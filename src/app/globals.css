@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 紙質暗紋 + 暖色暈影 */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  opacity: 0.5;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
+}
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 49;
+  background: radial-gradient(ellipse at 50% 30%, transparent 55%, rgba(10, 6, 2, 0.55) 100%);
+}
+
+@layer components {
+  .panel {
+    @apply bg-coal/80 border border-faded/25 rounded-sm p-4 relative;
+  }
+  .panel-title {
+    @apply font-mono text-xs tracking-[0.3em] text-gold/80 uppercase mb-3;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center px-3 py-1.5 border border-gold/40 text-cream text-sm
+      hover:bg-gold/15 hover:border-gold transition-colors rounded-sm disabled:opacity-30 disabled:pointer-events-none;
+  }
+  .btn-danger {
+    @apply border-vermillion/50 text-cinnabar hover:bg-vermillion/15 hover:border-vermillion;
+  }
+  .chip {
+    @apply inline-block px-1.5 py-0.5 text-xs border border-faded/30 text-faded rounded-sm font-mono;
+  }
+  .stat-bar {
+    @apply h-2 rounded-sm overflow-hidden bg-smoke;
+  }
+  .divider {
+    @apply flex items-center gap-3 text-faded/60 font-mono text-xs tracking-widest my-2;
+  }
+  .divider::before,
+  .divider::after {
+    content: "";
+    @apply flex-1 h-px bg-gradient-to-r from-transparent via-faded/40 to-transparent;
+  }
+  .deco-frame {
+    position: relative;
+  }
+  .deco-frame::before,
+  .deco-frame::after {
+    content: "";
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-color: rgba(201, 162, 39, 0.55);
+  }
+  .deco-frame::before {
+    top: -1px; left: -1px;
+    border-top: 1px solid; border-left: 1px solid;
+  }
+  .deco-frame::after {
+    bottom: -1px; right: -1px;
+    border-bottom: 1px solid; border-right: 1px solid;
+  }
+}
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #161310; }
+::-webkit-scrollbar-thumb { background: #4a4132; border-radius: 4px; }

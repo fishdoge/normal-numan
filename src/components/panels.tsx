@@ -117,7 +117,19 @@ export function LogPanel() {
 
 export function CombatPanel() {
   const s = useGame();
-  const combat = s.combat!;
+  const combat = s.combat;
+
+  if (!combat) {
+    return (
+      <div className="panel deco-frame">
+        <p className="panel-title">戰 況</p>
+        <p className="text-sm text-faded">
+          四下無事,靈風拂面。前往秘境「獵殺妖獸」,或採集時遭遇襲擊,戰況將顯示於此。
+        </p>
+      </div>
+    );
+  }
+
   const mon = MONSTERS.find((m) => m.id === combat.monsterId)!;
   const usable = s.learned.map(techById);
 

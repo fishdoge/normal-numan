@@ -8,7 +8,7 @@ import { MISSIONS } from "@/game/data/missions";
 import { RANK_NPCS } from "@/game/data/ranking";
 import { REALMS } from "@/game/data/realms";
 import { techById } from "@/game/data/techniques";
-import { ELEMENT_COLOR } from "@/game/types";
+import { ELEMENT_COLOR, ItemKind } from "@/game/types";
 
 type Tab = "explore" | "bag" | "tech" | "craft" | "market" | "mission" | "dex" | "rank";
 
@@ -115,39 +115,58 @@ function ExploreTab() {
   );
 }
 
+const BAG_SECTIONS: [string, ItemKind[]][] = [
+  ["材 料", ["material"]],
+  ["仙 草 · 丹 藥", ["herb", "pill"]],
+  ["法 器 · 護 身", ["artifact", "treasure"]],
+  ["功 法 秘 笈", ["manual"]],
+];
+
 function BagTab() {
   const s = useGame();
   const entries = Object.entries(s.inventory);
   if (entries.length === 0) return <p className="text-faded text-sm">儲物袋空空如也。</p>;
+
+  const row = ([id, n]: [string, number]) => {
+    const item = itemById(id);
+    const equipped = s.equippedWeapon === id || s.equippedArmor === id;
+    return (
+      <div key={id} className="flex items-center justify-between border border-faded/20 rounded-sm p-2.5">
+        <div className="min-w-0">
+          <span className="font-bold">
+            {item.name} <span className="text-faded font-normal">×{n}</span>
+            {item.element && <span className={`chip ml-2 ${ELEMENT_COLOR[item.element]}`}>{item.element}</span>}
+            {equipped && <span className="chip ml-2 text-gold border-gold/50">已裝備</span>}
+          </span>
+          <p className="text-xs text-faded truncate">{item.desc}</p>
+        </div>
+        <div className="flex gap-1.5 shrink-0 ml-3">
+          {(item.kind === "pill" || item.kind === "herb") && (
+            <button className="btn" onClick={() => s.useItem(id)}>服用</button>
+          )}
+          {item.kind === "manual" && (
+            <button className="btn" onClick={() => s.useItem(id)}>參悟</button>
+          )}
+          {(item.kind === "artifact" || item.kind === "treasure") && !equipped && (
+            <button className="btn" onClick={() => s.equip(id)}>裝備</button>
+          )}
+          <button className="btn btn-danger" onClick={() => s.sellItem(id)}>
+            售 {Math.max(1, Math.floor(item.price * 0.6))}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-2">
-      {entries.map(([id, n]) => {
-        const item = itemById(id);
-        const equipped = s.equippedWeapon === id || s.equippedArmor === id;
+      {BAG_SECTIONS.map(([title, kinds]) => {
+        const group = entries.filter(([id]) => kinds.includes(itemById(id).kind));
+        if (!group.length) return null;
         return (
-          <div key={id} className="flex items-center justify-between border border-faded/20 rounded-sm p-2.5">
-            <div className="min-w-0">
-              <span className="font-bold">
-                {item.name} <span className="text-faded font-normal">×{n}</span>
-                {item.element && <span className={`chip ml-2 ${ELEMENT_COLOR[item.element]}`}>{item.element}</span>}
-                {equipped && <span className="chip ml-2 text-gold border-gold/50">已裝備</span>}
-              </span>
-              <p className="text-xs text-faded truncate">{item.desc}</p>
-            </div>
-            <div className="flex gap-1.5 shrink-0 ml-3">
-              {(item.kind === "pill" || item.kind === "herb") && (
-                <button className="btn" onClick={() => s.useItem(id)}>服用</button>
-              )}
-              {item.kind === "manual" && (
-                <button className="btn" onClick={() => s.useItem(id)}>參悟</button>
-              )}
-              {(item.kind === "artifact" || item.kind === "treasure") && !equipped && (
-                <button className="btn" onClick={() => s.equip(id)}>裝備</button>
-              )}
-              <button className="btn btn-danger" onClick={() => s.sellItem(id)}>
-                售 {Math.max(1, Math.floor(item.price * 0.6))}
-              </button>
-            </div>
+          <div key={title}>
+            <div className="divider">{title}</div>
+            <div className="space-y-2">{group.map(row)}</div>
           </div>
         );
       })}

@@ -30,7 +30,6 @@ function DeathScreen() {
 export default function Game() {
   const started = useGame((s) => s.started);
   const dead = useGame((s) => s.dead);
-  const combat = useGame((s) => s.combat);
   const resetGame = useGame((s) => s.resetGame);
 
   if (!started) return <CharCreate />;
@@ -61,7 +60,7 @@ export default function Game() {
           <StatusPanel />
         </div>
         <div className="space-y-4">
-          {combat && <CombatPanel />}
+          <CombatPanel />
           <ActionTabs />
         </div>
         <LogPanel />

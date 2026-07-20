@@ -28,6 +28,11 @@ export const ITEMS: ItemDef[] = [
   { id: "longlinguo", name: "龍鱗果", kind: "herb", desc: "形如龍鱗的靈果,服之肉身堅如蛟龍。", price: 15000, exp: 40000 },
   { id: "huangjitiansui", name: "皇極天髓", kind: "herb", desc: "天地開闢時遺留的一縷精髓,化神以上方能承受。", price: 200000, exp: 600000 },
 
+  // ── 延壽極品(坊市不售,可遇不可求) ──
+  { id: "wanshoudan", name: "萬壽丹", kind: "pill", desc: "以百種靈藥煉成的延壽奇丹,服之增壽百載。", price: 20000, life: 100 },
+  { id: "yanshouguo", name: "延壽果", kind: "herb", desc: "萬載一熟的延壽靈果,服之增壽三百載,可遇不可求。", price: 80000, life: 300 },
+  { id: "panlongtao", name: "蟠龍壽桃", kind: "herb", desc: "傳說仙界流落的壽桃,龍紋盤繞,一枚增壽千載。", price: 500000, life: 1000 },
+
   // ── 丹藥 ──
   { id: "huanglongdan", name: "黃龍丹", kind: "pill", desc: "煉氣期修士常用補氣丹藥,增長修為。", price: 40, exp: 45 },
   { id: "huiyuandan", name: "回元丹", kind: "pill", desc: "迅速回復仙靈力的丹藥。", price: 35, mp: 80 },

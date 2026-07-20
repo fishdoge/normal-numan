@@ -5,10 +5,12 @@ import { useGame, playerStats } from "@/game/store";
 import { LOCATIONS, MONSTERS, RECIPES, REGIONS } from "@/game/data/world";
 import { ITEMS, itemById } from "@/game/data/items";
 import { MISSIONS } from "@/game/data/missions";
+import { RANK_NPCS } from "@/game/data/ranking";
+import { REALMS } from "@/game/data/realms";
 import { techById } from "@/game/data/techniques";
 import { ELEMENT_COLOR } from "@/game/types";
 
-type Tab = "explore" | "bag" | "tech" | "craft" | "market" | "mission" | "dex";
+type Tab = "explore" | "bag" | "tech" | "craft" | "market" | "mission" | "dex" | "rank";
 
 export default function ActionTabs() {
   const [tab, setTab] = useState<Tab>("explore");
@@ -20,6 +22,7 @@ export default function ActionTabs() {
     ["market", "坊市"],
     ["mission", "宗門任務"],
     ["dex", "妖獸圖鑑"],
+    ["rank", "修仙榜"],
   ];
   return (
     <div className="panel">
@@ -43,6 +46,7 @@ export default function ActionTabs() {
       {tab === "market" && <MarketTab />}
       {tab === "mission" && <MissionTab />}
       {tab === "dex" && <DexTab />}
+      {tab === "rank" && <RankTab />}
     </div>
   );
 }
@@ -58,7 +62,10 @@ function ExploreTab() {
   return (
     <div className="space-y-3">
       <div className="flex gap-2 mb-2">
-        <button className="btn" disabled={inCombat} onClick={s.cultivate}>打坐修煉</button>
+        <button className="btn" disabled={inCombat || s.cultToday >= 3} onClick={s.cultivate}>
+          打坐修煉 {s.cultToday}/3
+        </button>
+        <button className="btn" disabled={inCombat} onClick={s.restDay}>調息一日(-10載)</button>
         <button className="btn" disabled={inCombat} onClick={s.breakthrough}>嘗試突破</button>
       </div>
       <div className="divider">大 陸 遊 歷</div>
@@ -220,7 +227,7 @@ function CraftTab() {
 
 function MarketTab() {
   const s = useGame();
-  const wares = ITEMS.filter((i) => ["pill", "herb", "manual", "treasure"].includes(i.kind));
+  const wares = ITEMS.filter((i) => ["pill", "herb", "manual", "treasure"].includes(i.kind) && !i.life);
   return (
     <div className="space-y-2">
       <p className="text-xs text-faded">
@@ -336,6 +343,51 @@ function DexTab() {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function RankTab() {
+  const s = useGame();
+  // 同小境界時,修為(exp)高者居前;NPC 視為該境界修為 50%
+  const entries = [
+    ...RANK_NPCS.map((n) => ({
+      name: n.name, title: n.title, realmIdx: n.realmIdx,
+      exp: Math.floor(REALMS[n.realmIdx].expNeed * 0.5), me: false,
+    })),
+    {
+      name: s.name, title: "(你)", realmIdx: s.realmIdx, exp: s.exp, me: true,
+    },
+  ].sort((a, b) => b.realmIdx - a.realmIdx || b.exp - a.exp);
+
+  const myRank = entries.findIndex((e) => e.me) + 1;
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-faded">
+        天南修仙界風傳的《修仙榜》,錄天下強者。你當前名列第
+        <span className="text-gold"> {myRank} </span>位。
+      </p>
+      {entries.map((e, i) => (
+        <div
+          key={e.name + i}
+          className={`flex items-center justify-between border rounded-sm p-2.5 ${
+            e.me ? "border-gold/60 bg-gold/10" : "border-faded/20"
+          }`}
+        >
+          <div className="flex items-baseline gap-3 min-w-0">
+            <span className={`font-mono text-sm w-6 text-right shrink-0 ${i < 3 ? "text-gold" : "text-faded"}`}>
+              {i + 1}
+            </span>
+            <div className="min-w-0">
+              <span className={`font-bold ${e.me ? "text-gold" : ""}`}>{e.name}</span>
+              <span className="text-xs text-faded ml-2">{e.title}</span>
+            </div>
+          </div>
+          <span className="text-sm text-cream shrink-0 ml-3">{REALMS[e.realmIdx].name}</span>
+        </div>
+      ))}
+      <p className="text-xs text-faded/60">榜上人物境界為定數,唯有你仍在攀登——超越韓立,便是天下第一。</p>
     </div>
   );
 }

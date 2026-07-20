@@ -30,11 +30,11 @@ export const MONSTERS: Monster[] = [
   // ── 大晉(化神/煉虛級) ──
   { id: "mohua", name: "魔化修士", element: "火", hp: 500000, atk: 14000, exp: 220000, stones: [40000, 90000], drops: [{ id: "mojing", chance: 0.7 }, { id: "m_yuanci", chance: 0.06 }], desc: "修煉魔功走火入魔的煉虛修士,神智全失,兇性滔天。" },
   { id: "tianlanyao", name: "天嵐妖鳥", element: "火", hp: 900000, atk: 22000, exp: 450000, stones: [80000, 160000], drops: [{ id: "fenghuolin", chance: 0.5 }, { id: "m_sanyan", chance: 0.08 }], desc: "風火雙翼遮天蔽日,大晉妖族的圖騰聖獸。" },
-  { id: "guimu", name: "鬼母", element: "水", hp: 1600000, atk: 35000, exp: 900000, stones: [150000, 300000], drops: [{ id: "huangjitiansui", chance: 0.3 }, { id: "dahuandan", chance: 0.5 }], desc: "陰界裂縫爬出的存在,萬鬼朝拜,煉虛巔峰。" },
+  { id: "guimu", name: "鬼母", element: "水", hp: 1600000, atk: 35000, exp: 900000, stones: [150000, 300000], drops: [{ id: "huangjitiansui", chance: 0.3 }, { id: "dahuandan", chance: 0.5 }, { id: "wanshoudan", chance: 0.08 }], desc: "陰界裂縫爬出的存在,萬鬼朝拜,煉虛巔峰。" },
   // ── 靈界(合體/大乘級) ──
   { id: "zhenlingwei", name: "真靈衛", element: "金", hp: 9000000, atk: 160000, exp: 5200000, stones: [800000, 1600000], drops: [{ id: "longjinggu", chance: 0.4 }, { id: "m_zhenlong", chance: 0.05 }], desc: "靈界天淵城的傀儡戰衛,真靈血脈驅動。" },
-  { id: "gulong", name: "上古真龍殘魂", element: "木", hp: 20000000, atk: 300000, exp: 15000000, stones: [2000000, 4000000], drops: [{ id: "longjinggu", chance: 0.8 }, { id: "pojiedan", chance: 0.25 }], desc: "隕落真龍不滅的殘魂,一聲龍吟,萬里雲海翻覆。" },
-  { id: "tianjie", name: "天劫雷靈", element: "金", hp: 50000000, atk: 700000, exp: 60000000, stones: [5000000, 10000000], drops: [{ id: "pojiedan", chance: 0.5 }], desc: "天劫之中孕生的雷之精靈——渡過它,便是飛昇之門。" },
+  { id: "gulong", name: "上古真龍殘魂", element: "木", hp: 20000000, atk: 300000, exp: 15000000, stones: [2000000, 4000000], drops: [{ id: "longjinggu", chance: 0.8 }, { id: "pojiedan", chance: 0.25 }, { id: "yanshouguo", chance: 0.1 }], desc: "隕落真龍不滅的殘魂,一聲龍吟,萬里雲海翻覆。" },
+  { id: "tianjie", name: "天劫雷靈", element: "金", hp: 50000000, atk: 700000, exp: 60000000, stones: [5000000, 10000000], drops: [{ id: "pojiedan", chance: 0.5 }, { id: "panlongtao", chance: 0.12 }], desc: "天劫之中孕生的雷之精靈——渡過它,便是飛昇之門。" },
 ];
 
 export const LOCATIONS: Location[] = [

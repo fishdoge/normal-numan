@@ -22,13 +22,14 @@ export const ELEMENT_COLOR: Record<Element, string> = {
 
 export interface Realm {
   id: string;
-  name: string; // 煉氣期 三層
+  name: string; // 煉氣期 前期
   stage: number;
   expNeed: number; // 突破所需修為
   hpMax: number;
   mpMax: number; // 仙靈力上限
   atk: number;
   breakChance: number; // 突破成功率
+  lifespan: number; // 該境界壽元上限(載)
 }
 
 export type ItemKind = "material" | "herb" | "pill" | "manual" | "artifact" | "treasure";
@@ -44,6 +45,7 @@ export interface ItemDef {
   heal?: number;
   mp?: number;
   exp?: number;
+  life?: number; // 延壽(載)——極品,坊市不售
   // manual → 對應仙法
   teaches?: string;
   // artifact 屬性

@@ -37,11 +37,17 @@ interface GameState {
   vialCharge: number; // 每次修煉/採集 +1,滿 3 可催熟
   missionId: string | null;
   missionBase: number; // 接取時的擊殺基數
+  age: number; // 年齡(載)
+  lifeBonus: number; // 額外壽元(突破贈壽+延壽極品)
+  day: number; // 修行日
+  cultToday: number; // 今日已修煉次數(上限3)
+  dead: boolean; // 壽元耗盡
 
   // actions
   startGame: (name: string, sectId: string) => void;
   addLog: (msg: string) => void;
   cultivate: () => void;
+  restDay: () => void; // 調息一日:日+1、壽元-10載、重置修煉次數
   breakthrough: () => void;
   gather: (locationId: string) => void;
   startHunt: (locationId: string) => void;
@@ -75,6 +81,10 @@ function playerStats(s: GameState) {
 }
 
 export const getStats = playerStats;
+
+// 壽元上限 = 境界壽元 + 額外壽元
+export const maxLife = (s: Pick<GameState, "realmIdx" | "lifeBonus">) =>
+  REALMS[s.realmIdx].lifespan + s.lifeBonus;
 
 function elementMult(attacker: Element | undefined, defender: Element): number {
   if (!attacker) return 1;
@@ -153,6 +163,22 @@ function maybeEncounter(get: () => GameState, set: (p: Partial<GameState>) => vo
     const m = pool[rand(0, realm.stage >= 5 ? 2 : 1)];
     give(m);
     logs.push(`地動山搖,一座上古洞府破土而出!你搶在群修之前取走【${itemById(m).name}】,遁光而去。`);
+    return;
+  }
+  // 延壽極品:總計約 1.2% 機率,愈稀有愈難得
+  if (roll < 0.148) {
+    give("wanshoudan");
+    logs.push("你於一處無名廢墟中掘出一只丹盒,盒中靜臥一枚【萬壽丹】——延壽百載的奇丹!");
+    return;
+  }
+  if (roll < 0.151) {
+    give("yanshouguo");
+    logs.push("懸崖之下異香撲鼻——竟是一株萬載一熟的【延壽果】!你顫抖著雙手將其摘下。");
+    return;
+  }
+  if (roll < 0.152 && realm.stage >= 5) {
+    give("panlongtao");
+    logs.push("九天之上仙音縹緲,一枚龍紋壽桃自雲端墜落,正落你掌心——【蟠龍壽桃】!此乃仙界之物!");
   }
 }
 
@@ -228,6 +254,11 @@ export const useGame = create<GameState>()(
       vialCharge: 0,
       missionId: null,
       missionBase: 0,
+      age: 16,
+      lifeBonus: 0,
+      day: 1,
+      cultToday: 0,
+      dead: false,
 
       addLog: (msg) => pushLogs(get, set, [msg]),
 
@@ -252,7 +283,11 @@ export const useGame = create<GameState>()(
 
       cultivate: () => {
         const s = get();
-        if (s.combat) return;
+        if (s.combat || s.dead) return;
+        if (s.cultToday >= 3) {
+          pushLogs(get, set, ["今日心神已竭,再修無益。且調息一日,養精蓄銳。"]);
+          return;
+        }
         const { realm, sect, hpMax, mpMax } = playerStats(s);
         // 收益隨境界放大:每一小階約 20 次打坐
         const base = realm.expNeed * (0.04 + Math.random() * 0.03);
@@ -264,15 +299,34 @@ export const useGame = create<GameState>()(
           hp: Math.min(hpMax, s.hp + heal),
           mp: Math.min(mpMax, s.mp + mpGain),
           vialCharge: s.hasVial ? Math.min(3, s.vialCharge + 1) : 0,
+          cultToday: s.cultToday + 1,
         });
-        const logs = [`你盤膝打坐,吐納靈氣,修為 +${gain},氣血與仙靈力略有回復。`];
+        const logs = [`你盤膝打坐,吐納靈氣,修為 +${gain}(今日 ${s.cultToday + 1}/3)。`];
         maybeEncounter(get, set, logs);
         pushLogs(get, set, logs);
       },
 
+      restDay: () => {
+        const s = get();
+        if (s.combat || s.dead) return;
+        const age = s.age + 10;
+        const cap = maxLife(s);
+        const { hpMax, mpMax } = playerStats(s);
+        if (age >= cap) {
+          set({ age: cap, dead: true, combat: null });
+          pushLogs(get, set, [
+            `枯坐洞府,你忽覺經脈枯涸,鏡中鬢髮霜白——壽元已盡。`,
+            `享年 ${cap} 載,道隕於【${REALMS[s.realmIdx].name}】。仙路無情,一步遲,步步遲。`,
+          ]);
+          return;
+        }
+        set({ age, day: s.day + 1, cultToday: 0, hp: hpMax, mp: mpMax });
+        pushLogs(get, set, [`你閉關調息一日,氣血仙靈力盡復,修煉之機重聚。歲月如梭,壽元又逝十載(${age}/${cap})。`]);
+      },
+
       breakthrough: () => {
         const s = get();
-        if (s.combat) return;
+        if (s.combat || s.dead) return;
         const realm = REALMS[s.realmIdx];
         if (s.realmIdx >= REALMS.length - 1) {
           pushLogs(get, set, ["你已白日飛昇,位列仙班。仙界的故事,是另一部書了……"]);
@@ -294,20 +348,31 @@ export const useGame = create<GameState>()(
               "自山村凡童至真仙之軀,這一步,你走了一生。《凡人修仙傳》,至此功德圓滿。",
             ]);
           } else if (next.stage > realm.stage) {
-            pushLogs(get, set, [`天地色變,靈氣如百川歸海——你渡過大關,晉入【${next.name}】!壽元大增,神通更上一層樓。`]);
+            const gift = Math.floor(next.lifespan * 0.1);
+            set({ lifeBonus: get().lifeBonus + gift });
+            pushLogs(get, set, [
+              `天地色變,靈氣如百川歸海——你渡過大關,晉入【${next.name}】!`,
+              `脫胎換骨,壽元上限升至 ${next.lifespan} 載,更額外增壽 ${gift} 載。`,
+            ]);
           } else {
             pushLogs(get, set, [`靈氣灌體,經脈轟鳴——你成功突破至【${next.name}】!氣血仙靈力盡復。`]);
           }
         } else {
           const lost = Math.floor(realm.expNeed * 0.2);
           set({ exp: Math.max(0, s.exp - lost) });
-          pushLogs(get, set, [`突破失敗!靈氣暴走,修為損失 ${lost}。穩固心境,再接再厲。`]);
+          const isMajor = s.realmIdx % 3 === 2 || realm.id === "dujie";
+          pushLogs(get, set, [
+            `突破失敗!靈氣暴走,修為損失 ${lost}。` +
+              (isMajor
+                ? `大關未破,壽元仍困於【${realm.name}】之限(${maxLife(get())} 載)——壽關迫近,不可不慎。`
+                : "穩固心境,再接再厲。"),
+          ]);
         }
       },
 
       gather: (locationId) => {
         const s = get();
-        if (s.combat) return;
+        if (s.combat || s.dead) return;
         const loc = LOCATIONS.find((l) => l.id === locationId)!;
         const { realm } = playerStats(s);
         if (realm.stage < loc.reqStage) {
@@ -346,7 +411,7 @@ export const useGame = create<GameState>()(
 
       startHunt: (locationId) => {
         const s = get();
-        if (s.combat) return;
+        if (s.combat || s.dead) return;
         const loc = LOCATIONS.find((l) => l.id === locationId)!;
         const { realm } = playerStats(s);
         if (realm.stage < loc.reqStage) {
@@ -457,6 +522,7 @@ export const useGame = create<GameState>()(
         if (item.heal) { patch.hp = Math.min(hpMax, s.hp + item.heal); effects.push(`回復氣血 ${item.heal}`); }
         if (item.mp) { patch.mp = Math.min(mpMax, s.mp + item.mp); effects.push(`回復仙靈力 ${item.mp}`); }
         if (item.exp) { patch.exp = s.exp + item.exp; effects.push(`修為 +${item.exp}`); }
+        if (item.life) { patch.lifeBonus = s.lifeBonus + item.life; effects.push(`壽元 +${item.life} 載`); }
         set(patch);
         logs.push(`你服下 ${item.name},${effects.join(",")}。`);
         pushLogs(get, set, logs);
@@ -535,7 +601,15 @@ export const useGame = create<GameState>()(
         const { realm } = playerStats(s);
         const gain = Math.floor(realm.expNeed * 0.35);
         const inv = { ...s.inventory };
-        // 綠液催熟:隨機催生一株仙草
+        // 綠液催熟:隨機催生一株仙草;5% 機率竟催熟出延壽果
+        if (Math.random() < 0.05) {
+          inv.yanshouguo = (inv.yanshouguo ?? 0) + 1;
+          set({ vialCharge: 0, exp: s.exp + gain, inventory: inv });
+          pushLogs(get, set, [
+            `子夜時分,綠液滴落——藥圃中竟結出一枚【延壽果】!瓶中造化,奪天地壽數!修為 +${gain}。`,
+          ]);
+          return;
+        }
         const herbs = ["zhuguo", "xuelingzhi", "zijinhua", "tianlingguo"];
         const herb = Math.random() < 0.15 ? "tianlingguo" : herbs[rand(0, 2)];
         inv[herb] = (inv[herb] ?? 0) + 1;
@@ -608,6 +682,7 @@ export const useGame = create<GameState>()(
           log: [], combat: null,
           kills: {}, seen: [], hasVial: false, vialCharge: 0,
           missionId: null, missionBase: 0,
+          age: 16, lifeBonus: 0, day: 1, cultToday: 0, dead: false,
         });
       },
     }),

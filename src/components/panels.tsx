@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useGame, playerStats } from "@/game/store";
+import { useGame, playerStats, maxLife } from "@/game/store";
 import { REALMS } from "@/game/data/realms";
 import { SECTS } from "@/game/data/sects";
 import { MONSTERS } from "@/game/data/world";
@@ -56,6 +56,12 @@ export function StatusPanel() {
       <div className="divider">◆</div>
 
       <div className="grid grid-cols-2 gap-y-1 text-sm">
+        <span className="text-faded">壽元</span>
+        <span className={`text-right ${maxLife(s) - s.age <= REALMS[s.realmIdx].lifespan * 0.2 ? "text-vermillion" : ""}`}>
+          {s.age}/{maxLife(s)} 載
+        </span>
+        <span className="text-faded">修行日</span>
+        <span className="text-right">第 {s.day} 日(今日修煉 {s.cultToday}/3)</span>
         <span className="text-faded">攻擊</span><span className="text-right">{atk}</span>
         <span className="text-faded">防禦</span><span className="text-right">{def}</span>
         <span className="text-faded">靈石</span><span className="text-right text-gold">{s.stones}</span>

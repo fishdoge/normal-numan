@@ -175,3 +175,4 @@ src/components/CharCreate.tsx 開局:道號 + 門派
 src/components/panels.tsx   道籍 / 戰況 / 見聞錄
 src/components/ActionTabs.tsx 八大行動頁籤
 ```
+# normal-numan

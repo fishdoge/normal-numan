@@ -7,7 +7,8 @@ import { techById } from "@/game/data/techniques";
 import { ELEMENT_COLOR } from "@/game/types";
 
 export default function CharCreate() {
-  const startGame = useGame((s) => s.startGame);
+  const act = useGame((s) => s.act);
+  const busy = useGame((s) => s.busy);
   const [name, setName] = useState("");
   const [sectId, setSectId] = useState<string | null>(null);
 
@@ -68,8 +69,8 @@ export default function CharCreate() {
       <div className="text-center">
         <button
           className="btn text-lg px-10 py-3"
-          disabled={!sectId}
-          onClick={() => sectId && startGame(name.trim(), sectId)}
+          disabled={!sectId || busy}
+          onClick={() => sectId && act("start", { name: name.trim(), sectId })}
         >
           踏 上 仙 途
         </button>

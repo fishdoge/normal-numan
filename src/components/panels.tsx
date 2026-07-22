@@ -1,21 +1,23 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useGame, playerStats, maxLife } from "@/game/store";
+import { useGame, statsOf, maxLifeOf } from "@/game/store";
 import { REALMS } from "@/game/data/realms";
 import { SECTS } from "@/game/data/sects";
 import { MONSTERS } from "@/game/data/world";
 import { itemById } from "@/game/data/items";
 import { techById } from "@/game/data/techniques";
-import { ELEMENT_COLOR } from "@/game/types";
+import { ELEMENT_COLOR, formatStones } from "@/game/types";
 
 export function StatusPanel() {
-  const s = useGame();
-  const { realm, atk, def, hpMax, mpMax } = playerStats(s as never);
+  const s = useGame((x) => x.save)!;
+  const { realm, atk, def, hpMax, mpMax, speed } = statsOf(s);
   const sect = SECTS.find((x) => x.id === s.sectId);
   const expNeed = REALMS[s.realmIdx].expNeed;
   const weapon = s.equippedWeapon ? itemById(s.equippedWeapon) : null;
   const armor = s.equippedArmor ? itemById(s.equippedArmor) : null;
+  const act = useGame((x) => x.act);
+  const busy = useGame((x) => x.busy);
 
   const Bar = ({ v, max, cls }: { v: number; max: number; cls: string }) => (
     <div className="stat-bar">
@@ -57,43 +59,45 @@ export function StatusPanel() {
 
       <div className="grid grid-cols-2 gap-y-1 text-sm">
         <span className="text-faded">壽元</span>
-        <span className={`text-right ${maxLife(s) - s.age <= REALMS[s.realmIdx].lifespan * 0.2 ? "text-vermillion" : ""}`}>
-          {s.age}/{maxLife(s)} 載
+        <span className={`text-right ${maxLifeOf(s) - s.age <= REALMS[s.realmIdx].lifespan * 0.2 ? "text-vermillion" : ""}`}>
+          {s.age}/{maxLifeOf(s)} 年
         </span>
-        <span className="text-faded">修行日</span>
-        <span className="text-right">第 {s.day} 日(今日修煉 {s.cultToday}/3)</span>
+        <span className="text-faded">修行</span>
+        <span className="text-right">第 {s.day} 年(修煉 {s.cultToday}/3)</span>
         <span className="text-faded">攻擊</span><span className="text-right">{atk}</span>
         <span className="text-faded">防禦</span><span className="text-right">{def}</span>
-        <span className="text-faded">靈石</span><span className="text-right text-gold">{s.stones}</span>
+        <span className="text-faded">速度</span><span className="text-right">{speed}</span>
+        <span className="text-faded">靈石</span><span className="text-right text-gold">{formatStones(s.stones)}</span>
         <span className="text-faded">法器</span>
         <span className="text-right">{weapon ? weapon.name : "赤手空拳"}</span>
         <span className="text-faded">護身</span>
         <span className="text-right">{armor ? armor.name : "無"}</span>
       </div>
 
-      {s.hasVial && (
+      {s.learning && (
         <>
           <div className="divider">◆</div>
           <div className="text-sm">
-            <div className="flex items-baseline justify-between mb-1">
-              <span className="text-jade font-bold">小綠瓶</span>
-              <span className="text-xs font-mono text-faded">綠液 {s.vialCharge}/3</span>
+            <div className="flex items-baseline justify-between">
+              <span className="text-azure font-bold">修習中</span>
+              <span className="text-xs font-mono text-faded">尚需 {s.learning.remain} 年</span>
             </div>
-            <div className="stat-bar mb-2">
-              <div className="bg-jade h-full" style={{ width: `${(s.vialCharge / 3) * 100}%` }} />
-            </div>
-            <button className="btn w-full" disabled={s.vialCharge < 3 || !!s.combat} onClick={s.useVial}>
-              滴灌藥圃
-            </button>
+            <p className="text-cream mt-0.5">{techById(s.learning.techId).name}</p>
           </div>
         </>
       )}
+
+      <div className="mt-3">
+        <button className="btn w-full" onClick={() => act("restoreMp")} disabled={busy || !!s.combat}>
+          聚靈回力(耗靈石回滿仙靈力)
+        </button>
+      </div>
     </div>
   );
 }
 
 export function LogPanel() {
-  const log = useGame((s) => s.log);
+  const log = useGame((x) => x.save?.log ?? []);
   const boxRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = boxRef.current;
@@ -116,7 +120,9 @@ export function LogPanel() {
 }
 
 export function CombatPanel() {
-  const s = useGame();
+  const s = useGame((x) => x.save)!;
+  const act = useGame((x) => x.act);
+  const busy = useGame((x) => x.busy);
   const combat = s.combat;
 
   if (!combat) {
@@ -151,13 +157,13 @@ export function CombatPanel() {
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        <button className="btn" onClick={s.attackBasic}>法器攻擊</button>
+        <button className="btn" disabled={busy} onClick={() => act("attack")}>法器攻擊</button>
         {usable.map((t) => (
           <button
             key={t.id}
             className="btn"
-            disabled={s.mp < t.mpCost}
-            onClick={() => s.castTech(t.id)}
+            disabled={busy || s.mp < t.mpCost}
+            onClick={() => act("cast", { techId: t.id })}
             title={t.desc}
           >
             <span className={`mr-1 ${ELEMENT_COLOR[t.element]}`}>{t.element}</span>
@@ -165,7 +171,7 @@ export function CombatPanel() {
             <span className="ml-1 text-xs text-faded">({t.mpCost})</span>
           </button>
         ))}
-        <button className="btn btn-danger" onClick={s.flee}>遁走</button>
+        <button className="btn btn-danger" disabled={busy} onClick={() => act("flee")}>遁走</button>
       </div>
       <p className="text-xs text-faded/60 mt-3">
         五行相剋:金克木 · 木克土 · 土克水 · 水克火 · 火克金 —— 相剋傷害 ×1.5

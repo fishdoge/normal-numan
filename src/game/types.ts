@@ -20,6 +20,28 @@ export const ELEMENT_COLOR: Record<Element, string> = {
   土: "text-earth",
 };
 
+// 靈石面額:1 極品 = 100 上品 = 10,000 中品 = 1,000,000 下品
+export function formatStones(n: number): string {
+  if (n <= 0) return "0 下品";
+  const units: [string, number][] = [
+    ["極品", 1000000],
+    ["上品", 10000],
+    ["中品", 100],
+    ["下品", 1],
+  ];
+  const parts: string[] = [];
+  let rest = n;
+  for (const [label, v] of units) {
+    const q = Math.floor(rest / v);
+    if (q > 0) {
+      parts.push(`${q} ${label}`);
+      rest -= q * v;
+    }
+    if (parts.length >= 2) break; // 最多顯示兩級,避免冗長
+  }
+  return parts.join(" ");
+}
+
 export interface Realm {
   id: string;
   name: string; // 煉氣期 前期

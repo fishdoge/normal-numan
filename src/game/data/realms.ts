@@ -4,11 +4,11 @@ import { Realm } from "../types";
 // stage: 1煉氣 2築基 3結丹 4元嬰 5化神 6煉虛 7合體 8大乘 9渡劫
 // lifespan: 該大境界壽元上限(載),取材原著設定
 const MAJORS = [
-  { name: "煉氣期", exp: 40, hp: 60, mp: 30, atk: 6, brk: 0.95, life: 150 },
-  { name: "築基期", exp: 420, hp: 420, mp: 230, atk: 42, brk: 0.85, life: 300 },
-  { name: "結丹期", exp: 3200, hp: 2300, mp: 1300, atk: 190, brk: 0.75, life: 600 },
+  { name: "煉氣期", exp: 40, hp: 60, mp: 30, atk: 6, brk: 0.95, life: 120 },
+  { name: "築基期", exp: 420, hp: 420, mp: 230, atk: 42, brk: 0.85, life: 200 },
+  { name: "結丹期", exp: 3200, hp: 2300, mp: 1300, atk: 190, brk: 0.75, life: 400 },
   { name: "元嬰期", exp: 22000, hp: 12000, mp: 7000, atk: 850, brk: 0.65, life: 1200 },
-  { name: "化神期", exp: 130000, hp: 62000, mp: 37000, atk: 3800, brk: 0.55, life: 2500 },
+  { name: "化神期", exp: 130000, hp: 62000, mp: 37000, atk: 3800, brk: 0.55, life: 2000 },
   { name: "煉虛期", exp: 750000, hp: 310000, mp: 190000, atk: 17000, brk: 0.5, life: 6000 },
   { name: "合體期", exp: 4200000, hp: 1500000, mp: 950000, atk: 75000, brk: 0.45, life: 15000 },
   { name: "大乘期", exp: 22000000, hp: 7200000, mp: 4600000, atk: 330000, brk: 0.4, life: 40000 },

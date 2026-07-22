@@ -20,6 +20,18 @@ export const ELEMENT_COLOR: Record<Element, string> = {
   土: "text-earth",
 };
 
+// 仙靈力顯示色(真仙專屬,紫色)
+export const XIANLI_COLOR = "text-fuchsia-400";
+
+// 傷害顯示:每一億(1e8)點傷害計為一點「仙法傷害」
+export function formatDamage(n: number): string {
+  if (n >= 1e8) {
+    const v = n / 1e8;
+    return `${v >= 100 ? Math.round(v) : v.toFixed(2)} 仙法傷害`;
+  }
+  return `${n}`;
+}
+
 // 靈石面額:1 極品 = 100 上品 = 10,000 中品 = 1,000,000 下品
 export function formatStones(n: number): string {
   if (n <= 0) return "0 下品";
@@ -48,13 +60,13 @@ export interface Realm {
   stage: number;
   expNeed: number; // 突破所需修為
   hpMax: number;
-  mpMax: number; // 仙靈力上限
+  mpMax: number; // 法力上限
   atk: number;
   breakChance: number; // 突破成功率
   lifespan: number; // 該境界壽元上限(載)
 }
 
-export type ItemKind = "material" | "herb" | "pill" | "manual" | "artifact" | "treasure";
+export type ItemKind = "material" | "herb" | "pill" | "manual" | "artifact" | "treasure" | "special";
 
 export interface ItemDef {
   id: string;
@@ -68,6 +80,8 @@ export interface ItemDef {
   mp?: number;
   exp?: number;
   life?: number; // 延壽(載)——極品,坊市不售
+  lifePct?: number; // 依當前壽元上限的百分比延壽(增元丹 = 0.05)
+  xianli?: number; // 給予仙靈力點數(天仙丹、先天仙器,真仙專屬)
   // manual → 對應仙法
   teaches?: string;
   // artifact 屬性
@@ -80,7 +94,7 @@ export interface Technique {
   name: string;
   element: Element;
   desc: string;
-  mpCost: number; // 仙靈力消耗
+  mpCost: number; // 法力消耗
   power: number; // 威力倍率基底
   reqStage: number; // 需要境界 stage
 }
@@ -113,6 +127,7 @@ export interface Monster {
   stones: [number, number];
   drops: { id: string; chance: number }[];
   desc: string;
+  isLord?: boolean; // 地域王(妖獸領主),極稀有
 }
 
 export interface Region {
@@ -120,6 +135,7 @@ export interface Region {
   name: string;
   desc: string;
   reqStage: number;
+  lordId?: string; // 該區域的地域王(妖獸領主)
 }
 
 export interface Location {

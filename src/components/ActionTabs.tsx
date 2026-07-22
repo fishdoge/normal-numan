@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useGame, statsOf, learnYears } from "@/game/store";
+import { useGame, statsOf, learnYears, techLevelOf, techPowerMult, MAX_TECH_LEVEL } from "@/game/store";
 import { LOCATIONS, MONSTERS, RECIPES, REGIONS } from "@/game/data/world";
 import { ITEMS, itemById } from "@/game/data/items";
 import { MISSIONS } from "@/game/data/missions";
@@ -9,7 +9,7 @@ import { REALMS } from "@/game/data/realms";
 import { techById } from "@/game/data/techniques";
 import { ELEMENT_COLOR, ItemKind, formatStones } from "@/game/types";
 
-type Tab = "explore" | "bag" | "tech" | "craft" | "market" | "trade" | "mission" | "dex" | "rank";
+type Tab = "explore" | "bag" | "tech" | "craft" | "market" | "trade" | "mission" | "dex" | "rank" | "xianrank";
 
 export default function ActionTabs() {
   const [tab, setTab] = useState<Tab>("explore");
@@ -23,6 +23,7 @@ export default function ActionTabs() {
     ["mission", "宗門任務"],
     ["dex", "妖獸圖鑑"],
     ["rank", "修仙榜"],
+    ["xianrank", "真仙榜"],
   ];
   return (
     <div className="panel">
@@ -48,6 +49,7 @@ export default function ActionTabs() {
       {tab === "mission" && <MissionTab />}
       {tab === "dex" && <DexTab />}
       {tab === "rank" && <RankTab />}
+      {tab === "xianrank" && <XianRankTab />}
     </div>
   );
 }
@@ -68,6 +70,7 @@ function ExploreTab() {
       <div className="flex flex-wrap gap-1.5">
         {REGIONS.map((r) => {
           const rLocked = realm.stage < r.reqStage;
+          const isBeihan = r.id === "beihan";
           return (
             <button
               key={r.id}
@@ -75,9 +78,13 @@ function ExploreTab() {
               title={rLocked ? `需 ${r.reqStage} 階境界` : r.desc}
               className={`px-2.5 py-1 text-xs rounded-sm border transition-colors ${
                 regionId === r.id
-                  ? "border-gold bg-gold/15 text-gold"
+                  ? isBeihan
+                    ? "border-fuchsia-400 bg-fuchsia-400/15 text-fuchsia-300"
+                    : "border-gold bg-gold/15 text-gold"
                   : rLocked
                   ? "border-faded/15 text-faded/40 cursor-not-allowed"
+                  : isBeihan
+                  ? "border-fuchsia-400/40 text-fuchsia-300/90 hover:border-fuchsia-400"
                   : "border-faded/30 text-cream hover:border-gold/60"
               }`}
             >
@@ -116,6 +123,7 @@ const BAG_SECTIONS: [string, ItemKind[]][] = [
   ["仙 草 · 丹 藥", ["herb", "pill"]],
   ["法 器 · 護 身", ["artifact", "treasure"]],
   ["功 法 秘 笈", ["manual"]],
+  ["奇 珍 · 仙 物", ["special"]],
 ];
 
 function BagTab() {
@@ -145,6 +153,15 @@ function BagTab() {
           {(item.kind === "pill" || item.kind === "herb") && (
             <button className="btn" disabled={busy} onClick={() => act("useItem", { itemId: id })}>服用</button>
           )}
+          {item.kind === "special" && item.xianli && (
+            <button className="btn" disabled={busy} onClick={() => act("useItem", { itemId: id })}>煉化</button>
+          )}
+          {item.kind === "special" && id === "jinhundan" && (
+            <button className="btn border-gold/60 text-gold" disabled={busy} onClick={() => act("useItem", { itemId: id })}>服用晉金仙</button>
+          )}
+          {item.kind === "special" && !item.xianli && id !== "jinhundan" && (
+            <span className="chip text-fuchsia-400 border-fuchsia-400/50 self-center">於仙法欄使用</span>
+          )}
           {item.kind === "manual" && (
             <button
               className="btn"
@@ -158,9 +175,11 @@ function BagTab() {
           {(item.kind === "artifact" || item.kind === "treasure") && !equipped && (
             <button className="btn" disabled={busy} onClick={() => act("equip", { itemId: id })}>裝備</button>
           )}
-          <button className="btn btn-danger" disabled={busy} onClick={() => act("sell", { itemId: id })}>
-            售 {Math.max(1, Math.floor(item.price * 0.6))}
-          </button>
+          {item.kind !== "special" && (
+            <button className="btn btn-danger" disabled={busy} onClick={() => act("sell", { itemId: id })}>
+              售 {Math.max(1, Math.floor(item.price * 0.6))}
+            </button>
+          )}
         </div>
       </div>
     );
@@ -184,36 +203,54 @@ function BagTab() {
 
 function TechTab() {
   const s = useGame((x) => x.save)!;
+  const act = useGame((x) => x.act);
+  const busy = useGame((x) => x.busy);
+  const zenglingzhu = s.inventory["zenglingzhu"] ?? 0;
   return (
     <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-faded">法術最高 7 級,以增靈珠強化,每級威力大增。</p>
+        <span className="chip text-fuchsia-400 border-fuchsia-400/50">增靈珠 ×{zenglingzhu}</span>
+      </div>
       {s.learning && (
         <div className="border border-azure/40 bg-azure/5 rounded-sm p-3">
           <div className="flex items-baseline justify-between">
             <span className="font-bold text-azure">修習中:{techById(s.learning.techId).name}</span>
-            <span className="text-xs font-mono text-faded">尚需 {s.learning.remain} 年(調息推進)</span>
+            <span className="text-xs font-mono text-faded">尚需 {s.learning.remain} 年(打坐推進)</span>
           </div>
         </div>
       )}
       {s.learned.length === 0 && <p className="text-faded text-sm">尚未習得任何仙法。</p>}
       {s.learned.map((id) => {
         const t = techById(id);
+        const level = techLevelOf(s, id);
+        const maxed = level >= MAX_TECH_LEVEL;
         return (
           <div key={id} className="border border-faded/20 rounded-sm p-3">
             <div className="flex items-baseline justify-between">
               <span className="font-bold">
                 <span className={`mr-2 ${ELEMENT_COLOR[t.element]}`}>【{t.element}】</span>
                 {t.name}
+                <span className="chip ml-2 text-fuchsia-400 border-fuchsia-400/50">{level} / {MAX_TECH_LEVEL} 級</span>
               </span>
               <span className="text-xs text-faded font-mono">
-                威力 ×{t.power} · 仙靈力 {t.mpCost}
+                威力 ×{(t.power * techPowerMult(level)).toFixed(1)} · 法力 {t.mpCost}
               </span>
             </div>
             <p className="text-sm text-faded mt-1">{t.desc}</p>
+            <button
+              className="btn mt-2"
+              disabled={busy || maxed || zenglingzhu <= 0}
+              title={maxed ? "已達最高等級" : zenglingzhu <= 0 ? "需要增靈珠" : ""}
+              onClick={() => act("upgradeTech", { techId: id })}
+            >
+              {maxed ? "已達七級大圓滿" : `以增靈珠強化 → ${level + 1} 級`}
+            </button>
           </div>
         );
       })}
       <p className="text-xs text-faded/60 mt-2">
-        秘笈需「開始修習」後,以調息推進年月,期滿方成。一次僅能修習一部。
+        秘笈需「開始修習」後,以打坐推進年月,期滿方成。一次僅能修習一部。增靈珠由地域王掉落。
       </p>
     </div>
   );
@@ -268,7 +305,7 @@ function MarketTab() {
   const s = useGame((x) => x.save)!;
   const act = useGame((x) => x.act);
   const busy = useGame((x) => x.busy);
-  const wares = ITEMS.filter((i) => ["pill", "herb", "manual", "treasure"].includes(i.kind) && !i.life);
+  const wares = ITEMS.filter((i) => ["pill", "herb", "treasure"].includes(i.kind) && !i.life && !i.lifePct);
   return (
     <div className="space-y-2">
       <p className="text-xs text-faded">
@@ -519,36 +556,48 @@ function MissionTab() {
 
 function DexTab() {
   const s = useGame((x) => x.save)!;
+  const normals = MONSTERS.filter((m) => !m.isLord);
+  const lords = MONSTERS.filter((m) => m.isLord);
+
+  const monsterRow = (mon: (typeof MONSTERS)[number]) => {
+    const seen = s.seen.includes(mon.id);
+    const kills = s.kills[mon.id] ?? 0;
+    if (!seen)
+      return (
+        <div key={mon.id} className={`border rounded-sm p-3 opacity-40 ${mon.isLord ? "border-fuchsia-400/20" : "border-faded/15"}`}>
+          <span className="font-bold text-faded">???</span>
+          <p className="text-xs text-faded/60 mt-1">{mon.isLord ? "傳說中的地域之王,尚未現身。" : "尚未遭遇的妖獸,蹤跡成謎。"}</p>
+        </div>
+      );
+    return (
+      <div key={mon.id} className={`border rounded-sm p-3 ${mon.isLord ? "border-fuchsia-400/40 bg-fuchsia-400/5" : "border-faded/20"}`}>
+        <div className="flex items-baseline justify-between">
+          <span className="font-bold">
+            {mon.isLord && <span className="chip mr-2 text-fuchsia-400 border-fuchsia-400/50">地域王</span>}
+            {mon.name}
+            <span className={`chip ml-2 ${ELEMENT_COLOR[mon.element]}`}>{mon.element}屬性</span>
+          </span>
+          <span className="text-xs font-mono text-faded">
+            氣血 {mon.hp} · 攻擊 {mon.atk} · 已獵殺 {kills}
+          </span>
+        </div>
+        <p className="text-xs text-faded mt-1">{mon.desc}</p>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-2">
       <p className="text-xs text-faded">
         已目擊 {s.seen.length}/{MONSTERS.length} 種妖獸。遭遇即錄入圖鑑。
       </p>
-      {MONSTERS.map((mon) => {
-        const seen = s.seen.includes(mon.id);
-        const kills = s.kills[mon.id] ?? 0;
-        if (!seen)
-          return (
-            <div key={mon.id} className="border border-faded/15 rounded-sm p-3 opacity-40">
-              <span className="font-bold text-faded">???</span>
-              <p className="text-xs text-faded/60 mt-1">尚未遭遇的妖獸,蹤跡成謎。</p>
-            </div>
-          );
-        return (
-          <div key={mon.id} className="border border-faded/20 rounded-sm p-3">
-            <div className="flex items-baseline justify-between">
-              <span className="font-bold">
-                {mon.name}
-                <span className={`chip ml-2 ${ELEMENT_COLOR[mon.element]}`}>{mon.element}屬性</span>
-              </span>
-              <span className="text-xs font-mono text-faded">
-                氣血 {mon.hp} · 攻擊 {mon.atk} · 已獵殺 {kills}
-              </span>
-            </div>
-            <p className="text-xs text-faded mt-1">{mon.desc}</p>
-          </div>
-        );
-      })}
+      <div className="divider">妖 獸</div>
+      {normals.map(monsterRow)}
+      <div className="divider text-fuchsia-400/70">領 主</div>
+      <p className="text-xs text-faded">
+        地域王極為稀有,獵殺妖獸時約 2%~3% 機率遭遇。已遇 {s.lordsSeen?.length ?? 0}/{lords.length} 位,斬之或得增元丹、增靈珠等奇珍。其中太上金仙唯有「雲遊四海」時萬中之一得見。
+      </p>
+      {lords.map(monsterRow)}
     </div>
   );
 }
@@ -608,6 +657,69 @@ function RankTab() {
             <span className="text-sm text-cream shrink-0 ml-3">
               {REALMS[p.realm_idx]?.name ?? "??"}
               <span className="text-xs text-faded ml-2 font-mono">修為 {p.exp}</span>
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+interface XianPlayer {
+  name: string;
+  realm_idx: number;
+  xianli: number;
+  dead: boolean;
+}
+
+function XianRankTab() {
+  const s = useGame((x) => x.save)!;
+  const [players, setPlayers] = useState<XianPlayer[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = async () => {
+    setLoading(true);
+    try {
+      const j = await (await fetch("/api/ranking?type=xian")).json();
+      setPlayers(j.players ?? []);
+    } catch { /* ignore */ }
+    setLoading(false);
+  };
+  useEffect(() => { refresh(); }, []);
+
+  const myRank = players.findIndex((p) => p.name === s.name) + 1;
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-faded">
+        <span className="text-fuchsia-400 font-bold">真仙榜</span>——唯有白日飛昇的真仙方能登榜,按仙靈力高低排序。仙靈力一點即一倍攻擊,極難獲得。
+        {myRank > 0 && <>你當前名列第<span className="text-fuchsia-400"> {myRank} </span>位。</>}
+        <button className="chip ml-3 hover:text-fuchsia-400" onClick={refresh}>刷新</button>
+      </p>
+      {loading && <p className="text-sm text-faded">仙榜更新中…</p>}
+      {!loading && players.length === 0 && <p className="text-sm text-faded">仙界寂寥,尚無真仙留名。飛昇之後,煉化天仙丹與先天仙器,你將是第一位。</p>}
+      {players.map((p, i) => {
+        const me = p.name === s.name;
+        return (
+          <div
+            key={p.name + i}
+            className={`flex items-center justify-between border rounded-sm p-2.5 ${
+              me ? "border-fuchsia-400/60 bg-fuchsia-400/10" : "border-faded/20"
+            }`}
+          >
+            <div className="flex items-baseline gap-3 min-w-0">
+              <span className={`font-mono text-sm w-6 text-right shrink-0 ${i < 3 ? "text-fuchsia-400" : "text-faded"}`}>
+                {i + 1}
+              </span>
+              <div className="min-w-0">
+                <span className={`font-bold ${me ? "text-fuchsia-400" : ""}`}>{p.name}</span>
+                {me && <span className="text-xs text-fuchsia-400/70 ml-2">(你)</span>}
+                {p.dead && <span className="chip ml-2 text-vermillion border-vermillion/50">已隕落</span>}
+              </div>
+            </div>
+            <span className="text-sm shrink-0 ml-3">
+              <span className="text-fuchsia-400 font-bold">仙靈力 {p.xianli}</span>
+              <span className="text-xs text-faded ml-2 font-mono">{REALMS[p.realm_idx]?.name ?? "??"}</span>
             </span>
           </div>
         );

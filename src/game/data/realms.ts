@@ -4,14 +4,14 @@ import { Realm } from "../types";
 // stage: 1煉氣 2築基 3結丹 4元嬰 5化神 6煉虛 7合體 8大乘 9渡劫
 // lifespan: 該大境界壽元上限(載),取材原著設定
 const MAJORS = [
-  { name: "煉氣期", exp: 40, hp: 60, mp: 30, atk: 6, brk: 0.95, life: 120 },
-  { name: "築基期", exp: 420, hp: 420, mp: 230, atk: 42, brk: 0.85, life: 200 },
-  { name: "結丹期", exp: 3200, hp: 2300, mp: 1300, atk: 190, brk: 0.75, life: 400 },
-  { name: "元嬰期", exp: 22000, hp: 12000, mp: 7000, atk: 850, brk: 0.65, life: 1200 },
-  { name: "化神期", exp: 130000, hp: 62000, mp: 37000, atk: 3800, brk: 0.55, life: 2000 },
-  { name: "煉虛期", exp: 750000, hp: 310000, mp: 190000, atk: 17000, brk: 0.5, life: 6000 },
-  { name: "合體期", exp: 4200000, hp: 1500000, mp: 950000, atk: 75000, brk: 0.45, life: 15000 },
-  { name: "大乘期", exp: 22000000, hp: 7200000, mp: 4600000, atk: 330000, brk: 0.4, life: 40000 },
+  { name: "練氣期", exp: 30, hp: 50, mp: 25, atk: 5, brk: 0.95, life: 120 },
+  { name: "築基期", exp: 110, hp: 150, mp: 80, atk: 16, brk: 0.85, life: 200 },
+  { name: "結丹期", exp: 380, hp: 450, mp: 240, atk: 50, brk: 0.75, life: 400 },
+  { name: "元嬰期", exp: 1300, hp: 1400, mp: 720, atk: 160, brk: 0.65, life: 1200 },
+  { name: "化神期", exp: 4500, hp: 4200, mp: 2200, atk: 500, brk: 0.55, life: 2000 },
+  { name: "煉虛期", exp: 15000, hp: 13000, mp: 6800, atk: 1600, brk: 0.5, life: 6000 },
+  { name: "合體期", exp: 52000, hp: 40000, mp: 21000, atk: 5000, brk: 0.45, life: 15000 },
+  { name: "大乘期", exp: 180000, hp: 120000, mp: 63000, atk: 16000, brk: 0.4, life: 40000 },
 ];
 
 // 前/中/後期 修為與屬性倍率
@@ -39,12 +39,17 @@ export const REALMS: Realm[] = MAJORS.flatMap((M, i) =>
 REALMS.push(
   {
     id: "dujie", name: "渡劫期", stage: 9,
-    expNeed: 100000000, hpMax: 30000000, mpMax: 20000000, atk: 1300000,
+    expNeed: 600000, hpMax: 380000, mpMax: 200000, atk: 50000,
     breakChance: 0.3, lifespan: 100000,
   },
   {
     id: "feisheng", name: "真仙(已飛昇)", stage: 10,
-    expNeed: 999999999999, hpMax: 99999999, mpMax: 99999999, atk: 9999999,
+    expNeed: 999999999999, hpMax: 500000, mpMax: 500000, atk: 30000,
     breakChance: 0, lifespan: 99999999, // 仙人無壽
+  },
+  {
+    id: "jinxian_realm", name: "金仙", stage: 11,
+    expNeed: 999999999999, hpMax: 1200000, mpMax: 1200000, atk: 80000,
+    breakChance: 0, lifespan: 99999999, // 金仙超脫,以金魂丹自真仙突破而成
   }
 );

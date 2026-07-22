@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useGame, statsOf, maxLifeOf, Modal } from "@/game/store";
+import { useGame, statsOf, maxLifeOf, cultCostOf, Modal } from "@/game/store";
 import { REALMS } from "@/game/data/realms";
 import AuthGate from "./AuthGate";
 import CharCreate from "./CharCreate";
@@ -58,19 +58,28 @@ function CultivationBar() {
   const s = useGame((x) => x.save)!;
   const act = useGame((x) => x.act);
   const busy = useGame((x) => x.busy);
-  const { realm } = statsOf(s);
+  const { realm, hpMax } = statsOf(s);
   const inCombat = !!s.combat;
   const expNeed = realm.expNeed;
   const canBreak = s.exp >= expNeed;
+  const cost = cultCostOf(s);
   return (
     <div className={`panel deco-frame ${canBreak ? "border-gold/70" : ""}`}>
       <div className="flex flex-wrap items-center gap-3">
         <p className="panel-title mb-0 mr-2">修 煉</p>
-        <button className="btn text-base px-5 py-2" disabled={busy || inCombat || s.cultToday >= 3} onClick={() => act("cultivate")}>
-          打坐修煉 <span className="ml-1 font-mono text-xs">{s.cultToday}/3</span>
+        <button className="btn text-base px-5 py-2" disabled={busy || inCombat} onClick={() => act("cultivate")}>
+          打坐修煉 <span className="ml-1 font-mono text-xs">-{cost} 年壽元</span>
         </button>
-        <button className="btn text-base px-5 py-2" disabled={busy || inCombat} onClick={() => act("rest")}>
-          調息(-10 年壽元)
+        <button className="btn text-base px-5 py-2" disabled={busy || inCombat || s.hp >= hpMax} onClick={() => act("rest")}>
+          調息(回復氣血)
+        </button>
+        <button
+          className="btn text-base px-5 py-2 border-fuchsia-400/50 text-fuchsia-300 hover:bg-fuchsia-400/15 hover:border-fuchsia-400"
+          disabled={busy || inCombat || s.stones < 100000000}
+          onClick={() => act("wander")}
+          title="消耗 5000 年壽元 + 100 極品靈石。約 30% 得永久屬性,約 2.5% 直接得天仙丹,1% 遇金仙大 BOSS,餘則一無所獲。"
+        >
+          雲遊四海
         </button>
         <button
           className={`btn text-base px-5 py-2 ${canBreak ? "border-gold text-gold animate-pulse" : ""}`}
@@ -81,7 +90,7 @@ function CultivationBar() {
           嘗試突破{canBreak ? "!" : ""}
         </button>
         <span className="text-xs text-faded ml-auto font-mono">
-          修為 {s.exp}/{expNeed} · 失敗折損最大壽元 15%
+          修為 {s.exp}/{expNeed} · 突破失敗折損最大壽元 15%
         </span>
       </div>
     </div>
@@ -97,6 +106,7 @@ export default function Game() {
   const closeBreak = useGame((x) => x.closeBreak);
   const act = useGame((x) => x.act);
   const [auth, setAuth] = useState<"checking" | "anon" | "authed">("checking");
+  const [userName, setUserName] = useState("");
 
   const loadSave = useCallback(async () => {
     try {
@@ -107,6 +117,7 @@ export default function Game() {
       }
       const j = await res.json();
       setSave(j.save ?? null);
+      if (j.name) setUserName(j.name);
       if (j.save && j.lifeGained > 0) {
         useGame.getState().pushLog(`雲遊歸來,仙體自然溫養,增壽 ${j.lifeGained} 年。`);
       }
@@ -133,7 +144,7 @@ export default function Game() {
 
   if (auth === "anon") return <AuthGate onAuthed={() => loadSave()} />;
 
-  if (!save || !save.started) return <CharCreate />;
+  if (!save || !save.started) return <CharCreate name={userName} />;
 
   if (save.dead) return <DeathScreen />;
 

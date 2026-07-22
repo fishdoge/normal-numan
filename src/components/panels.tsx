@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { useGame, statsOf, maxLifeOf } from "@/game/store";
 import { REALMS } from "@/game/data/realms";
 import { SECTS } from "@/game/data/sects";
 import { MONSTERS } from "@/game/data/world";
 import { itemById } from "@/game/data/items";
 import { techById } from "@/game/data/techniques";
-import { ELEMENT_COLOR, formatStones } from "@/game/types";
+import { ELEMENT_COLOR, XIANLI_COLOR, formatStones } from "@/game/types";
 
 export function StatusPanel() {
   const s = useGame((x) => x.save)!;
@@ -17,7 +17,34 @@ export function StatusPanel() {
   const weapon = s.equippedWeapon ? itemById(s.equippedWeapon) : null;
   const armor = s.equippedArmor ? itemById(s.equippedArmor) : null;
   const act = useGame((x) => x.act);
-  const busy = useGame((x) => x.busy);
+
+  // 聚靈回力:按住即持續回力,鬆手停止
+  const holdingRef = useRef(false);
+  const loopingRef = useRef(false);
+  const runHold = useCallback(async () => {
+    if (loopingRef.current) return;
+    loopingRef.current = true;
+    try {
+      while (holdingRef.current) {
+        const st = useGame.getState().save;
+        const cur = st ? statsOf(st) : null;
+        if (!st || st.combat || st.dead || st.mp >= (cur?.mpMax ?? 0)) break;
+        await act("restoreMp");
+        await new Promise((r) => setTimeout(r, 90));
+      }
+    } finally {
+      loopingRef.current = false;
+    }
+  }, [act]);
+  const startHold = useCallback(() => {
+    if (holdingRef.current) return;
+    holdingRef.current = true;
+    runHold();
+  }, [runHold]);
+  const stopHold = useCallback(() => {
+    holdingRef.current = false;
+  }, []);
+  useEffect(() => () => { holdingRef.current = false; }, []);
 
   const Bar = ({ v, max, cls }: { v: number; max: number; cls: string }) => (
     <div className="stat-bar">
@@ -43,7 +70,7 @@ export function StatusPanel() {
         </div>
         <div>
           <div className="flex justify-between text-xs text-faded mb-0.5">
-            <span>仙靈力</span><span>{s.mp}/{mpMax}</span>
+            <span>法力</span><span>{s.mp}/{mpMax}</span>
           </div>
           <Bar v={s.mp} max={mpMax} cls="bg-azure" />
         </div>
@@ -63,10 +90,24 @@ export function StatusPanel() {
           {s.age}/{maxLifeOf(s)} 年
         </span>
         <span className="text-faded">修行</span>
-        <span className="text-right">第 {s.day} 年(修煉 {s.cultToday}/3)</span>
-        <span className="text-faded">攻擊</span><span className="text-right">{atk}</span>
+        <span className="text-right">第 {s.day} 年</span>
+        {s.xianli > 0 && (
+          <>
+            <span className="text-faded">仙靈力</span>
+            <span className={`text-right font-bold ${XIANLI_COLOR}`}>{s.xianli} 點 (攻擊 ×{1 + s.xianli})</span>
+          </>
+        )}
+        <span className="text-faded">攻擊</span><span className={`text-right ${s.xianli > 0 ? XIANLI_COLOR : ""}`}>{atk}</span>
         <span className="text-faded">防禦</span><span className="text-right">{def}</span>
         <span className="text-faded">速度</span><span className="text-right">{speed}</span>
+        {(s.boonHp + s.boonAtk + s.boonDef + s.boonSpeed) > 0 && (
+          <>
+            <span className="text-fuchsia-300">雲遊所得</span>
+            <span className="text-right text-fuchsia-300 text-xs">
+              {[s.boonHp && `血+${s.boonHp}`, s.boonAtk && `攻+${s.boonAtk}`, s.boonDef && `防+${s.boonDef}`, s.boonSpeed && `速+${s.boonSpeed}`].filter(Boolean).join(" ")}
+            </span>
+          </>
+        )}
         <span className="text-faded">靈石</span><span className="text-right text-gold">{formatStones(s.stones)}</span>
         <span className="text-faded">法器</span>
         <span className="text-right">{weapon ? weapon.name : "赤手空拳"}</span>
@@ -88,8 +129,15 @@ export function StatusPanel() {
       )}
 
       <div className="mt-3">
-        <button className="btn w-full" onClick={() => act("restoreMp")} disabled={busy || !!s.combat}>
-          聚靈回力(耗靈石回滿仙靈力)
+        <button
+          className="btn w-full select-none touch-none"
+          onPointerDown={(e) => { e.preventDefault(); startHold(); }}
+          onPointerUp={stopHold}
+          onPointerLeave={stopHold}
+          onPointerCancel={stopHold}
+          disabled={!!s.combat || s.mp >= mpMax}
+        >
+          聚靈回力(按住持續耗靈石回法力)
         </button>
       </div>
     </div>

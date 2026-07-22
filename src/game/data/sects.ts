@@ -14,7 +14,7 @@ export const SECTS: Sect[] = [
     id: "yanyue",
     name: "掩月宗",
     element: "水",
-    desc: "以水月神功聞名,門中多女修,水系法術陰柔綿長,仙靈力雄厚。",
+    desc: "以水月神功聞名,門中多女修,水系法術陰柔綿長,法力雄厚。",
     startTech: "shuijian",
     bonus: { mp: 40 },
   },

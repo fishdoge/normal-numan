@@ -15,7 +15,7 @@ const mono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "凡人修仙傳 · 文字修仙",
-  description: "凡人流文字修仙遊戲 — 靈石、仙靈力、五行法術、煉器、門派、探索洞窟。",
+  description: "凡人流文字修仙遊戲 — 靈石、法力、五行法術、煉器、門派、探索洞窟。",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

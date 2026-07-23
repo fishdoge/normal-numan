@@ -18,7 +18,13 @@ export async function POST(req: NextRequest) {
   const user = await userFromToken(req.cookies.get("session")?.value);
   if (!user) return NextResponse.json({ error: "未登入" }, { status: 401 });
   const { itemId, qty, price } = await req.json();
-  if (typeof itemId !== "string" || !Number.isInteger(qty) || qty < 1 || !Number.isInteger(price) || price < 1) {
+  if (
+    typeof itemId !== "string" ||
+    !Number.isInteger(qty) ||
+    qty < 1 ||
+    !Number.isInteger(price) ||
+    price < 1
+  ) {
     return NextResponse.json({ error: "參數有誤" }, { status: 400 });
   }
 
@@ -68,7 +74,8 @@ export async function DELETE(req: NextRequest) {
       )
       SELECT (SELECT count(*) FROM d) AS n, (SELECT data FROM upd) AS data`;
     const r = rows[0] as { n: string; data: { inventory: Record<string, number> } | null };
-    if (!r || Number(r.n) === 0) return NextResponse.json({ error: "掛單不存在或非你所有" }, { status: 404 });
+    if (!r || Number(r.n) === 0)
+      return NextResponse.json({ error: "掛單不存在或非你所有" }, { status: 404 });
     return NextResponse.json({ ok: true, inventory: r.data!.inventory });
   }
 
@@ -106,7 +113,9 @@ export async function DELETE(req: NextRequest) {
   const r = rows[0] as {
     n: string;
     data: { stones: number; inventory: Record<string, number> } | null;
-    item_id: string | null; qty: number | null; total: string | null;
+    item_id: string | null;
+    qty: number | null;
+    total: string | null;
   };
   if (!r || Number(r.n) === 0) {
     return NextResponse.json({ error: "靈石不足,或此單已被買走/不可購買" }, { status: 400 });
@@ -115,6 +124,8 @@ export async function DELETE(req: NextRequest) {
     ok: true,
     stones: r.data!.stones,
     inventory: r.data!.inventory,
-    itemId: r.item_id, qty: r.qty, total: Number(r.total),
+    itemId: r.item_id,
+    qty: r.qty,
+    total: Number(r.total),
   });
 }

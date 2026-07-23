@@ -66,7 +66,8 @@ export interface Realm {
   lifespan: number; // 該境界壽元上限(載)
 }
 
-export type ItemKind = "material" | "herb" | "pill" | "manual" | "artifact" | "treasure" | "special";
+export type ItemKind =
+  "material" | "herb" | "pill" | "manual" | "artifact" | "treasure" | "special";
 
 export interface ItemDef {
   id: string;

@@ -44,11 +44,19 @@ export function StatusPanel() {
   const stopHold = useCallback(() => {
     holdingRef.current = false;
   }, []);
-  useEffect(() => () => { holdingRef.current = false; }, []);
+  useEffect(
+    () => () => {
+      holdingRef.current = false;
+    },
+    [],
+  );
 
   const Bar = ({ v, max, cls }: { v: number; max: number; cls: string }) => (
     <div className="stat-bar">
-      <div className={cls} style={{ width: `${Math.max(0, Math.min(100, (v / max) * 100))}%`, height: "100%" }} />
+      <div
+        className={cls}
+        style={{ width: `${Math.max(0, Math.min(100, (v / max) * 100))}%`, height: "100%" }}
+      />
     </div>
   );
 
@@ -64,19 +72,28 @@ export function StatusPanel() {
       <div className="space-y-2 text-sm">
         <div>
           <div className="flex justify-between text-xs text-faded mb-0.5">
-            <span>氣血</span><span>{s.hp}/{hpMax}</span>
+            <span>氣血</span>
+            <span>
+              {s.hp}/{hpMax}
+            </span>
           </div>
           <Bar v={s.hp} max={hpMax} cls="bg-vermillion" />
         </div>
         <div>
           <div className="flex justify-between text-xs text-faded mb-0.5">
-            <span>法力</span><span>{s.mp}/{mpMax}</span>
+            <span>法力</span>
+            <span>
+              {s.mp}/{mpMax}
+            </span>
           </div>
           <Bar v={s.mp} max={mpMax} cls="bg-azure" />
         </div>
         <div>
           <div className="flex justify-between text-xs text-faded mb-0.5">
-            <span>修為</span><span>{s.exp}/{expNeed}</span>
+            <span>修為</span>
+            <span>
+              {s.exp}/{expNeed}
+            </span>
           </div>
           <Bar v={s.exp} max={expNeed} cls="bg-jade" />
         </div>
@@ -86,7 +103,9 @@ export function StatusPanel() {
 
       <div className="grid grid-cols-2 gap-y-1 text-sm">
         <span className="text-faded">壽元</span>
-        <span className={`text-right ${maxLifeOf(s) - s.age <= REALMS[s.realmIdx].lifespan * 0.2 ? "text-vermillion" : ""}`}>
+        <span
+          className={`text-right ${maxLifeOf(s) - s.age <= REALMS[s.realmIdx].lifespan * 0.2 ? "text-vermillion" : ""}`}
+        >
           {s.age}/{maxLifeOf(s)} 年
         </span>
         <span className="text-faded">修行</span>
@@ -94,21 +113,34 @@ export function StatusPanel() {
         {s.xianli > 0 && (
           <>
             <span className="text-faded">仙靈力</span>
-            <span className={`text-right font-bold ${XIANLI_COLOR}`}>{s.xianli} 點 (攻擊 ×{1 + s.xianli})</span>
-          </>
-        )}
-        <span className="text-faded">攻擊</span><span className={`text-right ${s.xianli > 0 ? XIANLI_COLOR : ""}`}>{atk}</span>
-        <span className="text-faded">防禦</span><span className="text-right">{def}</span>
-        <span className="text-faded">速度</span><span className="text-right">{speed}</span>
-        {(s.boonHp + s.boonAtk + s.boonDef + s.boonSpeed) > 0 && (
-          <>
-            <span className="text-fuchsia-300">雲遊所得</span>
-            <span className="text-right text-fuchsia-300 text-xs">
-              {[s.boonHp && `血+${s.boonHp}`, s.boonAtk && `攻+${s.boonAtk}`, s.boonDef && `防+${s.boonDef}`, s.boonSpeed && `速+${s.boonSpeed}`].filter(Boolean).join(" ")}
+            <span className={`text-right font-bold ${XIANLI_COLOR}`}>
+              {s.xianli} 點 (攻擊 ×{1 + s.xianli})
             </span>
           </>
         )}
-        <span className="text-faded">靈石</span><span className="text-right text-gold">{formatStones(s.stones)}</span>
+        <span className="text-faded">攻擊</span>
+        <span className={`text-right ${s.xianli > 0 ? XIANLI_COLOR : ""}`}>{atk}</span>
+        <span className="text-faded">防禦</span>
+        <span className="text-right">{def}</span>
+        <span className="text-faded">速度</span>
+        <span className="text-right">{speed}</span>
+        {s.boonHp + s.boonAtk + s.boonDef + s.boonSpeed > 0 && (
+          <>
+            <span className="text-fuchsia-300">雲遊所得</span>
+            <span className="text-right text-fuchsia-300 text-xs">
+              {[
+                s.boonHp && `血+${s.boonHp}`,
+                s.boonAtk && `攻+${s.boonAtk}`,
+                s.boonDef && `防+${s.boonDef}`,
+                s.boonSpeed && `速+${s.boonSpeed}`,
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            </span>
+          </>
+        )}
+        <span className="text-faded">靈石</span>
+        <span className="text-right text-gold">{formatStones(s.stones)}</span>
         <span className="text-faded">法器</span>
         <span className="text-right">{weapon ? weapon.name : "赤手空拳"}</span>
         <span className="text-faded">護身</span>
@@ -131,7 +163,10 @@ export function StatusPanel() {
       <div className="mt-3">
         <button
           className="btn w-full select-none touch-none"
-          onPointerDown={(e) => { e.preventDefault(); startHold(); }}
+          onPointerDown={(e) => {
+            e.preventDefault();
+            startHold();
+          }}
           onPointerUp={stopHold}
           onPointerLeave={stopHold}
           onPointerCancel={stopHold}
@@ -197,15 +232,23 @@ export function CombatPanel() {
       <p className="text-sm text-faded mt-1">{mon.desc}</p>
       <div className="mt-3">
         <div className="flex justify-between text-xs text-faded mb-0.5">
-          <span>妖獸氣血</span><span>{combat.monsterHp}/{mon.hp}</span>
+          <span>妖獸氣血</span>
+          <span>
+            {combat.monsterHp}/{mon.hp}
+          </span>
         </div>
         <div className="stat-bar">
-          <div className="bg-vermillion h-full" style={{ width: `${(combat.monsterHp / mon.hp) * 100}%` }} />
+          <div
+            className="bg-vermillion h-full"
+            style={{ width: `${(combat.monsterHp / mon.hp) * 100}%` }}
+          />
         </div>
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        <button className="btn" disabled={busy} onClick={() => act("attack")}>法器攻擊</button>
+        <button className="btn" disabled={busy} onClick={() => act("attack")}>
+          法器攻擊
+        </button>
         {usable.map((t) => (
           <button
             key={t.id}
@@ -219,7 +262,9 @@ export function CombatPanel() {
             <span className="ml-1 text-xs text-faded">({t.mpCost})</span>
           </button>
         ))}
-        <button className="btn btn-danger" disabled={busy} onClick={() => act("flee")}>遁走</button>
+        <button className="btn btn-danger" disabled={busy} onClick={() => act("flee")}>
+          遁走
+        </button>
       </div>
       <p className="text-xs text-faded/60 mt-3">
         五行相剋:金克木 · 木克土 · 土克水 · 水克火 · 火克金 —— 相剋傷害 ×1.5

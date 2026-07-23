@@ -14,10 +14,13 @@ export default function CharCreate({ name }: { name?: string }) {
   return (
     <main className="max-w-3xl mx-auto px-4 py-12">
       <header className="text-center mb-10">
-        <p className="font-mono text-xs tracking-[0.5em] text-gold/70 mb-3">A MORTAL&apos;S JOURNEY</p>
+        <p className="font-mono text-xs tracking-[0.5em] text-gold/70 mb-3">
+          A MORTAL&apos;S JOURNEY
+        </p>
         <h1 className="text-5xl font-black tracking-widest text-parchment">凡人修仙傳</h1>
         <p className="mt-4 text-faded">
-          山村窮小子,資質平庸,唯有一縷不屈道心。<br />
+          山村窮小子,資質平庸,唯有一縷不屈道心。
+          <br />
           靈石為財,法力為刃,五行相生相剋 —— 凡人亦可問鼎仙途。
         </p>
       </header>
@@ -48,8 +51,7 @@ export default function CharCreate({ name }: { name?: string }) {
                 </div>
                 <p className="text-sm text-faded mt-1 leading-relaxed">{sect.desc}</p>
                 <p className="text-xs mt-2 text-cream/80">
-                  入門仙法:{tech.name} ·{" "}
-                  {sect.bonus.exp ? `修煉效率 +${sect.bonus.exp}%` : ""}
+                  入門仙法:{tech.name} · {sect.bonus.exp ? `修煉效率 +${sect.bonus.exp}%` : ""}
                   {sect.bonus.atk ? `攻擊 +${sect.bonus.atk}` : ""}
                   {sect.bonus.hp ? `氣血 +${sect.bonus.hp} ` : ""}
                   {sect.bonus.mp ? `法力 +${sect.bonus.mp}` : ""}

@@ -24,6 +24,10 @@ export async function POST(req: NextRequest) {
   await sql`INSERT INTO sessions (token, user_id) VALUES (${token}, ${userId})`;
 
   const res = NextResponse.json({ ok: true, name: name.trim() });
-  res.cookies.set("session", token, { httpOnly: true, sameSite: "lax", maxAge: 60 * 60 * 24 * 365 });
+  res.cookies.set("session", token, {
+    httpOnly: true,
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 365,
+  });
   return res;
 }

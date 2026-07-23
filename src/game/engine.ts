@@ -95,7 +95,11 @@ export function statsOf(s: SaveData) {
   const def = (weapon?.defBonus ?? 0) + (armor?.defBonus ?? 0) + (s.boonDef ?? 0);
   const hpMax = realm.hpMax + (sect?.bonus.hp ?? 0) + (s.boonHp ?? 0);
   const mpMax = realm.mpMax + (sect?.bonus.mp ?? 0);
-  const speed = realm.atk + Math.floor(((weapon?.atkBonus ?? 0) + (armor?.defBonus ?? 0)) * 0.02) + realm.stage * 5 + (s.boonSpeed ?? 0);
+  const speed =
+    realm.atk +
+    Math.floor(((weapon?.atkBonus ?? 0) + (armor?.defBonus ?? 0)) * 0.02) +
+    realm.stage * 5 +
+    (s.boonSpeed ?? 0);
   return { realm, sect, atk, baseAtk, xianli, def, hpMax, mpMax, speed, weaponEl: weapon?.element };
 }
 
@@ -127,23 +131,46 @@ function take(s: SaveData, id: string, n = 1): boolean {
 export function newSave(name: string, sectId: string): SaveData {
   const sect = SECTS.find((x) => x.id === sectId)!;
   const s: SaveData = {
-    started: true, name: name || "無名散修", sectId, realmIdx: 0, exp: 0,
-    hp: 0, mp: 0, stones: 20,
+    started: true,
+    name: name || "無名散修",
+    sectId,
+    realmIdx: 0,
+    exp: 0,
+    hp: 0,
+    mp: 0,
+    stones: 20,
     inventory: { huanglongdan: 2, liaoshangdan: 1 },
-    learned: [sect.startTech], learning: null,
-    equippedWeapon: null, equippedArmor: null,
-    kills: {}, seen: [], lordsSeen: [], missionId: null, missionBase: 0,
-    age: 16, lifeBonus: 0, day: 1, cultToday: 0, xianli: 0, techLevels: {},
-    boonHp: 0, boonAtk: 0, boonDef: 0, boonSpeed: 0, dead: false,
-    log: [], combat: null,
+    learned: [sect.startTech],
+    learning: null,
+    equippedWeapon: null,
+    equippedArmor: null,
+    kills: {},
+    seen: [],
+    lordsSeen: [],
+    missionId: null,
+    missionBase: 0,
+    age: 16,
+    lifeBonus: 0,
+    day: 1,
+    cultToday: 0,
+    xianli: 0,
+    techLevels: {},
+    boonHp: 0,
+    boonAtk: 0,
+    boonDef: 0,
+    boonSpeed: 0,
+    dead: false,
+    log: [],
+    combat: null,
   };
   const { hpMax, mpMax } = statsOf(s);
   s.hp = hpMax;
   s.mp = mpMax;
-  log(s,
+  log(
+    s,
     `${s.name} 拜入 ${sect.name},自此踏上修仙之路。`,
     `長老傳授入門仙法:${techById(sect.startTech).name}。`,
-    "身上僅有 20 枚下品靈石與幾瓶丹藥,前路漫漫,道阻且長。"
+    "身上僅有 20 枚下品靈石與幾瓶丹藥,前路漫漫,道阻且長。",
   );
   return s;
 }
@@ -233,7 +260,10 @@ function winCombat(s: SaveData): Modal {
   s.kills[mon.id] = (s.kills[mon.id] ?? 0) + 1;
   const isLord = mon.isLord;
   s.combat = null;
-  log(s, `${isLord ? "歷經苦戰,你竟斬殺了地域之王 " : "你擊殺了 "}${mon.name}!獲得修為 ${mon.exp}、靈石 ${stones}${dropNames.length ? ",拾得:" + dropNames.join("、") : ""}。`);
+  log(
+    s,
+    `${isLord ? "歷經苦戰,你竟斬殺了地域之王 " : "你擊殺了 "}${mon.name}!獲得修為 ${mon.exp}、靈石 ${stones}${dropNames.length ? ",拾得:" + dropNames.join("、") : ""}。`,
+  );
   return {
     title: isLord ? "地 域 王 授 首" : "戰 利 品",
     success: true,
@@ -241,13 +271,19 @@ function winCombat(s: SaveData): Modal {
       `${isLord ? "斬殺地域王" : "擊殺"}【${mon.name}】`,
       ...(mon.exp > 0 ? [`修為 +${mon.exp}`] : []),
       `靈石 +${stones}`,
-      ...(dropNames.length ? [`拾得:${dropNames.join("、")}`] : [isLord ? "此王氣運深厚,竟未留下寶物,可惜!" : "妖獸未留下完整材料。"]),
+      ...(dropNames.length
+        ? [`拾得:${dropNames.join("、")}`]
+        : [isLord ? "此王氣運深厚,竟未留下寶物,可惜!" : "妖獸未留下完整材料。"]),
     ],
   };
 }
 
 // ═══ 主入口 ═══
-export function applyAction(s: SaveData, type: string, payload: Record<string, unknown> = {}): ActionResult {
+export function applyAction(
+  s: SaveData,
+  type: string,
+  payload: Record<string, unknown> = {},
+): ActionResult {
   const result = applyActionInner(s, type, payload);
   // 統一收尾:氣血 / 法力 不得超過各自上限(也不得為負)
   const { hpMax, mpMax } = statsOf(result.save);
@@ -256,7 +292,11 @@ export function applyAction(s: SaveData, type: string, payload: Record<string, u
   return result;
 }
 
-function applyActionInner(s: SaveData, type: string, payload: Record<string, unknown> = {}): ActionResult {
+function applyActionInner(
+  s: SaveData,
+  type: string,
+  payload: Record<string, unknown> = {},
+): ActionResult {
   // 向後相容:補齊舊存檔缺少的欄位
   if (!Array.isArray(s.lordsSeen)) s.lordsSeen = [];
   if (typeof s.xianli !== "number") s.xianli = 0;
@@ -279,9 +319,11 @@ function applyActionInner(s: SaveData, type: string, payload: Record<string, unk
         s.age = cap;
         s.dead = true;
         s.combat = null;
-        log(s,
+        log(
+          s,
           "你強提一口真氣打坐,卻覺經脈枯涸,鏡中鬢髮霜白——壽元已盡。",
-          `享年 ${cap} 年,道隕於【${realm.name}】。仙路無情,一步遲,步步遲。`);
+          `享年 ${cap} 年,道隕於【${realm.name}】。仙路無情,一步遲,步步遲。`,
+        );
         return { save: s };
       }
       s.age += cost;
@@ -344,30 +386,67 @@ function applyActionInner(s: SaveData, type: string, payload: Record<string, unk
         s.combat = { monsterId: boss.id, monsterHp: boss.hp, locationId: "__wander__" };
         if (!s.seen.includes(boss.id)) s.seen.push(boss.id);
         if (!s.lordsSeen.includes(boss.id)) s.lordsSeen.push(boss.id);
-        log(s, "雲遊萬里,忽見金光垂天——一位【太上金仙】立於雲端俯瞰眾生!絕世威壓下,你竟無從遁逃,唯有死戰!");
+        log(
+          s,
+          "雲遊萬里,忽見金光垂天——一位【太上金仙】立於雲端俯瞰眾生!絕世威壓下,你竟無從遁逃,唯有死戰!",
+        );
         return { save: s };
       }
       // 2.5% 直接得天仙丹
       if (roll < 0.035) {
         give(s, "tianxiandan");
         log(s, "雲遊至一處仙家洞府,你於塵封玉匣中尋得一枚【天仙丹】——曠世機緣!");
-        return { save: s, loot: { title: "雲 遊 奇 緣", success: true, lines: ["雲遊四海,福緣深厚:", "於仙家洞府得【天仙丹】一枚!", "飛昇為真仙後煉化,可增一點仙靈力。"] } };
+        return {
+          save: s,
+          loot: {
+            title: "雲 遊 奇 緣",
+            success: true,
+            lines: [
+              "雲遊四海,福緣深厚:",
+              "於仙家洞府得【天仙丹】一枚!",
+              "飛昇為真仙後煉化,可增一點仙靈力。",
+            ],
+          },
+        };
       }
       // 30% 永久屬性提升
       if (roll < 0.335) {
         const { hpMax, atk, def, speed } = statsOf(s);
         const kind = rand(0, 3);
         let line: string;
-        if (kind === 0) { const g = Math.max(5, Math.floor(hpMax * 0.05)); s.boonHp += g; line = `於仙山秘境洗髓伐毛,氣血上限永久 +${g}!`; }
-        else if (kind === 1) { const g = Math.max(2, Math.floor(atk * 0.05)); s.boonAtk += g; line = `得一位隱世前輩指點武道,攻擊永久 +${g}!`; }
-        else if (kind === 2) { const g = Math.max(2, Math.floor((def + 10) * 0.5)); s.boonDef += g; line = `於古戰場悟得護體真意,防禦永久 +${g}!`; }
-        else { const g = Math.max(2, Math.floor(speed * 0.08)); s.boonSpeed += g; line = `踏遍名山大川,身法漸臻化境,速度永久 +${g}!`; }
+        if (kind === 0) {
+          const g = Math.max(5, Math.floor(hpMax * 0.05));
+          s.boonHp += g;
+          line = `於仙山秘境洗髓伐毛,氣血上限永久 +${g}!`;
+        } else if (kind === 1) {
+          const g = Math.max(2, Math.floor(atk * 0.05));
+          s.boonAtk += g;
+          line = `得一位隱世前輩指點武道,攻擊永久 +${g}!`;
+        } else if (kind === 2) {
+          const g = Math.max(2, Math.floor((def + 10) * 0.5));
+          s.boonDef += g;
+          line = `於古戰場悟得護體真意,防禦永久 +${g}!`;
+        } else {
+          const g = Math.max(2, Math.floor(speed * 0.08));
+          s.boonSpeed += g;
+          line = `踏遍名山大川,身法漸臻化境,速度永久 +${g}!`;
+        }
         log(s, `雲遊四海,遍歷奇遇——${line}`);
-        return { save: s, loot: { title: "雲 遊 際 遇", success: true, lines: ["歷經五千載雲遊,終有所得:", line] } };
+        return {
+          save: s,
+          loot: { title: "雲 遊 際 遇", success: true, lines: ["歷經五千載雲遊,終有所得:", line] },
+        };
       }
       // 70% 一無所獲
       log(s, "雲遊四海五千載,山川壯麗,人事滄桑,卻未逢機緣,徒增閱歷而已。");
-      return { save: s, loot: { title: "雲 遊 四 海", success: false, lines: ["五千載遊歷,飽覽天地,卻無所得。", "仙途本就如此——大機緣可遇不可求。"] } };
+      return {
+        save: s,
+        loot: {
+          title: "雲 遊 四 海",
+          success: false,
+          lines: ["五千載遊歷,飽覽天地,卻無所得。", "仙途本就如此——大機緣可遇不可求。"],
+        },
+      };
     }
 
     case "breakthrough": {
@@ -378,7 +457,10 @@ function applyActionInner(s: SaveData, type: string, payload: Record<string, unk
         return { save: s };
       }
       if (s.exp < realm.expNeed) {
-        log(s, `修為不足,突破 ${REALMS[s.realmIdx + 1].name} 需 ${realm.expNeed} 修為(現有 ${s.exp})。`);
+        log(
+          s,
+          `修為不足,突破 ${REALMS[s.realmIdx + 1].name} 需 ${realm.expNeed} 修為(現有 ${s.exp})。`,
+        );
         return { save: s };
       }
       if (Math.random() < realm.breakChance) {
@@ -391,21 +473,28 @@ function applyActionInner(s: SaveData, type: string, payload: Record<string, unk
         let breakResult: Modal;
         if (next.stage === 10) {
           breakResult = {
-            success: true, title: "白 日 飛 昇",
-            lines: ["九霄之上雷雲翻湧,萬丈金光自天門傾瀉——你踏碎虛空,白日飛昇!",
-              "自山村凡童至真仙之軀,這一步,你走了一生。"],
+            success: true,
+            title: "白 日 飛 昇",
+            lines: [
+              "九霄之上雷雲翻湧,萬丈金光自天門傾瀉——你踏碎虛空,白日飛昇!",
+              "自山村凡童至真仙之軀,這一步,你走了一生。",
+            ],
           };
         } else if (next.stage > realm.stage) {
           const gift = Math.floor(next.lifespan * 0.1);
           s.lifeBonus += gift;
           breakResult = {
-            success: true, title: "突 破 大 關",
-            lines: [`天地色變,靈氣如百川歸海——你渡過大關,晉入【${next.name}】!`,
-              `壽元上限躍升至 ${next.lifespan} 年,脫胎換骨,額外增壽 ${gift} 年。`],
+            success: true,
+            title: "突 破 大 關",
+            lines: [
+              `天地色變,靈氣如百川歸海——你渡過大關,晉入【${next.name}】!`,
+              `壽元上限躍升至 ${next.lifespan} 年,脫胎換骨,額外增壽 ${gift} 年。`,
+            ],
           };
         } else {
           breakResult = {
-            success: true, title: "突 破 成 功",
+            success: true,
+            title: "突 破 成 功",
             lines: [`靈氣灌體,經脈轟鳴——你成功突破至【${next.name}】!氣血法力盡復。`],
           };
         }
@@ -460,7 +549,14 @@ function applyActionInner(s: SaveData, type: string, payload: Record<string, unk
       const lines = [`採得:${found.join("、")}`];
       log(s, `你在 ${loc.name} 仔細搜尋,${lines.join(";")}。`);
       maybeEncounter(s);
-      return { save: s, loot: { title: "採 集 所 得", success: true, lines: [`於【${loc.name}】搜尋一番:`, ...lines] } };
+      return {
+        save: s,
+        loot: {
+          title: "採 集 所 得",
+          success: true,
+          lines: [`於【${loc.name}】搜尋一番:`, ...lines],
+        },
+      };
     }
 
     case "hunt": {
@@ -480,7 +576,10 @@ function applyActionInner(s: SaveData, type: string, payload: Record<string, unk
         s.combat = { monsterId: lord.id, monsterHp: lord.hp, locationId: loc.id };
         if (!s.seen.includes(lord.id)) s.seen.push(lord.id);
         if (!s.lordsSeen.includes(lord.id)) s.lordsSeen.push(lord.id);
-        log(s, `天地驟然一暗——${loc.name} 的地域之王【${lord.name}】現身了!(${lord.element}屬性)絕世凶威,撲面而來!`);
+        log(
+          s,
+          `天地驟然一暗——${loc.name} 的地域之王【${lord.name}】現身了!(${lord.element}屬性)絕世凶威,撲面而來!`,
+        );
         return { save: s };
       }
       const mid = loc.monsters[rand(0, loc.monsters.length - 1)];
@@ -505,10 +604,17 @@ function applyActionInner(s: SaveData, type: string, payload: Record<string, unk
       const mult = elementMult(tech.element, mon.element);
       const level = techLevelOf(s, techId);
       const lvlMult = techPowerMult(level);
-      const dmg = Math.max(1, Math.floor(atk * tech.power * lvlMult * mult * (0.9 + Math.random() * 0.2)));
+      const dmg = Math.max(
+        1,
+        Math.floor(atk * tech.power * lvlMult * mult * (0.9 + Math.random() * 0.2)),
+      );
       s.mp -= tech.mpCost;
-      log(s, `你施展【${tech.name}】(${level} 級),對 ${mon.name} 造成 ${formatDamage(dmg)}傷害` +
-        (mult > 1 ? "(五行相剋,威力大增!)" : mult < 1 ? "(屬性被剋,威力受阻)" : "") + "。");
+      log(
+        s,
+        `你施展【${tech.name}】(${level} 級),對 ${mon.name} 造成 ${formatDamage(dmg)}傷害` +
+          (mult > 1 ? "(五行相剋,威力大增!)" : mult < 1 ? "(屬性被剋,威力受阻)" : "") +
+          "。",
+      );
       s.combat.monsterHp -= dmg;
       if (s.combat.monsterHp <= 0) return { save: s, loot: winCombat(s) };
       monsterTurn(s);
@@ -558,20 +664,29 @@ function applyActionInner(s: SaveData, type: string, payload: Record<string, unk
           return { save: s };
         }
         if (s.learning) {
-          log(s, `你正在修習【${techById(s.learning.techId).name}】(尚需 ${s.learning.remain} 年),心無二用,無法同時參悟他法。`);
+          log(
+            s,
+            `你正在修習【${techById(s.learning.techId).name}】(尚需 ${s.learning.remain} 年),心無二用,無法同時參悟他法。`,
+          );
           return { save: s };
         }
         take(s, itemId);
         const years = learnYears(item.teaches);
         s.learning = { techId: item.teaches, remain: years };
-        log(s, `你焚香沐浴,開始參悟【${item.name}】。此法玄奧,需潛修 ${years} 年方可大成(調息推進)。`);
+        log(
+          s,
+          `你焚香沐浴,開始參悟【${item.name}】。此法玄奧,需潛修 ${years} 年方可大成(調息推進)。`,
+        );
         return { save: s };
       }
 
       if (item.kind === "artifact" || item.kind === "treasure") {
         if (item.kind === "artifact") s.equippedWeapon = itemId;
         else s.equippedArmor = itemId;
-        log(s, `你將【${item.name}】${item.kind === "artifact" ? "祭於身前,攻伐之力大增" : "穿戴護身"}。`);
+        log(
+          s,
+          `你將【${item.name}】${item.kind === "artifact" ? "祭於身前,攻伐之力大增" : "穿戴護身"}。`,
+        );
         return { save: s };
       }
 
@@ -591,8 +706,21 @@ function applyActionInner(s: SaveData, type: string, payload: Record<string, unk
         const { hpMax: nhp, mpMax: nmp } = statsOf(s);
         s.hp = nhp;
         s.mp = nmp;
-        log(s, "你吞下【金魂丹】,金光自魂魄深處炸開——魂軀蛻變,道果金鑄,你自真仙一步踏入【金仙】之境!");
-        return { save: s, breakResult: { success: true, title: "晉 入 金 仙", lines: ["金魂丹入腹,魂魄盡數金鑄,超脫真仙桎梏——", "你正式晉入【金仙】之境,萬法加身,睥睨仙庭!"] } };
+        log(
+          s,
+          "你吞下【金魂丹】,金光自魂魄深處炸開——魂軀蛻變,道果金鑄,你自真仙一步踏入【金仙】之境!",
+        );
+        return {
+          save: s,
+          breakResult: {
+            success: true,
+            title: "晉 入 金 仙",
+            lines: [
+              "金魂丹入腹,魂魄盡數金鑄,超脫真仙桎梏——",
+              "你正式晉入【金仙】之境,萬法加身,睥睨仙庭!",
+            ],
+          },
+        };
       }
 
       // 真仙之物:凝練仙靈力(需已飛昇)
@@ -603,8 +731,18 @@ function applyActionInner(s: SaveData, type: string, payload: Record<string, unk
         }
         take(s, itemId);
         s.xianli = (s.xianli ?? 0) + item.xianli;
-        log(s, `你盤坐九霄,煉化【${item.name}】——仙靈力 +${item.xianli}(現 ${s.xianli} 點),攻伐之力再攀新境!`);
-        return { save: s, loot: { title: "仙 靈 力 增 長", success: true, lines: [`煉化【${item.name}】`, `仙靈力 +${item.xianli}`, `現有仙靈力:${s.xianli} 點`] } };
+        log(
+          s,
+          `你盤坐九霄,煉化【${item.name}】——仙靈力 +${item.xianli}(現 ${s.xianli} 點),攻伐之力再攀新境!`,
+        );
+        return {
+          save: s,
+          loot: {
+            title: "仙 靈 力 增 長",
+            success: true,
+            lines: [`煉化【${item.name}】`, `仙靈力 +${item.xianli}`, `現有仙靈力:${s.xianli} 點`],
+          },
+        };
       }
 
       // 增靈珠須於「仙法」欄位使用
@@ -615,10 +753,22 @@ function applyActionInner(s: SaveData, type: string, payload: Record<string, unk
 
       take(s, itemId);
       const effects: string[] = [];
-      if (item.heal) { s.hp = Math.min(hpMax, s.hp + item.heal); effects.push(`回復氣血 ${item.heal}`); }
-      if (item.mp) { s.mp = Math.min(mpMax, s.mp + item.mp); effects.push(`回復法力 ${item.mp}`); }
-      if (item.exp) { s.exp += item.exp; effects.push(`修為 +${item.exp}`); }
-      if (item.life) { s.lifeBonus += item.life; effects.push(`壽元上限 +${item.life} 年`); }
+      if (item.heal) {
+        s.hp = Math.min(hpMax, s.hp + item.heal);
+        effects.push(`回復氣血 ${item.heal}`);
+      }
+      if (item.mp) {
+        s.mp = Math.min(mpMax, s.mp + item.mp);
+        effects.push(`回復法力 ${item.mp}`);
+      }
+      if (item.exp) {
+        s.exp += item.exp;
+        effects.push(`修為 +${item.exp}`);
+      }
+      if (item.life) {
+        s.lifeBonus += item.life;
+        effects.push(`壽元上限 +${item.life} 年`);
+      }
       if (item.lifePct) {
         const gain = Math.floor(maxLifeOf(s) * item.lifePct);
         s.lifeBonus += gain;
@@ -672,7 +822,14 @@ function applyActionInner(s: SaveData, type: string, payload: Record<string, unk
       s.stones -= rec.stones;
       give(s, rec.result);
       log(s, `爐火純青,三日三夜——你成功煉製出法器【${rec.name}】!`);
-      return { save: s, loot: { title: "煉 器 大 成", success: true, lines: [`【${rec.name}】出爐!`, itemById(rec.result).desc] } };
+      return {
+        save: s,
+        loot: {
+          title: "煉 器 大 成",
+          success: true,
+          lines: [`【${rec.name}】出爐!`, itemById(rec.result).desc],
+        },
+      };
     }
 
     case "equip": {
@@ -748,7 +905,10 @@ function applyActionInner(s: SaveData, type: string, payload: Record<string, unk
         lines.push(`另賜【${itemById(m.item).name}】`);
       }
       log(s, `任務【${m.name}】完成!執事堂發放:${lines.join("、")}。`);
-      return { save: s, loot: { title: "任 務 完 成", success: true, lines: [`【${m.name}】覆命`, ...lines] } };
+      return {
+        save: s,
+        loot: { title: "任 務 完 成", success: true, lines: [`【${m.name}】覆命`, ...lines] },
+      };
     }
 
     case "abandonMission": {
@@ -773,7 +933,18 @@ function applyActionInner(s: SaveData, type: string, payload: Record<string, unk
       s.techLevels = { ...s.techLevels, [techId]: level + 1 };
       const tech = techById(techId);
       log(s, `你以增靈珠溫養【${tech.name}】,法術精進——${level} 級 → ${level + 1} 級,威力大增!`);
-      return { save: s, loot: { title: "仙 法 精 進", success: true, lines: [`【${tech.name}】`, `${level} 級 → ${level + 1} 級`, `威力倍率 ×${techPowerMult(level + 1).toFixed(1)}`] } };
+      return {
+        save: s,
+        loot: {
+          title: "仙 法 精 進",
+          success: true,
+          lines: [
+            `【${tech.name}】`,
+            `${level} 級 → ${level + 1} 級`,
+            `威力倍率 ×${techPowerMult(level + 1).toFixed(1)}`,
+          ],
+        },
+      };
     }
 
     default:

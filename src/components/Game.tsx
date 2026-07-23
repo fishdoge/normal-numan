@@ -19,8 +19,10 @@ function DeathScreen() {
         <p className="panel-title">墓 誌 銘</p>
         <p className="leading-loose text-cream">
           {s.name},享年 {maxLifeOf(s)} 年,道隕於【{REALMS[s.realmIdx].name}】。
-          <br />修行 {s.day} 年,終究未能問鼎大道。
-          <br />仙路盡頭誰為峰?一見無始道成空。
+          <br />
+          修行 {s.day} 年,終究未能問鼎大道。
+          <br />
+          仙路盡頭誰為峰?一見無始道成空。
         </p>
       </div>
       <button className="btn text-lg px-10 py-3" onClick={() => act("reset")}>
@@ -34,20 +36,29 @@ function DeathScreen() {
 function ResultModal({ modal, onClose }: { modal: Modal; onClose: () => void }) {
   const ok = modal.success !== false;
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-ink/80 backdrop-blur-sm" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-ink/80 backdrop-blur-sm"
+      onClick={onClose}
+    >
       <div
         className={`panel deco-frame max-w-md w-full mx-4 text-center animate-floatUp ${
           ok ? "border-gold/60" : "border-vermillion/60"
         }`}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className={`text-3xl font-black tracking-[0.3em] my-4 ${ok ? "text-gold" : "text-vermillion"}`}>
+        <h2
+          className={`text-3xl font-black tracking-[0.3em] my-4 ${ok ? "text-gold" : "text-vermillion"}`}
+        >
           {modal.title}
         </h2>
         <div className="space-y-2 text-cream leading-relaxed mb-6 text-left px-2">
-          {modal.lines.map((l, i) => <p key={i}>{l}</p>)}
+          {modal.lines.map((l, i) => (
+            <p key={i}>{l}</p>
+          ))}
         </div>
-        <button className="btn px-8 mb-2" onClick={onClose}>知 曉</button>
+        <button className="btn px-8 mb-2" onClick={onClose}>
+          知 曉
+        </button>
       </div>
     </div>
   );
@@ -67,10 +78,18 @@ function CultivationBar() {
     <div className={`panel deco-frame ${canBreak ? "border-gold/70" : ""}`}>
       <div className="flex flex-wrap items-center gap-3">
         <p className="panel-title mb-0 mr-2">修 煉</p>
-        <button className="btn text-base px-5 py-2" disabled={busy || inCombat} onClick={() => act("cultivate")}>
+        <button
+          className="btn text-base px-5 py-2"
+          disabled={busy || inCombat}
+          onClick={() => act("cultivate")}
+        >
           打坐修煉 <span className="ml-1 font-mono text-xs">-{cost} 年壽元</span>
         </button>
-        <button className="btn text-base px-5 py-2" disabled={busy || inCombat || s.hp >= hpMax} onClick={() => act("rest")}>
+        <button
+          className="btn text-base px-5 py-2"
+          disabled={busy || inCombat || s.hp >= hpMax}
+          onClick={() => act("rest")}
+        >
           調息(回復氣血)
         </button>
         <button
@@ -155,7 +174,9 @@ export default function Game() {
       <header className="flex items-baseline justify-between mb-5">
         <div>
           <h1 className="text-2xl font-black tracking-[0.35em]">凡人修仙傳</h1>
-          <p className="font-mono text-[10px] tracking-[0.4em] text-faded">A MORTAL&apos;S JOURNEY TO IMMORTALITY</p>
+          <p className="font-mono text-[10px] tracking-[0.4em] text-faded">
+            A MORTAL&apos;S JOURNEY TO IMMORTALITY
+          </p>
         </div>
         <div className="flex gap-4 items-baseline">
           <button

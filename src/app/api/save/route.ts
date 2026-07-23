@@ -35,5 +35,11 @@ export async function GET(req: NextRequest) {
       WHERE user_id = ${user.id}`;
   }
 
-  return NextResponse.json({ ok: true, save, name: user.name, lifeGained, credited: credited.length > 0 });
+  return NextResponse.json({
+    ok: true,
+    save,
+    name: user.name,
+    lifeGained,
+    credited: credited.length > 0,
+  });
 }

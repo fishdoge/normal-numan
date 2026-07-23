@@ -62,15 +62,26 @@ body::after {
     border-color: rgba(201, 162, 39, 0.55);
   }
   .deco-frame::before {
-    top: -1px; left: -1px;
-    border-top: 1px solid; border-left: 1px solid;
+    top: -1px;
+    left: -1px;
+    border-top: 1px solid;
+    border-left: 1px solid;
   }
   .deco-frame::after {
-    bottom: -1px; right: -1px;
-    border-bottom: 1px solid; border-right: 1px solid;
+    bottom: -1px;
+    right: -1px;
+    border-bottom: 1px solid;
+    border-right: 1px solid;
   }
 }
 
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: #161310; }
-::-webkit-scrollbar-thumb { background: #4a4132; border-radius: 4px; }
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #161310;
+}
+::-webkit-scrollbar-thumb {
+  background: #4a4132;
+  border-radius: 4px;
+}

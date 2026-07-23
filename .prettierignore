@@ -1,0 +1,12 @@
+.next
+node_modules
+dist
+build
+coverage
+*.md
+package-lock.json
+
+# 資料表:刻意維持「一筆一行」的緊湊寫法,交由人工維護
+src/game/data/world.ts
+src/game/data/items.ts
+src/game/data/missions.ts

@@ -4,7 +4,15 @@
 // 前端不再持有任何遊戲邏輯或 localStorage 存檔
 import { create } from "zustand";
 import type { SaveData, Modal } from "./engine";
-import { statsOf, maxLifeOf, learnYears, cultCostOf, techLevelOf, techPowerMult, MAX_TECH_LEVEL } from "./engine";
+import {
+  statsOf,
+  maxLifeOf,
+  learnYears,
+  cultCostOf,
+  techLevelOf,
+  techPowerMult,
+  MAX_TECH_LEVEL,
+} from "./engine";
 
 export type { SaveData, Modal };
 export { statsOf, maxLifeOf, learnYears, cultCostOf, techLevelOf, techPowerMult, MAX_TECH_LEVEL };

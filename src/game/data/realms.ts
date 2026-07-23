@@ -33,23 +33,41 @@ export const REALMS: Realm[] = MAJORS.flatMap((M, i) =>
     // 後期→下一大境界 是大關卡,成功率驟降
     breakChance: j < 2 ? 0.95 : M.brk,
     lifespan: M.life,
-  }))
+  })),
 );
 
 REALMS.push(
   {
-    id: "dujie", name: "渡劫期", stage: 9,
-    expNeed: 600000, hpMax: 380000, mpMax: 200000, atk: 50000,
-    breakChance: 0.3, lifespan: 100000,
+    id: "dujie",
+    name: "渡劫期",
+    stage: 9,
+    expNeed: 600000,
+    hpMax: 380000,
+    mpMax: 200000,
+    atk: 50000,
+    breakChance: 0.3,
+    lifespan: 100000,
   },
   {
-    id: "feisheng", name: "真仙(已飛昇)", stage: 10,
-    expNeed: 999999999999, hpMax: 500000, mpMax: 500000, atk: 30000,
-    breakChance: 0, lifespan: 99999999, // 仙人無壽
+    id: "feisheng",
+    name: "真仙境(已飛昇)",
+    stage: 10,
+    expNeed: 999999999999,
+    hpMax: 500000,
+    mpMax: 500000,
+    atk: 30000,
+    breakChance: 0,
+    lifespan: 99999999, // 仙人無壽
   },
   {
-    id: "jinxian_realm", name: "金仙", stage: 11,
-    expNeed: 999999999999, hpMax: 1200000, mpMax: 1200000, atk: 80000,
-    breakChance: 0, lifespan: 99999999, // 金仙超脫,以金魂丹自真仙突破而成
-  }
+    id: "jinxian_realm",
+    name: "金仙境",
+    stage: 11,
+    expNeed: 999999999999,
+    hpMax: 1200000,
+    mpMax: 1200000,
+    atk: 80000,
+    breakChance: 0,
+    lifespan: 99999999, // 金仙超脫,以金魂丹自真仙突破而成
+  },
 );

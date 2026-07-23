@@ -110,8 +110,8 @@ function ExploreTab() {
             <span className="text-xs font-mono text-amber-300/80">已通關第 {s.futuFloor} 層</span>
           </div>
           <p className="text-sm text-faded mt-1">
-            塔中是一尊幻象太歲天尊,每打過一層便強大一倍,永無止境。挑戰下一層(第 {s.futuFloor + 1}{" "}
-            層)——每 5 層得天仙丹、每 10 層得金魂丹,高層更藏頂尖仙法。
+            塔中是一尊幻象太歲天尊,每打過一層便更強(氣血 ×1.5、攻擊 ×1.2),永無止境。挑戰下一層(第{" "}
+            {s.futuFloor + 1} 層)——每 5 層得天仙丹、每 10 層得金魂丹,高層更藏頂尖仙法。
           </p>
           <button
             className="btn mt-2 border-amber-300/60 text-amber-300 hover:bg-amber-300/15"

@@ -891,9 +891,10 @@ function applyActionInner(
       }
       const base = monsterById("huanxiang_taisui");
       const floor = s.futuFloor + 1; // 挑戰下一層(從第 1 層起)
-      const mult = Math.pow(2, floor - 1); // 每層強度翻倍
-      const bossHp = Math.floor(base.hp * mult);
-      const bossAtk = Math.floor(base.atk * mult);
+      const hpMult = Math.pow(1.5, floor - 1); // 每層氣血 ×1.5
+      const atkMult = Math.pow(1.2, floor - 1); // 每層攻擊 ×1.2
+      const bossHp = Math.floor(base.hp * hpMult);
+      const bossAtk = Math.floor(base.atk * atkMult);
       s.combat = {
         monsterId: base.id,
         monsterHp: bossHp,
@@ -907,7 +908,7 @@ function applyActionInner(
       if (!s.lordsSeen.includes(base.id)) s.lordsSeen.push(base.id);
       log(
         s,
-        `⚠ 你踏上浮屠塔第 ${floor} 層——幻象太歲天尊自虛空凝形!(氣血 ${bossHp}、攻擊 ${bossAtk},較首層強 ${mult} 倍)`,
+        `⚠ 你踏上浮屠塔第 ${floor} 層——幻象太歲天尊自虛空凝形!(氣血 ${bossHp}、攻擊 ${bossAtk})`,
       );
       return { save: s };
     }

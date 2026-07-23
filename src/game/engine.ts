@@ -231,7 +231,7 @@ function maybeEncounter(s: SaveData) {
     s.exp += gain;
     log(s, `打坐間心神空明,天地法則於眼前一閃而逝——頓悟!修為 +${gain}。`);
   } else if (roll < 0.05) {
-    const stones = Math.floor(realm.expNeed * 0.005) + rand(10, 30);
+    const stones = Math.floor(realm.expNeed * 0.005) + rand(10, 100);
     s.stones += stones;
     log(s, `你偶遇一位隕落修士的遺蛻,收殮入土後,拾得遺留靈石 ${stones} 枚。`);
   } else if (roll < 0.075) {
@@ -244,7 +244,7 @@ function maybeEncounter(s: SaveData) {
     s.stones -= lost;
     log(s, `一名遊方散修與你論道半日,臨別時你才發現儲物袋輕了——被順走了 ${lost} 靈石!`);
   } else if (roll < 0.105) {
-    const gain = Math.floor(realm.expNeed * 0.25);
+    const gain = Math.floor(realm.expNeed * 0.025);
     s.exp += gain;
     log(s, `荒亭避雨,偶遇一位白髮老道與你手談一局。局終人杳,棋盤上殘留一縷道韻——修為 +${gain}。`);
   } else if (roll < 0.12 && realm.stage >= 3) {

@@ -157,6 +157,46 @@ export const TECHNIQUES: Technique[] = [
     power: 20,
     reqStage: 8,
   },
+  {
+    id: "beiming",
+    name: "北冥玄天訣",
+    element: "水",
+    desc: "北寒仙尊畢生所悟的無上仙法,水行臻於極致,一念之間凍結仙靈,萬里成冰。唯真仙可修。",
+    mpCost: 30000,
+    power: 42,
+    reqStage: 10,
+  },
+  // ── 真仙 / 金仙仙法(極難取得,修煉時間極長) ──
+  {
+    id: "hunyuan_yiqi",
+    name: "混元一氣仙訣",
+    element: "土",
+    desc: "開天闢地的混元至法,一氣化三清,鎮壓諸天萬法。真仙需苦修數十萬載方能大成。",
+    mpCost: 80000,
+    power: 90,
+    reqStage: 10,
+    learnYears: 300000,
+  },
+  {
+    id: "taiqing_daoyun",
+    name: "太清道韻九轉",
+    element: "金",
+    desc: "太清仙尊遺留的九轉道韻,每一轉皆是一重天地,金光所至,仙魔俱滅。真仙頂尖仙法。",
+    mpCost: 120000,
+    power: 130,
+    reqStage: 10,
+    learnYears: 500000,
+  },
+  {
+    id: "zhutian_shenlei",
+    name: "誅天神雷金仙法",
+    element: "金",
+    desc: "唯金仙可修的誅天神雷,一雷落下,億萬里化為焦土,乃仙庭鎮壓叛仙的無上殺伐仙法。",
+    mpCost: 300000,
+    power: 260,
+    reqStage: 11,
+    learnYears: 1000000,
+  },
 ];
 
 export const techById = (id: string) => TECHNIQUES.find((t) => t.id === id)!;

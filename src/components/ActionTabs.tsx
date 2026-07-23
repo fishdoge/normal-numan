@@ -13,20 +13,11 @@ import { LOCATIONS, MONSTERS, RECIPES, REGIONS } from "@/game/data/world";
 import { ITEMS, itemById } from "@/game/data/items";
 import { MISSIONS } from "@/game/data/missions";
 import { REALMS } from "@/game/data/realms";
+import { SECTS } from "@/game/data/sects";
 import { techById } from "@/game/data/techniques";
-import { ELEMENT_COLOR, ItemKind, formatStones } from "@/game/types";
+import { ELEMENT_COLOR, ItemKind, KIND_LABEL, formatStones } from "@/game/types";
 
-type Tab =
-  | "explore"
-  | "bag"
-  | "tech"
-  | "craft"
-  | "market"
-  | "trade"
-  | "mission"
-  | "dex"
-  | "rank"
-  | "xianrank";
+type Tab = "explore" | "bag" | "tech" | "craft" | "market" | "trade" | "mission" | "dex" | "rank";
 
 export default function ActionTabs() {
   const [tab, setTab] = useState<Tab>("explore");
@@ -39,8 +30,7 @@ export default function ActionTabs() {
     ["trade", "交易行"],
     ["mission", "宗門任務"],
     ["dex", "妖獸圖鑑"],
-    ["rank", "修仙榜"],
-    ["xianrank", "真仙榜"],
+    ["rank", "排行榜"],
   ];
   return (
     <div className="panel">
@@ -68,7 +58,6 @@ export default function ActionTabs() {
       {tab === "mission" && <MissionTab />}
       {tab === "dex" && <DexTab />}
       {tab === "rank" && <RankTab />}
-      {tab === "xianrank" && <XianRankTab />}
     </div>
   );
 }
@@ -87,9 +76,9 @@ function ExploreTab() {
     <div className="space-y-3">
       <div className="divider">大 陸 遊 歷</div>
       <div className="flex flex-wrap gap-1.5">
-        {REGIONS.map((r) => {
+        {REGIONS.filter((r) => !r.hidden || s.jinyuanUnlocked).map((r) => {
           const rLocked = realm.stage < r.reqStage;
-          const isBeihan = r.id === "beihan";
+          const isPurple = r.color === "fuchsia";
           return (
             <button
               key={r.id}
@@ -97,12 +86,12 @@ function ExploreTab() {
               title={rLocked ? `需 ${r.reqStage} 階境界` : r.desc}
               className={`px-2.5 py-1 text-xs rounded-sm border transition-colors ${
                 regionId === r.id
-                  ? isBeihan
+                  ? isPurple
                     ? "border-fuchsia-400 bg-fuchsia-400/15 text-fuchsia-300"
                     : "border-gold bg-gold/15 text-gold"
                   : rLocked
                     ? "border-faded/15 text-faded/40 cursor-not-allowed"
-                    : isBeihan
+                    : isPurple
                       ? "border-fuchsia-400/40 text-fuchsia-300/90 hover:border-fuchsia-400"
                       : "border-faded/30 text-cream hover:border-gold/60"
               }`}
@@ -114,6 +103,25 @@ function ExploreTab() {
         })}
       </div>
       <p className="text-xs text-faded">{region.desc}</p>
+      {regionId === "jinyuan" && s.jinyuanUnlocked && realm.stage >= 10 && (
+        <div className="border border-amber-300/50 bg-amber-300/5 rounded-sm p-3">
+          <div className="flex items-baseline justify-between">
+            <span className="font-bold text-amber-300">浮 屠 塔</span>
+            <span className="text-xs font-mono text-amber-300/80">已通關第 {s.futuFloor} 層</span>
+          </div>
+          <p className="text-sm text-faded mt-1">
+            塔中是一尊幻象太歲天尊,每打過一層便強大一倍,永無止境。挑戰下一層(第 {s.futuFloor + 1}{" "}
+            層)——每 5 層得天仙丹、每 10 層得金魂丹,高層更藏頂尖仙法。
+          </p>
+          <button
+            className="btn mt-2 border-amber-300/60 text-amber-300 hover:bg-amber-300/15"
+            disabled={inCombat || busy}
+            onClick={() => act("challengeFutu")}
+          >
+            登 塔 · 挑戰第 {s.futuFloor + 1} 層
+          </button>
+        </div>
+      )}
       {locs.map((loc) => {
         const locked = realm.stage < loc.reqStage;
         return (
@@ -152,10 +160,13 @@ function ExploreTab() {
 const BAG_SECTIONS: [string, ItemKind[]][] = [
   ["材 料", ["material"]],
   ["仙 草 · 丹 藥", ["herb", "pill"]],
-  ["法 器 · 護 身", ["artifact", "treasure"]],
-  ["功 法 秘 笈", ["manual"]],
+  ["法 器 · 法 衣 · 護 身 符 · 符 籙", ["artifact", "robe", "treasure", "amulet", "talisman"]],
+  ["靈 寵", ["pet"]],
+  ["功 法 秘 笈 · 圖 譜", ["manual", "recipe"]],
   ["奇 珍 · 仙 物", ["special"]],
 ];
+
+const EQUIPPABLE: ItemKind[] = ["artifact", "robe", "treasure", "amulet", "talisman", "pet"];
 
 function BagTab() {
   const s = useGame((x) => x.save)!;
@@ -164,9 +175,17 @@ function BagTab() {
   const entries = Object.entries(s.inventory);
   if (entries.length === 0) return <p className="text-faded text-sm">儲物袋空空如也。</p>;
 
+  const equippedIds = [
+    s.equippedWeapon,
+    s.equippedRobe ?? s.equippedArmor,
+    s.equippedAmulet,
+    s.equippedTalisman,
+    s.equippedPet,
+  ];
+
   const row = ([id, n]: [string, number]) => {
     const item = itemById(id);
-    const equipped = s.equippedWeapon === id || s.equippedArmor === id;
+    const equipped = equippedIds.includes(id);
     return (
       <div
         key={id}
@@ -175,6 +194,7 @@ function BagTab() {
         <div className="min-w-0">
           <span className="font-bold">
             {item.name} <span className="text-faded font-normal">×{n}</span>
+            <span className="chip ml-2 text-faded/80 border-faded/30">{KIND_LABEL[item.kind]}</span>
             {item.element && (
               <span className={`chip ml-2 ${ELEMENT_COLOR[item.element]}`}>{item.element}</span>
             )}
@@ -212,6 +232,15 @@ function BagTab() {
               於仙法欄使用
             </span>
           )}
+          {item.kind === "recipe" && (
+            <button
+              className="btn border-azure/60 text-azure"
+              disabled={busy}
+              onClick={() => act("useItem", { itemId: id })}
+            >
+              參悟圖譜
+            </button>
+          )}
           {item.kind === "manual" && (
             <button
               className="btn"
@@ -222,12 +251,12 @@ function BagTab() {
               {s.learning ? "修習中…" : "開始修習"}
             </button>
           )}
-          {(item.kind === "artifact" || item.kind === "treasure") && !equipped && (
+          {EQUIPPABLE.includes(item.kind) && !equipped && (
             <button className="btn" disabled={busy} onClick={() => act("equip", { itemId: id })}>
-              裝備
+              {item.kind === "pet" ? "收為靈寵" : "裝備"}
             </button>
           )}
-          {item.kind !== "special" && (
+          {item.kind !== "special" && item.kind !== "recipe" && (
             <button
               className="btn btn-danger"
               disabled={busy}
@@ -320,21 +349,36 @@ function CraftTab() {
   const s = useGame((x) => x.save)!;
   const act = useGame((x) => x.act);
   const busy = useGame((x) => x.busy);
+  const { realm } = statsOf(s);
   return (
     <div className="space-y-2">
+      <p className="text-xs text-faded">
+        煉器堂——藍框配方需先由妖獸掉落圖譜參悟後方能煉製。裝備分類已於名稱旁標示。
+      </p>
       {RECIPES.map((rec) => {
         const result = itemById(rec.result);
+        const locked = rec.dropOnly && !s.unlockedRecipes.includes(rec.id);
+        const stageLocked = (rec.reqStage ?? 1) > realm.stage;
         const canStones = s.stones >= rec.stones;
         const canMats = rec.materials.every((m) => (s.inventory[m.id] ?? 0) >= m.n);
         return (
-          <div key={rec.id} className="border border-faded/20 rounded-sm p-3">
+          <div
+            key={rec.id}
+            className={`border rounded-sm p-3 ${rec.dropOnly ? "border-azure/50 bg-azure/5" : "border-faded/20"} ${locked || stageLocked ? "opacity-55" : ""}`}
+          >
             <div className="flex items-baseline justify-between">
               <span className="font-bold">
                 {rec.name}
+                <span className="chip ml-2 text-faded/80 border-faded/30">
+                  {KIND_LABEL[result.kind]}
+                </span>
                 {result.element && (
                   <span className={`chip ml-2 ${ELEMENT_COLOR[result.element]}`}>
                     {result.element}
                   </span>
+                )}
+                {rec.dropOnly && (
+                  <span className="chip ml-2 text-azure border-azure/60">圖譜配方</span>
                 )}
               </span>
               <span className={`text-xs font-mono ${canStones ? "text-gold" : "text-vermillion"}`}>
@@ -356,15 +400,19 @@ function CraftTab() {
               })}
               <span className="text-faded">
                 → {result.atkBonus ? `攻+${result.atkBonus} ` : ""}
-                {result.defBonus ? `防+${result.defBonus}` : ""}
+                {result.defBonus ? `防+${result.defBonus} ` : ""}
+                {result.speedBonus ? `速+${result.speedBonus}` : ""}
               </span>
             </p>
             <button
               className="btn mt-2"
-              disabled={busy || !canStones || !canMats}
+              disabled={busy || !canStones || !canMats || locked || stageLocked}
+              title={
+                locked ? "需先取得對應圖譜研讀" : stageLocked ? `需 ${rec.reqStage} 階境界` : ""
+              }
               onClick={() => act("craft", { recipeId: rec.id })}
             >
-              煉製
+              {locked ? "🔒 未參透圖譜" : stageLocked ? "境界不足" : "煉製"}
             </button>
           </div>
         );
@@ -378,12 +426,17 @@ function MarketTab() {
   const act = useGame((x) => x.act);
   const busy = useGame((x) => x.busy);
   const wares = ITEMS.filter(
-    (i) => ["pill", "herb", "treasure"].includes(i.kind) && !i.life && !i.lifePct,
+    (i) =>
+      ["pill", "herb", "robe", "amulet", "talisman"].includes(i.kind) &&
+      !i.life &&
+      !i.lifePct &&
+      !i.dropOnly &&
+      (i.reqStage ?? 1) <= 8,
   );
   return (
     <div className="space-y-2">
       <p className="text-xs text-faded">
-        坊市為宗門官營,明碼標價。現有靈石:
+        坊市為宗門官營,明碼標價。大乘以上的仙家至寶坊市不售,唯有斬妖奪寶方能得之。現有靈石:
         <span className="text-gold"> {formatStones(s.stones)}</span>
       </p>
       {wares.map((item) => (
@@ -394,10 +447,11 @@ function MarketTab() {
           <div className="min-w-0">
             <span className="font-bold">
               {item.name}
-              {item.kind === "manual" && item.teaches && (
-                <span className="chip ml-2 text-azure border-azure/50">
-                  修習 {learnYears(item.teaches)} 年
-                </span>
+              <span className="chip ml-2 text-faded/80 border-faded/30">
+                {KIND_LABEL[item.kind]}
+              </span>
+              {item.element && (
+                <span className={`chip ml-2 ${ELEMENT_COLOR[item.element]}`}>{item.element}</span>
               )}
             </span>
             <p className="text-xs text-faded truncate">{item.desc}</p>
@@ -750,7 +804,7 @@ function DexTab() {
       <div className="divider text-fuchsia-400/70">領 主</div>
       <p className="text-xs text-faded">
         地域王極為稀有,獵殺妖獸時約 2%~3% 機率遭遇。已遇 {s.lordsSeen?.length ?? 0}/{lords.length}{" "}
-        位,斬之或得增元丹、增靈珠等奇珍。其中太上金仙唯有「雲遊四海」時萬中之一得見。
+        位,斬之掉落豐厚——增元丹、增靈珠、高階符籙與圖譜。北寒仙尊更有機率傳下無上仙法;金源仙帝、太上金仙則掉落金魂丹等仙緣。
       </p>
       {lords.map(monsterRow)}
     </div>
@@ -761,97 +815,149 @@ interface RankPlayer {
   name: string;
   realm_idx: number;
   exp: number;
+  xianli: number;
+  futu_floor: number;
   dead: boolean;
 }
 
-function RankTab() {
-  const s = useGame((x) => x.save)!;
-  const [players, setPlayers] = useState<RankPlayer[]>([]);
-  const [loading, setLoading] = useState(true);
+interface PlayerProfile {
+  name: string;
+  realmIdx: number;
+  exp: number;
+  xianli: number;
+  futuFloor: number;
+  sectId: string | null;
+  age: number;
+  day: number;
+  dead: boolean;
+  seenCount: number;
+  lordsSeenCount: number;
+  learnedCount: number;
+  equippedWeapon: string | null;
+  equippedRobe: string | null;
+  equippedAmulet: string | null;
+  equippedTalisman: string | null;
+  equippedPet: string | null;
+}
 
-  const refresh = async () => {
-    setLoading(true);
-    try {
-      const j = await (await fetch("/api/ranking")).json();
-      setPlayers(j.players ?? []);
-    } catch {
-      /* ignore */
-    }
-    setLoading(false);
-  };
-  useEffect(() => {
-    refresh();
-  }, []);
-
-  const myRank = players.findIndex((p) => p.name === s.name) + 1;
-
+function PlayerDetailCard({ profile, onClose }: { profile: PlayerProfile; onClose: () => void }) {
+  const isXian = REALMS[profile.realmIdx]?.stage >= 10;
+  const gear: [string, string | null][] = [
+    ["法器", profile.equippedWeapon],
+    ["法衣", profile.equippedRobe],
+    ["護身符", profile.equippedAmulet],
+    ["符籙", profile.equippedTalisman],
+    ["靈寵", profile.equippedPet],
+  ];
   return (
-    <div className="space-y-2">
-      <p className="text-xs text-faded">
-        天下修仙榜——全服修士同榜競逐,按境界高低、修為深淺排序。
-        {myRank > 0 && (
+    <div
+      className={`border rounded-sm p-4 mb-3 ${isXian ? "border-fuchsia-400/60 bg-fuchsia-400/5" : "border-gold/50 bg-gold/5"}`}
+    >
+      <div className="flex items-baseline justify-between mb-2">
+        <span
+          className={`text-lg font-bold ${isXian ? "text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 via-amber-200 to-fuchsia-300" : "text-gold"}`}
+        >
+          {profile.name}
+          {profile.dead && (
+            <span className="chip ml-2 text-vermillion border-vermillion/50">已隕落</span>
+          )}
+        </span>
+        <button className="chip hover:text-cream" onClick={onClose}>
+          關閉 ✕
+        </button>
+      </div>
+      <div className="grid grid-cols-2 gap-y-1 text-sm">
+        <span className="text-faded">境界</span>
+        <span className={`text-right ${isXian ? "text-fuchsia-300" : ""}`}>
+          {REALMS[profile.realmIdx]?.name ?? "??"}
+        </span>
+        <span className="text-faded">門派</span>
+        <span className="text-right">
+          {SECTS.find((x) => x.id === profile.sectId)?.name ?? "散修"}
+        </span>
+        <span className="text-faded">修為</span>
+        <span className="text-right font-mono">{profile.exp}</span>
+        {profile.xianli > 0 && (
           <>
-            你當前名列第<span className="text-gold"> {myRank} </span>位。
+            <span className="text-faded">仙靈力</span>
+            <span className="text-right font-bold text-fuchsia-400">{profile.xianli} 點</span>
           </>
         )}
-        <button className="chip ml-3 hover:text-gold" onClick={refresh}>
-          刷新
-        </button>
-      </p>
-      {loading && <p className="text-sm text-faded">榜文更新中…</p>}
-      {!loading && players.length === 0 && (
-        <p className="text-sm text-faded">榜上無人,你將是第一位留名者。</p>
-      )}
-      {players.map((p, i) => {
-        const me = p.name === s.name;
-        return (
-          <div
-            key={p.name + i}
-            className={`flex items-center justify-between border rounded-sm p-2.5 ${
-              me ? "border-gold/60 bg-gold/10" : "border-faded/20"
-            }`}
-          >
-            <div className="flex items-baseline gap-3 min-w-0">
-              <span
-                className={`font-mono text-sm w-6 text-right shrink-0 ${i < 3 ? "text-gold" : "text-faded"}`}
-              >
-                {i + 1}
-              </span>
-              <div className="min-w-0">
-                <span className={`font-bold ${me ? "text-gold" : ""}`}>{p.name}</span>
-                {me && <span className="text-xs text-gold/70 ml-2">(你)</span>}
-                {p.dead && (
-                  <span className="chip ml-2 text-vermillion border-vermillion/50">已隕落</span>
-                )}
-              </div>
-            </div>
-            <span className="text-sm text-cream shrink-0 ml-3">
-              {REALMS[p.realm_idx]?.name ?? "??"}
-              <span className="text-xs text-faded ml-2 font-mono">修為 {p.exp}</span>
+        {profile.futuFloor > 0 && (
+          <>
+            <span className="text-faded">浮屠塔</span>
+            <span className="text-right font-bold text-amber-300">第 {profile.futuFloor} 層</span>
+          </>
+        )}
+        <span className="text-faded">壽元 / 修行</span>
+        <span className="text-right">
+          {profile.age} 年 · 修行 {profile.day} 載
+        </span>
+        <span className="text-faded">圖鑑 · 領主 · 仙法</span>
+        <span className="text-right text-xs">
+          妖獸 {profile.seenCount} · 領主 {profile.lordsSeenCount} · 仙法 {profile.learnedCount}
+        </span>
+      </div>
+      <div className="divider">裝 備</div>
+      <div className="grid grid-cols-2 gap-y-1 text-sm">
+        {gear.map(([label, id]) => (
+          <div key={label} className="contents">
+            <span className="text-faded">{label}</span>
+            <span
+              className={`text-right ${id ? (label === "靈寵" ? "text-fuchsia-300" : "text-cream") : "text-faded/50"}`}
+            >
+              {id ? itemById(id).name : "—"}
             </span>
           </div>
-        );
-      })}
+        ))}
+      </div>
     </div>
   );
 }
 
-interface XianPlayer {
-  name: string;
-  realm_idx: number;
-  xianli: number;
-  dead: boolean;
+function usePlayerLookup() {
+  const [profile, setProfile] = useState<PlayerProfile | null>(null);
+  const [err, setErr] = useState("");
+  const lookup = async (name: string) => {
+    if (!name.trim()) return;
+    setErr("");
+    try {
+      const j = await (
+        await fetch(`/api/ranking?player=${encodeURIComponent(name.trim())}`)
+      ).json();
+      if (j.ok) setProfile(j.profile);
+      else {
+        setProfile(null);
+        setErr(j.error ?? "查無此修士");
+      }
+    } catch {
+      setErr("查詢失敗");
+    }
+  };
+  return { profile, setProfile, err, lookup };
 }
 
-function XianRankTab() {
-  const s = useGame((x) => x.save)!;
-  const [players, setPlayers] = useState<XianPlayer[]>([]);
-  const [loading, setLoading] = useState(true);
+type Board = "xiu" | "exp" | "futu";
 
-  const refresh = async () => {
+function RankTab() {
+  const s = useGame((x) => x.save)!;
+  const [board, setBoard] = useState<Board>("xiu");
+  const [players, setPlayers] = useState<RankPlayer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState("");
+  const { profile, setProfile, err, lookup } = usePlayerLookup();
+
+  const boards: [Board, string, string][] = [
+    ["xiu", "修仙榜", "按境界高低、仙靈力、修為綜合排序"],
+    ["exp", "修為榜", "純以修為深淺論高下"],
+    ["futu", "浮屠塔榜", "以浮屠塔通關層數論英雄"],
+  ];
+  const boardMeta = boards.find((b) => b[0] === board)!;
+
+  const refresh = async (b: Board = board) => {
     setLoading(true);
     try {
-      const j = await (await fetch("/api/ranking?type=xian")).json();
+      const j = await (await fetch(`/api/ranking?type=${b}`)).json();
       setPlayers(j.players ?? []);
     } catch {
       /* ignore */
@@ -859,61 +965,117 @@ function XianRankTab() {
     setLoading(false);
   };
   useEffect(() => {
-    refresh();
-  }, []);
+    refresh(board);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [board]);
 
   const myRank = players.findIndex((p) => p.name === s.name) + 1;
+  const isFutuBoard = board === "futu";
+
+  // 各榜右側顯示的主數值
+  const rightValue = (p: RankPlayer) => {
+    if (board === "futu")
+      return <span className="text-amber-300 font-bold">第 {p.futu_floor} 層</span>;
+    if (board === "exp")
+      return (
+        <>
+          <span className="text-jade font-mono">修為 {p.exp}</span>
+          <span className="text-xs text-faded ml-2">{REALMS[p.realm_idx]?.name ?? "??"}</span>
+        </>
+      );
+    // 修仙榜
+    return (
+      <>
+        <span>{REALMS[p.realm_idx]?.name ?? "??"}</span>
+        {p.xianli > 0 && <span className="text-xs text-fuchsia-400 ml-2">仙靈力 {p.xianli}</span>}
+      </>
+    );
+  };
+
+  const accent = isFutuBoard ? "amber-300" : "gold";
 
   return (
     <div className="space-y-2">
+      {/* 三榜切換 */}
+      <div className="flex gap-1.5">
+        {boards.map(([b, label]) => (
+          <button
+            key={b}
+            onClick={() => setBoard(b)}
+            className={`px-3 py-1 text-sm rounded-sm border transition-colors ${
+              board === b
+                ? b === "futu"
+                  ? "border-amber-300 bg-amber-300/15 text-amber-300"
+                  : "border-gold bg-gold/15 text-gold"
+                : "border-faded/30 text-faded hover:text-cream"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
       <p className="text-xs text-faded">
-        <span className="text-fuchsia-400 font-bold">真仙榜</span>
-        ——唯有白日飛昇的真仙方能登榜,按仙靈力高低排序。仙靈力一點即一倍攻擊,極難獲得。
+        {boardMeta[2]}。
         {myRank > 0 && (
           <>
-            你當前名列第<span className="text-fuchsia-400"> {myRank} </span>位。
+            你當前名列第<span className={`text-${accent}`}> {myRank} </span>位。
           </>
         )}
-        <button className="chip ml-3 hover:text-fuchsia-400" onClick={refresh}>
+        <button className="chip ml-3 hover:text-gold" onClick={() => refresh()}>
           刷新
         </button>
       </p>
-      {loading && <p className="text-sm text-faded">仙榜更新中…</p>}
+      <div className="flex gap-2 items-center">
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && lookup(query)}
+          placeholder="搜尋修士道號…"
+          className="flex-1 bg-smoke border border-faded/30 rounded-sm px-2 py-1.5 text-sm text-parchment"
+        />
+        <button className="btn" onClick={() => lookup(query)}>
+          查詢
+        </button>
+      </div>
+      {err && <p className="text-sm text-vermillion">{err}</p>}
+      {profile && <PlayerDetailCard profile={profile} onClose={() => setProfile(null)} />}
+      {loading && <p className="text-sm text-faded">榜文更新中…</p>}
       {!loading && players.length === 0 && (
         <p className="text-sm text-faded">
-          仙界寂寥,尚無真仙留名。飛昇之後,煉化天仙丹與先天仙器,你將是第一位。
+          {isFutuBoard ? "浮屠塔尚無人登臨,你將是第一位挑戰者。" : "榜上無人,你將是第一位留名者。"}
         </p>
       )}
       {players.map((p, i) => {
         const me = p.name === s.name;
+        const topColor = isFutuBoard ? "text-amber-300" : "text-gold";
         return (
-          <div
+          <button
             key={p.name + i}
-            className={`flex items-center justify-between border rounded-sm p-2.5 ${
-              me ? "border-fuchsia-400/60 bg-fuchsia-400/10" : "border-faded/20"
+            onClick={() => lookup(p.name)}
+            className={`w-full text-left flex items-center justify-between border rounded-sm p-2.5 transition-colors hover:border-gold/60 ${
+              me
+                ? isFutuBoard
+                  ? "border-amber-300/60 bg-amber-300/10"
+                  : "border-gold/60 bg-gold/10"
+                : "border-faded/20"
             }`}
           >
             <div className="flex items-baseline gap-3 min-w-0">
               <span
-                className={`font-mono text-sm w-6 text-right shrink-0 ${i < 3 ? "text-fuchsia-400" : "text-faded"}`}
+                className={`font-mono text-sm w-6 text-right shrink-0 ${i < 3 ? topColor : "text-faded"}`}
               >
                 {i + 1}
               </span>
               <div className="min-w-0">
-                <span className={`font-bold ${me ? "text-fuchsia-400" : ""}`}>{p.name}</span>
-                {me && <span className="text-xs text-fuchsia-400/70 ml-2">(你)</span>}
+                <span className={`font-bold ${me ? topColor : ""}`}>{p.name}</span>
+                {me && <span className={`text-xs ${topColor}/70 ml-2`}>(你)</span>}
                 {p.dead && (
                   <span className="chip ml-2 text-vermillion border-vermillion/50">已隕落</span>
                 )}
               </div>
             </div>
-            <span className="text-sm shrink-0 ml-3">
-              <span className="text-fuchsia-400 font-bold">仙靈力 {p.xianli}</span>
-              <span className="text-xs text-faded ml-2 font-mono">
-                {REALMS[p.realm_idx]?.name ?? "??"}
-              </span>
-            </span>
-          </div>
+            <span className="text-sm text-cream shrink-0 ml-3">{rightValue(p)}</span>
+          </button>
         );
       })}
     </div>

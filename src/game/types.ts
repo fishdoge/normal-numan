@@ -67,7 +67,44 @@ export interface Realm {
 }
 
 export type ItemKind =
-  "material" | "herb" | "pill" | "manual" | "artifact" | "treasure" | "special";
+  | "material"
+  | "herb"
+  | "pill"
+  | "manual"
+  | "artifact" // 法器(攻擊,武器槽)
+  | "robe" // 法衣(防禦,護甲槽)
+  | "amulet" // 護身符(防禦,飾品槽)
+  | "talisman" // 符籙(攻擊/輔助,符籙槽)
+  | "pet" // 靈寵(寵物槽)
+  | "recipe" // 煉器圖譜(使用後解鎖配方)
+  | "treasure" // 舊:護身之寶(向後相容,視為 robe)
+  | "special";
+
+// 裝備槽定義(順序即人物欄顯示順序)
+export type EquipSlot = "weapon" | "robe" | "amulet" | "talisman" | "pet";
+export const EQUIP_SLOTS: { slot: EquipSlot; label: string; kinds: ItemKind[] }[] = [
+  { slot: "weapon", label: "法器", kinds: ["artifact"] },
+  { slot: "robe", label: "法衣", kinds: ["robe", "treasure"] },
+  { slot: "amulet", label: "護身符", kinds: ["amulet"] },
+  { slot: "talisman", label: "符籙", kinds: ["talisman"] },
+  { slot: "pet", label: "靈寵", kinds: ["pet"] },
+];
+export const KIND_LABEL: Record<string, string> = {
+  material: "材料",
+  herb: "仙草",
+  pill: "丹藥",
+  manual: "秘笈",
+  artifact: "法器",
+  robe: "法衣",
+  amulet: "護身符",
+  talisman: "符籙",
+  pet: "靈寵",
+  recipe: "圖譜",
+  treasure: "法衣",
+  special: "仙物",
+};
+export const slotOfKind = (kind: ItemKind): EquipSlot | null =>
+  EQUIP_SLOTS.find((s) => s.kinds.includes(kind))?.slot ?? null;
 
 export interface ItemDef {
   id: string;
@@ -85,9 +122,18 @@ export interface ItemDef {
   xianli?: number; // 給予仙靈力點數(天仙丹、先天仙器,真仙專屬)
   // manual → 對應仙法
   teaches?: string;
-  // artifact 屬性
+  // recipe → 解鎖的煉器配方 id
+  unlocksRecipe?: string;
+  // 裝備屬性
   atkBonus?: number;
   defBonus?: number;
+  speedBonus?: number;
+  // 靈寵專屬:靈石收益倍率(1.2 = +20%)
+  stoneMult?: number;
+  // 裝備 / 道具境界需求(stage);超過大乘(8)者僅能由妖獸掉落,坊市與煉器不得取得
+  reqStage?: number;
+  // 僅能由妖獸掉落(不可購買 / 一般煉器)
+  dropOnly?: boolean;
 }
 
 export interface Technique {
@@ -98,15 +144,18 @@ export interface Technique {
   mpCost: number; // 法力消耗
   power: number; // 威力倍率基底
   reqStage: number; // 需要境界 stage
+  learnYears?: number; // 修習年數覆寫(真仙/金仙仙法極長,預設為 reqStage×10)
 }
 
 export interface Recipe {
   id: string;
-  result: string; // artifact item id
+  result: string; // 產出裝備 item id
   name: string;
   materials: { id: string; n: number }[];
   stones: number; // 靈石費用
   desc: string;
+  dropOnly?: boolean; // 需由妖獸掉落圖譜解鎖後方可煉製(高階裝備)
+  reqStage?: number; // 需要境界
 }
 
 export interface Sect {
@@ -137,6 +186,8 @@ export interface Region {
   desc: string;
   reqStage: number;
   lordId?: string; // 該區域的地域王(妖獸領主)
+  hidden?: boolean; // 需透過探索秘境解鎖(金源仙域)
+  color?: "gold" | "fuchsia"; // 地圖標示色(北寒/金源=紫)
 }
 
 export interface Location {

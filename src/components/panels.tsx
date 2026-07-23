@@ -1,22 +1,30 @@
 "use client";
 
 import { useEffect, useRef, useCallback } from "react";
-import { useGame, statsOf, maxLifeOf } from "@/game/store";
+import { useGame, statsOf, maxLifeOf, XIANLI_MULT } from "@/game/store";
 import { REALMS } from "@/game/data/realms";
 import { SECTS } from "@/game/data/sects";
 import { MONSTERS } from "@/game/data/world";
 import { itemById } from "@/game/data/items";
 import { techById } from "@/game/data/techniques";
-import { ELEMENT_COLOR, XIANLI_COLOR, formatStones } from "@/game/types";
+import { ELEMENT_COLOR, XIANLI_COLOR, EQUIP_SLOTS, formatStones } from "@/game/types";
 
 export function StatusPanel() {
   const s = useGame((x) => x.save)!;
   const { realm, atk, def, hpMax, mpMax, speed } = statsOf(s);
   const sect = SECTS.find((x) => x.id === s.sectId);
   const expNeed = REALMS[s.realmIdx].expNeed;
-  const weapon = s.equippedWeapon ? itemById(s.equippedWeapon) : null;
-  const armor = s.equippedArmor ? itemById(s.equippedArmor) : null;
+  const isXian = realm.stage >= 10;
   const act = useGame((x) => x.act);
+
+  // 各裝備槽當前裝備
+  const equipMap: Record<string, string | null> = {
+    weapon: s.equippedWeapon,
+    robe: s.equippedRobe ?? s.equippedArmor,
+    amulet: s.equippedAmulet,
+    talisman: s.equippedTalisman,
+    pet: s.equippedPet,
+  };
 
   // 聚靈回力:按住即持續回力,鬆手停止
   const holdingRef = useRef(false);
@@ -64,10 +72,14 @@ export function StatusPanel() {
     <div className="panel deco-frame">
       <p className="panel-title">道 籍</p>
       <div className="flex items-baseline justify-between mb-1">
-        <span className="text-xl font-bold">{s.name}</span>
+        <span
+          className={`text-xl font-bold ${isXian ? "text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 via-amber-200 to-fuchsia-300" : ""}`}
+        >
+          {s.name}
+        </span>
         <span className="text-sm text-faded">{sect?.name}</span>
       </div>
-      <p className="text-gold mb-3">{realm.name}</p>
+      <p className={`mb-3 ${isXian ? "text-fuchsia-300 font-bold" : "text-gold"}`}>{realm.name}</p>
 
       <div className="space-y-2 text-sm">
         <div>
@@ -114,7 +126,7 @@ export function StatusPanel() {
           <>
             <span className="text-faded">仙靈力</span>
             <span className={`text-right font-bold ${XIANLI_COLOR}`}>
-              {s.xianli} 點 (攻擊 ×{1 + s.xianli})
+              {s.xianli} 點 (攻擊 ×{(1 + s.xianli * XIANLI_MULT).toFixed(1)})
             </span>
           </>
         )}
@@ -141,10 +153,24 @@ export function StatusPanel() {
         )}
         <span className="text-faded">靈石</span>
         <span className="text-right text-gold">{formatStones(s.stones)}</span>
-        <span className="text-faded">法器</span>
-        <span className="text-right">{weapon ? weapon.name : "赤手空拳"}</span>
-        <span className="text-faded">護身</span>
-        <span className="text-right">{armor ? armor.name : "無"}</span>
+      </div>
+
+      <div className="divider">裝 備</div>
+      <div className="grid grid-cols-2 gap-y-1 text-sm">
+        {EQUIP_SLOTS.map(({ slot, label }) => {
+          const id = equipMap[slot];
+          const it = id ? itemById(id) : null;
+          return (
+            <div key={slot} className="contents">
+              <span className="text-faded">{label}</span>
+              <span
+                className={`text-right ${it ? (slot === "pet" ? "text-fuchsia-300" : "text-cream") : "text-faded/50"}`}
+              >
+                {it ? it.name : "—"}
+              </span>
+            </div>
+          );
+        })}
       </div>
 
       {s.learning && (
@@ -221,12 +247,26 @@ export function CombatPanel() {
 
   const mon = MONSTERS.find((m) => m.id === combat.monsterId)!;
   const usable = s.learned.map(techById);
+  const isLord = combat.isLord || mon.isLord;
+  const hpMaxMon = combat.bossHpMax ?? mon.hp; // 浮屠塔動態 BOSS 用其實際上限
+  const displayName = combat.futuFloor ? `${mon.name} · 第 ${combat.futuFloor} 層` : mon.name;
 
   return (
-    <div className="panel deco-frame border-vermillion/40">
-      <p className="panel-title text-cinnabar">激 戰</p>
+    <div
+      className={`panel deco-frame ${isLord ? "border-fuchsia-400/70 shadow-[0_0_18px_rgba(232,121,249,0.25)]" : "border-vermillion/40"}`}
+    >
+      <p className={`panel-title ${isLord ? "text-fuchsia-300" : "text-cinnabar"}`}>
+        {combat.futuFloor ? "⚠ 浮 屠 塔" : isLord ? "⚠ 王 者 降 臨" : "激 戰"}
+      </p>
       <div className="flex items-baseline justify-between">
-        <span className="text-lg font-bold">{mon.name}</span>
+        <span className={`text-lg font-bold ${isLord ? "text-fuchsia-300" : ""}`}>
+          {isLord && (
+            <span className="chip mr-2 text-fuchsia-400 border-fuchsia-400/60">
+              {combat.futuFloor ? "幻象" : "地域王"}
+            </span>
+          )}
+          {displayName}
+        </span>
         <span className={`chip ${ELEMENT_COLOR[mon.element]}`}>{mon.element}屬性</span>
       </div>
       <p className="text-sm text-faded mt-1">{mon.desc}</p>
@@ -234,13 +274,13 @@ export function CombatPanel() {
         <div className="flex justify-between text-xs text-faded mb-0.5">
           <span>妖獸氣血</span>
           <span>
-            {combat.monsterHp}/{mon.hp}
+            {combat.monsterHp}/{hpMaxMon}
           </span>
         </div>
         <div className="stat-bar">
           <div
             className="bg-vermillion h-full"
-            style={{ width: `${(combat.monsterHp / mon.hp) * 100}%` }}
+            style={{ width: `${(combat.monsterHp / hpMaxMon) * 100}%` }}
           />
         </div>
       </div>

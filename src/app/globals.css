@@ -85,3 +85,25 @@ body::after {
   background: #4a4132;
   border-radius: 4px;
 }
+
+/* 真仙(已飛昇)專屬:得道昇仙的絢麗光暈 */
+.xian-aura::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 48;
+  background:
+    radial-gradient(ellipse at 20% 15%, rgba(232, 121, 249, 0.14), transparent 45%),
+    radial-gradient(ellipse at 80% 25%, rgba(103, 232, 249, 0.12), transparent 45%),
+    radial-gradient(ellipse at 50% 90%, rgba(251, 191, 36, 0.12), transparent 50%);
+  animation: xianShift 12s ease-in-out infinite alternate;
+}
+@keyframes xianShift {
+  0% {
+    opacity: 0.65;
+  }
+  100% {
+    opacity: 1;
+  }
+}

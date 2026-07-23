@@ -80,10 +80,39 @@ export const ITEMS: ItemDef[] = [
   { id: "zhenlongyin", name: "真龍璽", kind: "artifact", desc: "真龍精骨所刻帝璽,蓋落之處,山河俱碎。", price: 160000, atkBonus: 12000, defBonus: 3900 },
 
   // ── 護身之寶 ──
-  { id: "hushenfu", name: "護身符", kind: "treasure", desc: "注入法力後可擋一次致命攻擊的符籙。", price: 110, defBonus: 7 },
-  { id: "wuguangyi", name: "烏光甲衣", kind: "treasure", desc: "陰煞之氣淬煉的軟甲,烏光流轉。", price: 240, defBonus: 10 },
-  { id: "fengleichi", name: "風雷翅", kind: "treasure", desc: "風火之鱗煉製的雙翅,雷光一閃百里之外,兼可護身。", price: 6000, defBonus: 560 },
-  { id: "jinganghu", name: "金剛璃甲", kind: "treasure", desc: "蛟龍之鱗綴玄天寒鐵而成,刀劍難傷。", price: 2400, defBonus: 230 },
+  { id: "hushenfu", name: "護身符", kind: "amulet", desc: "注入法力後可擋一次致命攻擊的符籙。", price: 110, defBonus: 7 },
+  { id: "wuguangyi", name: "烏光甲衣", kind: "robe", desc: "陰煞之氣淬煉的軟甲,烏光流轉。", price: 240, defBonus: 10 },
+  { id: "fengleichi", name: "風雷翅", kind: "amulet", desc: "風火之鱗煉製的雙翅,雷光一閃百里之外,兼可護身增速。", price: 6000, defBonus: 560, speedBonus: 40 },
+  { id: "jinganghu", name: "金剛璃甲", kind: "robe", desc: "蛟龍之鱗綴玄天寒鐵而成,刀劍難傷。", price: 2400, defBonus: 230 },
+
+  // ── 符籙(攻擊/輔助,符籙槽;高階由妖獸掉落) ──
+  { id: "fu_liehuo", name: "烈火焚天符", kind: "talisman", desc: "貼身催動,火靈附刃,攻擊大增。", element: "火", price: 320, atkBonus: 12 },
+  { id: "fu_wulei", name: "五雷正法符", kind: "talisman", desc: "五雷轟頂,攻速兼備的雷系符籙。", element: "金", price: 3200, atkBonus: 180, speedBonus: 20 },
+  { id: "fu_xuanyin", name: "玄陰噬魂符", kind: "talisman", desc: "陰煞凝符,攻伐凌厲,大乘修士所用。", price: 42000, atkBonus: 2600, dropOnly: true, reqStage: 8 },
+  { id: "fu_taixu", name: "太虛混元符", kind: "talisman", desc: "仙家符籙,唯真仙可禦,攻伐之力超凡。", price: 0, atkBonus: 18000, dropOnly: true, reqStage: 10 },
+
+  // ── 靈寵(寵物槽,僅探索秘境 5% 獲得;增益靈石收益與攻防) ──
+  { id: "pet_linghu", name: "赤煉靈狐", kind: "pet", desc: "元嬰級靈寵,通人性,伴主嗅寶——靈石收益 ×1.2,略增攻防。", price: 0, stoneMult: 1.2, atkBonus: 120, defBonus: 80, reqStage: 4, dropOnly: true },
+  { id: "pet_xuangui", name: "玄冰靈龜", kind: "pet", desc: "化神級靈寵,龜甲護主——靈石收益 ×1.2,大增防禦。", price: 0, stoneMult: 1.2, atkBonus: 300, defBonus: 1200, reqStage: 5, dropOnly: true },
+  { id: "pet_jinpeng", name: "金翅靈鵬", kind: "pet", desc: "大乘級靈寵,馱主遨遊——靈石收益 ×1.2,大增攻擊與速度。", price: 0, stoneMult: 1.2, atkBonus: 6000, defBonus: 2000, speedBonus: 120, reqStage: 8, dropOnly: true },
+  { id: "pet_tianhu", name: "九尾天狐", kind: "pet", desc: "真仙級靈寵,九尾通天——靈石收益 ×1.2,攻防俱強。", price: 0, stoneMult: 1.2, atkBonus: 40000, defBonus: 20000, speedBonus: 200, reqStage: 10, dropOnly: true },
+  { id: "pet_hundun", name: "混沌幼獸", kind: "pet", desc: "金仙級靈寵,吞天噬地之姿——靈石收益 ×1.2,攻防冠絕。", price: 0, stoneMult: 1.2, atkBonus: 120000, defBonus: 60000, speedBonus: 400, reqStage: 11, dropOnly: true },
+
+  // ── 煉器圖譜(妖獸掉落,使用後解鎖對應配方;藍框標示) ──
+  { id: "blueprint_xuanyin", name: "《玄陰噬魂符》符籙圖譜", kind: "recipe", desc: "記載玄陰噬魂符的煉製之法,參詳後可自行煉製。", price: 0, unlocksRecipe: "r_fu_xuanyin", dropOnly: true },
+  { id: "blueprint_taixu", name: "《太虛混元符》仙符圖譜", kind: "recipe", desc: "仙家符籙圖譜,唯真仙可參悟煉製。", price: 0, unlocksRecipe: "r_fu_taixu", dropOnly: true },
+
+  // ── 金源仙域仙器(五關卡妖獸掉落,強度遠超北寒) ──
+  { id: "jy_taiyi", name: "太乙金光劍", kind: "artifact", desc: "金源仙域至寶,太乙金光縱橫,無堅不摧。", element: "金", price: 0, atkBonus: 45000, defBonus: 8000, dropOnly: true, reqStage: 10 },
+  { id: "jy_hunyuan", name: "混元仙袍", kind: "robe", desc: "金源仙域煉就的仙袍,萬法不侵。", price: 0, defBonus: 40000, dropOnly: true, reqStage: 10 },
+
+  // ── 北寒仙尊獨有:更強大的仙法秘笈 ──
+  { id: "m_beiming", name: "《北冥玄天訣》", kind: "manual", desc: "北寒仙尊畢生所悟的無上仙法,水行之極,凍結仙靈。唯真仙可修。", price: 0, teaches: "beiming", dropOnly: true },
+
+  // ── 真仙 / 金仙頂尖仙法秘笈(極難取得,修煉數十萬載) ──
+  { id: "m_hunyuan", name: "《混元一氣仙訣》殘卷", kind: "manual", desc: "開天混元至法,參悟需真仙之境,苦修三十萬載方能大成。金源仙帝身隕方出。", price: 0, teaches: "hunyuan_yiqi", dropOnly: true },
+  { id: "m_taiqing", name: "《太清道韻九轉》玉冊", kind: "manual", desc: "太清仙尊遺留的九轉道韻,修習需五十萬載。太上金仙與浮屠塔高層機緣。", price: 0, teaches: "taiqing_daoyun", dropOnly: true },
+  { id: "m_zhutian", name: "《誅天神雷金仙法》仙簡", kind: "manual", desc: "唯金仙可修的無上殺伐仙法,修習需百萬載。傳說僅浮屠塔絕頂可得。", price: 0, teaches: "zhutian_shenlei", dropOnly: true },
 ];
 
 export const itemById = (id: string) => ITEMS.find((i) => i.id === id)!;

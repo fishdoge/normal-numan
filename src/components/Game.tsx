@@ -96,7 +96,7 @@ function CultivationBar() {
           className="btn text-base px-5 py-2 border-fuchsia-400/50 text-fuchsia-300 hover:bg-fuchsia-400/15 hover:border-fuchsia-400"
           disabled={busy || inCombat || s.stones < 100000000}
           onClick={() => act("wander")}
-          title="消耗 5000 年壽元 + 100 極品靈石。約 30% 得永久屬性,約 2.5% 直接得天仙丹,1% 遇金仙大 BOSS,餘則一無所獲。"
+          title="消耗 5000 年壽元 + 100 極品靈石。約 5% 觸發探索秘境(紫色機緣),約 2.5% 直接得天仙丹,30% 得永久屬性,1% 遇金仙大 BOSS,餘則一無所獲。"
         >
           雲遊四海
         </button>
@@ -167,15 +167,21 @@ export default function Game() {
 
   if (save.dead) return <DeathScreen />;
 
+  const isXian = REALMS[save.realmIdx]?.stage >= 10;
+
   return (
-    <main className="max-w-6xl mx-auto px-4 py-6">
+    <main className={`max-w-6xl mx-auto px-4 py-6 relative ${isXian ? "xian-aura" : ""}`}>
       {breakResult && <ResultModal modal={breakResult} onClose={closeBreak} />}
       {!breakResult && loot && <ResultModal modal={loot} onClose={closeLoot} />}
       <header className="flex items-baseline justify-between mb-5">
         <div>
-          <h1 className="text-2xl font-black tracking-[0.35em]">凡人修仙傳</h1>
+          <h1
+            className={`text-2xl font-black tracking-[0.35em] ${isXian ? "text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 via-amber-200 to-cyan-200" : ""}`}
+          >
+            凡人修仙傳
+          </h1>
           <p className="font-mono text-[10px] tracking-[0.4em] text-faded">
-            A MORTAL&apos;S JOURNEY TO IMMORTALITY
+            {isXian ? "ASCENDED · 得 道 成 仙" : "A MORTAL\u2019S JOURNEY TO IMMORTALITY"}
           </p>
         </div>
         <div className="flex gap-4 items-baseline">

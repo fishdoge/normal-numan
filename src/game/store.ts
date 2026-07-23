@@ -12,10 +12,20 @@ import {
   techLevelOf,
   techPowerMult,
   MAX_TECH_LEVEL,
+  XIANLI_MULT,
 } from "./engine";
 
 export type { SaveData, Modal };
-export { statsOf, maxLifeOf, learnYears, cultCostOf, techLevelOf, techPowerMult, MAX_TECH_LEVEL };
+export {
+  statsOf,
+  maxLifeOf,
+  learnYears,
+  cultCostOf,
+  techLevelOf,
+  techPowerMult,
+  MAX_TECH_LEVEL,
+  XIANLI_MULT,
+};
 
 interface ClientState {
   save: SaveData | null;

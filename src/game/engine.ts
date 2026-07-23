@@ -1,9 +1,9 @@
 // 伺服器權威遊戲引擎:所有獎勵運算在此執行,前端僅顯示
-import { COUNTERS, Element, Monster, formatDamage } from "./types";
+import { COUNTERS, Element, Monster, ItemDef, formatDamage } from "./types";
 import { REALMS } from "./data/realms";
 import { SECTS } from "./data/sects";
 import { techById } from "./data/techniques";
-import { itemById } from "./data/items";
+import { itemById, ITEMS } from "./data/items";
 import { LOCATIONS, MONSTERS, RECIPES, REGIONS } from "./data/world";
 import { MISSIONS } from "./data/missions";
 
@@ -11,6 +11,10 @@ export interface CombatState {
   monsterId: string;
   monsterHp: number;
   locationId: string;
+  isLord?: boolean; // 地域王 / 仙帝 / 超級 BOSS 遭遇(額外標示)
+  futuFloor?: number; // 浮屠塔:正在挑戰的層數(幻象太歲天尊)
+  bossHpMax?: number; // 動態 BOSS 的氣血上限(浮屠塔用)
+  bossAtk?: number; // 動態 BOSS 的攻擊(浮屠塔用)
 }
 
 export interface Learning {
@@ -30,8 +34,15 @@ export interface SaveData {
   inventory: Record<string, number>;
   learned: string[];
   learning: Learning | null;
-  equippedWeapon: string | null;
-  equippedArmor: string | null;
+  equippedWeapon: string | null; // 法器
+  equippedArmor: string | null; // 舊欄位(法衣);保留以相容,遷移至 equippedRobe
+  equippedRobe: string | null; // 法衣
+  equippedAmulet: string | null; // 護身符
+  equippedTalisman: string | null; // 符籙
+  equippedPet: string | null; // 靈寵
+  unlockedRecipes: string[]; // 已解鎖的圖譜配方 id
+  jinyuanUnlocked: boolean; // 金源仙域是否已由探索秘境解鎖
+  futuFloor: number; // 浮屠塔已通關的最高層數(幻象太歲天尊)
   kills: Record<string, number>;
   seen: string[];
   lordsSeen: string[]; // 已遭遇的地域王(妖獸領主)
@@ -41,12 +52,13 @@ export interface SaveData {
   lifeBonus: number;
   day: number;
   cultToday: number;
-  xianli: number; // 仙靈力(真仙專屬,攻擊倍數單位)
+  xianli: number; // 仙靈力(真仙專屬,攻擊倍數單位,每點 +0.2 倍)
   techLevels: Record<string, number>; // 仙法等級(1~7),增靈珠強化
-  boonHp: number; // 雲遊四海永久加成
+  boonHp: number; // 雲遊四海永久加成(固定比例累加)
   boonAtk: number;
   boonDef: number;
   boonSpeed: number;
+  boonReset?: boolean; // 已執行 1.5 版 boon 歸零遷移
   dead: boolean;
   log: string[];
   combat: CombatState | null;
@@ -67,8 +79,11 @@ export interface ActionResult {
 
 const MAX_LOG = 60;
 
-// 每部秘笈的學習年數:境界需求 ×10 年
-export const learnYears = (techId: string) => techById(techId).reqStage * 10;
+// 每部秘笈的學習年數:仙法可自訂 learnYears,否則境界需求 ×10 年
+export const learnYears = (techId: string) => {
+  const t = techById(techId);
+  return t.learnYears ?? t.reqStage * 10;
+};
 
 // 打坐修煉每次消耗的壽元:5 年,隨大境界翻倍(練氣5 築基10 結丹20 元嬰40……)
 export const cultCostOf = (s: Pick<SaveData, "realmIdx">) =>
@@ -80,31 +95,57 @@ export const techLevelOf = (s: Pick<SaveData, "techLevels">, techId: string) =>
   s.techLevels?.[techId] ?? 1;
 export const techPowerMult = (level: number) => 1 + (level - 1) * 0.3;
 
+// 仙靈力:每一點 = 攻擊 ×0.2 倍(真仙專屬,紫色)
+export const XIANLI_MULT = 0.2;
+
 export const maxLifeOf = (s: Pick<SaveData, "realmIdx" | "lifeBonus">) =>
   REALMS[s.realmIdx].lifespan + s.lifeBonus;
 
 export function statsOf(s: SaveData) {
   const realm = REALMS[s.realmIdx];
   const sect = SECTS.find((x) => x.id === s.sectId);
+  // 各裝備槽(法器 / 法衣 / 護身符 / 符籙 / 靈寵)
   const weapon = s.equippedWeapon ? itemById(s.equippedWeapon) : null;
-  const armor = s.equippedArmor ? itemById(s.equippedArmor) : null;
-  const baseAtk = realm.atk + (sect?.bonus.atk ?? 0) + (weapon?.atkBonus ?? 0) + (s.boonAtk ?? 0);
-  // 仙靈力:一點 = 一倍攻擊力(真仙專屬,紫色)
+  const robe =
+    (s.equippedRobe ?? s.equippedArmor) ? itemById((s.equippedRobe ?? s.equippedArmor)!) : null;
+  const amulet = s.equippedAmulet ? itemById(s.equippedAmulet) : null;
+  const talisman = s.equippedTalisman ? itemById(s.equippedTalisman) : null;
+  const pet = s.equippedPet ? itemById(s.equippedPet) : null;
+  const gear = [weapon, robe, amulet, talisman, pet];
+  const sumAtk = gear.reduce((a, g) => a + (g?.atkBonus ?? 0), 0);
+  const sumDef = gear.reduce((a, g) => a + (g?.defBonus ?? 0), 0);
+  const sumSpeed = gear.reduce((a, g) => a + (g?.speedBonus ?? 0), 0);
+  const baseAtk = realm.atk + (sect?.bonus.atk ?? 0) + sumAtk + (s.boonAtk ?? 0);
+  // 仙靈力:一點 = 攻擊 ×0.2 倍(真仙專屬,紫色)
   const xianli = s.xianli ?? 0;
-  const atk = Math.floor(baseAtk * (1 + xianli));
-  const def = (weapon?.defBonus ?? 0) + (armor?.defBonus ?? 0) + (s.boonDef ?? 0);
+  const atk = Math.floor(baseAtk * (1 + xianli * XIANLI_MULT));
+  const def = sumDef + (s.boonDef ?? 0);
   const hpMax = realm.hpMax + (sect?.bonus.hp ?? 0) + (s.boonHp ?? 0);
   const mpMax = realm.mpMax + (sect?.bonus.mp ?? 0);
-  const speed =
-    realm.atk +
-    Math.floor(((weapon?.atkBonus ?? 0) + (armor?.defBonus ?? 0)) * 0.02) +
-    realm.stage * 5 +
-    (s.boonSpeed ?? 0);
-  return { realm, sect, atk, baseAtk, xianli, def, hpMax, mpMax, speed, weaponEl: weapon?.element };
+  const speed = realm.atk + Math.floor(sumSpeed) + realm.stage * 5 + (s.boonSpeed ?? 0);
+  const stoneMult = pet?.stoneMult ?? 1;
+  return {
+    realm,
+    sect,
+    atk,
+    baseAtk,
+    xianli,
+    def,
+    hpMax,
+    mpMax,
+    speed,
+    stoneMult,
+    weaponEl: weapon?.element ?? talisman?.element,
+  };
 }
 
 const rand = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
 const monsterById = (id: string): Monster => MONSTERS.find((m) => m.id === id)!;
+
+// 秘境可給予的裝備 / 秘笈池
+const EQUIP_KINDS = ["artifact", "robe", "amulet", "talisman", "pet"];
+const ITEMS_EQUIP = ITEMS.filter((i) => EQUIP_KINDS.includes(i.kind));
+const ITEMS_MANUAL = ITEMS.filter((i) => i.kind === "manual" && i.teaches);
 
 function elementMult(attacker: Element | undefined, defender: Element): number {
   if (!attacker) return 1;
@@ -144,6 +185,13 @@ export function newSave(name: string, sectId: string): SaveData {
     learning: null,
     equippedWeapon: null,
     equippedArmor: null,
+    equippedRobe: null,
+    equippedAmulet: null,
+    equippedTalisman: null,
+    equippedPet: null,
+    unlockedRecipes: [],
+    jinyuanUnlocked: false,
+    futuFloor: 0,
     kills: {},
     seen: [],
     lordsSeen: [],
@@ -223,15 +271,16 @@ function monsterTurn(s: SaveData): string[] {
   if (!s.combat) return [];
   const lines: string[] = [];
   const mon = monsterById(s.combat.monsterId);
+  const monAtk = s.combat.bossAtk ?? mon.atk;
   const { def, hpMax, speed } = statsOf(s);
-  const monSpeed = Math.floor(mon.atk * 1.2);
+  const monSpeed = Math.floor(monAtk * 1.2);
   const dodge = Math.min(0.35, Math.max(0.05, (speed / (speed + monSpeed)) * 0.5));
   if (Math.random() < dodge) {
     lines.push(`${mon.name} 撲擊而來,你身形一晃,堪堪避過!(閃避 ${Math.round(dodge * 100)}%)`);
     log(s, ...lines);
     return lines;
   }
-  const dmg = Math.max(1, rand(Math.floor(mon.atk * 0.8), Math.floor(mon.atk * 1.2)) - def);
+  const dmg = Math.max(1, rand(Math.floor(monAtk * 0.8), Math.floor(monAtk * 1.2)) - def);
   lines.push(`${mon.name} 反擊,你受到 ${dmg} 點傷害。`);
   s.hp -= dmg;
   if (s.hp <= 0) {
@@ -247,7 +296,41 @@ function monsterTurn(s: SaveData): string[] {
 
 function winCombat(s: SaveData): Modal {
   const mon = monsterById(s.combat!.monsterId);
-  const stones = rand(mon.stones[0], mon.stones[1]);
+  const { stoneMult } = statsOf(s);
+
+  // 浮屠塔:通關一層 → 記錄層數、給予隨層數遞增的獎勵
+  const floor = s.combat!.futuFloor;
+  if (floor && mon.id === "huanxiang_taisui") {
+    s.combat = null;
+    s.futuFloor = Math.max(s.futuFloor, floor);
+    const reward = Math.floor(200000 * floor * stoneMult);
+    s.stones += reward;
+    const lines = [`你在浮屠塔擊碎第 ${floor} 層的幻象太歲天尊!`, `靈石 +${reward}`];
+    // 每 5 層必得天仙丹;每 10 層必得金魂丹
+    if (floor % 10 === 0) {
+      give(s, "jinhundan");
+      lines.push("塔靈嘉獎:【金魂丹】一枚!");
+    } else if (floor % 5 === 0) {
+      give(s, "tianxiandan");
+      lines.push("塔靈嘉獎:【天仙丹】一枚!");
+    } else if (Math.random() < 0.25) {
+      give(s, "tianxiandan");
+      lines.push("幻象崩解間,一枚【天仙丹】墜落!");
+    }
+    // 高層機緣:頂尖仙法秘笈(極難)
+    if (floor >= 30 && !s.learned.includes("zhutian_shenlei") && Math.random() < 0.1) {
+      give(s, "m_zhutian");
+      lines.push("塔頂金光大盛——你竟得傳說中的【《誅天神雷金仙法》仙簡】!");
+    } else if (floor >= 15 && !s.learned.includes("taiqing_daoyun") && Math.random() < 0.12) {
+      give(s, "m_taiqing");
+      lines.push("幻象深處浮現一卷【《太清道韻九轉》玉冊】,你伸手攝來!");
+    }
+    lines.push(`下一層(第 ${floor + 1} 層)的幻象太歲天尊,將強大一倍。`);
+    log(s, `浮屠塔第 ${floor} 層告破!靈石 +${reward}。`);
+    return { title: `浮 屠 塔 · 第 ${floor} 層`, success: true, lines };
+  }
+
+  const stones = Math.floor(rand(mon.stones[0], mon.stones[1]) * stoneMult);
   const dropNames: string[] = [];
   for (const d of mon.drops) {
     if (Math.random() < d.chance) {
@@ -278,6 +361,109 @@ function winCombat(s: SaveData): Modal {
   };
 }
 
+// 依道具種類裝備到對應槽位;回傳是否成功
+function equipToSlot(s: SaveData, item: ItemDef): boolean {
+  switch (item.kind) {
+    case "artifact":
+      s.equippedWeapon = item.id;
+      return true;
+    case "robe":
+    case "treasure":
+      s.equippedRobe = item.id;
+      return true;
+    case "amulet":
+      s.equippedAmulet = item.id;
+      return true;
+    case "talisman":
+      s.equippedTalisman = item.id;
+      return true;
+    case "pet":
+      s.equippedPet = item.id;
+      return true;
+    default:
+      return false;
+  }
+}
+const slotVerb = (kind: string) =>
+  kind === "artifact"
+    ? "祭於身前,攻伐大增"
+    : kind === "talisman"
+      ? "貼身催動"
+      : kind === "pet"
+        ? "收為靈寵,伴隨左右"
+        : "穿戴護身";
+
+// 探索秘境(雲遊際遇,紫色):秘笈 / 靈石 / 法術 / 裝備 / 靈寵,並有機會解鎖金源仙域
+function exploreSecretRealm(s: SaveData): ActionResult {
+  const realm = REALMS[s.realmIdx];
+  const lines: string[] = ["雲遊途中,你踏入一處與世隔絕的上古【秘境】——"];
+  const roll = Math.random();
+
+  // 12% 解鎖金源仙域(僅真仙,且尚未解鎖)
+  if (realm.stage >= 10 && !s.jinyuanUnlocked && roll < 0.12) {
+    s.jinyuanUnlocked = true;
+    lines.push(
+      "秘境盡頭,一道金色仙門轟然洞開——【金源仙域】的入口自此為你顯現!",
+      "遊歷探索的地圖上,金源仙域已然解鎖。其中妖獸之強,遠勝北寒五十倍,慎入。",
+    );
+    log(s, "你於秘境深處尋得通往【金源仙域】的仙門,新地圖解鎖!");
+    return { save: s, loot: { title: "秘 境 · 金 源 仙 門", success: true, lines } };
+  }
+
+  // 5% 得靈寵(依境界給對應等級靈寵)
+  if (roll < 0.17) {
+    const petPool = [
+      { id: "pet_linghu", stage: 4 },
+      { id: "pet_xuangui", stage: 5 },
+      { id: "pet_jinpeng", stage: 8 },
+      { id: "pet_tianhu", stage: 10 },
+      { id: "pet_hundun", stage: 11 },
+    ].filter((p) => realm.stage >= p.stage);
+    const pick = petPool.length ? petPool[petPool.length - 1] : { id: "pet_linghu", stage: 4 };
+    give(s, pick.id);
+    const pet = itemById(pick.id);
+    lines.push(`秘境靈氣氤氳,一頭【${pet.name}】與你一見投緣,自願隨行!`, pet.desc);
+    log(s, `你在秘境中收服了靈寵【${pet.name}】!`);
+    return { save: s, loot: { title: "秘 境 · 靈 寵 相 隨", success: true, lines } };
+  }
+
+  // 25% 完整裝備(依境界給予,秘境不受 dropOnly 限制)
+  if (roll < 0.42) {
+    const gearPool = ITEMS_EQUIP.filter(
+      (i) => (i.reqStage ?? 1) <= realm.stage && i.id !== "jinhundan",
+    );
+    if (gearPool.length) {
+      const g = gearPool[rand(0, gearPool.length - 1)];
+      give(s, g.id);
+      lines.push(`石室中靜置著一件【${g.name}】,你伸手取之,如獲至寶!`, g.desc);
+      log(s, `你於秘境得到裝備【${g.name}】!`);
+      return { save: s, loot: { title: "秘 境 · 仙 家 遺 寶", success: true, lines } };
+    }
+  }
+
+  // 25% 法術秘笈(依境界)
+  if (roll < 0.67) {
+    const manualPool = ITEMS_MANUAL.filter((i) => {
+      const t = i.teaches ? techById(i.teaches) : null;
+      return t && t.reqStage <= realm.stage && !s.learned.includes(i.teaches!);
+    });
+    if (manualPool.length) {
+      const m = manualPool[rand(0, manualPool.length - 1)];
+      give(s, m.id);
+      lines.push(`一方玉簡懸浮於秘境祭壇——【${m.name}】,你小心收入囊中。`, m.desc);
+      log(s, `你於秘境得到秘笈【${m.name}】!`);
+      return { save: s, loot: { title: "秘 境 · 玉 簡 傳 承", success: true, lines } };
+    }
+  }
+
+  // 其餘:大量靈石
+  const gain = Math.floor(realm.expNeed * 0.5) + rand(100, 500);
+  s.stones += gain;
+  lines.push(`秘境中一座靈石礦脈熠熠生輝,你滿載而歸——靈石 +${gain}!`);
+  log(s, `你於秘境採得靈石 ${gain} 枚!`);
+  return { save: s, loot: { title: "秘 境 · 靈 石 礦 脈", success: true, lines } };
+}
+
 // ═══ 主入口 ═══
 export function applyAction(
   s: SaveData,
@@ -301,10 +487,26 @@ function applyActionInner(
   if (!Array.isArray(s.lordsSeen)) s.lordsSeen = [];
   if (typeof s.xianli !== "number") s.xianli = 0;
   if (!s.techLevels || typeof s.techLevels !== "object") s.techLevels = {};
+  // 1.5 版:雲遊四海 boon 曾為指數成長,一律歸零重置(遊戲平衡)
+  if (!s.boonReset) {
+    s.boonHp = 0;
+    s.boonAtk = 0;
+    s.boonDef = 0;
+    s.boonSpeed = 0;
+    s.boonReset = true;
+  }
   if (typeof s.boonHp !== "number") s.boonHp = 0;
   if (typeof s.boonAtk !== "number") s.boonAtk = 0;
   if (typeof s.boonDef !== "number") s.boonDef = 0;
   if (typeof s.boonSpeed !== "number") s.boonSpeed = 0;
+  // 1.5 版:裝備槽重構——舊 equippedArmor(法衣)遷移至 equippedRobe
+  if (s.equippedRobe === undefined) s.equippedRobe = s.equippedArmor ?? null;
+  if (s.equippedAmulet === undefined) s.equippedAmulet = null;
+  if (s.equippedTalisman === undefined) s.equippedTalisman = null;
+  if (s.equippedPet === undefined) s.equippedPet = null;
+  if (!Array.isArray(s.unlockedRecipes)) s.unlockedRecipes = [];
+  if (typeof s.jinyuanUnlocked !== "boolean") s.jinyuanUnlocked = false;
+  if (typeof s.futuFloor !== "number") s.futuFloor = 0;
 
   if (s.dead && type !== "reset") return { save: s, error: "你已道隕,唯有轉世重修。" };
 
@@ -358,8 +560,24 @@ function applyActionInner(
         log(s, "你氣血充盈,無需調息。");
         return { save: s };
       }
+      // 調息消耗壽元:為打坐修煉的 2 倍
+      const restCost = cultCostOf(s) * 2;
+      const cap = maxLifeOf(s);
+      if (s.age + restCost >= cap) {
+        s.age = cap;
+        s.dead = true;
+        s.combat = null;
+        log(
+          s,
+          "你強行運轉周天調息療傷,卻覺生機如燭火將熄——壽元已盡。",
+          `享年 ${cap} 年,道隕於【${REALMS[s.realmIdx].name}】。`,
+        );
+        return { save: s };
+      }
+      s.age += restCost;
+      s.day = s.age;
       s.hp = hpMax;
-      log(s, "你緩緩吐納,周天運轉,氣血盡復。");
+      log(s, `你緩緩吐納,周天運轉,氣血盡復(耗壽元 ${restCost} 年,現 ${s.age}/${cap})。`);
       return { save: s };
     }
 
@@ -383,7 +601,12 @@ function applyActionInner(
       // 1% 遭遇金仙境超級大 BOSS
       if (roll < 0.01) {
         const boss = monsterById("jinxian");
-        s.combat = { monsterId: boss.id, monsterHp: boss.hp, locationId: "__wander__" };
+        s.combat = {
+          monsterId: boss.id,
+          monsterHp: boss.hp,
+          locationId: "__wander__",
+          isLord: true,
+        };
         if (!s.seen.includes(boss.id)) s.seen.push(boss.id);
         if (!s.lordsSeen.includes(boss.id)) s.lordsSeen.push(boss.id);
         log(
@@ -392,8 +615,12 @@ function applyActionInner(
         );
         return { save: s };
       }
+      // 5% 探索秘境(紫色際遇):秘笈 / 靈石 / 法術 / 裝備,並有機會解鎖金源仙域
+      if (roll < 0.06) {
+        return exploreSecretRealm(s);
+      }
       // 2.5% 直接得天仙丹
-      if (roll < 0.035) {
+      if (roll < 0.085) {
         give(s, "tianxiandan");
         log(s, "雲遊至一處仙家洞府,你於塵封玉匣中尋得一枚【天仙丹】——曠世機緣!");
         return {
@@ -409,25 +636,25 @@ function applyActionInner(
           },
         };
       }
-      // 30% 永久屬性提升
-      if (roll < 0.335) {
-        const { hpMax, atk, def, speed } = statsOf(s);
+      // 30% 永久屬性提升(固定比例:以「境界基礎值」的 3% 累加,非指數成長)
+      if (roll < 0.385) {
+        const realm = REALMS[s.realmIdx];
         const kind = rand(0, 3);
         let line: string;
         if (kind === 0) {
-          const g = Math.max(5, Math.floor(hpMax * 0.05));
+          const g = Math.max(5, Math.floor(realm.hpMax * 0.03));
           s.boonHp += g;
           line = `於仙山秘境洗髓伐毛,氣血上限永久 +${g}!`;
         } else if (kind === 1) {
-          const g = Math.max(2, Math.floor(atk * 0.05));
+          const g = Math.max(2, Math.floor(realm.atk * 0.03));
           s.boonAtk += g;
           line = `得一位隱世前輩指點武道,攻擊永久 +${g}!`;
         } else if (kind === 2) {
-          const g = Math.max(2, Math.floor((def + 10) * 0.5));
+          const g = Math.max(2, Math.floor(realm.atk * 0.03));
           s.boonDef += g;
           line = `於古戰場悟得護體真意,防禦永久 +${g}!`;
         } else {
-          const g = Math.max(2, Math.floor(speed * 0.08));
+          const g = Math.max(2, Math.floor(realm.stage * 3));
           s.boonSpeed += g;
           line = `踏遍名山大川,身法漸臻化境,速度永久 +${g}!`;
         }
@@ -437,7 +664,7 @@ function applyActionInner(
           loot: { title: "雲 遊 際 遇", success: true, lines: ["歷經五千載雲遊,終有所得:", line] },
         };
       }
-      // 70% 一無所獲
+      // 一無所獲
       log(s, "雲遊四海五千載,山川壯麗,人事滄桑,卻未逢機緣,徒增閱歷而已。");
       return {
         save: s,
@@ -573,20 +800,26 @@ function applyActionInner(
       const lordChance = 0.02 + Math.random() * 0.01;
       if (region?.lordId && Math.random() < lordChance) {
         const lord = monsterById(region.lordId);
-        s.combat = { monsterId: lord.id, monsterHp: lord.hp, locationId: loc.id };
+        s.combat = { monsterId: lord.id, monsterHp: lord.hp, locationId: loc.id, isLord: true };
         if (!s.seen.includes(lord.id)) s.seen.push(lord.id);
         if (!s.lordsSeen.includes(lord.id)) s.lordsSeen.push(lord.id);
         log(
           s,
-          `天地驟然一暗——${loc.name} 的地域之王【${lord.name}】現身了!(${lord.element}屬性)絕世凶威,撲面而來!`,
+          `⚠ 天地驟然一暗——${loc.name} 的地域之王【${lord.name}】現身了!(${lord.element}屬性)絕世凶威,撲面而來!`,
         );
         return { save: s };
       }
       const mid = loc.monsters[rand(0, loc.monsters.length - 1)];
       const mon = monsterById(mid);
-      s.combat = { monsterId: mid, monsterHp: mon.hp, locationId: loc.id };
+      s.combat = { monsterId: mid, monsterHp: mon.hp, locationId: loc.id, isLord: mon.isLord };
       if (!s.seen.includes(mid)) s.seen.push(mid);
-      log(s, `你主動深入 ${loc.name} 尋妖,遭遇了 ${mon.name}(${mon.element}屬性)!`);
+      if (mon.isLord && !s.lordsSeen.includes(mid)) s.lordsSeen.push(mid);
+      log(
+        s,
+        mon.isLord
+          ? `⚠ 你踏入 ${loc.name},仙威如淵——【${mon.name}】(${mon.element}屬性)橫亙眼前!`
+          : `你主動深入 ${loc.name} 尋妖,遭遇了 ${mon.name}(${mon.element}屬性)!`,
+      );
       return { save: s };
     }
 
@@ -647,6 +880,38 @@ function applyActionInner(
       return { save: s };
     }
 
+    case "challengeFutu": {
+      if (s.combat) return { save: s, error: "激戰之中,無法登塔。" };
+      // 浮屠塔僅真仙可挑戰,且需先解鎖金源仙域
+      if (REALMS[s.realmIdx].stage < 10) {
+        return { save: s, error: "浮屠塔位於金源仙域深處,唯有飛昇真仙方能踏入。" };
+      }
+      if (!s.jinyuanUnlocked) {
+        return { save: s, error: "你尚未尋得金源仙域,浮屠塔無從得見。" };
+      }
+      const base = monsterById("huanxiang_taisui");
+      const floor = s.futuFloor + 1; // 挑戰下一層(從第 1 層起)
+      const mult = Math.pow(2, floor - 1); // 每層強度翻倍
+      const bossHp = Math.floor(base.hp * mult);
+      const bossAtk = Math.floor(base.atk * mult);
+      s.combat = {
+        monsterId: base.id,
+        monsterHp: bossHp,
+        locationId: "__futu__",
+        isLord: true,
+        futuFloor: floor,
+        bossHpMax: bossHp,
+        bossAtk,
+      };
+      if (!s.seen.includes(base.id)) s.seen.push(base.id);
+      if (!s.lordsSeen.includes(base.id)) s.lordsSeen.push(base.id);
+      log(
+        s,
+        `⚠ 你踏上浮屠塔第 ${floor} 層——幻象太歲天尊自虛空凝形!(氣血 ${bossHp}、攻擊 ${bossAtk},較首層強 ${mult} 倍)`,
+      );
+      return { save: s };
+    }
+
     case "useItem": {
       const itemId = String(payload.itemId ?? "");
       const item = itemById(itemId);
@@ -680,14 +945,35 @@ function applyActionInner(
         return { save: s };
       }
 
-      if (item.kind === "artifact" || item.kind === "treasure") {
-        if (item.kind === "artifact") s.equippedWeapon = itemId;
-        else s.equippedArmor = itemId;
-        log(
-          s,
-          `你將【${item.name}】${item.kind === "artifact" ? "祭於身前,攻伐之力大增" : "穿戴護身"}。`,
-        );
+      // 裝備:法器 / 法衣 / 護身符 / 符籙 / 靈寵
+      if (["artifact", "robe", "treasure", "amulet", "talisman", "pet"].includes(item.kind)) {
+        if ((item.reqStage ?? 1) > realm.stage) {
+          log(s, `【${item.name}】非你此境界所能駕馭(需更高境界)。`);
+          return { save: s };
+        }
+        equipToSlot(s, item);
+        log(s, `你將【${item.name}】${slotVerb(item.kind)}。`);
         return { save: s };
+      }
+
+      // 煉器圖譜:使用後解鎖對應配方
+      if (item.kind === "recipe" && item.unlocksRecipe) {
+        if (s.unlockedRecipes.includes(item.unlocksRecipe)) {
+          log(s, `你早已參透【${item.name}】所載之法,無需再研。`);
+          return { save: s };
+        }
+        take(s, itemId);
+        s.unlockedRecipes.push(item.unlocksRecipe);
+        const rec = RECIPES.find((r) => r.id === item.unlocksRecipe);
+        log(s, `你參詳【${item.name}】,煉器堂新增可煉之物:【${rec?.name ?? "?"}】!`);
+        return {
+          save: s,
+          loot: {
+            title: "圖 譜 參 悟",
+            success: true,
+            lines: [`參透【${item.name}】`, `煉器新配方解鎖:${rec?.name ?? "?"}`],
+          },
+        };
       }
 
       // 金魂丹:真仙突破金仙
@@ -781,8 +1067,17 @@ function applyActionInner(
     case "buy": {
       const item = itemById(String(payload.itemId ?? ""));
       if (!item) return { save: s, error: "無此商品" };
-      if (item.life || item.lifePct || item.kind === "manual" || item.kind === "special") {
-        return { save: s, error: "此物坊市不售" };
+      if (
+        item.life ||
+        item.lifePct ||
+        item.kind === "manual" ||
+        item.kind === "special" ||
+        item.kind === "recipe" ||
+        item.kind === "pet" ||
+        item.dropOnly ||
+        (item.reqStage ?? 1) > 8
+      ) {
+        return { save: s, error: "此物坊市不售,唯有斬妖奪寶方能得之" };
       }
       if (s.stones < item.price) {
         log(s, `靈石不足,${item.name} 需 ${item.price} 靈石。`);
@@ -799,8 +1094,15 @@ function applyActionInner(
       if (!item || !take(s, item.id)) return { save: s, error: "並無此物" };
       const gain = Math.max(1, Math.floor(item.price * 0.6));
       s.stones += gain;
-      if (s.equippedWeapon === item.id && !(s.inventory[item.id] > 0)) s.equippedWeapon = null;
-      if (s.equippedArmor === item.id && !(s.inventory[item.id] > 0)) s.equippedArmor = null;
+      const gone = !(s.inventory[item.id] > 0);
+      if (gone) {
+        if (s.equippedWeapon === item.id) s.equippedWeapon = null;
+        if (s.equippedArmor === item.id) s.equippedArmor = null;
+        if (s.equippedRobe === item.id) s.equippedRobe = null;
+        if (s.equippedAmulet === item.id) s.equippedAmulet = null;
+        if (s.equippedTalisman === item.id) s.equippedTalisman = null;
+        if (s.equippedPet === item.id) s.equippedPet = null;
+      }
       log(s, `售出 ${item.name},得 ${gain} 靈石。`);
       return { save: s };
     }
@@ -808,6 +1110,14 @@ function applyActionInner(
     case "craft": {
       const rec = RECIPES.find((x) => x.id === payload.recipeId);
       if (!rec) return { save: s, error: "無此配方" };
+      // 高階配方(圖譜解鎖):需先由妖獸掉落圖譜研讀
+      if (rec.dropOnly && !s.unlockedRecipes.includes(rec.id)) {
+        return { save: s, error: "此配方尚未參透,需先取得對應圖譜研讀" };
+      }
+      const { realm } = statsOf(s);
+      if ((rec.reqStage ?? 1) > realm.stage) {
+        return { save: s, error: "境界不足,無法駕馭此配方" };
+      }
       if (s.stones < rec.stones) {
         log(s, `煉製 ${rec.name} 需 ${rec.stones} 靈石作爐火之資,靈石不足。`);
         return { save: s };
@@ -821,7 +1131,7 @@ function applyActionInner(
       for (const m of rec.materials) take(s, m.id, m.n);
       s.stones -= rec.stones;
       give(s, rec.result);
-      log(s, `爐火純青,三日三夜——你成功煉製出法器【${rec.name}】!`);
+      log(s, `爐火純青,三日三夜——你成功煉製出【${rec.name}】!`);
       return {
         save: s,
         loot: {
@@ -835,10 +1145,12 @@ function applyActionInner(
     case "equip": {
       const item = itemById(String(payload.itemId ?? ""));
       if (!item || (s.inventory[item.id] ?? 0) <= 0) return { save: s, error: "並無此物" };
-      if (item.kind === "artifact") s.equippedWeapon = item.id;
-      else if (item.kind === "treasure") s.equippedArmor = item.id;
-      else return { save: s, error: "此物無法裝備" };
-      log(s, `你將【${item.name}】${item.kind === "artifact" ? "祭於身前" : "穿戴護身"}。`);
+      const { realm } = statsOf(s);
+      if ((item.reqStage ?? 1) > realm.stage) {
+        return { save: s, error: "境界不足,無法駕馭此物" };
+      }
+      if (!equipToSlot(s, item)) return { save: s, error: "此物無法裝備" };
+      log(s, `你將【${item.name}】${slotVerb(item.kind)}。`);
       return { save: s };
     }
 

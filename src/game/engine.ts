@@ -231,7 +231,7 @@ function maybeEncounter(s: SaveData) {
     s.exp += gain;
     log(s, `打坐間心神空明,天地法則於眼前一閃而逝——頓悟!修為 +${gain}。`);
   } else if (roll < 0.05) {
-    const stones = Math.floor(realm.expNeed * 0.3) + rand(10, 30);
+    const stones = Math.floor(realm.expNeed * 0.005) + rand(10, 30);
     s.stones += stones;
     log(s, `你偶遇一位隕落修士的遺蛻,收殮入土後,拾得遺留靈石 ${stones} 枚。`);
   } else if (roll < 0.075) {

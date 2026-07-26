@@ -14,8 +14,9 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "凡人修仙傳 · 文字修仙",
-  description: "凡人流文字修仙遊戲 — 靈石、法力、五行法術、煉器、門派、探索洞窟。",
+  title: "LDZ 交易風雲傳 · 交易員得成神之路",
+  description:
+    "交易員養成放置遊戲 — 美金、精力、盤性策略、硬體升級、交易團隊、鏈上遊獵。LDZ 出品。",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

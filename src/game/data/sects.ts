@@ -1,45 +1,37 @@
 import { Sect } from "../types";
 
-// 越國七大修仙門派(取其五,依五行配置)
+// LDZ 交易風雲傳 — 四大交易團隊(沿用五行作為「交易屬性」相剋)
 export const SECTS: Sect[] = [
   {
-    id: "huangfeng",
-    name: "黃楓谷",
-    element: "木",
-    desc: "越國七派之一,韓立所屬。擅長丹藥、木系法術,底蘊深厚,弟子修煉穩紮穩打。",
-    startTech: "mujian",
-    bonus: { exp: 15 },
-  },
-  {
-    id: "yanyue",
-    name: "掩月宗",
-    element: "水",
-    desc: "以水月神功聞名,門中多女修,水系法術陰柔綿長,法力雄厚。",
-    startTech: "shuijian",
-    bonus: { mp: 40 },
-  },
-  {
-    id: "julian",
-    name: "巨劍門",
+    id: "ldz",
+    name: "LDZ",
     element: "金",
-    desc: "劍修門派,以巨劍術破萬法,攻擊凌厲,金系法器加成極高。",
+    desc: "阿兜領軍的頂級交易團隊,主打趨勢與指標實戰,報單績效冠絕社群。攻擊凌厲,出手即斬倉。",
     startTech: "jinren",
     bonus: { atk: 8 },
   },
   {
-    id: "huadao",
-    name: "化刀塢",
+    id: "bishengke",
+    name: "幣勝客",
     element: "火",
-    desc: "刀修聚集之地,刀罡如火,近戰兇悍,體魄強橫。",
+    desc: "高槓桿、高風險的爆倉流猛將集散地,順勢重倉,一波帶走。體魄(倉位)強橫。",
     startTech: "huoqiu",
     bonus: { hp: 60 },
   },
   {
-    id: "tianque",
-    name: "天闕堡",
-    element: "土",
-    desc: "堡壘型門派,土系防禦法術冠絕越國,弟子皮糙肉厚,擅打持久戰。",
-    startTech: "tudun",
-    bonus: { hp: 30, mp: 20 },
+    id: "onepct",
+    name: "1%交易者聯盟",
+    element: "水",
+    desc: "只做金字塔頂端 1% 的穩健派,資金控管綿密,精力(交易能量)雄厚,擅長打持久盤。",
+    startTech: "shuijian",
+    bonus: { mp: 40 },
+  },
+  {
+    id: "biai",
+    name: "幣癌",
+    element: "木",
+    desc: "全天候高頻套利的狂熱團隊,鏈上鏈下不眠不休,進修效率冠絕全場。",
+    startTech: "mujian",
+    bonus: { exp: 15 },
   },
 ];

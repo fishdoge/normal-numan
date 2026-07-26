@@ -14,25 +14,33 @@ export default function CharCreate({ name }: { name?: string }) {
   return (
     <main className="max-w-3xl mx-auto px-4 py-12">
       <header className="text-center mb-10">
-        <p className="font-mono text-xs tracking-[0.5em] text-gold/70 mb-3">
-          A MORTAL&apos;S JOURNEY
+        <div className="flex justify-center mb-4">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/ldz/adou.png"
+            alt="阿兜"
+            className="h-28 w-28 rounded-full object-cover border-2 border-emerald-400/40 shadow-[0_0_30px_rgba(52,211,153,0.25)]"
+          />
+        </div>
+        <p className="font-mono text-xs tracking-[0.5em] text-emerald-400/70 mb-3">
+          A TRADER&apos;S ROAD TO GODHOOD
         </p>
-        <h1 className="text-5xl font-black tracking-widest text-parchment">凡人修仙傳</h1>
+        <h1 className="text-5xl font-black tracking-widest text-parchment">LDZ 交易風雲傳</h1>
         <p className="mt-4 text-faded">
-          山村窮小子,資質平庸,唯有一縷不屈道心。
+          一個一無所有的韭菜,唯有一顆不服輸的交易心。
           <br />
-          靈石為財,法力為刃,五行相生相剋 —— 凡人亦可問鼎仙途。
+          美金為本,策略為刃,盤性相生相剋 —— 韭菜亦可登頂,成神封王。
         </p>
       </header>
 
       <section className="panel deco-frame mb-6 text-center">
-        <p className="panel-title">道 號</p>
-        <p className="text-2xl font-bold text-gold">{name || "無名散修"}</p>
-        <p className="text-xs text-faded mt-2">此道號於註冊仙籍時已定,將伴你一生仙途。</p>
+        <p className="panel-title">交 易 員 代 號</p>
+        <p className="text-2xl font-bold text-gold">{name || "無名散戶"}</p>
+        <p className="text-xs text-faded mt-2">此代號於註冊時已定,將伴你一生交易之路。</p>
       </section>
 
       <section className="panel deco-frame mb-8">
-        <p className="panel-title">拜入門派</p>
+        <p className="panel-title">選擇交易團隊</p>
         <div className="grid gap-3 sm:grid-cols-2">
           {SECTS.map((sect) => {
             const tech = techById(sect.startTech);
@@ -42,19 +50,21 @@ export default function CharCreate({ name }: { name?: string }) {
                 key={sect.id}
                 onClick={() => setSectId(sect.id)}
                 className={`text-left border rounded-sm p-3 transition-colors ${
-                  active ? "border-gold bg-gold/10" : "border-faded/25 hover:border-faded/60"
+                  active
+                    ? "border-emerald-400 bg-emerald-400/10"
+                    : "border-faded/25 hover:border-faded/60"
                 }`}
               >
                 <div className="flex items-baseline justify-between">
                   <span className="text-lg font-bold">{sect.name}</span>
-                  <span className={`chip ${ELEMENT_COLOR[sect.element]}`}>{sect.element}行</span>
+                  <span className={`chip ${ELEMENT_COLOR[sect.element]}`}>{sect.element}盤</span>
                 </div>
                 <p className="text-sm text-faded mt-1 leading-relaxed">{sect.desc}</p>
                 <p className="text-xs mt-2 text-cream/80">
-                  入門仙法:{tech.name} · {sect.bonus.exp ? `修煉效率 +${sect.bonus.exp}%` : ""}
-                  {sect.bonus.atk ? `攻擊 +${sect.bonus.atk}` : ""}
-                  {sect.bonus.hp ? `氣血 +${sect.bonus.hp} ` : ""}
-                  {sect.bonus.mp ? `法力 +${sect.bonus.mp}` : ""}
+                  入門策略:{tech.name} · {sect.bonus.exp ? `進修效率 +${sect.bonus.exp}%` : ""}
+                  {sect.bonus.atk ? `交易火力 +${sect.bonus.atk}` : ""}
+                  {sect.bonus.hp ? `倉位 +${sect.bonus.hp} ` : ""}
+                  {sect.bonus.mp ? `精力 +${sect.bonus.mp}` : ""}
                 </p>
               </button>
             );
@@ -68,9 +78,26 @@ export default function CharCreate({ name }: { name?: string }) {
           disabled={!sectId || busy}
           onClick={() => sectId && act("start", { sectId })}
         >
-          踏 上 仙 途
+          入 場 開 單
         </button>
       </div>
+
+      {/* LDZ 社群資訊 */}
+      <section className="mt-10 panel deco-frame text-center">
+        <div className="flex items-center justify-center gap-4 mb-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/ldz/ldz-logo.jpg" alt="LDZ" className="h-9 rounded" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/ldz/luka-logo.png" alt="LUKA" className="h-9 rounded" />
+        </div>
+        <p className="text-sm text-faded leading-relaxed">
+          本作由 <span className="text-emerald-300 font-bold">LDZ 交易團隊</span>{" "}
+          出品。加入阿兜社群,領取專屬福利、參與定期活動,與屋頂龜趨勢指標、RM 盤整指標一起實戰報單。
+        </p>
+        <p className="mt-3 font-mono text-gold">
+          BingX 交易所推薦碼:<span className="text-lg font-bold">PK6WLT</span>
+        </p>
+      </section>
     </main>
   );
 }

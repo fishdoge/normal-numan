@@ -5,18 +5,18 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: "#0d0b08",
-        coal: "#161310",
-        smoke: "#211d18",
-        parchment: "#ecdcb8",
-        cream: "#d8c69a",
-        faded: "#9a8a68",
-        vermillion: "#c03a2b",
-        cinnabar: "#e05a3a",
-        jade: "#4d9970",
-        gold: "#c9a227",
-        azure: "#4a7fa5",
-        // 五行
+        ink: "#050607",
+        coal: "#0b0f0e",
+        smoke: "#141a18",
+        parchment: "#e6f2ec",
+        cream: "#b9ccc2",
+        faded: "#6f8479",
+        vermillion: "#e0483a",
+        cinnabar: "#ff6a4a",
+        jade: "#34d399",
+        gold: "#e5b83b",
+        azure: "#4a9fd0",
+        // 盤性(五行)
         metal: "#d9d2c0",
         wood: "#5aa860",
         water: "#5a8fd0",

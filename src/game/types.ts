@@ -32,26 +32,13 @@ export function formatDamage(n: number): string {
   return `${n}`;
 }
 
-// 靈石面額:1 極品 = 100 上品 = 10,000 中品 = 1,000,000 下品
+// 美金顯示:千分位,大額以 K/M/B 縮寫
 export function formatStones(n: number): string {
-  if (n <= 0) return "0 下品";
-  const units: [string, number][] = [
-    ["極品", 1000000],
-    ["上品", 10000],
-    ["中品", 100],
-    ["下品", 1],
-  ];
-  const parts: string[] = [];
-  let rest = n;
-  for (const [label, v] of units) {
-    const q = Math.floor(rest / v);
-    if (q > 0) {
-      parts.push(`${q} ${label}`);
-      rest -= q * v;
-    }
-    if (parts.length >= 2) break; // 最多顯示兩級,避免冗長
-  }
-  return parts.join(" ");
+  if (n <= 0) return "$0";
+  if (n >= 1_000_000_000) return `$${(n / 1_000_000_000).toFixed(2)}B`;
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`;
+  if (n >= 10_000) return `$${(n / 1000).toFixed(1)}K`;
+  return `$${n.toLocaleString("en-US")}`;
 }
 
 export interface Realm {
@@ -80,28 +67,28 @@ export type ItemKind =
   | "treasure" // 舊:護身之寶(向後相容,視為 robe)
   | "special";
 
-// 裝備槽定義(順序即人物欄顯示順序)
+// 裝備槽定義(硬體配置,順序即交易員欄顯示順序)
 export type EquipSlot = "weapon" | "robe" | "amulet" | "talisman" | "pet";
 export const EQUIP_SLOTS: { slot: EquipSlot; label: string; kinds: ItemKind[] }[] = [
-  { slot: "weapon", label: "法器", kinds: ["artifact"] },
-  { slot: "robe", label: "法衣", kinds: ["robe", "treasure"] },
-  { slot: "amulet", label: "護身符", kinds: ["amulet"] },
-  { slot: "talisman", label: "符籙", kinds: ["talisman"] },
-  { slot: "pet", label: "靈寵", kinds: ["pet"] },
+  { slot: "weapon", label: "顯示卡 GPU", kinds: ["artifact"] },
+  { slot: "robe", label: "散熱系統", kinds: ["robe", "treasure"] },
+  { slot: "amulet", label: "不斷電 UPS", kinds: ["amulet"] },
+  { slot: "talisman", label: "處理器 CPU", kinds: ["talisman"] },
+  { slot: "pet", label: "交易機器人", kinds: ["pet"] },
 ];
 export const KIND_LABEL: Record<string, string> = {
-  material: "材料",
-  herb: "仙草",
-  pill: "丹藥",
-  manual: "秘笈",
-  artifact: "法器",
-  robe: "法衣",
-  amulet: "護身符",
-  talisman: "符籙",
-  pet: "靈寵",
-  recipe: "圖譜",
-  treasure: "法衣",
-  special: "仙物",
+  material: "零件",
+  herb: "能量飲",
+  pill: "營養補給",
+  manual: "策略手冊",
+  artifact: "顯示卡",
+  robe: "散熱",
+  amulet: "不斷電",
+  talisman: "處理器",
+  pet: "交易機器人",
+  recipe: "組裝藍圖",
+  treasure: "散熱",
+  special: "稀有道具",
 };
 export const slotOfKind = (kind: ItemKind): EquipSlot | null =>
   EQUIP_SLOTS.find((s) => s.kinds.includes(kind))?.slot ?? null;

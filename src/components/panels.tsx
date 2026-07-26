@@ -70,21 +70,21 @@ export function StatusPanel() {
 
   return (
     <div className="panel deco-frame">
-      <p className="panel-title">道 籍</p>
+      <p className="panel-title">交 易 員 檔 案</p>
       <div className="flex items-baseline justify-between mb-1">
         <span
-          className={`text-xl font-bold ${isXian ? "text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 via-amber-200 to-fuchsia-300" : ""}`}
+          className={`text-xl font-bold ${isXian ? "text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-lime-200 to-emerald-300" : ""}`}
         >
           {s.name}
         </span>
         <span className="text-sm text-faded">{sect?.name}</span>
       </div>
-      <p className={`mb-3 ${isXian ? "text-fuchsia-300 font-bold" : "text-gold"}`}>{realm.name}</p>
+      <p className={`mb-3 ${isXian ? "text-emerald-300 font-bold" : "text-gold"}`}>{realm.name}</p>
 
       <div className="space-y-2 text-sm">
         <div>
           <div className="flex justify-between text-xs text-faded mb-0.5">
-            <span>氣血</span>
+            <span>倉位</span>
             <span>
               {s.hp}/{hpMax}
             </span>
@@ -93,7 +93,7 @@ export function StatusPanel() {
         </div>
         <div>
           <div className="flex justify-between text-xs text-faded mb-0.5">
-            <span>法力</span>
+            <span>精力</span>
             <span>
               {s.mp}/{mpMax}
             </span>
@@ -102,7 +102,7 @@ export function StatusPanel() {
         </div>
         <div>
           <div className="flex justify-between text-xs text-faded mb-0.5">
-            <span>修為</span>
+            <span>交易量</span>
             <span>
               {s.exp}/{expNeed}
             </span>
@@ -114,36 +114,36 @@ export function StatusPanel() {
       <div className="divider">◆</div>
 
       <div className="grid grid-cols-2 gap-y-1 text-sm">
-        <span className="text-faded">壽元</span>
+        <span className="text-faded">資產</span>
         <span
           className={`text-right ${maxLifeOf(s) - s.age <= REALMS[s.realmIdx].lifespan * 0.2 ? "text-vermillion" : ""}`}
         >
-          {s.age}/{maxLifeOf(s)} 年
+          {s.age}/{maxLifeOf(s)} 載
         </span>
-        <span className="text-faded">修行</span>
+        <span className="text-faded">資歷</span>
         <span className="text-right">第 {s.day} 年</span>
         {s.xianli > 0 && (
           <>
-            <span className="text-faded">仙靈力</span>
+            <span className="text-faded">影響力</span>
             <span className={`text-right font-bold ${XIANLI_COLOR}`}>
-              {s.xianli} 點 (攻擊 ×{(1 + s.xianli * XIANLI_MULT).toFixed(1)})
+              {s.xianli} 點 (火力 ×{(1 + s.xianli * XIANLI_MULT).toFixed(1)})
             </span>
           </>
         )}
-        <span className="text-faded">攻擊</span>
+        <span className="text-faded">交易火力</span>
         <span className={`text-right ${s.xianli > 0 ? XIANLI_COLOR : ""}`}>{atk}</span>
-        <span className="text-faded">防禦</span>
+        <span className="text-faded">風控</span>
         <span className="text-right">{def}</span>
-        <span className="text-faded">速度</span>
+        <span className="text-faded">手速</span>
         <span className="text-right">{speed}</span>
         {s.boonHp + s.boonAtk + s.boonDef + s.boonSpeed > 0 && (
           <>
-            <span className="text-fuchsia-300">雲遊所得</span>
-            <span className="text-right text-fuchsia-300 text-xs">
+            <span className="text-emerald-300">盤感積累</span>
+            <span className="text-right text-emerald-300 text-xs">
               {[
-                s.boonHp && `血+${s.boonHp}`,
-                s.boonAtk && `攻+${s.boonAtk}`,
-                s.boonDef && `防+${s.boonDef}`,
+                s.boonHp && `倉+${s.boonHp}`,
+                s.boonAtk && `火+${s.boonAtk}`,
+                s.boonDef && `控+${s.boonDef}`,
                 s.boonSpeed && `速+${s.boonSpeed}`,
               ]
                 .filter(Boolean)
@@ -151,11 +151,11 @@ export function StatusPanel() {
             </span>
           </>
         )}
-        <span className="text-faded">靈石</span>
+        <span className="text-faded">美金</span>
         <span className="text-right text-gold">{formatStones(s.stones)}</span>
       </div>
 
-      <div className="divider">裝 備</div>
+      <div className="divider">硬 體 配 置</div>
       <div className="grid grid-cols-2 gap-y-1 text-sm">
         {EQUIP_SLOTS.map(({ slot, label }) => {
           const id = equipMap[slot];
@@ -164,7 +164,7 @@ export function StatusPanel() {
             <div key={slot} className="contents">
               <span className="text-faded">{label}</span>
               <span
-                className={`text-right ${it ? (slot === "pet" ? "text-fuchsia-300" : "text-cream") : "text-faded/50"}`}
+                className={`text-right ${it ? (slot === "pet" ? "text-emerald-300" : "text-cream") : "text-faded/50"}`}
               >
                 {it ? it.name : "—"}
               </span>
@@ -178,7 +178,7 @@ export function StatusPanel() {
           <div className="divider">◆</div>
           <div className="text-sm">
             <div className="flex items-baseline justify-between">
-              <span className="text-azure font-bold">修習中</span>
+              <span className="text-azure font-bold">進修中</span>
               <span className="text-xs font-mono text-faded">尚需 {s.learning.remain} 年</span>
             </div>
             <p className="text-cream mt-0.5">{techById(s.learning.techId).name}</p>
@@ -198,7 +198,7 @@ export function StatusPanel() {
           onPointerCancel={stopHold}
           disabled={!!s.combat || s.mp >= mpMax}
         >
-          聚靈回力(按住持續耗靈石回法力)
+          充能回氣(按住持續耗美金回精力)
         </button>
       </div>
     </div>
@@ -214,9 +214,9 @@ export function LogPanel() {
   }, [log]);
   return (
     <div className="panel h-64 lg:h-full flex flex-col">
-      <p className="panel-title">見 聞 錄</p>
+      <p className="panel-title">盤 面 日 誌</p>
       <div ref={boxRef} className="flex-1 overflow-y-auto space-y-1.5 pr-1 text-sm leading-relaxed">
-        {log.length === 0 && <p className="text-faded/50">仙路漫漫,一切由此開始……</p>}
+        {log.length === 0 && <p className="text-faded/50">交易之路漫漫,一切由此開始……</p>}
         {log.map((l, i) => (
           <p key={i} className="animate-floatUp">
             <span className="text-faded/50 font-mono text-xs mr-1">▸</span>
@@ -237,9 +237,9 @@ export function CombatPanel() {
   if (!combat) {
     return (
       <div className="panel deco-frame">
-        <p className="panel-title">戰 況</p>
+        <p className="panel-title">交 易 對 局</p>
         <p className="text-sm text-faded">
-          四下無事,靈風拂面。前往秘境「獵殺妖獸」,或採集時遭遇襲擊,戰況將顯示於此。
+          盤面平靜,無單在身。前往市場「挑戰交易對手」,或盯盤時遭遇突襲,對局將顯示於此。
         </p>
       </div>
     );
@@ -248,31 +248,31 @@ export function CombatPanel() {
   const mon = MONSTERS.find((m) => m.id === combat.monsterId)!;
   const usable = s.learned.map(techById);
   const isLord = combat.isLord || mon.isLord;
-  const hpMaxMon = combat.bossHpMax ?? mon.hp; // 浮屠塔動態 BOSS 用其實際上限
-  const displayName = combat.futuFloor ? `${mon.name} · 第 ${combat.futuFloor} 層` : mon.name;
+  const hpMaxMon = combat.bossHpMax ?? mon.hp; // 塔式對手動態上限
+  const displayName = combat.futuFloor ? `${mon.name} · 第 ${combat.futuFloor} 關` : mon.name;
 
   return (
     <div
-      className={`panel deco-frame ${isLord ? "border-fuchsia-400/70 shadow-[0_0_18px_rgba(232,121,249,0.25)]" : "border-vermillion/40"}`}
+      className={`panel deco-frame ${isLord ? "border-emerald-400/70 shadow-[0_0_18px_rgba(52,211,153,0.25)]" : "border-vermillion/40"}`}
     >
-      <p className={`panel-title ${isLord ? "text-fuchsia-300" : "text-cinnabar"}`}>
-        {combat.futuFloor ? "⚠ 浮 屠 塔" : isLord ? "⚠ 王 者 降 臨" : "激 戰"}
+      <p className={`panel-title ${isLord ? "text-emerald-300" : "text-cinnabar"}`}>
+        {combat.futuFloor ? "⚠ 爆 倉 擂 台" : isLord ? "⚠ 巨 鯨 現 身" : "交 易 對 決"}
       </p>
       <div className="flex items-baseline justify-between">
-        <span className={`text-lg font-bold ${isLord ? "text-fuchsia-300" : ""}`}>
+        <span className={`text-lg font-bold ${isLord ? "text-emerald-300" : ""}`}>
           {isLord && (
-            <span className="chip mr-2 text-fuchsia-400 border-fuchsia-400/60">
-              {combat.futuFloor ? "幻象" : "地域王"}
+            <span className="chip mr-2 text-emerald-400 border-emerald-400/60">
+              {combat.futuFloor ? "幻象莊家" : "巨鯨"}
             </span>
           )}
           {displayName}
         </span>
-        <span className={`chip ${ELEMENT_COLOR[mon.element]}`}>{mon.element}屬性</span>
+        <span className={`chip ${ELEMENT_COLOR[mon.element]}`}>{mon.element}盤</span>
       </div>
       <p className="text-sm text-faded mt-1">{mon.desc}</p>
       <div className="mt-3">
         <div className="flex justify-between text-xs text-faded mb-0.5">
-          <span>妖獸氣血</span>
+          <span>對手目標交易額</span>
           <span>
             {combat.monsterHp}/{hpMaxMon}
           </span>
@@ -287,7 +287,7 @@ export function CombatPanel() {
 
       <div className="mt-4 flex flex-wrap gap-2">
         <button className="btn" disabled={busy} onClick={() => act("attack")}>
-          法器攻擊
+          手動下單
         </button>
         {usable.map((t) => (
           <button
@@ -303,11 +303,11 @@ export function CombatPanel() {
           </button>
         ))}
         <button className="btn btn-danger" disabled={busy} onClick={() => act("flee")}>
-          遁走
+          砍單離場
         </button>
       </div>
       <p className="text-xs text-faded/60 mt-3">
-        五行相剋:金克木 · 木克土 · 土克水 · 水克火 · 火克金 —— 相剋傷害 ×1.5
+        盤性相剋:金克木 · 木克土 · 土克水 · 水克火 · 火克金 —— 對症下單清算 ×1.5
       </p>
     </div>
   );

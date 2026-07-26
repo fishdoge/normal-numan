@@ -1,6 +1,5 @@
-// 修仙排行榜 NPC(取材原著人物)
-// realmIdx 對應 REALMS 索引:每大境界 3 小階,煉氣0-2 築基3-5 結丹6-8 元嬰9-11
-// 化神12-14 煉虛15-17 合體18-20 大乘21-23 渡劫24 真仙25
+// 交易員排行榜 NPC(加密圈傳奇人物風格化)
+// realmIdx 對應 REALMS 索引:每大境界 3 小階
 export interface RankNpc {
   name: string;
   title: string;
@@ -8,14 +7,14 @@ export interface RankNpc {
 }
 
 export const RANK_NPCS: RankNpc[] = [
-  { name: "韓立", title: "掌天瓶主·人界第一人", realmIdx: 24 },
-  { name: "玄骨老怪", title: "大晉魔道巨擘", realmIdx: 21 },
-  { name: "銀月", title: "天狐一族·嵐仙傳承", realmIdx: 18 },
-  { name: "南宮婉", title: "掩月宗聖女", realmIdx: 15 },
-  { name: "紫靈仙子", title: "亂星海散修雙驕之一", realmIdx: 12 },
-  { name: "董萱兒", title: "天南第一美修", realmIdx: 10 },
-  { name: "陳巧倩", title: "星宮傳人", realmIdx: 9 },
-  { name: "墨大夫", title: "七玄門供奉", realmIdx: 6 },
-  { name: "厲飛雨", title: "七玄門天才", realmIdx: 4 },
-  { name: "張鐵", title: "神手谷藥童", realmIdx: 1 },
+  { name: "中本聰", title: "比特幣創世·匿名神話", realmIdx: 24 },
+  { name: "V 神", title: "以太坊教主·Vitalik", realmIdx: 21 },
+  { name: "CZ", title: "幣安帝國創辦人", realmIdx: 18 },
+  { name: "阿兜", title: "LDZ 交易團隊主理人", realmIdx: 15 },
+  { name: "鮑魚哥", title: "合約爆倉傳說·反指之王", realmIdx: 12 },
+  { name: "巨鯨老王", title: "鏈上巨鯨·砸盤大戶", realmIdx: 10 },
+  { name: "科學家 Neo", title: "MEV 套利大師", realmIdx: 9 },
+  { name: "定投教主", title: "囤幣佈道者", realmIdx: 6 },
+  { name: "槓桿仔阿明", title: "百倍合約亡命徒", realmIdx: 4 },
+  { name: "韭菜小張", title: "剛入場的散戶", realmIdx: 1 },
 ];

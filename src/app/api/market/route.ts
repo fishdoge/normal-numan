@@ -118,7 +118,7 @@ export async function DELETE(req: NextRequest) {
     total: string | null;
   };
   if (!r || Number(r.n) === 0) {
-    return NextResponse.json({ error: "靈石不足,或此單已被買走/不可購買" }, { status: 400 });
+    return NextResponse.json({ error: "美金不足,或此單已被買走/不可購買" }, { status: 400 });
   }
   return NextResponse.json({
     ok: true,

@@ -27,11 +27,11 @@ body::after {
     @apply bg-coal/80 border border-faded/25 rounded-sm p-4 relative;
   }
   .panel-title {
-    @apply font-mono text-xs tracking-[0.3em] text-gold/80 uppercase mb-3;
+    @apply font-mono text-xs tracking-[0.3em] text-emerald-400/80 uppercase mb-3;
   }
   .btn {
-    @apply inline-flex items-center justify-center px-3 py-1.5 border border-gold/40 text-cream text-sm
-      hover:bg-gold/15 hover:border-gold transition-colors rounded-sm disabled:opacity-30 disabled:pointer-events-none;
+    @apply inline-flex items-center justify-center px-3 py-1.5 border border-emerald-500/40 text-cream text-sm
+      hover:bg-emerald-500/15 hover:border-emerald-400 transition-colors rounded-sm disabled:opacity-30 disabled:pointer-events-none;
   }
   .btn-danger {
     @apply border-vermillion/50 text-cinnabar hover:bg-vermillion/15 hover:border-vermillion;

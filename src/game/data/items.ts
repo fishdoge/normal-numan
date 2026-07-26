@@ -1,118 +1,118 @@
 import { ItemDef } from "../types";
 
 export const ITEMS: ItemDef[] = [
-  // ── 材料 ──
-  { id: "tiekuang", name: "精鐵礦", kind: "material", desc: "凡鐵中偶含靈性者,煉器基礎材料。", element: "金", price: 4 },
-  { id: "hanjing", name: "寒玉精", kind: "material", desc: "萬年寒潭底凝結的玉精,觸手生寒。", element: "水", price: 8 },
-  { id: "jinleizhu", name: "金雷竹枝", kind: "material", desc: "受雷擊而不死的異竹,金中帶雷,煉製飛劍的絕佳材料。", element: "金", price: 31 },
-  { id: "yaodan", name: "妖獸內丹", kind: "material", desc: "一階妖獸體內凝結的內丹,蘊含精純妖力。", price: 45 },
-  { id: "huoyu", name: "火蟒之鱗", kind: "material", desc: "火蟒蛻下的赤鱗,炙熱不熄。", element: "火", price: 12 },
-  { id: "wenyu", name: "溫玉", kind: "material", desc: "地脈深處孕育的暖玉,土行至寶之基。", element: "土", price: 10 },
-  { id: "qingmu", name: "千年青木心", kind: "material", desc: "千年古木之心,木靈之氣濃郁欲滴。", element: "木", price: 14 },
-  { id: "yinsha", name: "陰煞之氣", kind: "material", desc: "洞窟深處聚集的陰煞,以玉瓶封存。", price: 18 },
-  { id: "xingchengang", name: "星辰鋼", kind: "material", desc: "隕星之核提煉的神鋼,亂星海特產,煉製頂階法寶必備。", element: "金", price: 47 },
-  { id: "xuantiehan", name: "玄天寒鐵", kind: "material", desc: "萬載玄冰包裹的寒鐵,重逾千鈞。", element: "水", price: 56 },
-  { id: "jiaolin", name: "蛟龍之鱗", kind: "material", desc: "血蛟蛻下的逆鱗,堅逾精鋼,隱有龍威。", element: "水", price: 83 },
-  { id: "mojing", name: "魔道魔晶", kind: "material", desc: "魔修隕落後凝結的晶核,魔氣森然。", price: 42 },
-  { id: "fenghuolin", name: "風火之鱗", kind: "material", desc: "天嵐妖鳥的翎鱗,蘊風火二性,煉風雷翅之基。", element: "火", price: 86 },
-  { id: "longjinggu", name: "真龍精骨", kind: "material", desc: "上古真龍遺蛻之骨,一寸龍骨一寸金。", price: 99 },
+  // ── 零件(材料) ──
+  { id: "tiekuang", name: "基礎晶片", kind: "material", desc: "量產晶片中偶含高良率者,硬體組裝基礎零件。", element: "金", price: 4 },
+  { id: "hanjing", name: "冷儲晶片", kind: "material", desc: "冷錢包深處凝結的低溫晶片,觸手生寒。", element: "水", price: 8 },
+  { id: "jinleizhu", name: "頂級算力晶片", kind: "material", desc: "承受過雷擊仍不燒毀的異晶,金中帶雷,組裝量化顯卡的絕佳零件。", element: "金", price: 31 },
+  { id: "yaodan", name: "對手晶核", kind: "material", desc: "低階對手爆倉後凝結的晶核,蘊含精純算力。", price: 45 },
+  { id: "huoyu", name: "超頻散熱鱗", kind: "material", desc: "槓桿火蟒蛻下的赤鱗,炙熱不熄,超頻散熱之材。", element: "火", price: 12 },
+  { id: "wenyu", name: "穩壓溫玉", kind: "material", desc: "地脈深處孕育的暖玉,穩壓供電至寶之基。", element: "土", price: 10 },
+  { id: "qingmu", name: "千年導熱矽", kind: "material", desc: "千年古木之心提煉的導熱矽,散熱之氣濃郁欲滴。", element: "木", price: 14 },
+  { id: "yinsha", name: "暗池數據", kind: "material", desc: "鏈上暗池聚集的隱匿數據,以加密瓶封存。", price: 18 },
+  { id: "xingchengang", name: "星辰鋼", kind: "material", desc: "隕星之核提煉的神鋼,山寨幣海特產,組裝頂階硬體必備。", element: "金", price: 47 },
+  { id: "xuantiehan", name: "玄天寒鐵", kind: "material", desc: "萬載冷儲包裹的寒鐵,重逾千鈞。", element: "水", price: 56 },
+  { id: "jiaolin", name: "巨鱷逆鱗", kind: "material", desc: "詐盤巨鱷蛻下的逆鱗,堅逾精鋼,隱有莊威。", element: "水", price: 83 },
+  { id: "mojing", name: "爆倉魔晶", kind: "material", desc: "賭徒爆倉後凝結的晶核,魔氣森然。", price: 42 },
+  { id: "fenghuolin", name: "高頻超頻鱗", kind: "material", desc: "高頻量化妖鳥的翎鱗,蘊風火二性,組裝超頻翅之基。", element: "火", price: 86 },
+  { id: "longjinggu", name: "巨鯨精骨", kind: "material", desc: "上古巨鯨遺蛻之骨,一寸鯨骨一寸金。", price: 99 },
 
-  // ── 仙草 ──
-  { id: "huanglongcao", name: "黃龍草", kind: "herb", desc: "常見靈草,煉製黃龍丹主藥。", price: 6, exp: 8 },
-  { id: "zhuguo", name: "朱果", kind: "herb", desc: "百年一熟的靈果,服之可增修為。", price: 13, exp: 16 },
-  { id: "tianlingguo", name: "天靈果", kind: "herb", desc: "傳說中的靈果,凡人服之可開靈根,修士服之修為大進。", price: 36, exp: 48 },
-  { id: "zijinhua", name: "紫金花", kind: "herb", desc: "生於絕壁的奇花,可入丹,微量回復法力。", price: 7, mp: 11 },
-  { id: "xuelingzhi", name: "血靈芝", kind: "herb", desc: "赤紅如血的靈芝,生機盎然,可直接服用療傷。", price: 9, heal: 29 },
-  { id: "qiannianlingru", name: "千年靈乳", kind: "herb", desc: "石鐘乳萬載凝成,一滴便可洗髓伐骨。", price: 180, exp: 300 },
-  { id: "ziyuanhua", name: "紫猿花", kind: "herb", desc: "南疆奇花,煉製凝嬰丹的主藥。", price: 240, exp: 470 },
-  { id: "longlinguo", name: "龍鱗果", kind: "herb", desc: "形如龍鱗的靈果,服之肉身堅如蛟龍。", price: 880, exp: 2400 },
-  { id: "huangjitiansui", name: "皇極天髓", kind: "herb", desc: "天地開闢時遺留的一縷精髓,化神以上方能承受。", price: 6900, exp: 21000 },
+  // ── 能量飲(仙草) ──
+  { id: "huanglongcao", name: "提神能量飲", kind: "herb", desc: "常見能量飲,組裝入門硬體主料,略增交易量。", price: 6, exp: 8 },
+  { id: "zhuguo", name: "紅牛精華", kind: "herb", desc: "百年一熟的能量精華,服之可增交易量。", price: 13, exp: 16 },
+  { id: "tianlingguo", name: "天靈醒腦果", kind: "herb", desc: "傳說中的醒腦靈果,散戶服之開竅,交易員服之盤感大進。", price: 36, exp: 48 },
+  { id: "zijinhua", name: "紫金咖啡豆", kind: "herb", desc: "生於絕壁的奇豆,可入補給,微量回復精力。", price: 7, mp: 11 },
+  { id: "xuelingzhi", name: "血靈補劑", kind: "herb", desc: "赤紅如血的補劑,生機盎然,可直接服用回補倉位。", price: 9, heal: 29 },
+  { id: "qiannianlingru", name: "千年靈參飲", kind: "herb", desc: "千年靈參萃取,一滴便可洗髓伐骨,盤感暴增。", price: 180, exp: 300 },
+  { id: "ziyuanhua", name: "紫猿醒神露", kind: "herb", desc: "南疆奇露,凝練交易直覺的主藥。", price: 240, exp: 470 },
+  { id: "longlinguo", name: "龍鱗抗壓果", kind: "herb", desc: "形如龍鱗的靈果,服之心臟堅如巨鯨,抗住任何插針。", price: 880, exp: 2400 },
+  { id: "huangjitiansui", name: "皇極天髓", kind: "herb", desc: "市場開闢時遺留的一縷精髓,化神級交易員以上方能承受。", price: 6900, exp: 21000 },
 
-  // ── 延壽極品(坊市不售,可遇不可求) ──
-  { id: "wanshoudan", name: "萬壽丹", kind: "pill", desc: "以百種靈藥煉成的延壽奇丹,服之增壽百載。", price: 20000, life: 100 },
-  { id: "yanshouguo", name: "延壽果", kind: "herb", desc: "萬載一熟的延壽靈果,服之增壽三百載,可遇不可求。", price: 80000, life: 300 },
-  { id: "panlongtao", name: "蟠龍壽桃", kind: "herb", desc: "傳說仙界流落的壽桃,龍紋盤繞,一枚增壽千載。", price: 500000, life: 1000 },
+  // ── 延壽極品(商城不售,可遇不可求) ── 資產類
+  { id: "wanshoudan", name: "萬倍回本丹", kind: "pill", desc: "以百種秘方煉成的續命奇丹,服之資產增百載。", price: 20000, life: 100 },
+  { id: "yanshouguo", name: "續命回本果", kind: "herb", desc: "萬載一熟的續命靈果,服之資產增三百載,可遇不可求。", price: 80000, life: 300 },
+  { id: "panlongtao", name: "蟠龍不敗桃", kind: "herb", desc: "傳說頂級資本流落的壽桃,龍紋盤繞,一枚增資產千載。", price: 500000, life: 1000 },
 
-  // ── 領主獎勵(地域王掉落,坊市不售) ──
-  { id: "zengyuandan", name: "增元丹", kind: "pill", desc: "地域王內丹煉成的奇丹,服之壯大本源,壽元上限永久增加 5%。", price: 100000, lifePct: 0.05 },
-  { id: "zenglingzhu", name: "增靈珠", kind: "special", desc: "蘊含精純法則之力的靈珠,可於「仙法」欄位強化一門仙法一個等級(法術最高七級)。", price: 150000 },
+  // ── 領主獎勵(巨鯨掉落,商城不售) ──
+  { id: "zengyuandan", name: "本金擴充丹", kind: "pill", desc: "巨鯨晶核煉成的奇丹,服之壯大本源,資產上限永久增加 5%。", price: 100000, lifePct: 0.05 },
+  { id: "zenglingzhu", name: "策略強化核", kind: "special", desc: "蘊含精純市場法則的強化核,可於「交易策略」欄強化一門策略一個等級(策略最高七級)。", price: 150000 },
 
-  // ── 真仙之物(飛昇後,坊市不售,極難獲得) ──
-  { id: "tianxiandan", name: "天仙丹", kind: "special", desc: "仙界秘傳,唯真仙可煉化。服之凝練一點仙靈力,攻伐之力倍增。", price: 0, xianli: 1 },
-  { id: "xiantian_zhong", name: "先天玄靈鐘", kind: "special", desc: "北寒仙域中孕育的先天仙器,煉化可得二點仙靈力。", price: 0, xianli: 2 },
-  { id: "xiantian_qi", name: "先天太清旗", kind: "special", desc: "開天遺留的先天至寶,煉化可得三點仙靈力。", price: 0, xianli: 3 },
-  { id: "jinhundan", name: "金魂丹", kind: "special", desc: "太上金仙隕落後凝成的金色魂丹,唯真仙可服。服之魂魄蛻變,可自真仙突破至金仙之境!", price: 0 },
+  // ── 封神之物(封神後,商城不售,極難獲得) ──
+  { id: "tianxiandan", name: "操盤密鑰", kind: "special", desc: "頂級圈秘傳,唯基金經理人可煉化。服之凝練一點影響力,交易火力倍增。", price: 0, xianli: 1 },
+  { id: "xiantian_zhong", name: "先天玄靈終端", kind: "special", desc: "頂級對沖基金中孕育的先天級硬體,煉化可得二點影響力。", price: 0, xianli: 2 },
+  { id: "xiantian_qi", name: "先天太清主機", kind: "special", desc: "開天遺留的先天至寶主機,煉化可得三點影響力。", price: 0, xianli: 3 },
+  { id: "jinhundan", name: "家族資本密令", kind: "special", desc: "傳奇資本隕落後凝成的金色密令,唯基金經理人可服。服之蛻變,可自基金經理人晉升家族基金經理人之境!", price: 0 },
 
-  // ── 丹藥 ──
-  { id: "huanglongdan", name: "黃龍丹", kind: "pill", desc: "煉氣期修士常用補氣丹藥,增長修為。", price: 30, exp: 34 },
-  { id: "huiyuandan", name: "回元丹", kind: "pill", desc: "迅速回復法力的丹藥。", price: 9, mp: 29 },
-  { id: "liaoshangdan", name: "療傷丹", kind: "pill", desc: "外敷內服皆可,癒合傷勢。", price: 22, heal: 120 },
-  { id: "zhujidan", name: "築基丹", kind: "pill", desc: "傳說服之可大增築基成功率的靈丹,有價無市。", price: 520, exp: 390 },
-  { id: "ningyingdan", name: "凝嬰丹", kind: "pill", desc: "結丹修士凝結元嬰的輔藥,紫猿花所煉。", price: 1800, exp: 1500 },
-  { id: "dahuandan", name: "大還丹", kind: "pill", desc: "起死回生的靈丹,重傷垂死亦可救回。", price: 5000, heal: 99999 },
-  { id: "jiuqulingshen", name: "九曲靈參丹", kind: "pill", desc: "九曲靈參煉製,法力如潮湧回。", price: 3000, mp: 99999 },
-  { id: "pojiedan", name: "破界丹", kind: "pill", desc: "衝擊大乘瓶頸的無上靈丹,以皇極天髓為引。", price: 4100, exp: 16000 },
+  // ── 營養補給(丹藥) ──
+  { id: "huanglongdan", name: "回氣補給包", kind: "pill", desc: "新手交易員常用補給,增長交易量。", price: 30, exp: 34 },
+  { id: "huiyuandan", name: "回精能量膠", kind: "pill", desc: "迅速回復精力的補給。", price: 9, mp: 29 },
+  { id: "liaoshangdan", name: "回倉修復劑", kind: "pill", desc: "內服外敷皆可,回補倉位。", price: 22, heal: 120 },
+  { id: "zhujidan", name: "晉級加成劑", kind: "pill", desc: "傳說服之可大增晉級考核成功率的補劑,有價無市。", price: 520, exp: 390 },
+  { id: "ningyingdan", name: "凝神突破劑", kind: "pill", desc: "衝擊更高階級的輔助補劑,紫猿醒神露所煉。", price: 1800, exp: 1500 },
+  { id: "dahuandan", name: "起死回生劑", kind: "pill", desc: "起死回生的補劑,倉位垂危亦可救回。", price: 5000, heal: 99999 },
+  { id: "jiuqulingshen", name: "九曲滿血能量", kind: "pill", desc: "九曲靈參煉製,精力如潮湧回。", price: 3000, mp: 99999 },
+  { id: "pojiedan", name: "破界晉升劑", kind: "pill", desc: "衝擊精英瓶頸的無上補劑,以皇極天髓為引。", price: 4100, exp: 16000 },
 
-  // ── 仙法秘笈 ──
-  { id: "m_qingzhufeng", name: "《青竹蜂雲劍訣》殘卷", kind: "manual", desc: "研讀後可習得青竹蜂雲劍訣。", price: 800, teaches: "qingzhufeng" },
-  { id: "m_leidun", name: "《雷遁術》玉簡", kind: "manual", desc: "研讀後可習得雷遁術。", price: 600, teaches: "leidun" },
-  { id: "m_hanbing", name: "《寒冰破》秘笈", kind: "manual", desc: "研讀後可習得寒冰破。", price: 550, teaches: "hanbing" },
-  { id: "m_liehuo", name: "《烈火符陣》符書", kind: "manual", desc: "研讀後可習得烈火符陣。", price: 650, teaches: "liehuo" },
-  { id: "m_dayan", name: "《大衍訣》石碑拓文", kind: "manual", desc: "研讀後可習得大衍訣。", price: 620, teaches: "dayan" },
-  { id: "m_jinlei", name: "《金雷竹御雷真訣》", kind: "manual", desc: "研讀後可習得御雷真訣。需築基期。", price: 3000, teaches: "jinlei" },
-  { id: "m_xuantian", name: "《玄天斬靈劍法》", kind: "manual", desc: "玄天之寶所載無上劍法。需結丹期。", price: 12000, teaches: "xuantian" },
-  { id: "m_aohan", name: "《傲寒六訣》", kind: "manual", desc: "極寒魔功,六訣連環,寒潮滅世。需元嬰期。", price: 60000, teaches: "aohan" },
-  { id: "m_dageng", name: "《大庚劍陣圖》", kind: "manual", desc: "古修士遺留的劍陣圖,金精所煉飛劍列陣,鋒銳無匹。需元嬰期。", price: 90000, teaches: "dageng" },
-  { id: "m_yuanci", name: "《元磁神光錄》", kind: "manual", desc: "元磁山之力化神光,鎮壓萬法。需化神期。", price: 400000, teaches: "yuanci" },
-  { id: "m_sanyan", name: "《三焰化火真經》", kind: "manual", desc: "三色靈焰合一,焚山煮海。需煉虛期。", price: 1500000, teaches: "sanyan" },
-  { id: "m_zhenlong", name: "《真龍九變》", kind: "manual", desc: "化身真龍的無上神通,大乘可修。", price: 8000000, teaches: "zhenlong" },
+  // ── 交易策略手冊 ──
+  { id: "m_qingzhufeng", name: "《多空蜂群套利》殘卷", kind: "manual", desc: "研讀後可習得多空蜂群套利。", price: 800, teaches: "qingzhufeng" },
+  { id: "m_leidun", name: "《閃電平倉》教學", kind: "manual", desc: "研讀後可習得閃電平倉。", price: 600, teaches: "leidun" },
+  { id: "m_hanbing", name: "《冰封空單》秘笈", kind: "manual", desc: "研讀後可習得冰封空單。", price: 550, teaches: "hanbing" },
+  { id: "m_liehuo", name: "《FOMO 連環單》符書", kind: "manual", desc: "研讀後可習得 FOMO 連環單。", price: 650, teaches: "liehuo" },
+  { id: "m_dayan", name: "《大盤鎮壓術》拓文", kind: "manual", desc: "研讀後可習得大盤鎮壓術。", price: 620, teaches: "dayan" },
+  { id: "m_jinlei", name: "《雷霆爆單真訣》", kind: "manual", desc: "研讀後可習得雷霆爆單。需銅牌交易員。", price: 3000, teaches: "jinlei" },
+  { id: "m_xuantian", name: "《玄天斬倉劍法》", kind: "manual", desc: "量化系統所載無上殺法。需銀牌交易員。", price: 12000, teaches: "xuantian" },
+  { id: "m_aohan", name: "《傲寒六重空單》", kind: "manual", desc: "極寒對沖,六訣連環,空頭滅世。需金牌交易員。", price: 60000, teaches: "aohan" },
+  { id: "m_dageng", name: "《七十二量化劍陣圖》", kind: "manual", desc: "古操盤手遺留的量化陣圖,七十二策略列陣,鋒銳無匹。需金牌交易員。", price: 90000, teaches: "dageng" },
+  { id: "m_yuanci", name: "《磁吸鎖倉神光錄》", kind: "manual", desc: "資金磁吸之力化神光,鎖死對手。需白金交易員。", price: 400000, teaches: "yuanci" },
+  { id: "m_sanyan", name: "《三焰爆倉流真經》", kind: "manual", desc: "三色情緒烈焰合一,焚山煮海。需鑽石交易員。", price: 1500000, teaches: "sanyan" },
+  { id: "m_zhenlong", name: "《真龍九轉套利》", kind: "manual", desc: "化身盤中真龍的無上套利神通,精英交易員可修。", price: 8000000, teaches: "zhenlong" },
 
-  // ── 法器(煉製所得) ──
-  { id: "qingsuo", name: "青索劍", kind: "artifact", desc: "青光如索的木系飛劍。", element: "木", price: 100, atkBonus: 6 },
-  { id: "jinjian", name: "金光巨劍", kind: "artifact", desc: "巨劍門制式法器,沉重鋒銳。", element: "金", price: 120, atkBonus: 7 },
-  { id: "hanbingzhui", name: "寒冰錐", kind: "artifact", desc: "寒玉精煉成的冰錐法器。", element: "水", price: 110, atkBonus: 5, defBonus: 2 },
-  { id: "huolingqi", name: "火靈旗", kind: "artifact", desc: "火蟒鱗煉製的赤色小旗,揮動間烈焰騰空。", element: "火", price: 130, atkBonus: 8 },
-  { id: "hutudun", name: "厚土盾", kind: "artifact", desc: "溫玉為心的土黃圓盾,防禦驚人。", element: "土", price: 110, atkBonus: 2, defBonus: 8 },
-  { id: "qingzhufengjian", name: "青竹蜂雲劍", kind: "artifact", desc: "以金雷竹煉製的本命飛劍,可一化為多。韓立的成名法寶。", element: "金", price: 600, atkBonus: 16, defBonus: 3 },
-  { id: "dagengjian", name: "大庚劍陣", kind: "artifact", desc: "七十二口金色小劍結成的劍陣,青蒙山金精所煉。", element: "金", price: 4700, atkBonus: 170, defBonus: 28 },
-  { id: "sanyanshan", name: "三焰扇", kind: "artifact", desc: "三色火鳥翎羽所製寶扇,一扇之威,焚天滅地。", element: "火", price: 12000, atkBonus: 750, defBonus: 75 },
-  { id: "yuancishan", name: "元磁神山", kind: "artifact", desc: "萬丈元磁山煉成寸許小山,祭出時鎮壓一切飛遁。", element: "土", price: 60000, atkBonus: 3800, defBonus: 1400 },
-  { id: "zhenlongyin", name: "真龍璽", kind: "artifact", desc: "真龍精骨所刻帝璽,蓋落之處,山河俱碎。", price: 160000, atkBonus: 12000, defBonus: 3900 },
+  // ── 顯示卡 GPU(組裝所得) ──
+  { id: "qingsuo", name: "入門顯卡 GT", kind: "artifact", desc: "青光如索的木盤入門顯卡。", element: "木", price: 100, atkBonus: 6 },
+  { id: "jinjian", name: "金光算力卡", kind: "artifact", desc: "LDZ 制式顯卡,沉重鋒銳,算力凌厲。", element: "金", price: 120, atkBonus: 7 },
+  { id: "hanbingzhui", name: "冰封散熱錐", kind: "artifact", desc: "冷儲晶片煉成的低溫顯卡。", element: "水", price: 110, atkBonus: 5, defBonus: 2 },
+  { id: "huolingqi", name: "火靈超頻旗", kind: "artifact", desc: "超頻散熱鱗煉製的赤色顯卡,運轉間烈焰騰空。", element: "火", price: 130, atkBonus: 8 },
+  { id: "hutudun", name: "厚土穩定卡", kind: "artifact", desc: "穩壓溫玉為心的土黃顯卡,穩定性驚人。", element: "土", price: 110, atkBonus: 2, defBonus: 8 },
+  { id: "qingzhufengjian", name: "蜂群量化卡", kind: "artifact", desc: "以頂級算力晶片組裝的本命量化顯卡,可一化為多。阿兜的成名硬體。", element: "金", price: 600, atkBonus: 16, defBonus: 3 },
+  { id: "dagengjian", name: "七十二核算力陣", kind: "artifact", desc: "七十二顆金色運算核心結成的算力陣,星辰鋼所煉。", element: "金", price: 4700, atkBonus: 170, defBonus: 28 },
+  { id: "sanyanshan", name: "三焰旗艦卡", kind: "artifact", desc: "三色火鳥翎羽所製旗艦顯卡,一運之威,焚天滅地。", element: "火", price: 12000, atkBonus: 750, defBonus: 75 },
+  { id: "yuancishan", name: "元磁神山主機", kind: "artifact", desc: "萬丈元磁算力凝成寸許主機,啟動時鎮壓一切行情。", element: "土", price: 60000, atkBonus: 3800, defBonus: 1400 },
+  { id: "zhenlongyin", name: "真龍旗艦顯卡", kind: "artifact", desc: "巨鯨精骨所刻旗艦核心,啟動之處,行情俱碎。", price: 160000, atkBonus: 12000, defBonus: 3900 },
 
-  // ── 護身之寶 ──
-  { id: "hushenfu", name: "護身符", kind: "amulet", desc: "注入法力後可擋一次致命攻擊的符籙。", price: 110, defBonus: 7 },
-  { id: "wuguangyi", name: "烏光甲衣", kind: "robe", desc: "陰煞之氣淬煉的軟甲,烏光流轉。", price: 240, defBonus: 10 },
-  { id: "fengleichi", name: "風雷翅", kind: "amulet", desc: "風火之鱗煉製的雙翅,雷光一閃百里之外,兼可護身增速。", price: 6000, defBonus: 560, speedBonus: 40 },
-  { id: "jinganghu", name: "金剛璃甲", kind: "robe", desc: "蛟龍之鱗綴玄天寒鐵而成,刀劍難傷。", price: 2400, defBonus: 230 },
+  // ── 散熱 / 不斷電(護身之寶) ──
+  { id: "hushenfu", name: "不斷電 UPS", kind: "amulet", desc: "注入電力後可擋一次斷電當機的不斷電系統。", price: 110, defBonus: 7 },
+  { id: "wuguangyi", name: "烏光散熱甲", kind: "robe", desc: "暗池數據淬煉的軟性散熱甲,烏光流轉。", price: 240, defBonus: 10 },
+  { id: "fengleichi", name: "風雷超頻翅", kind: "amulet", desc: "高頻超頻鱗煉製的雙翅散熱,毫秒一閃百里之外,兼可護機增速。", price: 6000, defBonus: 560, speedBonus: 40 },
+  { id: "jinganghu", name: "金剛璃甲散熱", kind: "robe", desc: "巨鱷逆鱗綴玄天寒鐵而成,水火不侵的頂級散熱。", price: 2400, defBonus: 230 },
 
-  // ── 符籙(攻擊/輔助,符籙槽;高階由妖獸掉落) ──
-  { id: "fu_liehuo", name: "烈火焚天符", kind: "talisman", desc: "貼身催動,火靈附刃,攻擊大增。", element: "火", price: 320, atkBonus: 12 },
-  { id: "fu_wulei", name: "五雷正法符", kind: "talisman", desc: "五雷轟頂,攻速兼備的雷系符籙。", element: "金", price: 3200, atkBonus: 180, speedBonus: 20 },
-  { id: "fu_xuanyin", name: "玄陰噬魂符", kind: "talisman", desc: "陰煞凝符,攻伐凌厲,大乘修士所用。", price: 42000, atkBonus: 2600, dropOnly: true, reqStage: 8 },
-  { id: "fu_taixu", name: "太虛混元符", kind: "talisman", desc: "仙家符籙,唯真仙可禦,攻伐之力超凡。", price: 0, atkBonus: 18000, dropOnly: true, reqStage: 10 },
+  // ── 處理器 CPU(攻擊/輔助,高階由對手掉落) ──
+  { id: "fu_liehuo", name: "烈火焚天處理器", kind: "talisman", desc: "貼身超頻,火靈附核,交易火力大增。", element: "火", price: 320, atkBonus: 12 },
+  { id: "fu_wulei", name: "五雷正法處理器", kind: "talisman", desc: "五雷轟頂,算力與手速兼備的金盤處理器。", element: "金", price: 3200, atkBonus: 180, speedBonus: 20 },
+  { id: "fu_xuanyin", name: "玄陰噬盤處理器", kind: "talisman", desc: "暗池數據凝核,攻伐凌厲,大乘級交易員所用。", price: 42000, atkBonus: 2600, dropOnly: true, reqStage: 8 },
+  { id: "fu_taixu", name: "太虛混元處理器", kind: "talisman", desc: "機構級處理器,唯基金經理人可駕馭,算力超凡。", price: 0, atkBonus: 18000, dropOnly: true, reqStage: 10 },
 
-  // ── 靈寵(寵物槽,僅探索秘境 5% 獲得;增益靈石收益與攻防) ──
-  { id: "pet_linghu", name: "赤煉靈狐", kind: "pet", desc: "元嬰級靈寵,通人性,伴主嗅寶——靈石收益 ×1.2,略增攻防。", price: 0, stoneMult: 1.2, atkBonus: 120, defBonus: 80, reqStage: 4, dropOnly: true },
-  { id: "pet_xuangui", name: "玄冰靈龜", kind: "pet", desc: "化神級靈寵,龜甲護主——靈石收益 ×1.2,大增防禦。", price: 0, stoneMult: 1.2, atkBonus: 300, defBonus: 1200, reqStage: 5, dropOnly: true },
-  { id: "pet_jinpeng", name: "金翅靈鵬", kind: "pet", desc: "大乘級靈寵,馱主遨遊——靈石收益 ×1.2,大增攻擊與速度。", price: 0, stoneMult: 1.2, atkBonus: 6000, defBonus: 2000, speedBonus: 120, reqStage: 8, dropOnly: true },
-  { id: "pet_tianhu", name: "九尾天狐", kind: "pet", desc: "真仙級靈寵,九尾通天——靈石收益 ×1.2,攻防俱強。", price: 0, stoneMult: 1.2, atkBonus: 40000, defBonus: 20000, speedBonus: 200, reqStage: 10, dropOnly: true },
-  { id: "pet_hundun", name: "混沌幼獸", kind: "pet", desc: "金仙級靈寵,吞天噬地之姿——靈石收益 ×1.2,攻防冠絕。", price: 0, stoneMult: 1.2, atkBonus: 120000, defBonus: 60000, speedBonus: 400, reqStage: 11, dropOnly: true },
+  // ── 交易機器人(僅鏈上探索 5% 獲得;增益美金收益與攻防) ──
+  { id: "pet_linghu", name: "赤煉套利狐 Bot", kind: "pet", desc: "元嬰級交易機器人,通人性,伴主嗅單——美金收益 ×1.2,略增攻防。", price: 0, stoneMult: 1.2, atkBonus: 120, defBonus: 80, reqStage: 4, dropOnly: true },
+  { id: "pet_xuangui", name: "玄冰風控龜 Bot", kind: "pet", desc: "化神級交易機器人,鐵殼護主——美金收益 ×1.2,大增風控。", price: 0, stoneMult: 1.2, atkBonus: 300, defBonus: 1200, reqStage: 5, dropOnly: true },
+  { id: "pet_jinpeng", name: "金翅高頻鵬 Bot", kind: "pet", desc: "大乘級交易機器人,馱主遨遊——美金收益 ×1.2,大增火力與手速。", price: 0, stoneMult: 1.2, atkBonus: 6000, defBonus: 2000, speedBonus: 120, reqStage: 8, dropOnly: true },
+  { id: "pet_tianhu", name: "九尾量化狐 Bot", kind: "pet", desc: "基金經理人級交易機器人,九尾通天——美金收益 ×1.2,攻防俱強。", price: 0, stoneMult: 1.2, atkBonus: 40000, defBonus: 20000, speedBonus: 200, reqStage: 10, dropOnly: true },
+  { id: "pet_hundun", name: "混沌吞盤獸 Bot", kind: "pet", desc: "家族基金級交易機器人,吞天噬地之姿——美金收益 ×1.2,攻防冠絕。", price: 0, stoneMult: 1.2, atkBonus: 120000, defBonus: 60000, speedBonus: 400, reqStage: 11, dropOnly: true },
 
-  // ── 煉器圖譜(妖獸掉落,使用後解鎖對應配方;藍框標示) ──
-  { id: "blueprint_xuanyin", name: "《玄陰噬魂符》符籙圖譜", kind: "recipe", desc: "記載玄陰噬魂符的煉製之法,參詳後可自行煉製。", price: 0, unlocksRecipe: "r_fu_xuanyin", dropOnly: true },
-  { id: "blueprint_taixu", name: "《太虛混元符》仙符圖譜", kind: "recipe", desc: "仙家符籙圖譜,唯真仙可參悟煉製。", price: 0, unlocksRecipe: "r_fu_taixu", dropOnly: true },
+  // ── 組裝藍圖(對手掉落,使用後解鎖對應配方;藍框標示) ──
+  { id: "blueprint_xuanyin", name: "《玄陰噬盤處理器》藍圖", kind: "recipe", desc: "記載玄陰噬盤處理器的組裝之法,參詳後可自行組裝。", price: 0, unlocksRecipe: "r_fu_xuanyin", dropOnly: true },
+  { id: "blueprint_taixu", name: "《太虛混元處理器》藍圖", kind: "recipe", desc: "機構級處理器藍圖,唯基金經理人可參悟組裝。", price: 0, unlocksRecipe: "r_fu_taixu", dropOnly: true },
 
-  // ── 金源仙域仙器(五關卡妖獸掉落,強度遠超北寒) ──
-  { id: "jy_taiyi", name: "太乙金光劍", kind: "artifact", desc: "金源仙域至寶,太乙金光縱橫,無堅不摧。", element: "金", price: 0, atkBonus: 45000, defBonus: 8000, dropOnly: true, reqStage: 10 },
-  { id: "jy_hunyuan", name: "混元仙袍", kind: "robe", desc: "金源仙域煉就的仙袍,萬法不侵。", price: 0, defBonus: 40000, dropOnly: true, reqStage: 10 },
+  // ── 主力黑池頂級硬體(五關卡對手掉落,強度遠超對沖基金) ──
+  { id: "jy_taiyi", name: "太乙金光顯卡", kind: "artifact", desc: "主力黑池至寶,太乙金光縱橫,算力無堅不摧。", element: "金", price: 0, atkBonus: 45000, defBonus: 8000, dropOnly: true, reqStage: 10 },
+  { id: "jy_hunyuan", name: "混元機構散熱", kind: "robe", desc: "主力黑池煉就的頂級散熱,萬法不侵。", price: 0, defBonus: 40000, dropOnly: true, reqStage: 10 },
 
-  // ── 北寒仙尊獨有:更強大的仙法秘笈 ──
-  { id: "m_beiming", name: "《北冥玄天訣》", kind: "manual", desc: "北寒仙尊畢生所悟的無上仙法,水行之極,凍結仙靈。唯真仙可修。", price: 0, teaches: "beiming", dropOnly: true },
+  // ── 頂級操盤宗師獨有:更強大的策略手冊 ──
+  { id: "m_beiming", name: "《北冥對沖神訣》", kind: "manual", desc: "頂級操盤宗師畢生所悟的無上對沖,水盤之極,凍結流動性。唯基金經理人可修。", price: 0, teaches: "beiming", dropOnly: true },
 
-  // ── 真仙 / 金仙頂尖仙法秘笈(極難取得,修煉數十萬載) ──
-  { id: "m_hunyuan", name: "《混元一氣仙訣》殘卷", kind: "manual", desc: "開天混元至法,參悟需真仙之境,苦修三十萬載方能大成。金源仙帝身隕方出。", price: 0, teaches: "hunyuan_yiqi", dropOnly: true },
-  { id: "m_taiqing", name: "《太清道韻九轉》玉冊", kind: "manual", desc: "太清仙尊遺留的九轉道韻,修習需五十萬載。太上金仙與浮屠塔高層機緣。", price: 0, teaches: "taiqing_daoyun", dropOnly: true },
-  { id: "m_zhutian", name: "《誅天神雷金仙法》仙簡", kind: "manual", desc: "唯金仙可修的無上殺伐仙法,修習需百萬載。傳說僅浮屠塔絕頂可得。", price: 0, teaches: "zhutian_shenlei", dropOnly: true },
+  // ── 基金經理人 / 家族基金頂尖策略手冊(極難取得,進修數十萬載) ──
+  { id: "m_hunyuan", name: "《混元一氣量化神訣》殘卷", kind: "manual", desc: "開天混元量化至法,參悟需基金經理人之境,苦研三十萬載方能大成。主力莊家身隕方出。", price: 0, teaches: "hunyuan_yiqi", dropOnly: true },
+  { id: "m_taiqing", name: "《太清九轉複利》玉冊", kind: "manual", desc: "傳奇宗師遺留的九轉複利,進修需五十萬載。傳奇資本與爆倉擂台高層機緣。", price: 0, teaches: "taiqing_daoyun", dropOnly: true },
+  { id: "m_zhutian", name: "《誅盤神雷 · 金仙操盤法》仙簡", kind: "manual", desc: "唯家族基金經理人可修的無上殺伐法,進修需百萬載。傳說僅爆倉擂台絕頂可得。", price: 0, teaches: "zhutian_shenlei", dropOnly: true },
 ];
 
 export const itemById = (id: string) => ITEMS.find((i) => i.id === id)!;

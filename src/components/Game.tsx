@@ -13,20 +13,20 @@ function DeathScreen() {
   const act = useGame((x) => x.act);
   return (
     <main className="max-w-2xl mx-auto px-4 py-24 text-center">
-      <p className="font-mono text-xs tracking-[0.5em] text-faded mb-4">HERE LIES A CULTIVATOR</p>
-      <h1 className="text-5xl font-black tracking-widest text-vermillion mb-6">壽 元 已 盡</h1>
+      <p className="font-mono text-xs tracking-[0.5em] text-faded mb-4">HERE LIES A TRADER</p>
+      <h1 className="text-5xl font-black tracking-widest text-vermillion mb-6">資 產 歸 零</h1>
       <div className="panel deco-frame text-left mx-auto max-w-md mb-8">
-        <p className="panel-title">墓 誌 銘</p>
+        <p className="panel-title">交 易 遺 言</p>
         <p className="leading-loose text-cream">
-          {s.name},享年 {maxLifeOf(s)} 年,道隕於【{REALMS[s.realmIdx].name}】。
+          {s.name},操盤 {maxLifeOf(s)} 載,爆倉出局於【{REALMS[s.realmIdx].name}】。
           <br />
-          修行 {s.day} 年,終究未能問鼎大道。
+          交易生涯 {s.day} 年,終究未能登頂封神。
           <br />
-          仙路盡頭誰為峰?一見無始道成空。
+          盤海無涯誰為峰?一朝爆倉萬事空。
         </p>
       </div>
       <button className="btn text-lg px-10 py-3" onClick={() => act("reset")}>
-        轉 世 重 修
+        重 新 入 場
       </button>
     </main>
   );
@@ -77,39 +77,39 @@ function CultivationBar() {
   return (
     <div className={`panel deco-frame ${canBreak ? "border-gold/70" : ""}`}>
       <div className="flex flex-wrap items-center gap-3">
-        <p className="panel-title mb-0 mr-2">修 煉</p>
+        <p className="panel-title mb-0 mr-2">操 盤</p>
         <button
           className="btn text-base px-5 py-2"
           disabled={busy || inCombat}
           onClick={() => act("cultivate")}
         >
-          打坐修煉 <span className="ml-1 font-mono text-xs">-{cost} 年壽元</span>
+          進修苦研 <span className="ml-1 font-mono text-xs">-{cost} 載資產</span>
         </button>
         <button
           className="btn text-base px-5 py-2"
           disabled={busy || inCombat || s.hp >= hpMax}
           onClick={() => act("rest")}
         >
-          調息(回復氣血)
+          休息(回復倉位)
         </button>
         <button
-          className="btn text-base px-5 py-2 border-fuchsia-400/50 text-fuchsia-300 hover:bg-fuchsia-400/15 hover:border-fuchsia-400"
+          className="btn text-base px-5 py-2 border-emerald-400/50 text-emerald-300 hover:bg-emerald-400/15 hover:border-emerald-400"
           disabled={busy || inCombat || s.stones < 100000000}
           onClick={() => act("wander")}
-          title="消耗 5000 年壽元 + 100 極品靈石。約 5% 觸發探索秘境(紫色機緣),約 2.5% 直接得天仙丹,30% 得永久屬性,1% 遇金仙大 BOSS,餘則一無所獲。"
+          title="消耗 5000 載資產 + 1 億美金。約 5% 觸發鏈上探索(綠色機緣),約 2.5% 直接得操盤密鑰,30% 得永久盤感,1% 遇巨鯨,餘則一無所獲。"
         >
-          雲遊四海
+          鏈上遊獵
         </button>
         <button
           className={`btn text-base px-5 py-2 ${canBreak ? "border-gold text-gold animate-pulse" : ""}`}
           disabled={busy || inCombat || !canBreak}
           onClick={() => act("breakthrough")}
-          title={canBreak ? "" : `需修為 ${expNeed}`}
+          title={canBreak ? "" : `需交易量 ${expNeed}`}
         >
-          嘗試突破{canBreak ? "!" : ""}
+          升等考核{canBreak ? "!" : ""}
         </button>
         <span className="text-xs text-faded ml-auto font-mono">
-          修為 {s.exp}/{expNeed} · 突破失敗折損最大壽元 15%
+          交易量 {s.exp}/{expNeed} · 考核失敗折損最大資產 15%
         </span>
       </div>
     </div>
@@ -138,10 +138,10 @@ export default function Game() {
       setSave(j.save ?? null);
       if (j.name) setUserName(j.name);
       if (j.save && j.lifeGained > 0) {
-        useGame.getState().pushLog(`雲遊歸來,仙體自然溫養,增壽 ${j.lifeGained} 年。`);
+        useGame.getState().pushLog(`鏈上遊獵歸來,身心調養,增資產 ${j.lifeGained} 載。`);
       }
       if (j.save && j.credited) {
-        useGame.getState().pushLog("交易行貨款已入帳。");
+        useGame.getState().pushLog("場外交易貨款已入帳。");
       }
       setAuth("authed");
     } catch {
@@ -156,7 +156,7 @@ export default function Game() {
   if (auth === "checking") {
     return (
       <main className="flex items-center justify-center min-h-screen">
-        <p className="font-mono text-faded tracking-[0.4em] animate-pulse">道 藏 開 啟 中 …</p>
+        <p className="font-mono text-faded tracking-[0.4em] animate-pulse">終 端 連 線 中 …</p>
       </main>
     );
   }
@@ -173,25 +173,33 @@ export default function Game() {
     <main className={`max-w-6xl mx-auto px-4 py-6 relative ${isXian ? "xian-aura" : ""}`}>
       {breakResult && <ResultModal modal={breakResult} onClose={closeBreak} />}
       {!breakResult && loot && <ResultModal modal={loot} onClose={closeLoot} />}
-      <header className="flex items-baseline justify-between mb-5">
-        <div>
-          <h1
-            className={`text-2xl font-black tracking-[0.35em] ${isXian ? "text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 via-amber-200 to-cyan-200" : ""}`}
-          >
-            凡人修仙傳
-          </h1>
-          <p className="font-mono text-[10px] tracking-[0.4em] text-faded">
-            {isXian ? "ASCENDED · 得 道 成 仙" : "A MORTAL\u2019S JOURNEY TO IMMORTALITY"}
-          </p>
+      <header className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/ldz/ldz-logo.jpg"
+            alt="LDZ"
+            className="h-10 w-10 rounded object-cover border border-emerald-400/30"
+          />
+          <div>
+            <h1
+              className={`text-2xl font-black tracking-[0.25em] ${isXian ? "text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-lime-200 to-cyan-200" : ""}`}
+            >
+              LDZ 交易風雲傳
+            </h1>
+            <p className="font-mono text-[10px] tracking-[0.35em] text-faded">
+              {isXian ? "FUND MANAGER · 得 道 封 神" : "A TRADER\u2019S ROAD TO GODHOOD"}
+            </p>
+          </div>
         </div>
         <div className="flex gap-4 items-baseline">
           <button
             className="text-xs text-faded/60 hover:text-vermillion transition-colors"
             onClick={() => {
-              if (confirm("兵解重修將抹去一切進度,確定?")) act("reset");
+              if (confirm("重開帳戶將抹去一切進度,確定?")) act("reset");
             }}
           >
-            兵解重修
+            重開帳戶
           </button>
           <button
             className="text-xs text-faded/60 hover:text-gold transition-colors"

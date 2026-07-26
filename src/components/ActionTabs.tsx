@@ -22,14 +22,14 @@ type Tab = "explore" | "bag" | "tech" | "craft" | "market" | "trade" | "mission"
 export default function ActionTabs() {
   const [tab, setTab] = useState<Tab>("explore");
   const tabs: [Tab, string][] = [
-    ["explore", "遊歷探索"],
-    ["bag", "儲物袋"],
-    ["tech", "仙法"],
-    ["craft", "煉器"],
-    ["market", "坊市"],
-    ["trade", "交易行"],
-    ["mission", "宗門任務"],
-    ["dex", "妖獸圖鑑"],
+    ["explore", "盤面探索"],
+    ["bag", "資產庫"],
+    ["tech", "交易策略"],
+    ["craft", "硬體組裝"],
+    ["market", "商城"],
+    ["trade", "場外交易"],
+    ["mission", "團隊任務"],
+    ["dex", "對手情報"],
     ["rank", "排行榜"],
   ];
   return (
@@ -41,7 +41,7 @@ export default function ActionTabs() {
             onClick={() => setTab(t)}
             className={`px-3 py-1 text-sm rounded-sm transition-colors ${
               tab === t
-                ? "bg-gold/15 text-gold border border-gold/40"
+                ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/40"
                 : "text-faded hover:text-cream"
             }`}
           >
@@ -74,7 +74,7 @@ function ExploreTab() {
 
   return (
     <div className="space-y-3">
-      <div className="divider">大 陸 遊 歷</div>
+      <div className="divider">市 場 版 圖</div>
       <div className="flex flex-wrap gap-1.5">
         {REGIONS.filter((r) => !r.hidden || s.jinyuanUnlocked).map((r) => {
           const rLocked = realm.stage < r.reqStage;
@@ -83,7 +83,7 @@ function ExploreTab() {
             <button
               key={r.id}
               onClick={() => !rLocked && setRegionId(r.id)}
-              title={rLocked ? `需 ${r.reqStage} 階境界` : r.desc}
+              title={rLocked ? `需 ${r.reqStage} 級交易員` : r.desc}
               className={`px-2.5 py-1 text-xs rounded-sm border transition-colors ${
                 regionId === r.id
                   ? isPurple
@@ -106,19 +106,20 @@ function ExploreTab() {
       {regionId === "jinyuan" && s.jinyuanUnlocked && realm.stage >= 10 && (
         <div className="border border-amber-300/50 bg-amber-300/5 rounded-sm p-3">
           <div className="flex items-baseline justify-between">
-            <span className="font-bold text-amber-300">浮 屠 塔</span>
-            <span className="text-xs font-mono text-amber-300/80">已通關第 {s.futuFloor} 層</span>
+            <span className="font-bold text-amber-300">爆 倉 擂 台</span>
+            <span className="text-xs font-mono text-amber-300/80">已通關第 {s.futuFloor} 關</span>
           </div>
           <p className="text-sm text-faded mt-1">
-            塔中是一尊幻象太歲天尊,每打過一層便更強(氣血 ×1.5、攻擊 ×1.2),永無止境。挑戰下一層(第{" "}
-            {s.futuFloor + 1} 層)——每 5 層得天仙丹、每 10 層得金魂丹,高層更藏頂尖仙法。
+            擂台上是一尊幻象莊家天尊,每打過一關便更強(目標交易額 ×1.5、火力
+            ×1.2),永無止境。挑戰下一關(第 {s.futuFloor + 1} 關)——每 5 關得操盤密鑰、每 10
+            關得家族資本密令,高關更藏頂尖策略。
           </p>
           <button
             className="btn mt-2 border-amber-300/60 text-amber-300 hover:bg-amber-300/15"
             disabled={inCombat || busy}
             onClick={() => act("challengeFutu")}
           >
-            登 塔 · 挑戰第 {s.futuFloor + 1} 層
+            登 台 · 挑戰第 {s.futuFloor + 1} 關
           </button>
         </div>
       )}
@@ -131,7 +132,7 @@ function ExploreTab() {
           >
             <div className="flex items-baseline justify-between">
               <span className="font-bold">{loc.name}</span>
-              {locked && <span className="chip">境界不足</span>}
+              {locked && <span className="chip">級別不足</span>}
             </div>
             <p className="text-sm text-faded mt-1">{loc.desc}</p>
             <div className="mt-2 flex gap-2">
@@ -140,14 +141,14 @@ function ExploreTab() {
                 disabled={locked || inCombat || busy}
                 onClick={() => act("gather", { locationId: loc.id })}
               >
-                採集靈材
+                搜刮零件
               </button>
               <button
                 className="btn btn-danger"
                 disabled={locked || inCombat || busy}
                 onClick={() => act("hunt", { locationId: loc.id })}
               >
-                獵殺妖獸
+                挑戰對手
               </button>
             </div>
           </div>
@@ -158,12 +159,12 @@ function ExploreTab() {
 }
 
 const BAG_SECTIONS: [string, ItemKind[]][] = [
-  ["材 料", ["material"]],
-  ["仙 草 · 丹 藥", ["herb", "pill"]],
-  ["法 器 · 法 衣 · 護 身 符 · 符 籙", ["artifact", "robe", "treasure", "amulet", "talisman"]],
-  ["靈 寵", ["pet"]],
-  ["功 法 秘 笈 · 圖 譜", ["manual", "recipe"]],
-  ["奇 珍 · 仙 物", ["special"]],
+  ["零 件", ["material"]],
+  ["能 量 飲 · 補 給", ["herb", "pill"]],
+  ["顯 卡 · 散 熱 · UPS · CPU", ["artifact", "robe", "treasure", "amulet", "talisman"]],
+  ["交 易 機 器 人", ["pet"]],
+  ["策 略 手 冊 · 藍 圖", ["manual", "recipe"]],
+  ["稀 有 道 具", ["special"]],
 ];
 
 const EQUIPPABLE: ItemKind[] = ["artifact", "robe", "treasure", "amulet", "talisman", "pet"];
@@ -224,12 +225,12 @@ function BagTab() {
               disabled={busy}
               onClick={() => act("useItem", { itemId: id })}
             >
-              服用晉金仙
+              服用晉家族基金
             </button>
           )}
           {item.kind === "special" && !item.xianli && id !== "jinhundan" && (
-            <span className="chip text-fuchsia-400 border-fuchsia-400/50 self-center">
-              於仙法欄使用
+            <span className="chip text-emerald-400 border-emerald-400/50 self-center">
+              於交易策略欄使用
             </span>
           )}
           {item.kind === "recipe" && (
@@ -238,22 +239,22 @@ function BagTab() {
               disabled={busy}
               onClick={() => act("useItem", { itemId: id })}
             >
-              參悟圖譜
+              參悟藍圖
             </button>
           )}
           {item.kind === "manual" && (
             <button
               className="btn"
               disabled={busy || !!s.learning}
-              title={s.learning ? "已在修習其他仙法" : ""}
+              title={s.learning ? "已在進修其他策略" : ""}
               onClick={() => act("useItem", { itemId: id })}
             >
-              {s.learning ? "修習中…" : "開始修習"}
+              {s.learning ? "進修中…" : "開始進修"}
             </button>
           )}
           {EQUIPPABLE.includes(item.kind) && !equipped && (
             <button className="btn" disabled={busy} onClick={() => act("equip", { itemId: id })}>
-              {item.kind === "pet" ? "收為靈寵" : "裝備"}
+              {item.kind === "pet" ? "掛載" : "裝配"}
             </button>
           )}
           {item.kind !== "special" && item.kind !== "recipe" && (
@@ -262,7 +263,7 @@ function BagTab() {
               disabled={busy}
               onClick={() => act("sell", { itemId: id })}
             >
-              售 {Math.max(1, Math.floor(item.price * 0.6))}
+              賣 {Math.max(1, Math.floor(item.price * 0.6))}
             </button>
           )}
         </div>
@@ -300,14 +301,14 @@ function TechTab() {
       {s.learning && (
         <div className="border border-azure/40 bg-azure/5 rounded-sm p-3">
           <div className="flex items-baseline justify-between">
-            <span className="font-bold text-azure">修習中:{techById(s.learning.techId).name}</span>
+            <span className="font-bold text-azure">進修中:{techById(s.learning.techId).name}</span>
             <span className="text-xs font-mono text-faded">
-              尚需 {s.learning.remain} 年(打坐推進)
+              尚需 {s.learning.remain} 年(進修苦研推進)
             </span>
           </div>
         </div>
       )}
-      {s.learned.length === 0 && <p className="text-faded text-sm">尚未習得任何仙法。</p>}
+      {s.learned.length === 0 && <p className="text-faded text-sm">尚未習得任何策略。</p>}
       {s.learned.map((id) => {
         const t = techById(id);
         const level = techLevelOf(s, id);
@@ -323,23 +324,23 @@ function TechTab() {
                 </span>
               </span>
               <span className="text-xs text-faded font-mono">
-                威力 ×{(t.power * techPowerMult(level)).toFixed(1)} · 法力 {t.mpCost}
+                威力 ×{(t.power * techPowerMult(level)).toFixed(1)} · 精力 {t.mpCost}
               </span>
             </div>
             <p className="text-sm text-faded mt-1">{t.desc}</p>
             <button
               className="btn mt-2"
               disabled={busy || maxed || zenglingzhu <= 0}
-              title={maxed ? "已達最高等級" : zenglingzhu <= 0 ? "需要增靈珠" : ""}
+              title={maxed ? "已達最高等級" : zenglingzhu <= 0 ? "需要策略強化核" : ""}
               onClick={() => act("upgradeTech", { techId: id })}
             >
-              {maxed ? "已達七級大圓滿" : `以增靈珠強化 → ${level + 1} 級`}
+              {maxed ? "已達七級大圓滿" : `以策略強化核強化 → ${level + 1} 級`}
             </button>
           </div>
         );
       })}
       <p className="text-xs text-faded/60 mt-2">
-        秘笈需「開始修習」後,以打坐推進年月,期滿方成。一次僅能修習一部。增靈珠由地域王掉落。
+        策略手冊需「開始進修」後,以進修苦研推進年月,期滿方成。一次僅能進修一套。策略強化核由巨鯨掉落。
       </p>
     </div>
   );
@@ -353,7 +354,7 @@ function CraftTab() {
   return (
     <div className="space-y-2">
       <p className="text-xs text-faded">
-        煉器堂——藍框配方需先由妖獸掉落圖譜參悟後方能煉製。裝備分類已於名稱旁標示。
+        硬體組裝廠——藍框配方需先由對手掉落藍圖參悟後方能組裝。硬體分類已於名稱旁標示。
       </p>
       {RECIPES.map((rec) => {
         const result = itemById(rec.result);
@@ -408,11 +409,11 @@ function CraftTab() {
               className="btn mt-2"
               disabled={busy || !canStones || !canMats || locked || stageLocked}
               title={
-                locked ? "需先取得對應圖譜研讀" : stageLocked ? `需 ${rec.reqStage} 階境界` : ""
+                locked ? "需先取得對應藍圖研讀" : stageLocked ? `需 ${rec.reqStage} 級交易員` : ""
               }
               onClick={() => act("craft", { recipeId: rec.id })}
             >
-              {locked ? "🔒 未參透圖譜" : stageLocked ? "境界不足" : "煉製"}
+              {locked ? "🔒 未參透藍圖" : stageLocked ? "級別不足" : "組裝"}
             </button>
           </div>
         );
@@ -436,7 +437,7 @@ function MarketTab() {
   return (
     <div className="space-y-2">
       <p className="text-xs text-faded">
-        坊市為宗門官營,明碼標價。大乘以上的仙家至寶坊市不售,唯有斬妖奪寶方能得之。現有靈石:
+        商城為團隊官營,明碼標價。大乘以上的頂級硬體商城不售,唯有清算對手方能得之。現有美金:
         <span className="text-gold"> {formatStones(s.stones)}</span>
       </p>
       {wares.map((item) => (
@@ -581,7 +582,7 @@ function TradeTab() {
   return (
     <div className="space-y-3">
       <p className="text-xs text-faded">
-        萬寶樓交易行——修士自由掛賣,靈石結算,全服互通。 現有靈石:
+        場外交易大廳——交易員自由掛賣,美金結算,全服互通。 現有美金:
         <span className="text-gold">{formatStones(s.stones)}</span>
         <button className="chip ml-3 hover:text-gold" onClick={refresh}>
           刷新
@@ -727,11 +728,11 @@ function MissionTab() {
               <span className="font-bold">
                 {m.name}
                 <span className="chip ml-2">
-                  {m.kind === "kill" ? "獵殺" : "繳納"} {target} ×{m.n}
+                  {m.kind === "kill" ? "清算" : "繳納"} {target} ×{m.n}
                 </span>
               </span>
               <span className="text-xs font-mono text-gold">
-                {m.stones} 靈石 · 修為 {m.exp}
+                {m.stones} 美金 · 交易量 {m.exp}
               </span>
             </div>
             <p className="text-xs text-faded mt-1">
@@ -743,7 +744,7 @@ function MissionTab() {
               disabled={busy || locked || !!s.missionId}
               onClick={() => act("acceptMission", { missionId: m.id })}
             >
-              {locked ? "境界不足" : "領取"}
+              {locked ? "級別不足" : "領取"}
             </button>
           </div>
         );
@@ -768,7 +769,7 @@ function DexTab() {
         >
           <span className="font-bold text-faded">???</span>
           <p className="text-xs text-faded/60 mt-1">
-            {mon.isLord ? "傳說中的地域之王,尚未現身。" : "尚未遭遇的妖獸,蹤跡成謎。"}
+            {mon.isLord ? "傳說中的巨鯨,尚未現身。" : "尚未遭遇的對手,蹤跡成謎。"}
           </p>
         </div>
       );
@@ -780,13 +781,13 @@ function DexTab() {
         <div className="flex items-baseline justify-between">
           <span className="font-bold">
             {mon.isLord && (
-              <span className="chip mr-2 text-fuchsia-400 border-fuchsia-400/50">地域王</span>
+              <span className="chip mr-2 text-fuchsia-400 border-fuchsia-400/50">巨鯨</span>
             )}
             {mon.name}
-            <span className={`chip ml-2 ${ELEMENT_COLOR[mon.element]}`}>{mon.element}屬性</span>
+            <span className={`chip ml-2 ${ELEMENT_COLOR[mon.element]}`}>{mon.element}盤</span>
           </span>
           <span className="text-xs font-mono text-faded">
-            氣血 {mon.hp} · 攻擊 {mon.atk} · 已獵殺 {kills}
+            目標交易額 {mon.hp} · 火力 {mon.atk} · 已清算 {kills}
           </span>
         </div>
         <p className="text-xs text-faded mt-1">{mon.desc}</p>
@@ -797,14 +798,14 @@ function DexTab() {
   return (
     <div className="space-y-2">
       <p className="text-xs text-faded">
-        已目擊 {s.seen.length}/{MONSTERS.length} 種妖獸。遭遇即錄入圖鑑。
+        已目擊 {s.seen.length}/{MONSTERS.length} 種對手。遭遇即錄入情報。
       </p>
-      <div className="divider">妖 獸</div>
+      <div className="divider">對 手</div>
       {normals.map(monsterRow)}
-      <div className="divider text-fuchsia-400/70">領 主</div>
+      <div className="divider text-fuchsia-400/70">巨 鯨</div>
       <p className="text-xs text-faded">
-        地域王極為稀有,獵殺妖獸時約 2%~3% 機率遭遇。已遇 {s.lordsSeen?.length ?? 0}/{lords.length}{" "}
-        位,斬之掉落豐厚——增元丹、增靈珠、高階符籙與圖譜。北寒仙尊更有機率傳下無上仙法;金源仙帝、太上金仙則掉落金魂丹等仙緣。
+        巨鯨極為稀有,挑戰對手時約 2%~3% 機率遭遇。已遇 {s.lordsSeen?.length ?? 0}/{lords.length}{" "}
+        位,清算之掉落豐厚——本金擴充丹、策略強化核、高階處理器與藍圖。頂級操盤宗師更有機率傳下無上策略;主力莊家、傳奇資本則掉落家族資本密令等機緣。
       </p>
       {lords.map(monsterRow)}
     </div>
@@ -843,11 +844,11 @@ interface PlayerProfile {
 function PlayerDetailCard({ profile, onClose }: { profile: PlayerProfile; onClose: () => void }) {
   const isXian = REALMS[profile.realmIdx]?.stage >= 10;
   const gear: [string, string | null][] = [
-    ["法器", profile.equippedWeapon],
-    ["法衣", profile.equippedRobe],
-    ["護身符", profile.equippedAmulet],
-    ["符籙", profile.equippedTalisman],
-    ["靈寵", profile.equippedPet],
+    ["顯示卡", profile.equippedWeapon],
+    ["散熱", profile.equippedRobe],
+    ["不斷電", profile.equippedAmulet],
+    ["處理器", profile.equippedTalisman],
+    ["交易機器人", profile.equippedPet],
   ];
   return (
     <div
@@ -867,44 +868,44 @@ function PlayerDetailCard({ profile, onClose }: { profile: PlayerProfile; onClos
         </button>
       </div>
       <div className="grid grid-cols-2 gap-y-1 text-sm">
-        <span className="text-faded">境界</span>
+        <span className="text-faded">級別</span>
         <span className={`text-right ${isXian ? "text-fuchsia-300" : ""}`}>
           {REALMS[profile.realmIdx]?.name ?? "??"}
         </span>
-        <span className="text-faded">門派</span>
+        <span className="text-faded">團隊</span>
         <span className="text-right">
-          {SECTS.find((x) => x.id === profile.sectId)?.name ?? "散修"}
+          {SECTS.find((x) => x.id === profile.sectId)?.name ?? "散戶"}
         </span>
-        <span className="text-faded">修為</span>
+        <span className="text-faded">交易量</span>
         <span className="text-right font-mono">{profile.exp}</span>
         {profile.xianli > 0 && (
           <>
-            <span className="text-faded">仙靈力</span>
+            <span className="text-faded">影響力</span>
             <span className="text-right font-bold text-fuchsia-400">{profile.xianli} 點</span>
           </>
         )}
         {profile.futuFloor > 0 && (
           <>
-            <span className="text-faded">浮屠塔</span>
-            <span className="text-right font-bold text-amber-300">第 {profile.futuFloor} 層</span>
+            <span className="text-faded">爆倉擂台</span>
+            <span className="text-right font-bold text-amber-300">第 {profile.futuFloor} 關</span>
           </>
         )}
-        <span className="text-faded">壽元 / 修行</span>
+        <span className="text-faded">資產 / 資歷</span>
         <span className="text-right">
-          {profile.age} 年 · 修行 {profile.day} 載
+          {profile.age} 載 · 資歷 {profile.day} 年
         </span>
-        <span className="text-faded">圖鑑 · 領主 · 仙法</span>
+        <span className="text-faded">情報 · 巨鯨 · 策略</span>
         <span className="text-right text-xs">
-          妖獸 {profile.seenCount} · 領主 {profile.lordsSeenCount} · 仙法 {profile.learnedCount}
+          對手 {profile.seenCount} · 巨鯨 {profile.lordsSeenCount} · 策略 {profile.learnedCount}
         </span>
       </div>
-      <div className="divider">裝 備</div>
+      <div className="divider">硬 體 配 置</div>
       <div className="grid grid-cols-2 gap-y-1 text-sm">
         {gear.map(([label, id]) => (
           <div key={label} className="contents">
             <span className="text-faded">{label}</span>
             <span
-              className={`text-right ${id ? (label === "靈寵" ? "text-fuchsia-300" : "text-cream") : "text-faded/50"}`}
+              className={`text-right ${id ? (label === "交易機器人" ? "text-emerald-300" : "text-cream") : "text-faded/50"}`}
             >
               {id ? itemById(id).name : "—"}
             </span>
@@ -948,9 +949,9 @@ function RankTab() {
   const { profile, setProfile, err, lookup } = usePlayerLookup();
 
   const boards: [Board, string, string][] = [
-    ["xiu", "修仙榜", "按境界高低、仙靈力、修為綜合排序"],
-    ["exp", "修為榜", "純以修為深淺論高下"],
-    ["futu", "浮屠塔榜", "以浮屠塔通關層數論英雄"],
+    ["xiu", "成神榜", "按級別高低、影響力、交易量綜合排序"],
+    ["exp", "交易量榜", "純以交易量深淺論高下"],
+    ["futu", "爆倉擂台榜", "以爆倉擂台通關關數論英雄"],
   ];
   const boardMeta = boards.find((b) => b[0] === board)!;
 
@@ -975,11 +976,11 @@ function RankTab() {
   // 各榜右側顯示的主數值
   const rightValue = (p: RankPlayer) => {
     if (board === "futu")
-      return <span className="text-amber-300 font-bold">第 {p.futu_floor} 層</span>;
+      return <span className="text-amber-300 font-bold">第 {p.futu_floor} 關</span>;
     if (board === "exp")
       return (
         <>
-          <span className="text-jade font-mono">修為 {p.exp}</span>
+          <span className="text-jade font-mono">交易量 {p.exp}</span>
           <span className="text-xs text-faded ml-2">{REALMS[p.realm_idx]?.name ?? "??"}</span>
         </>
       );
@@ -987,7 +988,7 @@ function RankTab() {
     return (
       <>
         <span>{REALMS[p.realm_idx]?.name ?? "??"}</span>
-        {p.xianli > 0 && <span className="text-xs text-fuchsia-400 ml-2">仙靈力 {p.xianli}</span>}
+        {p.xianli > 0 && <span className="text-xs text-fuchsia-400 ml-2">影響力 {p.xianli}</span>}
       </>
     );
   };
@@ -1030,7 +1031,7 @@ function RankTab() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && lookup(query)}
-          placeholder="搜尋修士道號…"
+          placeholder="搜尋交易員代號…"
           className="flex-1 bg-smoke border border-faded/30 rounded-sm px-2 py-1.5 text-sm text-parchment"
         />
         <button className="btn" onClick={() => lookup(query)}>
@@ -1042,7 +1043,9 @@ function RankTab() {
       {loading && <p className="text-sm text-faded">榜文更新中…</p>}
       {!loading && players.length === 0 && (
         <p className="text-sm text-faded">
-          {isFutuBoard ? "浮屠塔尚無人登臨,你將是第一位挑戰者。" : "榜上無人,你將是第一位留名者。"}
+          {isFutuBoard
+            ? "爆倉擂台尚無人登臨,你將是第一位挑戰者。"
+            : "榜上無人,你將是第一位留名者。"}
         </p>
       )}
       {players.map((p, i) => {

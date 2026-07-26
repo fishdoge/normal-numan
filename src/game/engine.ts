@@ -216,9 +216,9 @@ export function newSave(name: string, sectId: string): SaveData {
   s.mp = mpMax;
   log(
     s,
-    `${s.name} 拜入 ${sect.name},自此踏上修仙之路。`,
-    `長老傳授入門仙法:${techById(sect.startTech).name}。`,
-    "身上僅有 20 枚下品靈石與幾瓶丹藥,前路漫漫,道阻且長。",
+    `${s.name} 加入 ${sect.name},自此踏上交易員成神之路。`,
+    `團隊傳授入門策略:${techById(sect.startTech).name}。`,
+    "身上僅有 20 美金與幾包補給,前路漫漫,盤海凶險。",
   );
   return s;
 }
@@ -229,41 +229,41 @@ function maybeEncounter(s: SaveData) {
   if (roll < 0.03) {
     const gain = Math.floor(realm.expNeed * 0.15);
     s.exp += gain;
-    log(s, `打坐間心神空明,天地法則於眼前一閃而逝——頓悟!修為 +${gain}。`);
+    log(s, `進修間靈光乍現,市場規律於眼前一閃而逝——頓悟!交易量 +${gain}。`);
   } else if (roll < 0.05) {
     const stones = Math.floor(realm.expNeed * 0.005) + rand(10, 100);
     s.stones += stones;
-    log(s, `你偶遇一位隕落修士的遺蛻,收殮入土後,拾得遺留靈石 ${stones} 枚。`);
+    log(s, `你翻到一個爆倉出局者遺留的錢包,清點之後,拾得殘餘美金 ${stones} 元。`);
   } else if (roll < 0.075) {
     const herbs = ["zhuguo", "xuelingzhi", "zijinhua", "qiannianlingru"];
     const h = herbs[rand(0, realm.stage >= 3 ? 3 : 2)];
     give(s, h);
-    log(s, `一隻靈猴自林間擲來一株【${itemById(h).name}】,吱吱兩聲便竄得無影無蹤。`);
+    log(s, `群裡一位老哥隨手丟給你一份【${itemById(h).name}】,發完就潛水了。`);
   } else if (roll < 0.085) {
     const lost = Math.floor(s.stones * 0.05);
     s.stones -= lost;
-    log(s, `一名遊方散修與你論道半日,臨別時你才發現儲物袋輕了——被順走了 ${lost} 靈石!`);
+    log(s, `一名網友跟你聊了半天單,道別後你才發現帳戶輕了——被詐走了 ${lost} 美金!`);
   } else if (roll < 0.105) {
     const gain = Math.floor(realm.expNeed * 0.025);
     s.exp += gain;
-    log(s, `荒亭避雨,偶遇一位白髮老道與你手談一局。局終人杳,棋盤上殘留一縷道韻——修為 +${gain}。`);
+    log(s, `深夜覆盤,偶然對上一位隱世操盤前輩的思路。訊息刪盡,只留一縷心法——交易量 +${gain}。`);
   } else if (roll < 0.12 && realm.stage >= 3) {
     give(s, "dahuandan");
-    log(s, "你救下一名被妖獸圍攻的散修,對方傾囊相贈一枚【大還丹】,拱手而別。");
+    log(s, "你拉了一名被莊家圍殺的散戶一把,對方感激之下塞來一瓶【起死回生劑】,拱手而別。");
   } else if (roll < 0.135 && realm.stage >= 4) {
     const pool = ["m_aohan", "m_dageng", "m_yuanci"];
     const m = pool[rand(0, realm.stage >= 5 ? 2 : 1)];
     give(s, m);
-    log(s, `地動山搖,一座上古洞府破土而出!你搶在群修之前取走【${itemById(m).name}】,遁光而去。`);
+    log(s, `一個塵封的老量化倉庫突然曝光!你搶在眾人之前備份走【${itemById(m).name}】,火速下線。`);
   } else if (roll < 0.143) {
     give(s, "wanshoudan");
-    log(s, "你於一處無名廢墟中掘出一只丹盒,盒中靜臥一枚【萬壽丹】——延壽百載的奇丹!");
+    log(s, "你在一處廢棄伺服器裡挖出一份加密檔,竟是一枚【萬倍回本丹】——資產增百載的奇物!");
   } else if (roll < 0.146) {
     give(s, "yanshouguo");
-    log(s, "懸崖之下異香撲鼻——竟是一株萬載一熟的【延壽果】!你顫抖著雙手將其摘下。");
+    log(s, "冷門角落異香撲鼻——竟是一枚萬載一熟的【續命回本果】!你顫抖著雙手將其收下。");
   } else if (roll < 0.147 && REALMS[s.realmIdx].stage >= 5) {
     give(s, "panlongtao");
-    log(s, "九天之上仙音縹緲,一枚龍紋壽桃自雲端墜落,正落你掌心——【蟠龍壽桃】!此乃仙界之物!");
+    log(s, "頂級圈傳說縹緲,一枚龍紋壽桃自雲端墜落,正落你掌心——【蟠龍不敗桃】!此乃資本至寶!");
   }
 }
 
@@ -281,11 +281,11 @@ function monsterTurn(s: SaveData): string[] {
     return lines;
   }
   const dmg = Math.max(1, rand(Math.floor(monAtk * 0.8), Math.floor(monAtk * 1.2)) - def);
-  lines.push(`${mon.name} 反擊,你受到 ${dmg} 點傷害。`);
+  lines.push(`${mon.name} 反手一擊,你的倉位承受 ${dmg} 點虧損。`);
   s.hp -= dmg;
   if (s.hp <= 0) {
     const lost = Math.floor(s.stones / 2);
-    lines.push(`你身受重傷不敵,倉皇遁走…… 遺失了 ${lost} 靈石。`);
+    lines.push(`你倉位被打穿,倉皇砍單離場…… 虧掉了 ${lost} 美金。`);
     s.hp = Math.max(1, Math.floor(hpMax * 0.3));
     s.stones -= lost;
     s.combat = null;
@@ -298,36 +298,36 @@ function winCombat(s: SaveData): Modal {
   const mon = monsterById(s.combat!.monsterId);
   const { stoneMult } = statsOf(s);
 
-  // 浮屠塔:通關一層 → 記錄層數、給予隨層數遞增的獎勵
+  // 爆倉擂台:通關一層 → 記錄層數、給予隨層數遞增的獎勵
   const floor = s.combat!.futuFloor;
   if (floor && mon.id === "huanxiang_taisui") {
     s.combat = null;
     s.futuFloor = Math.max(s.futuFloor, floor);
     const reward = Math.floor(200000 * floor * stoneMult);
     s.stones += reward;
-    const lines = [`你在浮屠塔擊碎第 ${floor} 層的幻象太歲天尊!`, `靈石 +${reward}`];
-    // 每 5 層必得天仙丹;每 10 層必得金魂丹
+    const lines = [`你在爆倉擂台清算了第 ${floor} 關的幻象莊家天尊!`, `美金 +${reward}`];
+    // 每 5 關必得操盤密鑰;每 10 關必得家族資本密令
     if (floor % 10 === 0) {
       give(s, "jinhundan");
-      lines.push("塔靈嘉獎:【金魂丹】一枚!");
+      lines.push("擂台嘉獎:【家族資本密令】一枚!");
     } else if (floor % 5 === 0) {
       give(s, "tianxiandan");
-      lines.push("塔靈嘉獎:【天仙丹】一枚!");
+      lines.push("擂台嘉獎:【操盤密鑰】一枚!");
     } else if (Math.random() < 0.25) {
       give(s, "tianxiandan");
-      lines.push("幻象崩解間,一枚【天仙丹】墜落!");
+      lines.push("幻象崩解間,一枚【操盤密鑰】墜落!");
     }
-    // 高層機緣:頂尖仙法秘笈(極難)
+    // 高層機緣:頂尖策略手冊(極難)
     if (floor >= 30 && !s.learned.includes("zhutian_shenlei") && Math.random() < 0.1) {
       give(s, "m_zhutian");
-      lines.push("塔頂金光大盛——你竟得傳說中的【《誅天神雷金仙法》仙簡】!");
+      lines.push("擂台頂端金光大盛——你竟得傳說中的【《誅盤神雷 · 金仙操盤法》仙簡】!");
     } else if (floor >= 15 && !s.learned.includes("taiqing_daoyun") && Math.random() < 0.12) {
       give(s, "m_taiqing");
-      lines.push("幻象深處浮現一卷【《太清道韻九轉》玉冊】,你伸手攝來!");
+      lines.push("幻象深處浮現一卷【《太清九轉複利》玉冊】,你伸手攝來!");
     }
-    lines.push(`下一層(第 ${floor + 1} 層)的幻象太歲天尊,將強大一倍。`);
-    log(s, `浮屠塔第 ${floor} 層告破!靈石 +${reward}。`);
-    return { title: `浮 屠 塔 · 第 ${floor} 層`, success: true, lines };
+    lines.push(`下一關(第 ${floor + 1} 關)的幻象莊家天尊,將更為強大。`);
+    log(s, `爆倉擂台第 ${floor} 關告破!美金 +${reward}。`);
+    return { title: `爆 倉 擂 台 · 第 ${floor} 關`, success: true, lines };
   }
 
   const stones = Math.floor(rand(mon.stones[0], mon.stones[1]) * stoneMult);
@@ -345,18 +345,18 @@ function winCombat(s: SaveData): Modal {
   s.combat = null;
   log(
     s,
-    `${isLord ? "歷經苦戰,你竟斬殺了地域之王 " : "你擊殺了 "}${mon.name}!獲得修為 ${mon.exp}、靈石 ${stones}${dropNames.length ? ",拾得:" + dropNames.join("、") : ""}。`,
+    `${isLord ? "苦戰之後,你竟清算了巨鯨 " : "你清算了 "}${mon.name}!獲得交易量 ${mon.exp}、美金 ${stones}${dropNames.length ? ",拾得:" + dropNames.join("、") : ""}。`,
   );
   return {
-    title: isLord ? "地 域 王 授 首" : "戰 利 品",
+    title: isLord ? "巨 鯨 授 首" : "交 易 收 益",
     success: true,
     lines: [
-      `${isLord ? "斬殺地域王" : "擊殺"}【${mon.name}】`,
-      ...(mon.exp > 0 ? [`修為 +${mon.exp}`] : []),
-      `靈石 +${stones}`,
+      `${isLord ? "清算巨鯨" : "清算"}【${mon.name}】`,
+      ...(mon.exp > 0 ? [`交易量 +${mon.exp}`] : []),
+      `美金 +${stones}`,
       ...(dropNames.length
         ? [`拾得:${dropNames.join("、")}`]
-        : [isLord ? "此王氣運深厚,竟未留下寶物,可惜!" : "妖獸未留下完整材料。"]),
+        : [isLord ? "此巨鯨資金深厚,竟未留下戰利,可惜!" : "對手未留下完整零件。"]),
     ],
   };
 }
@@ -386,31 +386,31 @@ function equipToSlot(s: SaveData, item: ItemDef): boolean {
 }
 const slotVerb = (kind: string) =>
   kind === "artifact"
-    ? "祭於身前,攻伐大增"
+    ? "裝上開機,算力大增"
     : kind === "talisman"
-      ? "貼身催動"
+      ? "插上處理器,火力全開"
       : kind === "pet"
-        ? "收為靈寵,伴隨左右"
-        : "穿戴護身";
+        ? "掛上交易機器人,自動盯盤"
+        : "接上護機硬體";
 
-// 探索秘境(雲遊際遇,紫色):秘笈 / 靈石 / 法術 / 裝備 / 靈寵,並有機會解鎖金源仙域
+// 鏈上探索(鏈上遊獵際遇,綠色):策略 / 美金 / 硬體 / 交易機器人,並有機會解鎖主力莊家黑池
 function exploreSecretRealm(s: SaveData): ActionResult {
   const realm = REALMS[s.realmIdx];
-  const lines: string[] = ["雲遊途中,你踏入一處與世隔絕的上古【秘境】——"];
+  const lines: string[] = ["鏈上遊獵途中,你潛入一處與世隔絕的隱藏【黑池】——"];
   const roll = Math.random();
 
-  // 12% 解鎖金源仙域(僅真仙,且尚未解鎖)
+  // 12% 解鎖主力莊家黑池(僅基金經理人,且尚未解鎖)
   if (realm.stage >= 10 && !s.jinyuanUnlocked && roll < 0.12) {
     s.jinyuanUnlocked = true;
     lines.push(
-      "秘境盡頭,一道金色仙門轟然洞開——【金源仙域】的入口自此為你顯現!",
-      "遊歷探索的地圖上,金源仙域已然解鎖。其中妖獸之強,遠勝北寒五十倍,慎入。",
+      "黑池盡頭,一道金色入口轟然洞開——【主力莊家黑池】的通道自此為你顯現!",
+      "盤面探索的地圖上,主力莊家黑池已然解鎖。其中對手之強,遠勝頂級對沖基金五十倍,慎入。",
     );
-    log(s, "你於秘境深處尋得通往【金源仙域】的仙門,新地圖解鎖!");
-    return { save: s, loot: { title: "秘 境 · 金 源 仙 門", success: true, lines } };
+    log(s, "你於黑池深處尋得通往【主力莊家黑池】的通道,新地圖解鎖!");
+    return { save: s, loot: { title: "黑 池 · 主 力 通 道", success: true, lines } };
   }
 
-  // 5% 得靈寵(依境界給對應等級靈寵)
+  // 5% 得交易機器人(依境界給對應等級)
   if (roll < 0.17) {
     const petPool = [
       { id: "pet_linghu", stage: 4 },
@@ -422,12 +422,12 @@ function exploreSecretRealm(s: SaveData): ActionResult {
     const pick = petPool.length ? petPool[petPool.length - 1] : { id: "pet_linghu", stage: 4 };
     give(s, pick.id);
     const pet = itemById(pick.id);
-    lines.push(`秘境靈氣氤氳,一頭【${pet.name}】與你一見投緣,自願隨行!`, pet.desc);
-    log(s, `你在秘境中收服了靈寵【${pet.name}】!`);
-    return { save: s, loot: { title: "秘 境 · 靈 寵 相 隨", success: true, lines } };
+    lines.push(`黑池演算法氤氳,一台【${pet.name}】與你頻率契合,自願隨行!`, pet.desc);
+    log(s, `你在黑池中收得交易機器人【${pet.name}】!`);
+    return { save: s, loot: { title: "黑 池 · 機 器 人 隨 行", success: true, lines } };
   }
 
-  // 25% 完整裝備(依境界給予,秘境不受 dropOnly 限制)
+  // 25% 完整硬體(依境界給予,不受 dropOnly 限制)
   if (roll < 0.42) {
     const gearPool = ITEMS_EQUIP.filter(
       (i) => (i.reqStage ?? 1) <= realm.stage && i.id !== "jinhundan",
@@ -435,13 +435,13 @@ function exploreSecretRealm(s: SaveData): ActionResult {
     if (gearPool.length) {
       const g = gearPool[rand(0, gearPool.length - 1)];
       give(s, g.id);
-      lines.push(`石室中靜置著一件【${g.name}】,你伸手取之,如獲至寶!`, g.desc);
-      log(s, `你於秘境得到裝備【${g.name}】!`);
-      return { save: s, loot: { title: "秘 境 · 仙 家 遺 寶", success: true, lines } };
+      lines.push(`機房中靜置著一台【${g.name}】,你伸手取之,如獲至寶!`, g.desc);
+      log(s, `你於黑池得到硬體【${g.name}】!`);
+      return { save: s, loot: { title: "黑 池 · 頂 級 硬 體", success: true, lines } };
     }
   }
 
-  // 25% 法術秘笈(依境界)
+  // 25% 策略手冊(依境界)
   if (roll < 0.67) {
     const manualPool = ITEMS_MANUAL.filter((i) => {
       const t = i.teaches ? techById(i.teaches) : null;
@@ -450,18 +450,18 @@ function exploreSecretRealm(s: SaveData): ActionResult {
     if (manualPool.length) {
       const m = manualPool[rand(0, manualPool.length - 1)];
       give(s, m.id);
-      lines.push(`一方玉簡懸浮於秘境祭壇——【${m.name}】,你小心收入囊中。`, m.desc);
-      log(s, `你於秘境得到秘笈【${m.name}】!`);
-      return { save: s, loot: { title: "秘 境 · 玉 簡 傳 承", success: true, lines } };
+      lines.push(`一份加密手冊靜靜躺在黑池伺服器——【${m.name}】,你小心備份下來。`, m.desc);
+      log(s, `你於黑池得到策略手冊【${m.name}】!`);
+      return { save: s, loot: { title: "黑 池 · 策 略 傳 承", success: true, lines } };
     }
   }
 
-  // 其餘:大量靈石
+  // 其餘:大量美金
   const gain = Math.floor(realm.expNeed * 0.5) + rand(100, 500);
   s.stones += gain;
-  lines.push(`秘境中一座靈石礦脈熠熠生輝,你滿載而歸——靈石 +${gain}!`);
-  log(s, `你於秘境採得靈石 ${gain} 枚!`);
-  return { save: s, loot: { title: "秘 境 · 靈 石 礦 脈", success: true, lines } };
+  lines.push(`黑池中一條資金暗流熠熠生輝,你滿載而歸——美金 +${gain}!`);
+  log(s, `你於黑池搬到美金 ${gain} 元!`);
+  return { save: s, loot: { title: "黑 池 · 資 金 暗 流", success: true, lines } };
 }
 
 // ═══ 主入口 ═══
@@ -512,40 +512,40 @@ function applyActionInner(
 
   switch (type) {
     case "cultivate": {
-      if (s.combat) return { save: s, error: "激戰之中,無法打坐。" };
+      if (s.combat) return { save: s, error: "交易對局中,無法進修。" };
       const { realm, sect, mpMax } = statsOf(s);
       const cost = cultCostOf(s);
       const cap = maxLifeOf(s);
-      // 打坐消耗壽元;壽元耗盡即道隕
+      // 進修消耗資產;資產耗盡即出局
       if (s.age + cost >= cap) {
         s.age = cap;
         s.dead = true;
         s.combat = null;
         log(
           s,
-          "你強提一口真氣打坐,卻覺經脈枯涸,鏡中鬢髮霜白——壽元已盡。",
-          `享年 ${cap} 年,道隕於【${realm.name}】。仙路無情,一步遲,步步遲。`,
+          "你硬撐著通宵覆盤,卻覺腦力枯竭、帳戶見底——資產已歸零。",
+          `操盤 ${cap} 載,爆倉出局於【${realm.name}】。市場無情,一步遲,步步遲。`,
         );
         return { save: s };
       }
       s.age += cost;
-      s.day = s.age; // 修行年限直接等於壽元
+      s.day = s.age; // 資歷直接等於資產消耗
       const base = realm.expNeed * (0.04 + Math.random() * 0.03);
       const gain = Math.max(1, Math.floor(base * (1 + (sect?.bonus.exp ?? 0) / 100)));
       s.exp += gain;
       s.mp = Math.min(mpMax, s.mp + Math.floor(mpMax * 0.25));
       s.cultToday += 1;
-      const lines = [`你盤膝打坐,吐納靈氣,修為 +${gain}(耗壽元 ${cost} 年,現 ${s.age}/${cap})。`];
-      // 修習仙法推進(以打坐年月推進)
+      const lines = [`你埋首鑽研盤面,交易量 +${gain}(耗資產 ${cost} 載,現 ${s.age}/${cap})。`];
+      // 策略進修推進(以進修年月推進)
       if (s.learning) {
         s.learning.remain -= cost;
         const tech = techById(s.learning.techId);
         if (s.learning.remain <= 0) {
           s.learned.push(s.learning.techId);
           s.learning = null;
-          lines.push(`苦修有成,水到渠成——你終於參透【${tech.name}】,自此多一大神通!`);
+          lines.push(`苦研有成,水到渠成——你終於參透【${tech.name}】,自此多一大殺招!`);
         } else {
-          lines.push(`【${tech.name}】修習中,尚需 ${s.learning.remain} 年。`);
+          lines.push(`【${tech.name}】進修中,尚需 ${s.learning.remain} 年。`);
         }
       }
       log(s, ...lines);
@@ -554,13 +554,13 @@ function applyActionInner(
     }
 
     case "rest": {
-      if (s.combat) return { save: s, error: "激戰之中,無法調息。" };
+      if (s.combat) return { save: s, error: "交易對局中,無法休息。" };
       const { hpMax } = statsOf(s);
       if (s.hp >= hpMax) {
-        log(s, "你氣血充盈,無需調息。");
+        log(s, "你倉位充盈,無需休息。");
         return { save: s };
       }
-      // 調息消耗壽元:為打坐修煉的 2 倍
+      // 休息消耗資產:為進修苦研的 2 倍
       const restCost = cultCostOf(s) * 2;
       const cap = maxLifeOf(s);
       if (s.age + restCost >= cap) {
@@ -569,36 +569,36 @@ function applyActionInner(
         s.combat = null;
         log(
           s,
-          "你強行運轉周天調息療傷,卻覺生機如燭火將熄——壽元已盡。",
-          `享年 ${cap} 年,道隕於【${REALMS[s.realmIdx].name}】。`,
+          "你強撐著休養調整心態,卻覺鬥志如燭火將熄——資產已歸零。",
+          `操盤 ${cap} 載,爆倉出局於【${REALMS[s.realmIdx].name}】。`,
         );
         return { save: s };
       }
       s.age += restCost;
       s.day = s.age;
       s.hp = hpMax;
-      log(s, `你緩緩吐納,周天運轉,氣血盡復(耗壽元 ${restCost} 年,現 ${s.age}/${cap})。`);
+      log(s, `你放下盤面好好休息,倉位盡復(耗資產 ${restCost} 載,現 ${s.age}/${cap})。`);
       return { save: s };
     }
 
     case "wander": {
-      if (s.combat) return { save: s, error: "激戰之中,無法遠遊。" };
+      if (s.combat) return { save: s, error: "交易對局中,無法遠行。" };
       const WANDER_LIFE = 5000;
-      const WANDER_STONES = 100 * 1000000; // 100 極品靈石
+      const WANDER_STONES = 100 * 1000000; // 1 億美金
       const cap = maxLifeOf(s);
       if (s.stones < WANDER_STONES) {
-        log(s, `雲遊四海需備 100 極品靈石為盤纏,你囊中羞澀,無法成行。`);
+        log(s, `鏈上遊獵需備 1 億美金作為本金,你囊中羞澀,無法成行。`);
         return { save: s };
       }
       if (s.age + WANDER_LIFE >= cap) {
-        log(s, `雲遊四海耗時 5000 載,你壽元將盡,豈能遠行?先延壽再議。`);
+        log(s, `鏈上遊獵耗時 5000 載,你資產將盡,豈能遠行?先回本再議。`);
         return { save: s };
       }
       s.stones -= WANDER_STONES;
       s.age += WANDER_LIFE;
       s.day = s.age;
       const roll = Math.random();
-      // 1% 遭遇金仙境超級大 BOSS
+      // 1% 遭遇家族基金超級大 BOSS
       if (roll < 0.01) {
         const boss = monsterById("jinxian");
         s.combat = {
@@ -611,27 +611,27 @@ function applyActionInner(
         if (!s.lordsSeen.includes(boss.id)) s.lordsSeen.push(boss.id);
         log(
           s,
-          "雲遊萬里,忽見金光垂天——一位【太上金仙】立於雲端俯瞰眾生!絕世威壓下,你竟無從遁逃,唯有死戰!",
+          "鏈上遊獵萬里,忽見金光垂天——一位【傳奇資本道君】現身盤面俯瞰眾生!絕世威壓下,你竟無從遁逃,唯有死戰!",
         );
         return { save: s };
       }
-      // 5% 探索秘境(紫色際遇):秘笈 / 靈石 / 法術 / 裝備,並有機會解鎖金源仙域
+      // 5% 鏈上探索(綠色際遇):策略 / 美金 / 硬體,並有機會解鎖主力莊家黑池
       if (roll < 0.06) {
         return exploreSecretRealm(s);
       }
-      // 2.5% 直接得天仙丹
+      // 2.5% 直接得操盤密鑰
       if (roll < 0.085) {
         give(s, "tianxiandan");
-        log(s, "雲遊至一處仙家洞府,你於塵封玉匣中尋得一枚【天仙丹】——曠世機緣!");
+        log(s, "鏈上遊獵至一處廢棄合約,你於加密檔案中尋得一枚【操盤密鑰】——曠世機緣!");
         return {
           save: s,
           loot: {
-            title: "雲 遊 奇 緣",
+            title: "遊 獵 奇 緣",
             success: true,
             lines: [
-              "雲遊四海,福緣深厚:",
-              "於仙家洞府得【天仙丹】一枚!",
-              "飛昇為真仙後煉化,可增一點仙靈力。",
+              "鏈上遊獵,福緣深厚:",
+              "於廢棄合約得【操盤密鑰】一枚!",
+              "封神為基金經理人後煉化,可增一點影響力。",
             ],
           },
         };
@@ -644,49 +644,49 @@ function applyActionInner(
         if (kind === 0) {
           const g = Math.max(5, Math.floor(realm.hpMax * 0.03));
           s.boonHp += g;
-          line = `於仙山秘境洗髓伐毛,氣血上限永久 +${g}!`;
+          line = `一場硬扛下來的行情磨練心性,倉位上限永久 +${g}!`;
         } else if (kind === 1) {
           const g = Math.max(2, Math.floor(realm.atk * 0.03));
           s.boonAtk += g;
-          line = `得一位隱世前輩指點武道,攻擊永久 +${g}!`;
+          line = `得一位隱世操盤前輩指點手法,交易火力永久 +${g}!`;
         } else if (kind === 2) {
           const g = Math.max(2, Math.floor(realm.atk * 0.03));
           s.boonDef += g;
-          line = `於古戰場悟得護體真意,防禦永久 +${g}!`;
+          line = `於一次黑天鵝中悟得資金控管真意,風控永久 +${g}!`;
         } else {
           const g = Math.max(2, Math.floor(realm.stage * 3));
           s.boonSpeed += g;
-          line = `踏遍名山大川,身法漸臻化境,速度永久 +${g}!`;
+          line = `盯盤無數,反應漸臻化境,手速永久 +${g}!`;
         }
-        log(s, `雲遊四海,遍歷奇遇——${line}`);
+        log(s, `鏈上遊獵,遍歷奇遇——${line}`);
         return {
           save: s,
-          loot: { title: "雲 遊 際 遇", success: true, lines: ["歷經五千載雲遊,終有所得:", line] },
+          loot: { title: "遊 獵 際 遇", success: true, lines: ["歷經五千載遊獵,終有所得:", line] },
         };
       }
       // 一無所獲
-      log(s, "雲遊四海五千載,山川壯麗,人事滄桑,卻未逢機緣,徒增閱歷而已。");
+      log(s, "鏈上遊獵五千載,行情起落,人事滄桑,卻未逢機緣,徒增閱歷而已。");
       return {
         save: s,
         loot: {
-          title: "雲 遊 四 海",
+          title: "鏈 上 遊 獵",
           success: false,
-          lines: ["五千載遊歷,飽覽天地,卻無所得。", "仙途本就如此——大機緣可遇不可求。"],
+          lines: ["五千載遊獵,飽覽盤海,卻無所得。", "交易之路本就如此——大機緣可遇不可求。"],
         },
       };
     }
 
     case "breakthrough": {
-      if (s.combat) return { save: s, error: "激戰之中,無法突破。" };
+      if (s.combat) return { save: s, error: "交易對局中,無法考核。" };
       const realm = REALMS[s.realmIdx];
       if (s.realmIdx >= REALMS.length - 1) {
-        log(s, "你已白日飛昇,位列仙班。仙界的故事,是另一部書了……");
+        log(s, "你已白日封神,位列家族基金。頂級圈的故事,是另一部書了……");
         return { save: s };
       }
       if (s.exp < realm.expNeed) {
         log(
           s,
-          `修為不足,突破 ${REALMS[s.realmIdx + 1].name} 需 ${realm.expNeed} 修為(現有 ${s.exp})。`,
+          `交易量不足,晉升 ${REALMS[s.realmIdx + 1].name} 需 ${realm.expNeed} 交易量(現有 ${s.exp})。`,
         );
         return { save: s };
       }
@@ -701,10 +701,10 @@ function applyActionInner(
         if (next.stage === 10) {
           breakResult = {
             success: true,
-            title: "白 日 飛 昇",
+            title: "白 日 封 神",
             lines: [
-              "九霄之上雷雲翻湧,萬丈金光自天門傾瀉——你踏碎虛空,白日飛昇!",
-              "自山村凡童至真仙之軀,這一步,你走了一生。",
+              "盤面之上資金翻湧,萬丈金光自交易之門傾瀉——你踏碎散戶宿命,白日封神!",
+              "自入場小韭菜至基金經理人之軀,這一步,你走了一生。",
             ],
           };
         } else if (next.stage > realm.stage) {
@@ -712,17 +712,17 @@ function applyActionInner(
           s.lifeBonus += gift;
           breakResult = {
             success: true,
-            title: "突 破 大 關",
+            title: "晉 級 考 核 通 過",
             lines: [
-              `天地色變,靈氣如百川歸海——你渡過大關,晉入【${next.name}】!`,
-              `壽元上限躍升至 ${next.lifespan} 年,脫胎換骨,額外增壽 ${gift} 年。`,
+              `盤面色變,資金如百川歸海——你通過大關考核,晉升【${next.name}】!`,
+              `資產上限躍升至 ${next.lifespan} 載,脫胎換骨,額外增資產 ${gift} 載。`,
             ],
           };
         } else {
           breakResult = {
             success: true,
-            title: "突 破 成 功",
-            lines: [`靈氣灌體,經脈轟鳴——你成功突破至【${next.name}】!氣血法力盡復。`],
+            title: "考 核 通 過",
+            lines: [`資金灌體,盤感轟鳴——你成功晉升至【${next.name}】!倉位精力盡復。`],
           };
         }
         log(s, ...breakResult.lines);
@@ -735,26 +735,26 @@ function applyActionInner(
       s.lifeBonus -= lifeCut;
       const cap = maxLifeOf(s);
       const lines = [
-        `靈氣暴走,經脈俱震!修為損失 ${lost}。`,
-        `道基受創,最大壽元折損 ${lifeCut} 年(現上限 ${cap} 年)。`,
+        `一波回撤,交易量損失 ${lost}。`,
+        `信心受創,最大資產折損 ${lifeCut} 載(現上限 ${cap} 載)。`,
       ];
       if (s.age >= cap) {
         s.age = cap;
         s.dead = true;
         s.combat = null;
-        lines.push("壽元隨道基崩毀而枯竭——你隕落於突破途中。");
+        lines.push("資產隨信心崩毀而枯竭——你爆倉於考核途中。");
       }
       log(s, ...lines);
-      return { save: s, breakResult: { success: false, title: "突 破 失 敗", lines } };
+      return { save: s, breakResult: { success: false, title: "考 核 失 敗", lines } };
     }
 
     case "gather": {
-      if (s.combat) return { save: s, error: "激戰之中!" };
+      if (s.combat) return { save: s, error: "交易對局中!" };
       const loc = LOCATIONS.find((l) => l.id === payload.locationId);
-      if (!loc) return { save: s, error: "無此秘境" };
+      if (!loc) return { save: s, error: "無此盤面" };
       const { realm } = statsOf(s);
       if (realm.stage < loc.reqStage) {
-        log(s, `${loc.name} 兇險異常,以你現在的境界踏入必死無疑。`);
+        log(s, `${loc.name} 兇險異常,以你現在的級別進場必被清算。`);
         return { save: s };
       }
       if (Math.random() < 0.35 && loc.monsters.length) {
@@ -762,7 +762,7 @@ function applyActionInner(
         const mon = monsterById(mid);
         s.combat = { monsterId: mid, monsterHp: mon.hp, locationId: loc.id };
         if (!s.seen.includes(mid)) s.seen.push(mid);
-        log(s, `你在 ${loc.name} 採集時,${mon.name} 突然襲來!`);
+        log(s, `你在 ${loc.name} 撿零件時,${mon.name} 突然殺出!`);
         return { save: s };
       }
       const pool = [...loc.materials, ...loc.herbs];
@@ -773,29 +773,29 @@ function applyActionInner(
         give(s, id);
         found.push(itemById(id).name);
       }
-      const lines = [`採得:${found.join("、")}`];
-      log(s, `你在 ${loc.name} 仔細搜尋,${lines.join(";")}。`);
+      const lines = [`撿到:${found.join("、")}`];
+      log(s, `你在 ${loc.name} 仔細搜刮,${lines.join(";")}。`);
       maybeEncounter(s);
       return {
         save: s,
         loot: {
-          title: "採 集 所 得",
+          title: "搜 刮 所 得",
           success: true,
-          lines: [`於【${loc.name}】搜尋一番:`, ...lines],
+          lines: [`於【${loc.name}】搜刮一番:`, ...lines],
         },
       };
     }
 
     case "hunt": {
-      if (s.combat) return { save: s, error: "激戰之中!" };
+      if (s.combat) return { save: s, error: "交易對局中!" };
       const loc = LOCATIONS.find((l) => l.id === payload.locationId);
-      if (!loc) return { save: s, error: "無此秘境" };
+      if (!loc) return { save: s, error: "無此盤面" };
       const { realm } = statsOf(s);
       if (realm.stage < loc.reqStage) {
-        log(s, `${loc.name} 兇險異常,以你現在的境界踏入必死無疑。`);
+        log(s, `${loc.name} 兇險異常,以你現在的級別進場必被清算。`);
         return { save: s };
       }
-      // 2%~3% 機率遭遇地域王(妖獸領主)
+      // 2%~3% 機率遭遇巨鯨領主
       const region = REGIONS.find((r) => r.id === loc.region);
       const lordChance = 0.02 + Math.random() * 0.01;
       if (region?.lordId && Math.random() < lordChance) {
@@ -805,7 +805,7 @@ function applyActionInner(
         if (!s.lordsSeen.includes(lord.id)) s.lordsSeen.push(lord.id);
         log(
           s,
-          `⚠ 天地驟然一暗——${loc.name} 的地域之王【${lord.name}】現身了!(${lord.element}屬性)絕世凶威,撲面而來!`,
+          `⚠ 盤面驟然一暗——${loc.name} 的巨鯨【${lord.name}】現身了!(${lord.element}盤)絕世凶威,撲面而來!`,
         );
         return { save: s };
       }
@@ -817,19 +817,19 @@ function applyActionInner(
       log(
         s,
         mon.isLord
-          ? `⚠ 你踏入 ${loc.name},仙威如淵——【${mon.name}】(${mon.element}屬性)橫亙眼前!`
-          : `你主動深入 ${loc.name} 尋妖,遭遇了 ${mon.name}(${mon.element}屬性)!`,
+          ? `⚠ 你踏入 ${loc.name},資金威壓如淵——【${mon.name}】(${mon.element}盤)橫亙眼前!`
+          : `你主動深入 ${loc.name} 找對手,遭遇了 ${mon.name}(${mon.element}盤)!`,
       );
       return { save: s };
     }
 
     case "cast": {
-      if (!s.combat) return { save: s, error: "並無戰鬥" };
+      if (!s.combat) return { save: s, error: "並無對局" };
       const techId = String(payload.techId ?? "");
-      if (!s.learned.includes(techId)) return { save: s, error: "未習得此仙法" };
+      if (!s.learned.includes(techId)) return { save: s, error: "未習得此策略" };
       const tech = techById(techId);
       if (s.mp < tech.mpCost) {
-        log(s, `法力不足,無法施展 ${tech.name}(需 ${tech.mpCost})。`);
+        log(s, `精力不足,無法施展 ${tech.name}(需 ${tech.mpCost})。`);
         return { save: s };
       }
       const mon = monsterById(s.combat.monsterId);
@@ -844,8 +844,8 @@ function applyActionInner(
       s.mp -= tech.mpCost;
       log(
         s,
-        `你施展【${tech.name}】(${level} 級),對 ${mon.name} 造成 ${formatDamage(dmg)}傷害` +
-          (mult > 1 ? "(五行相剋,威力大增!)" : mult < 1 ? "(屬性被剋,威力受阻)" : "") +
+        `你祭出【${tech.name}】(${level} 級),對 ${mon.name} 清算 ${formatDamage(dmg)}交易額` +
+          (mult > 1 ? "(盤性相剋,威力大增!)" : mult < 1 ? "(盤性被剋,威力受阻)" : "") +
           "。",
       );
       s.combat.monsterHp -= dmg;
@@ -855,12 +855,12 @@ function applyActionInner(
     }
 
     case "attack": {
-      if (!s.combat) return { save: s, error: "並無戰鬥" };
+      if (!s.combat) return { save: s, error: "並無對局" };
       const mon = monsterById(s.combat.monsterId);
       const { atk, weaponEl } = statsOf(s);
       const mult = elementMult(weaponEl, mon.element);
       const dmg = Math.max(1, Math.floor(atk * mult * (0.85 + Math.random() * 0.3)));
-      log(s, `你御使法器直取要害,對 ${mon.name} 造成 ${formatDamage(dmg)}傷害。`);
+      log(s, `你手動下單直取要害,對 ${mon.name} 清算 ${formatDamage(dmg)}交易額。`);
       s.combat.monsterHp -= dmg;
       if (s.combat.monsterHp <= 0) return { save: s, loot: winCombat(s) };
       monsterTurn(s);
@@ -868,31 +868,31 @@ function applyActionInner(
     }
 
     case "flee": {
-      if (!s.combat) return { save: s, error: "並無戰鬥" };
+      if (!s.combat) return { save: s, error: "並無對局" };
       const mon = monsterById(s.combat.monsterId);
       if (Math.random() < 0.6) {
         s.combat = null;
-        log(s, `你祭出遁光,成功從 ${mon.name} 爪下逃離。`);
+        log(s, `你果斷砍單,成功從 ${mon.name} 手中脫身。`);
       } else {
-        log(s, "遁走失敗!");
+        log(s, "砍單離場失敗!");
         monsterTurn(s);
       }
       return { save: s };
     }
 
     case "challengeFutu": {
-      if (s.combat) return { save: s, error: "激戰之中,無法登塔。" };
-      // 浮屠塔僅真仙可挑戰,且需先解鎖金源仙域
+      if (s.combat) return { save: s, error: "交易對局中,無法登台。" };
+      // 爆倉擂台僅基金經理人可挑戰,且需先解鎖主力莊家黑池
       if (REALMS[s.realmIdx].stage < 10) {
-        return { save: s, error: "浮屠塔位於金源仙域深處,唯有飛昇真仙方能踏入。" };
+        return { save: s, error: "爆倉擂台位於主力莊家黑池深處,唯有封神的基金經理人方能踏入。" };
       }
       if (!s.jinyuanUnlocked) {
-        return { save: s, error: "你尚未尋得金源仙域,浮屠塔無從得見。" };
+        return { save: s, error: "你尚未尋得主力莊家黑池,爆倉擂台無從得見。" };
       }
       const base = monsterById("huanxiang_taisui");
-      const floor = s.futuFloor + 1; // 挑戰下一層(從第 1 層起)
-      const hpMult = Math.pow(1.5, floor - 1); // 每層氣血 ×1.5
-      const atkMult = Math.pow(1.2, floor - 1); // 每層攻擊 ×1.2
+      const floor = s.futuFloor + 1; // 挑戰下一關(從第 1 關起)
+      const hpMult = Math.pow(1.5, floor - 1); // 每關目標交易額 ×1.5
+      const atkMult = Math.pow(1.2, floor - 1); // 每關火力 ×1.2
       const bossHp = Math.floor(base.hp * hpMult);
       const bossAtk = Math.floor(base.atk * atkMult);
       s.combat = {
@@ -908,7 +908,7 @@ function applyActionInner(
       if (!s.lordsSeen.includes(base.id)) s.lordsSeen.push(base.id);
       log(
         s,
-        `⚠ 你踏上浮屠塔第 ${floor} 層——幻象太歲天尊自虛空凝形!(氣血 ${bossHp}、攻擊 ${bossAtk})`,
+        `⚠ 你踏上爆倉擂台第 ${floor} 關——幻象莊家天尊自虛空凝形!(目標交易額 ${bossHp}、火力 ${bossAtk})`,
       );
       return { save: s };
     }
@@ -921,18 +921,18 @@ function applyActionInner(
 
       if (item.kind === "manual" && item.teaches) {
         if (s.learned.includes(item.teaches)) {
-          log(s, "你已參透此篇仙法,無需再讀。");
+          log(s, "你已參透此套策略,無需再讀。");
           return { save: s };
         }
         const tech = techById(item.teaches);
         if (realm.stage < tech.reqStage) {
-          log(s, `【${tech.name}】玄奧非常,以你現在的境界難以參悟(需更高境界)。`);
+          log(s, `【${tech.name}】艱深非常,以你現在的級別難以參悟(需更高級別)。`);
           return { save: s };
         }
         if (s.learning) {
           log(
             s,
-            `你正在修習【${techById(s.learning.techId).name}】(尚需 ${s.learning.remain} 年),心無二用,無法同時參悟他法。`,
+            `你正在進修【${techById(s.learning.techId).name}】(尚需 ${s.learning.remain} 年),心無二用,無法同時鑽研他法。`,
           );
           return { save: s };
         }
@@ -941,15 +941,15 @@ function applyActionInner(
         s.learning = { techId: item.teaches, remain: years };
         log(
           s,
-          `你焚香沐浴,開始參悟【${item.name}】。此法玄奧,需潛修 ${years} 年方可大成(調息推進)。`,
+          `你閉關苦研,開始鑽研【${item.name}】。此法艱深,需潛心 ${years} 年方可大成(進修苦研推進)。`,
         );
         return { save: s };
       }
 
-      // 裝備:法器 / 法衣 / 護身符 / 符籙 / 靈寵
+      // 硬體:顯示卡 / 散熱 / UPS / CPU / 交易機器人
       if (["artifact", "robe", "treasure", "amulet", "talisman", "pet"].includes(item.kind)) {
         if ((item.reqStage ?? 1) > realm.stage) {
-          log(s, `【${item.name}】非你此境界所能駕馭(需更高境界)。`);
+          log(s, `【${item.name}】非你此級別所能駕馭(需更高級別)。`);
           return { save: s };
         }
         equipToSlot(s, item);
@@ -957,7 +957,7 @@ function applyActionInner(
         return { save: s };
       }
 
-      // 煉器圖譜:使用後解鎖對應配方
+      // 組裝藍圖:使用後解鎖對應配方
       if (item.kind === "recipe" && item.unlocksRecipe) {
         if (s.unlockedRecipes.includes(item.unlocksRecipe)) {
           log(s, `你早已參透【${item.name}】所載之法,無需再研。`);
@@ -966,26 +966,26 @@ function applyActionInner(
         take(s, itemId);
         s.unlockedRecipes.push(item.unlocksRecipe);
         const rec = RECIPES.find((r) => r.id === item.unlocksRecipe);
-        log(s, `你參詳【${item.name}】,煉器堂新增可煉之物:【${rec?.name ?? "?"}】!`);
+        log(s, `你參詳【${item.name}】,硬體組裝新增可組之物:【${rec?.name ?? "?"}】!`);
         return {
           save: s,
           loot: {
-            title: "圖 譜 參 悟",
+            title: "藍 圖 參 悟",
             success: true,
-            lines: [`參透【${item.name}】`, `煉器新配方解鎖:${rec?.name ?? "?"}`],
+            lines: [`參透【${item.name}】`, `組裝新配方解鎖:${rec?.name ?? "?"}`],
           },
         };
       }
 
-      // 金魂丹:真仙突破金仙
+      // 家族資本密令:基金經理人晉升家族基金
       if (item.kind === "special" && itemId === "jinhundan") {
         const jinxianIdx = REALMS.findIndex((r) => r.id === "jinxian_realm");
         if (REALMS[s.realmIdx].stage < 10) {
-          log(s, "【金魂丹】乃金仙之物,唯有飛昇真仙服之方能蛻變,此刻你無福消受。");
+          log(s, "【家族資本密令】乃頂級之物,唯有封神的基金經理人服之方能蛻變,此刻你無福消受。");
           return { save: s };
         }
         if (s.realmIdx >= jinxianIdx) {
-          log(s, "你已臻金仙之境,金魂丹於你已無用處。");
+          log(s, "你已臻家族基金之境,此密令於你已無用處。");
           return { save: s };
         }
         take(s, itemId);
@@ -995,46 +995,46 @@ function applyActionInner(
         s.mp = nmp;
         log(
           s,
-          "你吞下【金魂丹】,金光自魂魄深處炸開——魂軀蛻變,道果金鑄,你自真仙一步踏入【金仙】之境!",
+          "你啟用【家族資本密令】,金光自帳戶深處炸開——資本蛻變,道果金鑄,你自基金經理人一步踏入【家族基金經理人】之境!",
         );
         return {
           save: s,
           breakResult: {
             success: true,
-            title: "晉 入 金 仙",
+            title: "晉 入 家 族 基 金",
             lines: [
-              "金魂丹入腹,魂魄盡數金鑄,超脫真仙桎梏——",
-              "你正式晉入【金仙】之境,萬法加身,睥睨仙庭!",
+              "密令啟用,資本盡數金鑄,超脫基金經理人桎梏——",
+              "你正式晉入【家族基金經理人】之境,萬法加身,睥睨頂級圈!",
             ],
           },
         };
       }
 
-      // 真仙之物:凝練仙靈力(需已飛昇)
+      // 封神之物:凝練影響力(需已封神)
       if (item.kind === "special" && item.xianli) {
         if (REALMS[s.realmIdx].stage < 10) {
-          log(s, `【${item.name}】乃仙界之物,唯有飛昇真仙方能煉化,此刻你尚無從下手。`);
+          log(s, `【${item.name}】乃頂級之物,唯有封神的基金經理人方能煉化,此刻你尚無從下手。`);
           return { save: s };
         }
         take(s, itemId);
         s.xianli = (s.xianli ?? 0) + item.xianli;
         log(
           s,
-          `你盤坐九霄,煉化【${item.name}】——仙靈力 +${item.xianli}(現 ${s.xianli} 點),攻伐之力再攀新境!`,
+          `你潛心煉化【${item.name}】——影響力 +${item.xianli}(現 ${s.xianli} 點),交易火力再攀新境!`,
         );
         return {
           save: s,
           loot: {
-            title: "仙 靈 力 增 長",
+            title: "影 響 力 增 長",
             success: true,
-            lines: [`煉化【${item.name}】`, `仙靈力 +${item.xianli}`, `現有仙靈力:${s.xianli} 點`],
+            lines: [`煉化【${item.name}】`, `影響力 +${item.xianli}`, `現有影響力:${s.xianli} 點`],
           },
         };
       }
 
-      // 增靈珠須於「仙法」欄位使用
+      // 策略強化核須於「交易策略」欄位使用
       if (item.kind === "special") {
-        log(s, `【${item.name}】須於「仙法」欄位選定一門仙法後使用。`);
+        log(s, `【${item.name}】須於「交易策略」欄位選定一門策略後使用。`);
         return { save: s };
       }
 
@@ -1042,24 +1042,24 @@ function applyActionInner(
       const effects: string[] = [];
       if (item.heal) {
         s.hp = Math.min(hpMax, s.hp + item.heal);
-        effects.push(`回復氣血 ${item.heal}`);
+        effects.push(`回復倉位 ${item.heal}`);
       }
       if (item.mp) {
         s.mp = Math.min(mpMax, s.mp + item.mp);
-        effects.push(`回復法力 ${item.mp}`);
+        effects.push(`回復精力 ${item.mp}`);
       }
       if (item.exp) {
         s.exp += item.exp;
-        effects.push(`修為 +${item.exp}`);
+        effects.push(`交易量 +${item.exp}`);
       }
       if (item.life) {
         s.lifeBonus += item.life;
-        effects.push(`壽元上限 +${item.life} 年`);
+        effects.push(`資產上限 +${item.life} 載`);
       }
       if (item.lifePct) {
         const gain = Math.floor(maxLifeOf(s) * item.lifePct);
         s.lifeBonus += gain;
-        effects.push(`壽元上限 +${gain} 年(${Math.round(item.lifePct * 100)}%)`);
+        effects.push(`資產上限 +${gain} 載(${Math.round(item.lifePct * 100)}%)`);
       }
       log(s, `你服下 ${item.name},${effects.join(",")}。`);
       return { save: s };
@@ -1078,15 +1078,15 @@ function applyActionInner(
         item.dropOnly ||
         (item.reqStage ?? 1) > 8
       ) {
-        return { save: s, error: "此物坊市不售,唯有斬妖奪寶方能得之" };
+        return { save: s, error: "此物商城不售,唯有清算對手方能得之" };
       }
       if (s.stones < item.price) {
-        log(s, `靈石不足,${item.name} 需 ${item.price} 靈石。`);
+        log(s, `美金不足,${item.name} 需 ${item.price} 美金。`);
         return { save: s };
       }
       s.stones -= item.price;
       give(s, item.id);
-      log(s, `坊市購入 ${item.name},花費 ${item.price} 靈石。`);
+      log(s, `商城購入 ${item.name},花費 ${item.price} 美金。`);
       return { save: s };
     }
 
@@ -1104,41 +1104,41 @@ function applyActionInner(
         if (s.equippedTalisman === item.id) s.equippedTalisman = null;
         if (s.equippedPet === item.id) s.equippedPet = null;
       }
-      log(s, `售出 ${item.name},得 ${gain} 靈石。`);
+      log(s, `賣出 ${item.name},得 ${gain} 美金。`);
       return { save: s };
     }
 
     case "craft": {
       const rec = RECIPES.find((x) => x.id === payload.recipeId);
       if (!rec) return { save: s, error: "無此配方" };
-      // 高階配方(圖譜解鎖):需先由妖獸掉落圖譜研讀
+      // 高階配方(藍圖解鎖):需先由對手掉落藍圖研讀
       if (rec.dropOnly && !s.unlockedRecipes.includes(rec.id)) {
-        return { save: s, error: "此配方尚未參透,需先取得對應圖譜研讀" };
+        return { save: s, error: "此配方尚未參透,需先取得對應藍圖研讀" };
       }
       const { realm } = statsOf(s);
       if ((rec.reqStage ?? 1) > realm.stage) {
-        return { save: s, error: "境界不足,無法駕馭此配方" };
+        return { save: s, error: "級別不足,無法駕馭此配方" };
       }
       if (s.stones < rec.stones) {
-        log(s, `煉製 ${rec.name} 需 ${rec.stones} 靈石作爐火之資,靈石不足。`);
+        log(s, `組裝 ${rec.name} 需 ${rec.stones} 美金作組裝工本,美金不足。`);
         return { save: s };
       }
       for (const m of rec.materials) {
         if ((s.inventory[m.id] ?? 0) < m.n) {
-          log(s, `材料不足:煉製 ${rec.name} 需 ${itemById(m.id).name} ×${m.n}。`);
+          log(s, `零件不足:組裝 ${rec.name} 需 ${itemById(m.id).name} ×${m.n}。`);
           return { save: s };
         }
       }
       for (const m of rec.materials) take(s, m.id, m.n);
       s.stones -= rec.stones;
       give(s, rec.result);
-      log(s, `爐火純青,三日三夜——你成功煉製出【${rec.name}】!`);
+      log(s, `徹夜組裝,反覆調校——你成功組裝出【${rec.name}】!`);
       return {
         save: s,
         loot: {
-          title: "煉 器 大 成",
+          title: "硬 體 組 裝 完 成",
           success: true,
-          lines: [`【${rec.name}】出爐!`, itemById(rec.result).desc],
+          lines: [`【${rec.name}】出廠!`, itemById(rec.result).desc],
         },
       };
     }
@@ -1148,47 +1148,47 @@ function applyActionInner(
       if (!item || (s.inventory[item.id] ?? 0) <= 0) return { save: s, error: "並無此物" };
       const { realm } = statsOf(s);
       if ((item.reqStage ?? 1) > realm.stage) {
-        return { save: s, error: "境界不足,無法駕馭此物" };
+        return { save: s, error: "級別不足,無法駕馭此物" };
       }
-      if (!equipToSlot(s, item)) return { save: s, error: "此物無法裝備" };
+      if (!equipToSlot(s, item)) return { save: s, error: "此物無法裝配" };
       log(s, `你將【${item.name}】${slotVerb(item.kind)}。`);
       return { save: s };
     }
 
     case "restoreMp": {
-      // 聚靈回力:按住即逐步回力。每次呼叫回復一小段法力並碾碎少量靈石。
+      // 充能回氣:按住即逐步回精力。每次呼叫回復一小段精力並消耗少量美金。
       const { realm, mpMax } = statsOf(s);
       const need = mpMax - s.mp;
       if (need <= 0) {
-        return { save: s }; // 已滿,靜默(按住時不洗版見聞錄)
+        return { save: s }; // 已滿,靜默(按住時不洗版日誌)
       }
       const fullCost = Math.max(10, Math.floor(realm.expNeed * 0.05));
       const mpPerTick = Math.max(1, Math.ceil(mpMax * 0.08));
       const restore = Math.min(mpPerTick, need);
       const cost = Math.max(1, Math.ceil((fullCost * restore) / mpMax));
       if (s.stones < cost) {
-        log(s, `靈石不足,聚靈中斷(每息需 ${cost} 靈石,現有 ${s.stones})。`);
+        log(s, `美金不足,充能中斷(每次需 ${cost} 美金,現有 ${s.stones})。`);
         return { save: s };
       }
       s.stones -= cost;
       s.mp += restore;
-      // 恰好回滿時,補一句見聞
-      if (s.mp >= mpMax) log(s, "靈氣如霧納入丹田——法力盡復。");
+      // 恰好回滿時,補一句日誌
+      if (s.mp >= mpMax) log(s, "能量回充完畢——精力盡復。");
       return { save: s };
     }
 
     case "acceptMission": {
       if (s.missionId) {
-        log(s, "你已領有宗門任務,須先完成或放棄。");
+        log(s, "你已領有團隊任務,須先完成或放棄。");
         return { save: s };
       }
       const m = MISSIONS.find((x) => x.id === payload.missionId);
       if (!m) return { save: s, error: "無此任務" };
       const { realm } = statsOf(s);
-      if (realm.stage < m.reqStage) return { save: s, error: "境界不足" };
+      if (realm.stage < m.reqStage) return { save: s, error: "級別不足" };
       s.missionId = m.id;
       s.missionBase = m.kind === "kill" ? (s.kills[m.targetId] ?? 0) : 0;
-      log(s, `你在執事堂領取任務【${m.name}】:${m.desc}`);
+      log(s, `你在團隊接下任務【${m.name}】:${m.desc}`);
       return { save: s };
     }
 
@@ -1198,7 +1198,7 @@ function applyActionInner(
       if (m.kind === "kill") {
         const done = (s.kills[m.targetId] ?? 0) - s.missionBase;
         if (done < m.n) {
-          log(s, `任務未竟:已獵殺 ${done}/${m.n}。`);
+          log(s, `任務未竟:已清算 ${done}/${m.n}。`);
           return { save: s };
         }
       } else {
@@ -1212,12 +1212,12 @@ function applyActionInner(
       s.missionBase = 0;
       s.stones += m.stones;
       s.exp += m.exp;
-      const lines = [`靈石 +${m.stones}`, `修為 +${m.exp}`];
+      const lines = [`美金 +${m.stones}`, `交易量 +${m.exp}`];
       if (m.item) {
         give(s, m.item);
         lines.push(`另賜【${itemById(m.item).name}】`);
       }
-      log(s, `任務【${m.name}】完成!執事堂發放:${lines.join("、")}。`);
+      log(s, `任務【${m.name}】完成!團隊發放:${lines.join("、")}。`);
       return {
         save: s,
         loot: { title: "任 務 完 成", success: true, lines: [`【${m.name}】覆命`, ...lines] },
@@ -1235,8 +1235,8 @@ function applyActionInner(
 
     case "upgradeTech": {
       const techId = String(payload.techId ?? "");
-      if (!s.learned.includes(techId)) return { save: s, error: "未習得此仙法" };
-      if ((s.inventory["zenglingzhu"] ?? 0) <= 0) return { save: s, error: "並無增靈珠" };
+      if (!s.learned.includes(techId)) return { save: s, error: "未習得此策略" };
+      if ((s.inventory["zenglingzhu"] ?? 0) <= 0) return { save: s, error: "並無策略強化核" };
       const level = techLevelOf(s, techId);
       if (level >= MAX_TECH_LEVEL) {
         log(s, `【${techById(techId).name}】已臻 ${MAX_TECH_LEVEL} 級大圓滿,無法再進。`);
@@ -1245,11 +1245,14 @@ function applyActionInner(
       take(s, "zenglingzhu");
       s.techLevels = { ...s.techLevels, [techId]: level + 1 };
       const tech = techById(techId);
-      log(s, `你以增靈珠溫養【${tech.name}】,法術精進——${level} 級 → ${level + 1} 級,威力大增!`);
+      log(
+        s,
+        `你以策略強化核淬鍊【${tech.name}】,策略精進——${level} 級 → ${level + 1} 級,威力大增!`,
+      );
       return {
         save: s,
         loot: {
-          title: "仙 法 精 進",
+          title: "策 略 精 進",
           success: true,
           lines: [
             `【${tech.name}】`,

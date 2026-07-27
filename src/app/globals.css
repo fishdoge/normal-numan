@@ -2,16 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 紙質暗紋 + 暖色暈影 */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 50;
-  opacity: 0.5;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
+/* 交易終端底:純黑 + 極細網格 */
+body {
+  background-color: #0b0e11;
+  background-image:
+    linear-gradient(rgba(132, 142, 156, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(132, 142, 156, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
 }
 body::after {
   content: "";
@@ -19,47 +16,56 @@ body::after {
   inset: 0;
   pointer-events: none;
   z-index: 49;
-  background: radial-gradient(ellipse at 50% 30%, transparent 55%, rgba(10, 6, 2, 0.55) 100%);
+  background: radial-gradient(ellipse at 50% 0%, rgba(14, 203, 129, 0.05), transparent 60%);
 }
 
 @layer components {
   .panel {
-    @apply bg-coal/80 border border-faded/25 rounded-sm p-4 relative;
+    @apply bg-coal border border-smoke rounded-md p-4 relative;
   }
   .panel-title {
-    @apply font-mono text-xs tracking-[0.3em] text-emerald-400/80 uppercase mb-3;
+    @apply font-mono text-[11px] tracking-[0.2em] text-faded uppercase mb-3 flex items-center gap-1.5;
+  }
+  .panel-title::before {
+    content: "//";
+    @apply text-jade/70;
   }
   .btn {
-    @apply inline-flex items-center justify-center px-3 py-1.5 border border-emerald-500/40 text-cream text-sm
-      hover:bg-emerald-500/15 hover:border-emerald-400 transition-colors rounded-sm disabled:opacity-30 disabled:pointer-events-none;
+    @apply inline-flex items-center justify-center px-3 py-1.5 border border-smoke bg-smoke/60 text-cream text-sm font-medium
+      hover:bg-jade/10 hover:border-jade/50 hover:text-jade transition-colors rounded disabled:opacity-30 disabled:pointer-events-none;
   }
-  .btn-danger {
-    @apply border-vermillion/50 text-cinnabar hover:bg-vermillion/15 hover:border-vermillion;
+  .btn-buy {
+    @apply border-jade/50 bg-jade/10 text-jade hover:bg-jade/20 hover:border-jade;
+  }
+  .btn-danger,
+  .btn-sell {
+    @apply border-vermillion/50 bg-vermillion/10 text-cinnabar hover:bg-vermillion/20 hover:border-vermillion;
   }
   .chip {
-    @apply inline-block px-1.5 py-0.5 text-xs border border-faded/30 text-faded rounded-sm font-mono;
+    @apply inline-block px-1.5 py-0.5 text-[11px] border border-smoke text-faded rounded font-mono;
   }
   .stat-bar {
-    @apply h-2 rounded-sm overflow-hidden bg-smoke;
+    @apply h-1.5 rounded-full overflow-hidden bg-smoke;
   }
   .divider {
-    @apply flex items-center gap-3 text-faded/60 font-mono text-xs tracking-widest my-2;
+    @apply flex items-center gap-2 text-faded/70 font-mono text-[11px] tracking-widest my-2 uppercase;
   }
-  .divider::before,
+  .divider::before {
+    content: "//";
+    @apply text-jade/50;
+  }
   .divider::after {
     content: "";
-    @apply flex-1 h-px bg-gradient-to-r from-transparent via-faded/40 to-transparent;
+    @apply flex-1 h-px bg-smoke;
   }
-  .deco-frame {
-    position: relative;
-  }
+  /* 交易終端外框:左上/右下角落標記 */
   .deco-frame::before,
   .deco-frame::after {
     content: "";
     position: absolute;
-    width: 14px;
-    height: 14px;
-    border-color: rgba(201, 162, 39, 0.55);
+    width: 10px;
+    height: 10px;
+    border-color: rgba(14, 203, 129, 0.4);
   }
   .deco-frame::before {
     top: -1px;
@@ -73,20 +79,29 @@ body::after {
     border-bottom: 1px solid;
     border-right: 1px solid;
   }
+  /* 數字等寬對齊 */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
 }
 
 ::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #161310;
+  background: #0b0e11;
 }
 ::-webkit-scrollbar-thumb {
-  background: #4a4132;
+  background: #2b3139;
   border-radius: 4px;
 }
+::-webkit-scrollbar-thumb:hover {
+  background: #3a424c;
+}
 
-/* 真仙(已飛昇)專屬:得道昇仙的絢麗光暈 */
+/* 封神(家族基金)專屬:資本沖霄的光暈 */
 .xian-aura::before {
   content: "";
   position: fixed;
@@ -94,14 +109,14 @@ body::after {
   pointer-events: none;
   z-index: 48;
   background:
-    radial-gradient(ellipse at 20% 15%, rgba(232, 121, 249, 0.14), transparent 45%),
-    radial-gradient(ellipse at 80% 25%, rgba(103, 232, 249, 0.12), transparent 45%),
-    radial-gradient(ellipse at 50% 90%, rgba(251, 191, 36, 0.12), transparent 50%);
+    radial-gradient(ellipse at 20% 15%, rgba(240, 185, 11, 0.1), transparent 45%),
+    radial-gradient(ellipse at 80% 25%, rgba(14, 203, 129, 0.08), transparent 45%),
+    radial-gradient(ellipse at 50% 90%, rgba(59, 158, 255, 0.08), transparent 50%);
   animation: xianShift 12s ease-in-out infinite alternate;
 }
 @keyframes xianShift {
   0% {
-    opacity: 0.65;
+    opacity: 0.6;
   }
   100% {
     opacity: 1;

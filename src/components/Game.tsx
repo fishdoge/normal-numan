@@ -64,6 +64,42 @@ function ResultModal({ modal, onClose }: { modal: Modal; onClose: () => void }) 
   );
 }
 
+// 頂部跑馬燈:假行情 + web3 幽默(純裝飾)
+function TickerBar() {
+  const ticks = [
+    ["$BTC", "+4.20%", true],
+    ["$ETH", "+6.90%", true],
+    ["$LDZ", "+42069%", true],
+    ["$DOGE", "-3.14%", false],
+    ["$歸零幣", "-99.9%", false],
+    ["$貔貅盤", "只進不出", false],
+    ["$SOL", "+12.3%", true],
+    ["$小丑倉", "-100%", false],
+    ["$阿兜幣", "+8.88%", true],
+    ["$天台券", "sold out", false],
+    ["$PEPE", "+21.0%", true],
+    ["$FOMO", "+3.33%", true],
+  ] as const;
+  const row = (
+    <div className="flex shrink-0 gap-6 pr-6">
+      {ticks.map(([sym, chg, up], i) => (
+        <span key={i} className="flex items-center gap-1.5 font-mono text-xs">
+          <span className="text-cream">{sym}</span>
+          <span className={up ? "text-jade" : "text-vermillion"}>{chg}</span>
+        </span>
+      ))}
+    </div>
+  );
+  return (
+    <div className="border-y border-smoke bg-coal/60 overflow-hidden py-1.5 mb-4">
+      <div className="flex w-max animate-ticker">
+        {row}
+        {row}
+      </div>
+    </div>
+  );
+}
+
 // 修煉欄:置頂、醒目
 function CultivationBar() {
   const s = useGame((x) => x.save)!;
@@ -77,9 +113,9 @@ function CultivationBar() {
   return (
     <div className={`panel deco-frame ${canBreak ? "border-gold/70" : ""}`}>
       <div className="flex flex-wrap items-center gap-3">
-        <p className="panel-title mb-0 mr-2">操 盤</p>
+        <p className="panel-title mb-0 mr-2">操盤台</p>
         <button
-          className="btn text-base px-5 py-2"
+          className="btn btn-buy text-base px-5 py-2"
           disabled={busy || inCombat}
           onClick={() => act("cultivate")}
         >
@@ -93,10 +129,10 @@ function CultivationBar() {
           休息(回復倉位)
         </button>
         <button
-          className="btn text-base px-5 py-2 border-emerald-400/50 text-emerald-300 hover:bg-emerald-400/15 hover:border-emerald-400"
+          className="btn text-base px-5 py-2 border-gold/50 text-gold hover:bg-gold/15 hover:border-gold"
           disabled={busy || inCombat || s.stones < 100000000}
           onClick={() => act("wander")}
-          title="消耗 5000 載資產 + 1 億美金。約 5% 觸發鏈上探索(綠色機緣),約 2.5% 直接得操盤密鑰,30% 得永久盤感,1% 遇巨鯨,餘則一無所獲。"
+          title="消耗 5000 載資產 + 1 億美金。約 5% 觸發鏈上探索(綠色機緣),約 2.5% 直接得操盤私鑰,30% 得永久盤感,1% 遇巨鯨,餘則一無所獲。"
         >
           鏈上遊獵
         </button>
@@ -108,7 +144,7 @@ function CultivationBar() {
         >
           升等考核{canBreak ? "!" : ""}
         </button>
-        <span className="text-xs text-faded ml-auto font-mono">
+        <span className="text-xs text-faded ml-auto font-mono tnum">
           交易量 {s.exp}/{expNeed} · 考核失敗折損最大資產 15%
         </span>
       </div>
@@ -173,45 +209,47 @@ export default function Game() {
     <main className={`max-w-6xl mx-auto px-4 py-6 relative ${isXian ? "xian-aura" : ""}`}>
       {breakResult && <ResultModal modal={breakResult} onClose={closeBreak} />}
       {!breakResult && loot && <ResultModal modal={loot} onClose={closeLoot} />}
-      <header className="flex items-center justify-between mb-5">
+      <header className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/ldz/ldz-logo.jpg"
             alt="LDZ"
-            className="h-10 w-10 rounded object-cover border border-emerald-400/30"
+            className="h-10 w-10 rounded object-cover border border-jade/30"
           />
           <div>
             <h1
-              className={`text-2xl font-black tracking-[0.25em] ${isXian ? "text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-lime-200 to-cyan-200" : ""}`}
+              className={`text-2xl font-black tracking-[0.25em] ${isXian ? "text-transparent bg-clip-text bg-gradient-to-r from-gold via-jade to-azure" : ""}`}
             >
               LDZ 交易風雲傳
             </h1>
             <p className="font-mono text-[10px] tracking-[0.35em] text-faded">
-              {isXian ? "FUND MANAGER · 得 道 封 神" : "A TRADER\u2019S ROAD TO GODHOOD"}
+              {isXian ? "FUND MANAGER · 得道封神" : "A TRADER\u2019S ROAD TO GODHOOD"}
             </p>
           </div>
         </div>
         <div className="flex gap-4 items-baseline">
           <button
-            className="text-xs text-faded/60 hover:text-vermillion transition-colors"
+            className="text-xs text-faded/60 hover:text-vermillion transition-colors font-mono"
             onClick={() => {
               if (confirm("重開帳戶將抹去一切進度,確定?")) act("reset");
             }}
           >
-            重開帳戶
+            [重開帳戶]
           </button>
           <button
-            className="text-xs text-faded/60 hover:text-gold transition-colors"
+            className="text-xs text-faded/60 hover:text-gold transition-colors font-mono"
             onClick={async () => {
               await fetch("/api/auth/logout", { method: "POST" });
               location.reload();
             }}
           >
-            登出
+            [登出]
           </button>
         </div>
       </header>
+
+      <TickerBar />
 
       <div className="mb-4">
         <CultivationBar />

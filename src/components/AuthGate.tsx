@@ -42,10 +42,10 @@ export default function AuthGate({ onAuthed }: { onAuthed: (name: string) => voi
           <img
             src="/ldz/ldz-logo.jpg"
             alt="LDZ"
-            className="h-16 w-16 rounded object-cover border border-emerald-400/40"
+            className="h-16 w-16 rounded object-cover border border-jade/40"
           />
         </div>
-        <p className="font-mono text-xs tracking-[0.5em] text-emerald-400/70 mb-3">
+        <p className="font-mono text-xs tracking-[0.5em] text-jade/70 mb-3">
           A TRADER&apos;S ROAD TO GODHOOD
         </p>
         <h1 className="text-4xl font-black tracking-widest text-parchment">LDZ 交易風雲傳</h1>
@@ -63,7 +63,7 @@ export default function AuthGate({ onAuthed }: { onAuthed: (name: string) => voi
               }}
               className={`px-3 py-1 text-sm rounded-sm transition-colors ${
                 mode === m
-                  ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/40"
+                  ? "bg-jade/15 text-jade border border-jade/40"
                   : "text-faded hover:text-cream"
               }`}
             >
@@ -81,7 +81,7 @@ export default function AuthGate({ onAuthed }: { onAuthed: (name: string) => voi
                 onChange={(e) => setName(e.target.value)}
                 placeholder="阿兜"
                 maxLength={12}
-                className="w-full bg-smoke border border-faded/30 rounded-sm px-3 py-2 text-parchment placeholder-faded/40 focus:outline-none focus:border-emerald-400/60"
+                className="w-full bg-smoke border border-faded/30 rounded-sm px-3 py-2 text-parchment placeholder-faded/40 focus:outline-none focus:border-jade/60"
               />
             </div>
           )}
@@ -92,7 +92,7 @@ export default function AuthGate({ onAuthed }: { onAuthed: (name: string) => voi
               onChange={(e) => setUsername(e.target.value)}
               placeholder="account"
               maxLength={32}
-              className="w-full bg-smoke border border-faded/30 rounded-sm px-3 py-2 text-parchment placeholder-faded/40 focus:outline-none focus:border-emerald-400/60"
+              className="w-full bg-smoke border border-faded/30 rounded-sm px-3 py-2 text-parchment placeholder-faded/40 focus:outline-none focus:border-jade/60"
             />
           </div>
           <div>
@@ -103,7 +103,7 @@ export default function AuthGate({ onAuthed }: { onAuthed: (name: string) => voi
               onChange={(e) => setPassword(e.target.value)}
               placeholder="至少 4 位"
               onKeyDown={(e) => e.key === "Enter" && submit()}
-              className="w-full bg-smoke border border-faded/30 rounded-sm px-3 py-2 text-parchment placeholder-faded/40 focus:outline-none focus:border-emerald-400/60"
+              className="w-full bg-smoke border border-faded/30 rounded-sm px-3 py-2 text-parchment placeholder-faded/40 focus:outline-none focus:border-jade/60"
             />
           </div>
           {err && <p className="text-sm text-vermillion">{err}</p>}

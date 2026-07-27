@@ -19,24 +19,26 @@ export default function CharCreate({ name }: { name?: string }) {
           <img
             src="/ldz/adou.png"
             alt="阿兜"
-            className="h-28 w-28 rounded-full object-cover border-2 border-emerald-400/40 shadow-[0_0_30px_rgba(52,211,153,0.25)]"
+            className="h-28 w-28 rounded-full object-cover border-2 border-jade/40 shadow-[0_0_30px_rgba(14,203,129,0.25)]"
           />
         </div>
-        <p className="font-mono text-xs tracking-[0.5em] text-emerald-400/70 mb-3">
+        <p className="font-mono text-xs tracking-[0.5em] text-jade/70 mb-3">
           A TRADER&apos;S ROAD TO GODHOOD
         </p>
         <h1 className="text-5xl font-black tracking-widest text-parchment">LDZ 交易風雲傳</h1>
         <p className="mt-4 text-faded">
-          一個一無所有的韭菜,唯有一顆不服輸的交易心。
+          一個一無所有的韭菜,唯有一顆不服輸的鑽石心臟。
           <br />
-          美金為本,策略為刃,盤性相生相剋 —— 韭菜亦可登頂,成神封王。
+          美金為本,策略為刃,盤性相生相剋 —— 韭菜亦可扛過歸零,成神封王。
         </p>
       </header>
 
       <section className="panel deco-frame mb-6 text-center">
-        <p className="panel-title">交 易 員 代 號</p>
+        <p className="panel-title">交易員代號</p>
         <p className="text-2xl font-bold text-gold">{name || "無名散戶"}</p>
-        <p className="text-xs text-faded mt-2">此代號於註冊時已定,將伴你一生交易之路。</p>
+        <p className="text-xs text-faded mt-2">
+          此代號於註冊時已定,將伴你一生交易之路(與爆倉紀錄)。
+        </p>
       </section>
 
       <section className="panel deco-frame mb-8">
@@ -49,10 +51,8 @@ export default function CharCreate({ name }: { name?: string }) {
               <button
                 key={sect.id}
                 onClick={() => setSectId(sect.id)}
-                className={`text-left border rounded-sm p-3 transition-colors ${
-                  active
-                    ? "border-emerald-400 bg-emerald-400/10"
-                    : "border-faded/25 hover:border-faded/60"
+                className={`text-left border rounded p-3 transition-colors ${
+                  active ? "border-jade bg-jade/10" : "border-smoke hover:border-faded/60"
                 }`}
               >
                 <div className="flex items-baseline justify-between">
@@ -91,7 +91,7 @@ export default function CharCreate({ name }: { name?: string }) {
           <img src="/ldz/luka-logo.png" alt="LUKA" className="h-9 rounded" />
         </div>
         <p className="text-sm text-faded leading-relaxed">
-          本作由 <span className="text-emerald-300 font-bold">LDZ 交易團隊</span>{" "}
+          本作由 <span className="text-jade font-bold">LDZ 交易團隊</span>{" "}
           出品。加入阿兜社群,領取專屬福利、參與定期活動,與屋頂龜趨勢指標、RM 盤整指標一起實戰報單。
         </p>
         <p className="mt-3 font-mono text-gold">

@@ -70,31 +70,39 @@ export function StatusPanel() {
 
   return (
     <div className="panel deco-frame">
-      <p className="panel-title">交 易 員 檔 案</p>
+      <p className="panel-title">交易員檔案</p>
       <div className="flex items-baseline justify-between mb-1">
         <span
-          className={`text-xl font-bold ${isXian ? "text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-lime-200 to-emerald-300" : ""}`}
+          className={`text-xl font-bold ${isXian ? "text-transparent bg-clip-text bg-gradient-to-r from-gold via-jade to-azure" : ""}`}
         >
           {s.name}
         </span>
-        <span className="text-sm text-faded">{sect?.name}</span>
+        <span className="text-xs text-faded font-mono">{sect?.name}</span>
       </div>
-      <p className={`mb-3 ${isXian ? "text-emerald-300 font-bold" : "text-gold"}`}>{realm.name}</p>
+      <div className="flex items-baseline justify-between mb-3">
+        <span className={`text-sm ${isXian ? "text-jade font-bold" : "text-gold"}`}>
+          {realm.name}
+        </span>
+        <span className="text-right">
+          <span className="text-lg font-bold text-jade tnum">{formatStones(s.stones)}</span>
+          <span className="text-[10px] text-faded ml-1">USD</span>
+        </span>
+      </div>
 
       <div className="space-y-2 text-sm">
         <div>
           <div className="flex justify-between text-xs text-faded mb-0.5">
-            <span>倉位</span>
-            <span>
+            <span>倉位 EQUITY</span>
+            <span className="tnum">
               {s.hp}/{hpMax}
             </span>
           </div>
-          <Bar v={s.hp} max={hpMax} cls="bg-vermillion" />
+          <Bar v={s.hp} max={hpMax} cls="bg-jade" />
         </div>
         <div>
           <div className="flex justify-between text-xs text-faded mb-0.5">
-            <span>精力</span>
-            <span>
+            <span>精力 MARGIN</span>
+            <span className="tnum">
               {s.mp}/{mpMax}
             </span>
           </div>
@@ -102,18 +110,18 @@ export function StatusPanel() {
         </div>
         <div>
           <div className="flex justify-between text-xs text-faded mb-0.5">
-            <span>交易量</span>
-            <span>
+            <span>交易量 VOLUME</span>
+            <span className="tnum">
               {s.exp}/{expNeed}
             </span>
           </div>
-          <Bar v={s.exp} max={expNeed} cls="bg-jade" />
+          <Bar v={s.exp} max={expNeed} cls="bg-gold" />
         </div>
       </div>
 
-      <div className="divider">◆</div>
+      <div className="divider" />
 
-      <div className="grid grid-cols-2 gap-y-1 text-sm">
+      <div className="grid grid-cols-2 gap-y-1 text-sm tnum">
         <span className="text-faded">資產</span>
         <span
           className={`text-right ${maxLifeOf(s) - s.age <= REALMS[s.realmIdx].lifespan * 0.2 ? "text-vermillion" : ""}`}
@@ -138,8 +146,8 @@ export function StatusPanel() {
         <span className="text-right">{speed}</span>
         {s.boonHp + s.boonAtk + s.boonDef + s.boonSpeed > 0 && (
           <>
-            <span className="text-emerald-300">盤感積累</span>
-            <span className="text-right text-emerald-300 text-xs">
+            <span className="text-jade">盤感積累</span>
+            <span className="text-right text-jade text-xs">
               {[
                 s.boonHp && `倉+${s.boonHp}`,
                 s.boonAtk && `火+${s.boonAtk}`,
@@ -151,11 +159,9 @@ export function StatusPanel() {
             </span>
           </>
         )}
-        <span className="text-faded">美金</span>
-        <span className="text-right text-gold">{formatStones(s.stones)}</span>
       </div>
 
-      <div className="divider">硬 體 配 置</div>
+      <div className="divider">硬體配置</div>
       <div className="grid grid-cols-2 gap-y-1 text-sm">
         {EQUIP_SLOTS.map(({ slot, label }) => {
           const id = equipMap[slot];
@@ -164,7 +170,7 @@ export function StatusPanel() {
             <div key={slot} className="contents">
               <span className="text-faded">{label}</span>
               <span
-                className={`text-right ${it ? (slot === "pet" ? "text-emerald-300" : "text-cream") : "text-faded/50"}`}
+                className={`text-right ${it ? (slot === "pet" ? "text-jade" : "text-cream") : "text-faded/50"}`}
               >
                 {it ? it.name : "—"}
               </span>
@@ -175,7 +181,7 @@ export function StatusPanel() {
 
       {s.learning && (
         <>
-          <div className="divider">◆</div>
+          <div className="divider" />
           <div className="text-sm">
             <div className="flex items-baseline justify-between">
               <span className="text-azure font-bold">進修中</span>
@@ -214,7 +220,7 @@ export function LogPanel() {
   }, [log]);
   return (
     <div className="panel h-64 lg:h-full flex flex-col">
-      <p className="panel-title">盤 面 日 誌</p>
+      <p className="panel-title">盤面日誌</p>
       <div ref={boxRef} className="flex-1 overflow-y-auto space-y-1.5 pr-1 text-sm leading-relaxed">
         {log.length === 0 && <p className="text-faded/50">交易之路漫漫,一切由此開始……</p>}
         {log.map((l, i) => (
@@ -237,7 +243,7 @@ export function CombatPanel() {
   if (!combat) {
     return (
       <div className="panel deco-frame">
-        <p className="panel-title">交 易 對 局</p>
+        <p className="panel-title">交易對局</p>
         <p className="text-sm text-faded">
           盤面平靜,無單在身。前往市場「挑戰交易對手」,或盯盤時遭遇突襲,對局將顯示於此。
         </p>
@@ -253,15 +259,15 @@ export function CombatPanel() {
 
   return (
     <div
-      className={`panel deco-frame ${isLord ? "border-emerald-400/70 shadow-[0_0_18px_rgba(52,211,153,0.25)]" : "border-vermillion/40"}`}
+      className={`panel deco-frame ${isLord ? "border-gold/70 shadow-[0_0_18px_rgba(240,185,11,0.2)]" : "border-vermillion/40"}`}
     >
-      <p className={`panel-title ${isLord ? "text-emerald-300" : "text-cinnabar"}`}>
-        {combat.futuFloor ? "⚠ 爆 倉 擂 台" : isLord ? "⚠ 巨 鯨 現 身" : "交 易 對 決"}
+      <p className={`panel-title ${isLord ? "text-gold" : "text-cinnabar"}`}>
+        {combat.futuFloor ? "⚠ 爆倉擂台" : isLord ? "⚠ 巨鯨現身" : "交易對決 LIVE"}
       </p>
       <div className="flex items-baseline justify-between">
-        <span className={`text-lg font-bold ${isLord ? "text-emerald-300" : ""}`}>
+        <span className={`text-lg font-bold ${isLord ? "text-gold" : ""}`}>
           {isLord && (
-            <span className="chip mr-2 text-emerald-400 border-emerald-400/60">
+            <span className="chip mr-2 text-gold border-gold/60">
               {combat.futuFloor ? "幻象莊家" : "巨鯨"}
             </span>
           )}
@@ -272,8 +278,8 @@ export function CombatPanel() {
       <p className="text-sm text-faded mt-1">{mon.desc}</p>
       <div className="mt-3">
         <div className="flex justify-between text-xs text-faded mb-0.5">
-          <span>對手目標交易額</span>
-          <span>
+          <span>對手目標交易額 TARGET</span>
+          <span className="tnum">
             {combat.monsterHp}/{hpMaxMon}
           </span>
         </div>
@@ -286,7 +292,7 @@ export function CombatPanel() {
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        <button className="btn" disabled={busy} onClick={() => act("attack")}>
+        <button className="btn btn-buy" disabled={busy} onClick={() => act("attack")}>
           手動下單
         </button>
         {usable.map((t) => (
@@ -302,7 +308,7 @@ export function CombatPanel() {
             <span className="ml-1 text-xs text-faded">({t.mpCost})</span>
           </button>
         ))}
-        <button className="btn btn-danger" disabled={busy} onClick={() => act("flee")}>
+        <button className="btn btn-sell" disabled={busy} onClick={() => act("flee")}>
           砍單離場
         </button>
       </div>

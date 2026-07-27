@@ -2,13 +2,13 @@ import { Monster, Location, Recipe, Region } from "../types";
 
 // ═══ 交易世界地圖:現貨 → 合約 → 山寨幣海 → 機構圈 → 鏈上黑森林 ═══
 export const REGIONS: Region[] = [
-  { id: "tiannan", name: "現貨市場", reqStage: 1, lordId: "lord_tiannan", desc: "所有交易員的起點,人人都是韭菜,散戶橫行的新手戰場。" },
-  { id: "jindi", name: "合約血海", reqStage: 3, lordId: "lord_jindi", desc: "高槓桿合約的修羅場,遍地爆倉屍骨,亦遍地暴富機緣。" },
-  { id: "luanxinghai", name: "山寨幣叢林", reqStage: 4, lordId: "lord_luanxinghai", desc: "萬千迷因幣與空氣幣並立的汪洋,莊家割韭於無形。" },
-  { id: "dajin", name: "華爾街機構圈", reqStage: 5, lordId: "lord_dajin", desc: "傳統資本與加密巨頭鼎立的戰場,臥虎藏龍,深不見底。" },
-  { id: "lingjie", name: "鏈上黑暗森林", reqStage: 7, lordId: "lord_lingjie", desc: "MEV 與巨鯨橫行的鏈上暗網,獵人與獵物只在一線之間。" },
-  { id: "beihan", name: "頂級對沖基金", reqStage: 10, lordId: "lord_beihan", color: "fuchsia", desc: "唯有封神的基金經理人方能踏足的頂級戰場,萬億資金黑池,先天級硬體與傳奇密鑰長眠。" },
-  { id: "jinyuan", name: "主力莊家黑池", reqStage: 10, lordId: "lord_jinyuan", hidden: true, color: "fuchsia", desc: "鏈上遊獵才能窺見的洪荒級黑池,主力資金沖霄,五重關卡層層設險,對手之強遠勝對沖基金五十倍。" },
+  { id: "tiannan", name: "現貨市場", reqStage: 1, lordId: "lord_tiannan", desc: "所有交易員的起點,人人都是韭菜,散戶追高殺低的新手屠宰場。" },
+  { id: "jindi", name: "合約賭場", reqStage: 3, lordId: "lord_jindi", desc: "125 倍槓桿的修羅場,遍地爆倉屍骨,亦遍地一夜暴富的傳說。" },
+  { id: "luanxinghai", name: "土狗幣叢林", reqStage: 4, lordId: "lord_luanxinghai", desc: "萬千迷因幣與空氣幣並立的汪洋,rug pull 於無形,進去十個九個歸零。" },
+  { id: "dajin", name: "華爾街機構圈", reqStage: 5, lordId: "lord_dajin", desc: "傳統資本與加密巨頭鼎立的戰場,臥虎藏龍,散戶進去只是流動性。" },
+  { id: "lingjie", name: "鏈上黑暗森林", reqStage: 7, lordId: "lord_lingjie", desc: "MEV 機器人與巨鯨橫行的 mempool 暗網,獵人與獵物只在一個區塊之間。" },
+  { id: "beihan", name: "頂級對沖基金", reqStage: 10, lordId: "lord_beihan", color: "fuchsia", desc: "唯有封神的基金經理人方能踏足的頂級戰場,萬億資金黑池,先天級礦機與傳奇私鑰長眠。" },
+  { id: "jinyuan", name: "主力莊家黑池", reqStage: 10, lordId: "lord_jinyuan", hidden: true, color: "fuchsia", desc: "鏈上遊獵才能窺見的洪荒級暗池,主力資金沖霄,五重關卡層層設險,對手之強遠勝對沖基金五十倍。" },
 ];
 
 export const MONSTERS: Monster[] = [
@@ -66,7 +66,7 @@ export const MONSTERS: Monster[] = [
   { id: "bh_binghun", name: "萬載沉倉魂", element: "水", hp: 300000, atk: 16000, exp: 0, stones: [6000, 12000], drops: [{ id: "xiantian_zhong", chance: 0.006 }], desc: "冷錢包深處凝聚萬載的沉倉寒魂,所觸之物盡成永凍,連影響力也能封凍。" },
   { id: "bh_xuanwu", name: "北冥風控玄武", element: "土", hp: 500000, atk: 22000, exp: 0, stones: [9000, 18000], drops: [{ id: "xiantian_zhong", chance: 0.007 }, { id: "xiantian_qi", chance: 0.03 }], desc: "背負資金山的太古風控玄武,龜甲堅逾機構硬體,鎮壓一方黑池。" },
   { id: "bh_hanlong", name: "寒霜量化龍", element: "金", hp: 650000, atk: 26000, exp: 0, stones: [11000, 22000], drops: [{ id: "xiantian_qi", chance: 0.004 }, { id: "xiantian_zhong", chance: 0.01 }], desc: "通體覆霜的量化龍,一息所至鎖倉千里,乃頂級操盤手麾下的守域機構獸。" },
-  { id: "lord_beihan", name: "頂級操盤宗師", element: "水", isLord: true, hp: 1500000, atk: 35000, exp: 0, stones: [20000, 40000], drops: [{ id: "tianxiandan", chance: 0.8 }, { id: "xiantian_qi", chance: 0.5 }, { id: "xiantian_zhong", chance: 0.5 }, { id: "m_beiming", chance: 0.2 }], desc: "頂級對沖基金的無上主宰,一身影響力深不見底,傳說祂是與市場同壽的古老巨頭。操盤密鑰唯祂身隕方出,更有機緣傳下無上策略。" },
+  { id: "lord_beihan", name: "頂級操盤宗師", element: "水", isLord: true, hp: 1500000, atk: 35000, exp: 0, stones: [20000, 40000], drops: [{ id: "tianxiandan", chance: 0.8 }, { id: "xiantian_qi", chance: 0.5 }, { id: "xiantian_zhong", chance: 0.5 }, { id: "m_beiming", chance: 0.2 }], desc: "頂級對沖基金的無上主宰,一身影響力深不見底,傳說祂是與市場同壽的古老巨頭。操盤私鑰唯祂身隕方出,更有機緣傳下無上策略。" },
 
   // ── 主力莊家黑池(鏈上遊獵解鎖,強度為對沖基金 50 倍,五重關卡) ──
   { id: "jy_taiyimang", name: "太乙主力金蟒", element: "金", hp: 20000000, atk: 600000, exp: 0, stones: [80000, 160000], drops: [{ id: "tianxiandan", chance: 0.2 }, { id: "xiantian_qi", chance: 0.15 }], desc: "主力黑池第一關的守關凶獸,通體金鱗,吞吐太乙主力資金。" },
@@ -233,20 +233,20 @@ export const LOCATIONS: Location[] = [
 ];
 
 export const RECIPES: Recipe[] = [
-  { id: "r_qingsuo", result: "qingsuo", name: "入門顯卡 GT", stones: 21, desc: "千年青木散熱佐以精鐵基板,入門級算力。", materials: [{ id: "qingmu", n: 2 }, { id: "tiekuang", n: 3 }] },
-  { id: "r_jinjian", result: "jinjian", name: "金光算力卡", stones: 26, desc: "五塊晶片反覆疊加,佐以妖丹晶核淬鋒。", materials: [{ id: "tiekuang", n: 5 }, { id: "yaodan", n: 1 }] },
-  { id: "r_hanbingzhui", result: "hanbingzhui", name: "冰封散熱錐", stones: 31, desc: "冷儲晶片凝形,陰煞定溫。", materials: [{ id: "hanjing", n: 2 }, { id: "yinsha", n: 1 }] },
-  { id: "r_huolingqi", result: "huolingqi", name: "火靈超頻旗", stones: 39, desc: "火蟒鱗織旗,妖丹為引,超頻不燒卡。", materials: [{ id: "huoyu", n: 3 }, { id: "yaodan", n: 1 }] },
-  { id: "r_hutudun", result: "hutudun", name: "厚土 UPS 盾", stones: 34, desc: "溫玉為心,精鐵鑲邊的不斷電護盾。", materials: [{ id: "wenyu", n: 3 }, { id: "tiekuang", n: 2 }] },
-  { id: "r_wuguangyi", result: "wuguangyi", name: "烏光散熱甲", stones: 79, desc: "三道陰煞淬鍊軟甲,烏光護機。", materials: [{ id: "yinsha", n: 3 }, { id: "hanjing", n: 1 }] },
-  { id: "r_qingzhufengjian", result: "qingzhufengjian", name: "蜂群量化卡", stones: 180, desc: "以頂級算力晶片為核,輔以冷儲、妖丹,煉成可一化為多的絕世量化顯卡。", materials: [{ id: "jinleizhu", n: 3 }, { id: "hanjing", n: 2 }, { id: "yaodan", n: 3 }] },
-  { id: "r_jinganghu", result: "jinganghu", name: "金剛璃甲散熱", stones: 1200, desc: "巨鱷逆鱗綴以玄天寒鐵,水火不侵的頂級散熱。", materials: [{ id: "jiaolin", n: 4 }, { id: "xuantiehan", n: 2 }] },
-  { id: "r_dagengjian", result: "dagengjian", name: "七十二核算力陣", stones: 3000, desc: "七十二枚星辰鋼鑄七十二顆運算核心,以量化陣圖統御。", materials: [{ id: "xingchengang", n: 6 }, { id: "jinleizhu", n: 2 }] },
-  { id: "r_fengleichi", result: "fengleichi", name: "風雷超頻翅", stones: 3000, desc: "高頻妖鳥翎鱗為骨,魔晶為芯,毫秒一閃即成交百里。", materials: [{ id: "fenghuolin", n: 3 }, { id: "mojing", n: 2 }] },
-  { id: "r_sanyanshan", result: "sanyanshan", name: "三焰散熱扇", stones: 8000, desc: "三色火鳥翎羽合璧,扇骨以星辰鋼鍛成的頂級散熱。", materials: [{ id: "fenghuolin", n: 5 }, { id: "xingchengang", n: 3 }, { id: "mojing", n: 3 }] },
-  { id: "r_yuancishan", result: "yuancishan", name: "元磁神山主機", stones: 40000, desc: "以皇極天髓溫養魔晶百日,凝聚元磁算力成山。", materials: [{ id: "mojing", n: 8 }, { id: "huangjitiansui", n: 1 }] },
-  { id: "r_zhenlongyin", result: "zhenlongyin", name: "真龍旗艦顯卡", stones: 82000, desc: "巨鯨精骨刻核,天髓開光——黑森林至寶,封神倚仗。", materials: [{ id: "longjinggu", n: 5 }, { id: "huangjitiansui", n: 2 }] },
+  { id: "r_qingsuo", result: "qingsuo", name: "二手礦渣卡 GT710", stones: 21, desc: "礦潮退去後撿來的二手顯卡,導熱矽加精鐵基板,聊勝於無的入門算力。", materials: [{ id: "qingmu", n: 2 }, { id: "tiekuang", n: 3 }] },
+  { id: "r_jinjian", result: "jinjian", name: "GTX 韭割卡", stones: 26, desc: "五塊晶片反覆疊加,佐以對手晶核淬鋒,專割新韭菜。", materials: [{ id: "tiekuang", n: 5 }, { id: "yaodan", n: 1 }] },
+  { id: "r_hanbingzhui", result: "hanbingzhui", name: "水冷靜音卡", stones: 31, desc: "冷儲晶片凝形,暗池數據定溫,運轉悄無聲息。", materials: [{ id: "hanjing", n: 2 }, { id: "yinsha", n: 1 }] },
+  { id: "r_huolingqi", result: "huolingqi", name: "RTX 超頻火箭", stones: 39, desc: "超頻散熱鱗織旗,對手晶核為引,超頻拉滿也不燒卡。", materials: [{ id: "huoyu", n: 3 }, { id: "yaodan", n: 1 }] },
+  { id: "r_hutudun", result: "hutudun", name: "厚土 UPS 不斷電", stones: 34, desc: "穩壓溫玉為心,精鐵鑲邊的不斷電護盾,斷電也不爆倉。", materials: [{ id: "wenyu", n: 3 }, { id: "tiekuang", n: 2 }] },
+  { id: "r_wuguangyi", result: "wuguangyi", name: "烏光石墨烯散熱", stones: 79, desc: "三道暗池數據淬鍊軟甲,烏光石墨烯貼滿全機。", materials: [{ id: "yinsha", n: 3 }, { id: "hanjing", n: 1 }] },
+  { id: "r_qingzhufengjian", result: "qingzhufengjian", name: "蜂群量化農場卡", stones: 180, desc: "以頂級算力晶片為核,輔以冷儲、對手晶核,組成可一化為多的絕世量化顯卡陣。", materials: [{ id: "jinleizhu", n: 3 }, { id: "hanjing", n: 2 }, { id: "yaodan", n: 3 }] },
+  { id: "r_jinganghu", result: "jinganghu", name: "金剛液冷機殼", stones: 1200, desc: "巨鱷逆鱗綴以玄天寒鐵,水火不侵的頂級液冷散熱機殼。", materials: [{ id: "jiaolin", n: 4 }, { id: "xuantiehan", n: 2 }] },
+  { id: "r_dagengjian", result: "dagengjian", name: "72 卡礦場陣列", stones: 3000, desc: "七十二枚星辰鋼鑄七十二顆運算核心,以量化陣圖統御的礦場級算力陣。", materials: [{ id: "xingchengang", n: 6 }, { id: "jinleizhu", n: 2 }] },
+  { id: "r_fengleichi", result: "fengleichi", name: "低延遲風雷網卡", stones: 3000, desc: "高頻超頻鱗為骨,爆倉魔晶為芯,毫秒一閃即成交百里外。", materials: [{ id: "fenghuolin", n: 3 }, { id: "mojing", n: 2 }] },
+  { id: "r_sanyanshan", result: "sanyanshan", name: "三風扇旗艦散熱", stones: 8000, desc: "三色火鳥翎羽合璧,扇骨以星辰鋼鍛成的頂級三風扇散熱。", materials: [{ id: "fenghuolin", n: 5 }, { id: "xingchengang", n: 3 }, { id: "mojing", n: 3 }] },
+  { id: "r_yuancishan", result: "yuancishan", name: "元磁神山礦主機", stones: 40000, desc: "以皇極天髓溫養爆倉魔晶百日,凝聚元磁算力成山的礦場主機。", materials: [{ id: "mojing", n: 8 }, { id: "huangjitiansui", n: 1 }] },
+  { id: "r_zhenlongyin", result: "zhenlongyin", name: "真龍 ASIC 旗艦礦機", stones: 82000, desc: "巨鯨精骨刻核,皇極天髓開光——黑森林至寶,封神倚仗的 ASIC 礦機。", materials: [{ id: "longjinggu", n: 5 }, { id: "huangjitiansui", n: 2 }] },
   // 藍圖解鎖的高階處理器(需對手掉落藍圖)
-  { id: "r_fu_xuanyin", result: "fu_xuanyin", name: "玄陰噬盤處理器", stones: 40000, desc: "以魔晶為引,陰煞凝核,大乘級交易員的攻伐處理器。", dropOnly: true, reqStage: 8, materials: [{ id: "mojing", n: 5 }, { id: "yinsha", n: 8 }] },
-  { id: "r_fu_taixu", result: "fu_taixu", name: "太虛混元處理器", stones: 200000, desc: "機構級處理器,以巨鯨精骨與皇極天髓為引,唯基金經理人可煉。", dropOnly: true, reqStage: 10, materials: [{ id: "longjinggu", n: 10 }, { id: "huangjitiansui", n: 5 }] },
+  { id: "r_fu_xuanyin", result: "fu_xuanyin", name: "玄陰噬盤處理器", stones: 40000, desc: "以爆倉魔晶為引,暗池數據凝核,大乘級交易員的攻伐處理器。", dropOnly: true, reqStage: 8, materials: [{ id: "mojing", n: 5 }, { id: "yinsha", n: 8 }] },
+  { id: "r_fu_taixu", result: "fu_taixu", name: "太虛混元處理器", stones: 200000, desc: "機構級處理器,以巨鯨精骨與皇極天髓為引,唯基金經理人可組。", dropOnly: true, reqStage: 10, materials: [{ id: "longjinggu", n: 10 }, { id: "huangjitiansui", n: 5 }] },
 ];

@@ -34,14 +34,14 @@ export default function ActionTabs() {
   ];
   return (
     <div className="panel">
-      <div className="flex flex-wrap gap-1 mb-4 border-b border-faded/20 pb-2">
+      <div className="flex flex-wrap gap-1 mb-4 border-b border-smoke pb-2">
         {tabs.map(([t, label]) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-3 py-1 text-sm rounded-sm transition-colors ${
+            className={`px-3 py-1 text-sm rounded transition-colors ${
               tab === t
-                ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/40"
+                ? "bg-jade/15 text-jade border border-jade/40"
                 : "text-faded hover:text-cream"
             }`}
           >
@@ -111,7 +111,7 @@ function ExploreTab() {
           </div>
           <p className="text-sm text-faded mt-1">
             擂台上是一尊幻象莊家天尊,每打過一關便更強(目標交易額 ×1.5、火力
-            ×1.2),永無止境。挑戰下一關(第 {s.futuFloor + 1} 關)——每 5 關得操盤密鑰、每 10
+            ×1.2),永無止境。挑戰下一關(第 {s.futuFloor + 1} 關)——每 5 關得操盤私鑰、每 10
             關得家族資本密令,高關更藏頂尖策略。
           </p>
           <button
@@ -225,7 +225,7 @@ function BagTab() {
               disabled={busy}
               onClick={() => act("useItem", { itemId: id })}
             >
-              服用晉家族基金
+              服用晉加密教父
             </button>
           )}
           {item.kind === "special" && !item.xianli && id !== "jinhundan" && (

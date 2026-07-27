@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
-import { Noto_Serif_TC, JetBrains_Mono } from "next/font/google";
+import { Noto_Sans_TC, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const serifTC = Noto_Serif_TC({
+const sansTC = Noto_Sans_TC({
   subsets: ["latin"],
-  weight: ["400", "600", "700", "900"],
+  weight: ["400", "500", "700", "900"],
   variable: "--font-serif-tc",
 });
 const mono = JetBrains_Mono({
   subsets: ["latin"],
-  weight: ["400", "500"],
+  weight: ["400", "500", "700"],
   variable: "--font-mono",
 });
 
@@ -23,7 +23,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="zh-Hant">
       <body
-        className={`${serifTC.variable} ${mono.variable} font-serif bg-ink text-parchment min-h-screen`}
+        className={`${sansTC.variable} ${mono.variable} bg-ink text-parchment min-h-screen`}
+        style={{ fontFamily: "var(--font-serif-tc), var(--font-mono), sans-serif" }}
       >
         {children}
       </body>

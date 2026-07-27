@@ -306,16 +306,16 @@ function winCombat(s: SaveData): Modal {
     const reward = Math.floor(200000 * floor * stoneMult);
     s.stones += reward;
     const lines = [`你在爆倉擂台清算了第 ${floor} 關的幻象莊家天尊!`, `美金 +${reward}`];
-    // 每 5 關必得操盤密鑰;每 10 關必得家族資本密令
+    // 每 5 關必得操盤私鑰;每 10 關必得家族資本密令
     if (floor % 10 === 0) {
       give(s, "jinhundan");
       lines.push("擂台嘉獎:【家族資本密令】一枚!");
     } else if (floor % 5 === 0) {
       give(s, "tianxiandan");
-      lines.push("擂台嘉獎:【操盤密鑰】一枚!");
+      lines.push("擂台嘉獎:【操盤私鑰】一枚!");
     } else if (Math.random() < 0.25) {
       give(s, "tianxiandan");
-      lines.push("幻象崩解間,一枚【操盤密鑰】墜落!");
+      lines.push("幻象崩解間,一枚【操盤私鑰】墜落!");
     }
     // 高層機緣:頂尖策略手冊(極難)
     if (floor >= 30 && !s.learned.includes("zhutian_shenlei") && Math.random() < 0.1) {
@@ -619,10 +619,10 @@ function applyActionInner(
       if (roll < 0.06) {
         return exploreSecretRealm(s);
       }
-      // 2.5% 直接得操盤密鑰
+      // 2.5% 直接得操盤私鑰
       if (roll < 0.085) {
         give(s, "tianxiandan");
-        log(s, "鏈上遊獵至一處廢棄合約,你於加密檔案中尋得一枚【操盤密鑰】——曠世機緣!");
+        log(s, "鏈上遊獵至一處廢棄合約,你於加密檔案中尋得一枚【操盤私鑰】——曠世機緣!");
         return {
           save: s,
           loot: {
@@ -630,7 +630,7 @@ function applyActionInner(
             success: true,
             lines: [
               "鏈上遊獵,福緣深厚:",
-              "於廢棄合約得【操盤密鑰】一枚!",
+              "於廢棄合約得【操盤私鑰】一枚!",
               "封神為基金經理人後煉化,可增一點影響力。",
             ],
           },
@@ -680,7 +680,7 @@ function applyActionInner(
       if (s.combat) return { save: s, error: "交易對局中,無法考核。" };
       const realm = REALMS[s.realmIdx];
       if (s.realmIdx >= REALMS.length - 1) {
-        log(s, "你已白日封神,位列家族基金。頂級圈的故事,是另一部書了……");
+        log(s, "你已白日封神,位列加密教父。頂級圈的故事,是另一部書了……");
         return { save: s };
       }
       if (s.exp < realm.expNeed) {
@@ -985,7 +985,7 @@ function applyActionInner(
           return { save: s };
         }
         if (s.realmIdx >= jinxianIdx) {
-          log(s, "你已臻家族基金之境,此密令於你已無用處。");
+          log(s, "你已臻加密教父之境,此密令於你已無用處。");
           return { save: s };
         }
         take(s, itemId);
@@ -995,7 +995,7 @@ function applyActionInner(
         s.mp = nmp;
         log(
           s,
-          "你啟用【家族資本密令】,金光自帳戶深處炸開——資本蛻變,道果金鑄,你自基金經理人一步踏入【家族基金經理人】之境!",
+          "你啟用【家族資本密令】,金光自帳戶深處炸開——資本蛻變,道果金鑄,你自基金經理人一步踏入【加密教父】之境!",
         );
         return {
           save: s,
@@ -1004,7 +1004,7 @@ function applyActionInner(
             title: "晉 入 家 族 基 金",
             lines: [
               "密令啟用,資本盡數金鑄,超脫基金經理人桎梏——",
-              "你正式晉入【家族基金經理人】之境,萬法加身,睥睨頂級圈!",
+              "你正式晉入【加密教父】之境,萬法加身,睥睨頂級圈!",
             ],
           },
         };

@@ -1,13 +1,124 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
-import { useGame, statsOf, maxLifeOf, XIANLI_MULT } from "@/game/store";
+import { useEffect, useRef, useCallback, useState } from "react";
+import { useGame, statsOf, maxLifeOf, XIANLI_MULT, sectDamageMultOfStages } from "@/game/store";
 import { REALMS } from "@/game/data/realms";
 import { SECTS } from "@/game/data/sects";
 import { MONSTERS } from "@/game/data/world";
 import { itemById } from "@/game/data/items";
 import { techById } from "@/game/data/techniques";
-import { ELEMENT_COLOR, XIANLI_COLOR, EQUIP_SLOTS, formatStones } from "@/game/types";
+import { ELEMENT_COLOR, ELEMENTS, XIANLI_COLOR, EQUIP_SLOTS, formatStones } from "@/game/types";
+
+// 五色異星盤(集滿解鎖蠻荒異界),五行 → 道具 id 對照
+const XINGPAN_ID_OF: Record<string, string> = {
+  金: "xingpan_jin",
+  木: "xingpan_mu",
+  水: "xingpan_shui",
+  火: "xingpan_huo",
+  土: "xingpan_tu",
+};
+
+// 太乙精魂(蠻荒異界四大地域王掉落,集滿於太乙殿突破太乙境)
+const TAIYI_SOULS: { id: string; label: string }[] = [
+  { id: "taiyi_jinghun_tianhu", label: "天狐" },
+  { id: "taiyi_jinghun_zhenlong", label: "真龍" },
+  { id: "taiyi_jinghun_baxia", label: "霸下" },
+  { id: "taiyi_jinghun_pixiu", label: "黑眼貔貅" },
+];
+
+// 特殊突破進度(異星盤集滿解鎖蠻荒異界 / 太乙精魂集滿突破太乙境),移至人物資訊欄位下方,不再擠在遊歷探索頁籤裡
+export function RealmProgressPanel() {
+  const s = useGame((x) => x.save)!;
+  const act = useGame((x) => x.act);
+  const busy = useGame((x) => x.busy);
+  const { realm } = statsOf(s);
+  const inCombat = !!s.combat;
+
+  const showManhuang = !s.manhuangUnlocked && realm.stage >= 10;
+  const showTaiyi = s.futuFloor >= 20 && realm.stage < 12;
+
+  if (!showManhuang && !showTaiyi) return null;
+
+  return (
+    <>
+      {showManhuang && (
+        <div className="panel deco-frame border-fuchsia-400/40">
+          <div className="flex items-baseline justify-between">
+            <span className="font-bold text-fuchsia-300">蠻 荒 異 界 · 五 色 異 星 盤</span>
+            <span className="text-xs font-mono text-fuchsia-300/80">
+              {ELEMENTS.filter((el) => (s.inventory[XINGPAN_ID_OF[el]] ?? 0) >= 1).length}/5
+            </span>
+          </div>
+          <p className="text-sm text-faded mt-1">
+            集滿金木水火土五色異星盤(金源仙域怪物稀有掉落),即可開啟蠻荒異界之門,內有天狐、真龍、霸下、貔貅四大領地。
+          </p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {ELEMENTS.map((el) => {
+              const has = (s.inventory[XINGPAN_ID_OF[el]] ?? 0) >= 1;
+              return (
+                <span
+                  key={el}
+                  className={`chip ${has ? ELEMENT_COLOR[el] : "text-faded/40 border-faded/20"}`}
+                >
+                  {el}
+                </span>
+              );
+            })}
+          </div>
+          <button
+            className="btn mt-2 w-full border-fuchsia-400/60 text-fuchsia-300 hover:bg-fuchsia-400/15"
+            disabled={
+              inCombat || busy || ELEMENTS.some((el) => (s.inventory[XINGPAN_ID_OF[el]] ?? 0) < 1)
+            }
+            onClick={() => act("unlockManhuang")}
+          >
+            開 啟 蠻 荒 異 界 之 門
+          </button>
+        </div>
+      )}
+      {showTaiyi && (
+        <div className="panel deco-frame border-fuchsia-400/40">
+          <div className="flex items-baseline justify-between">
+            <span className="font-bold text-fuchsia-300">太 乙 殿</span>
+            <span className="text-xs font-mono text-fuchsia-300/80">
+              {TAIYI_SOULS.filter((t) => (s.inventory[t.id] ?? 0) >= 1).length}/4 太乙精魂
+            </span>
+          </div>
+          <p className="text-sm text-faded mt-1">
+            浮屠塔登臨第 20 層後開啟。集滿蠻荒異界四大地域王(天狐/真龍/霸下/黑眼貔貅)身隕所遺的太乙精魂,
+            金仙可於此突破【太乙境】,並為宗門帶來 +120% 額外戰鬥傷害。
+          </p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {TAIYI_SOULS.map((t) => {
+              const has = (s.inventory[t.id] ?? 0) >= 1;
+              return (
+                <span
+                  key={t.id}
+                  className={`chip ${has ? ELEMENT_COLOR[itemById(t.id).element!] : "text-faded/40 border-faded/20"}`}
+                >
+                  {t.label}
+                </span>
+              );
+            })}
+          </div>
+          <button
+            className="btn mt-2 w-full border-fuchsia-400/60 text-fuchsia-300 hover:bg-fuchsia-400/15"
+            disabled={
+              inCombat ||
+              busy ||
+              REALMS[s.realmIdx]?.id !== "jinxian_realm" ||
+              TAIYI_SOULS.some((t) => (s.inventory[t.id] ?? 0) < 1)
+            }
+            title={REALMS[s.realmIdx]?.id !== "jinxian_realm" ? "唯金仙可於太乙殿突破" : ""}
+            onClick={() => act("ascendTaiyi")}
+          >
+            飛 升 太 乙
+          </button>
+        </div>
+      )}
+    </>
+  );
+}
 
 export function StatusPanel() {
   const s = useGame((x) => x.save)!;
@@ -16,6 +127,30 @@ export function StatusPanel() {
   const expNeed = REALMS[s.realmIdx].expNeed;
   const isXian = realm.stage >= 10;
   const act = useGame((x) => x.act);
+  const setActiveTab = useGame((x) => x.setActiveTab);
+
+  // 宗門集體戰力:輪詢同門境界分佈,算出目前的宗門傷害加成供顯示(實際套用仍以伺服器戰鬥當下重算為準)
+  const [sectMult, setSectMult] = useState(1);
+  useEffect(() => {
+    if (!s.sectId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const j = await (await fetch("/api/sect")).json();
+        if (!cancelled && j.ok) {
+          const stages = (j.members ?? []).map(
+            (m: { realm_idx: number }) => REALMS[m.realm_idx]?.stage,
+          );
+          setSectMult(sectDamageMultOfStages(stages));
+        }
+      } catch {
+        /* ignore,顯示欄位保持上次數值 */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [s.sectId, s.realmIdx]);
 
   // 各裝備槽當前裝備
   const equipMap: Record<string, string | null> = {
@@ -78,8 +213,19 @@ export function StatusPanel() {
         >
           {s.name}
         </span>
-        <span className="text-sm text-faded">{sect?.name}</span>
+        <button
+          className="text-sm text-faded hover:text-gold transition-colors"
+          onClick={() => setActiveTab("sect")}
+          title="查看宗門名錄與共享靈石庫"
+        >
+          {sect?.name ?? "散修"} ▸
+        </button>
       </div>
+      {sect && (
+        <p className="text-xs text-fuchsia-300/90 mb-1">
+          宗門加成 戰鬥傷害 ×{sectMult.toFixed(2)}
+        </p>
+      )}
       <p className={`mb-3 ${isXian ? "text-fuchsia-300 font-bold" : "text-gold"}`}>{realm.name}</p>
 
       <div className="space-y-2 text-sm">

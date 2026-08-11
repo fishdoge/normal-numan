@@ -4,11 +4,52 @@ import { useCallback, useEffect, useState } from "react";
 import { useGame, statsOf, maxLifeOf, cultCostOf, breakChanceOf, Modal } from "@/game/store";
 import { REALMS } from "@/game/data/realms";
 import { itemById } from "@/game/data/items";
+import { CHANGELOG } from "@/game/data/changelog";
 import { formatStones } from "@/game/types";
 import AuthGate from "./AuthGate";
 import CharCreate from "./CharCreate";
 import ActionTabs from "./ActionTabs";
-import { StatusPanel, LogPanel, CombatPanel } from "./panels";
+import { StatusPanel, LogPanel, CombatPanel, RealmProgressPanel } from "./panels";
+
+// 更新公告:逐版列出 version/ 目錄的重點內容(精簡為玩家視角)
+function ChangelogModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-ink/80 backdrop-blur-sm p-4"
+      onClick={onClose}
+    >
+      <div
+        className="panel deco-frame max-w-lg w-full max-h-[80vh] flex flex-col animate-floatUp"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-baseline justify-between mb-2">
+          <p className="panel-title mb-0">更 新 公 告</p>
+          <button className="chip hover:text-gold" onClick={onClose}>
+            關閉 ✕
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+          {CHANGELOG.map((entry) => (
+            <div key={entry.version} className="border border-faded/20 rounded-sm p-3">
+              <div className="flex items-baseline justify-between">
+                <span className="font-bold text-gold">
+                  版本 {entry.version}
+                  <span className="text-cream font-normal ml-2">{entry.title}</span>
+                </span>
+                <span className="text-xs text-faded font-mono shrink-0 ml-3">{entry.date}</span>
+              </div>
+              <ul className="mt-2 space-y-1 text-sm text-cream/90 list-disc list-inside">
+                {entry.highlights.map((h, i) => (
+                  <li key={i}>{h}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function DeathScreen() {
   const s = useGame((x) => x.save)!;
@@ -158,6 +199,7 @@ export default function Game() {
   const act = useGame((x) => x.act);
   const [auth, setAuth] = useState<"checking" | "anon" | "authed">("checking");
   const [userName, setUserName] = useState("");
+  const [showChangelog, setShowChangelog] = useState(false);
 
   const loadSave = useCallback(async () => {
     try {
@@ -203,6 +245,7 @@ export default function Game() {
     <main className={`max-w-6xl mx-auto px-4 py-6 relative ${isXian ? "xian-aura" : ""}`}>
       {breakResult && <ResultModal modal={breakResult} onClose={closeBreak} />}
       {!breakResult && loot && <ResultModal modal={loot} onClose={closeLoot} />}
+      {showChangelog && <ChangelogModal onClose={() => setShowChangelog(false)} />}
       <header className="flex items-baseline justify-between mb-5">
         <div>
           <h1
@@ -215,6 +258,12 @@ export default function Game() {
           </p>
         </div>
         <div className="flex gap-4 items-baseline">
+          <button
+            className="text-xs text-faded/60 hover:text-gold transition-colors"
+            onClick={() => setShowChangelog(true)}
+          >
+            更新公告
+          </button>
           <button
             className="text-xs text-faded/60 hover:text-vermillion transition-colors"
             onClick={() => {
@@ -242,6 +291,7 @@ export default function Game() {
       <div className="grid gap-4 lg:grid-cols-[300px_1fr_340px]">
         <div className="space-y-4">
           <StatusPanel />
+          <RealmProgressPanel />
         </div>
         <div className="space-y-4">
           <CombatPanel />

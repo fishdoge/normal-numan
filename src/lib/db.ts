@@ -35,6 +35,12 @@ export function ensureSchema() {
         price INTEGER NOT NULL CHECK (price > 0),
         created_at TIMESTAMPTZ DEFAULT now()
       )`;
+      // 宗門共享資源池(1.6 版):每個宗門一筆,存放全宗門共用靈石
+      await sql`CREATE TABLE IF NOT EXISTS sect_bank (
+        sect_id TEXT PRIMARY KEY,
+        stones BIGINT NOT NULL DEFAULT 0 CHECK (stones >= 0),
+        updated_at TIMESTAMPTZ DEFAULT now()
+      )`;
     })();
   }
   return ready;

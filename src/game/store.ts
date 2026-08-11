@@ -14,6 +14,8 @@ import {
   MAX_TECH_LEVEL,
   XIANLI_MULT,
   breakChanceOf,
+  SECT_STAGE_BONUS,
+  sectDamageMultOfStages,
 } from "./engine";
 
 export type { SaveData, Modal };
@@ -27,19 +29,37 @@ export {
   MAX_TECH_LEVEL,
   XIANLI_MULT,
   breakChanceOf,
+  SECT_STAGE_BONUS,
+  sectDamageMultOfStages,
 };
+
+// 行動頁籤(ActionTabs)目前分頁,提到 store 讓其他面板(如道籍)也能切換頁籤
+export type Tab =
+  | "explore"
+  | "bag"
+  | "tech"
+  | "craft"
+  | "market"
+  | "trade"
+  | "mission"
+  | "sect"
+  | "dex"
+  | "wanling"
+  | "rank";
 
 interface ClientState {
   save: SaveData | null;
   loot: Modal | null; // 採集/戰利品/任務彈窗
   breakResult: Modal | null; // 突破結果彈窗
   busy: boolean;
+  activeTab: Tab;
 
   act: (type: string, payload?: Record<string, unknown>) => Promise<void>;
   setSave: (save: SaveData | null) => void;
   closeLoot: () => void;
   closeBreak: () => void;
   pushLog: (msg: string) => void;
+  setActiveTab: (tab: Tab) => void;
 }
 
 export const useGame = create<ClientState>()((set, get) => ({
@@ -47,10 +67,12 @@ export const useGame = create<ClientState>()((set, get) => ({
   loot: null,
   breakResult: null,
   busy: false,
+  activeTab: "explore",
 
   setSave: (save) => set({ save }),
   closeLoot: () => set({ loot: null }),
   closeBreak: () => set({ breakResult: null }),
+  setActiveTab: (tab) => set({ activeTab: tab }),
   pushLog: (msg) => {
     const s = get().save;
     if (s) set({ save: { ...s, log: [...s.log, msg].slice(-60) } });

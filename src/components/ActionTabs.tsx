@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   useGame,
   statsOf,
@@ -8,6 +8,9 @@ import {
   techLevelOf,
   techPowerMult,
   MAX_TECH_LEVEL,
+  SECT_STAGE_BONUS,
+  sectDamageMultOfStages,
+  Tab,
 } from "@/game/store";
 import { LOCATIONS, MONSTERS, RECIPES, REGIONS } from "@/game/data/world";
 import { ITEMS, itemById } from "@/game/data/items";
@@ -17,10 +20,10 @@ import { SECTS } from "@/game/data/sects";
 import { techById } from "@/game/data/techniques";
 import { ELEMENT_COLOR, ItemKind, KIND_LABEL, formatStones } from "@/game/types";
 
-type Tab = "explore" | "bag" | "tech" | "craft" | "market" | "trade" | "mission" | "dex" | "rank";
-
 export default function ActionTabs() {
-  const [tab, setTab] = useState<Tab>("explore");
+  // 分頁狀態提到 store,讓道籍面板的「宗門」按鈕也能切換過來
+  const tab = useGame((x) => x.activeTab);
+  const setTab = useGame((x) => x.setActiveTab);
   const tabs: [Tab, string][] = [
     ["explore", "遊歷探索"],
     ["bag", "儲物袋"],
@@ -29,7 +32,9 @@ export default function ActionTabs() {
     ["market", "坊市"],
     ["trade", "交易行"],
     ["mission", "宗門任務"],
+    ["sect", "宗門"],
     ["dex", "妖獸圖鑑"],
+    ["wanling", "混沌萬靈榜"],
     ["rank", "排行榜"],
   ];
   return (
@@ -56,7 +61,9 @@ export default function ActionTabs() {
       {tab === "market" && <MarketTab />}
       {tab === "trade" && <TradeTab />}
       {tab === "mission" && <MissionTab />}
+      {tab === "sect" && <SectTab />}
       {tab === "dex" && <DexTab />}
+      {tab === "wanling" && <WanlingTab />}
       {tab === "rank" && <RankTab />}
     </div>
   );
@@ -76,7 +83,12 @@ function ExploreTab() {
     <div className="space-y-3">
       <div className="divider">大 陸 遊 歷</div>
       <div className="flex flex-wrap gap-1.5">
-        {REGIONS.filter((r) => !r.hidden || s.jinyuanUnlocked).map((r) => {
+        {REGIONS.filter(
+          (r) =>
+            !r.hidden ||
+            (r.id === "jinyuan" && s.jinyuanUnlocked) ||
+            (r.id === "manhuang" && s.manhuangUnlocked),
+        ).map((r) => {
           const rLocked = realm.stage < r.reqStage;
           const isPurple = r.color === "fuchsia";
           return (
@@ -182,6 +194,7 @@ function BagTab() {
   const act = useGame((x) => x.act);
   const busy = useGame((x) => x.busy);
   const entries = Object.entries(s.inventory);
+  const [filter, setFilter] = useState("全部");
   if (entries.length === 0) return <p className="text-faded text-sm">儲物袋空空如也。</p>;
 
   const equippedIds = [
@@ -280,9 +293,41 @@ function BagTab() {
     );
   };
 
+  // 只列出儲物袋內實際有東西的分類,避免出現空分類按鈕
+  const availableSections = BAG_SECTIONS.filter(([, kinds]) =>
+    entries.some(([id]) => kinds.includes(itemById(id).kind)),
+  );
+  const sectionsToShow =
+    filter === "全部" ? availableSections : availableSections.filter(([title]) => title === filter);
+
   return (
     <div className="space-y-2">
-      {BAG_SECTIONS.map(([title, kinds]) => {
+      <div className="flex flex-wrap gap-1.5 pb-1">
+        <button
+          onClick={() => setFilter("全部")}
+          className={`px-2.5 py-1 text-xs rounded-sm border transition-colors ${
+            filter === "全部"
+              ? "border-gold bg-gold/15 text-gold"
+              : "border-faded/30 text-faded hover:text-cream"
+          }`}
+        >
+          全部
+        </button>
+        {availableSections.map(([title]) => (
+          <button
+            key={title}
+            onClick={() => setFilter(title)}
+            className={`px-2.5 py-1 text-xs rounded-sm border transition-colors ${
+              filter === title
+                ? "border-gold bg-gold/15 text-gold"
+                : "border-faded/30 text-faded hover:text-cream"
+            }`}
+          >
+            {title.replace(/\s/g, "")}
+          </button>
+        ))}
+      </div>
+      {sectionsToShow.map(([title, kinds]) => {
         const group = entries.filter(([id]) => kinds.includes(itemById(id).kind));
         if (!group.length) return null;
         return (
@@ -443,12 +488,33 @@ function MarketTab() {
       !i.dropOnly &&
       (i.reqStage ?? 1) <= 8,
   );
+  const changshenghe = itemById("changshenghe");
   return (
     <div className="space-y-2">
       <p className="text-xs text-faded">
         坊市為宗門官營,明碼標價。大乘以上的仙家至寶坊市不售,唯有斬妖奪寶方能得之。現有靈石:
         <span className="text-gold"> {formatStones(s.stones)}</span>
       </p>
+
+      <div className="border border-azure/40 bg-azure/5 rounded-sm p-3">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="min-w-0">
+            <span className="font-bold text-azure">獨立黑市 · 長生盒</span>
+            <p className="text-xs text-faded mt-1">{changshenghe.desc}</p>
+          </div>
+          <button
+            className="btn shrink-0 border-azure/60 text-azure hover:bg-azure/15"
+            disabled={busy || s.stones < changshenghe.price}
+            onClick={() => act("buy", { itemId: "changshenghe" })}
+          >
+            購入 {formatStones(changshenghe.price)}
+          </button>
+        </div>
+        <p className="text-xs text-faded/70 mt-1.5">
+          與壽元每 20~100 年才隨機出現一次的黑市不同,長生盒常年在此販售,開啟後隨機得一味延壽丹藥。
+        </p>
+      </div>
+
       {wares.map((item) => (
         <div
           key={item.id}
@@ -684,6 +750,243 @@ function TradeTab() {
   );
 }
 
+// 宗門傷害加成表(SECT_STAGE_BONUS)各境界 stage 對應的顯示名稱
+const SECT_STAGE_LABEL: Record<number, string> = {
+  4: "元嬰期",
+  5: "化神期",
+  6: "煉虛期",
+  7: "合體期",
+  8: "大乘期",
+  10: "真仙",
+  11: "金仙",
+  12: "太乙境",
+};
+
+interface SectMember {
+  name: string;
+  realm_idx: number;
+  exp: number;
+  dead: boolean;
+  updated_at: string;
+}
+
+function SectTab() {
+  const s = useGame((x) => x.save)!;
+  const setSave = useGame((x) => x.setSave);
+  const [members, setMembers] = useState<SectMember[]>([]);
+  const [bank, setBank] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [amount, setAmount] = useState(1000);
+  const [view, setView] = useState<"members" | "damage">("damage");
+
+  const sect = SECTS.find((x) => x.id === s.sectId);
+
+  // 依同門境界分佈,算出每一階貢獻的人數/加成,以及總戰鬥傷害倍率
+  const stageCounts = useMemo(() => {
+    const counts: Record<number, number> = {};
+    for (const m of members) {
+      const stage = REALMS[m.realm_idx]?.stage;
+      if (stage != null) counts[stage] = (counts[stage] ?? 0) + 1;
+    }
+    return counts;
+  }, [members]);
+  const sectMult = useMemo(
+    () => sectDamageMultOfStages(members.map((m) => REALMS[m.realm_idx]?.stage)),
+    [members],
+  );
+
+  const refresh = async () => {
+    setLoading(true);
+    try {
+      const j = await (await fetch("/api/sect")).json();
+      if (j.ok) {
+        setMembers(j.members ?? []);
+        setBank(j.bank ?? 0);
+        setErr("");
+      } else {
+        setErr(j.error ?? "查詢失敗");
+      }
+    } catch {
+      setErr("查詢失敗");
+    }
+    setLoading(false);
+  };
+  useEffect(() => {
+    refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 存/取宗門資源後,重新從伺服器拉自己的存檔(伺服器為唯一權威)
+  const reloadSave = async () => {
+    try {
+      const j = await (await fetch("/api/save")).json();
+      if (j.save) setSave(j.save);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const doAction = async (action: "deposit" | "withdraw") => {
+    if (amount < 1) return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/sect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, amount }),
+      });
+      const j = await res.json();
+      if (!res.ok) {
+        setErr(j.error ?? "操作失敗");
+      } else {
+        setErr("");
+      }
+      await Promise.all([refresh(), reloadSave()]);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-faded">
+        {sect?.name ?? "散修"}——宗門聲勢隨在世高階同門人數增長,越多元嬰以上同門在世,全宗門戰鬥傷害越高。
+        目前宗門加成:<span className="text-fuchsia-300 font-bold">戰鬥傷害 ×{sectMult.toFixed(2)}</span>
+        <button className="chip ml-3 hover:text-gold" onClick={refresh}>
+          刷新
+        </button>
+      </p>
+
+      <div className="border border-gold/40 bg-gold/5 rounded-sm p-3">
+        <div className="flex items-baseline justify-between">
+          <span className="font-bold text-gold">宗門共享靈石庫</span>
+          <span className="text-sm font-mono text-gold">{formatStones(bank)}</span>
+        </div>
+        <p className="text-xs text-faded mt-1">
+          存入的靈石歸全宗門共用,任何同門都能提領,量力而為、互通有無。現有靈石:
+          <span className="text-gold">{formatStones(s.stones)}</span>
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2 items-center">
+          <input
+            type="number"
+            min={1}
+            value={amount}
+            onChange={(e) => setAmount(Math.max(1, +e.target.value || 1))}
+            className="w-32 bg-smoke border border-faded/30 rounded-sm px-2 py-1.5 text-sm text-parchment"
+          />
+          <button className="btn" disabled={busy} onClick={() => doAction("deposit")}>
+            存入
+          </button>
+          <button className="btn" disabled={busy} onClick={() => doAction("withdraw")}>
+            提領
+          </button>
+        </div>
+      </div>
+
+      {err && <p className="text-sm text-vermillion">{err}</p>}
+
+      {/* 宗門內的小分頁:同門名錄 / 傷害加成來源明細 */}
+      <div className="flex gap-1.5">
+        {(
+          [
+            ["damage", "傷害加成來源"],
+            ["members", "同門名錄"],
+          ] as [typeof view, string][]
+        ).map(([v, label]) => (
+          <button
+            key={v}
+            onClick={() => setView(v)}
+            className={`px-2.5 py-1 text-xs rounded-sm border transition-colors ${
+              view === v
+                ? "border-fuchsia-400 bg-fuchsia-400/15 text-fuchsia-300"
+                : "border-faded/30 text-faded hover:text-cream"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {loading && <p className="text-sm text-faded">查詢中…</p>}
+
+      {!loading && view === "damage" && (
+        <div className="space-y-2">
+          <div className="border border-fuchsia-400/30 bg-fuchsia-400/5 rounded-sm p-3">
+            <div className="flex items-baseline justify-between">
+              <span className="font-bold text-fuchsia-300">宗門總加成</span>
+              <span className="text-sm font-mono text-fuchsia-300">
+                戰鬥傷害 ×{sectMult.toFixed(2)}
+              </span>
+            </div>
+            <p className="text-xs text-faded mt-1">
+              基準倍率 ×1.00,依下列各境界在世同門人數逐一疊加。
+            </p>
+          </div>
+          {Object.entries(SECT_STAGE_BONUS)
+            .map(([stage, bonus]) => [Number(stage), bonus] as [number, number])
+            .sort((a, b) => a[0] - b[0])
+            .map(([stage, bonus]) => {
+              const n = stageCounts[stage] ?? 0;
+              const subtotal = n * bonus;
+              return (
+                <div
+                  key={stage}
+                  className={`flex items-center justify-between border rounded-sm p-2.5 ${
+                    n > 0 ? "border-fuchsia-400/30" : "border-faded/15 opacity-60"
+                  }`}
+                >
+                  <span className="font-bold">
+                    {SECT_STAGE_LABEL[stage] ?? `境界${stage}`}
+                    <span className="chip ml-2 text-faded/80 border-faded/30">
+                      每人 +{Math.round(bonus * 100)}%
+                    </span>
+                  </span>
+                  <span className="text-sm font-mono text-cream shrink-0 ml-3">
+                    {n} 人 <span className="text-fuchsia-300 ml-2">+{Math.round(subtotal * 100)}%</span>
+                  </span>
+                </div>
+              );
+            })}
+        </div>
+      )}
+
+      {!loading && view === "members" && (
+        <div className="space-y-2">
+          {members.length === 0 && !err && (
+            <p className="text-sm text-faded">宗門暫無其他在冊同門。</p>
+          )}
+          {members.map((m, i) => {
+            const me = m.name === s.name;
+            const isXian = REALMS[m.realm_idx]?.stage >= 10;
+            return (
+              <div
+                key={m.name + i}
+                className={`flex items-center justify-between border rounded-sm p-2.5 ${
+                  me ? "border-gold/60 bg-gold/10" : "border-faded/20"
+                }`}
+              >
+                <div className="min-w-0">
+                  <span className={`font-bold ${isXian ? "text-fuchsia-300" : ""}`}>{m.name}</span>
+                  {me && <span className="chip ml-2 text-gold border-gold/50">你</span>}
+                  {m.dead && (
+                    <span className="chip ml-2 text-vermillion border-vermillion/50">已隕落</span>
+                  )}
+                </div>
+                <span className="text-sm text-cream shrink-0 ml-3">
+                  {REALMS[m.realm_idx]?.name ?? "??"}
+                  <span className="text-xs text-faded ml-2">修為 {m.exp}</span>
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MissionTab() {
   const s = useGame((x) => x.save)!;
   const act = useGame((x) => x.act);
@@ -817,6 +1120,78 @@ function DexTab() {
         位,斬之掉落豐厚——增元丹、增靈珠、高階符籙與圖譜。北寒仙尊更有機率傳下無上仙法;金源仙帝、太上金仙則掉落金魂丹等仙緣。
       </p>
       {lords.map(monsterRow)}
+    </div>
+  );
+}
+
+// 混沌萬靈榜:全物品一覽,唯真仙以上境界(stage >= 10)可查閱
+function itemStatLine(item: (typeof ITEMS)[number]): string {
+  const parts: string[] = [];
+  if (item.price) parts.push(`售價 ${formatStones(item.price)}`);
+  if (item.heal) parts.push(`回氣血 ${item.heal}`);
+  if (item.mp) parts.push(`回法力 ${item.mp}`);
+  if (item.exp) parts.push(`修為 +${item.exp}`);
+  if (item.life) parts.push(`延壽 +${item.life} 年`);
+  if (item.lifePct) parts.push(`延壽 +${Math.round(item.lifePct * 100)}%`);
+  if (item.xianli) parts.push(`仙靈力 +${item.xianli}`);
+  if (item.atkBonus) parts.push(`攻 +${item.atkBonus}`);
+  if (item.defBonus) parts.push(`防 +${item.defBonus}`);
+  if (item.speedBonus) parts.push(`速 +${item.speedBonus}`);
+  if (item.stoneMult) parts.push(`靈石 ×${item.stoneMult}`);
+  if (item.breakBonus) parts.push(`突破 +${Math.round(item.breakBonus * 100)}%`);
+  if (item.reqStage) parts.push(`需 ${item.reqStage} 階境界`);
+  if (item.dropOnly) parts.push("僅妖獸掉落");
+  return parts.join(" · ");
+}
+
+function WanlingTab() {
+  const s = useGame((x) => x.save)!;
+  const { realm } = statsOf(s);
+
+  if (realm.stage < 10) {
+    return (
+      <p className="text-sm text-faded">
+        【混沌萬靈榜】乃仙界至寶,窺盡天地萬物,唯真仙以上境界方能查閱——你尚未飛昇,無緣得見其貌。
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-faded">
+        混沌萬靈榜,錄盡天地萬物,共 {ITEMS.length} 種,真仙以上方能查閱全貌。
+      </p>
+      {BAG_SECTIONS.map(([title, kinds]) => {
+        const group = ITEMS.filter((i) => kinds.includes(i.kind));
+        if (!group.length) return null;
+        return (
+          <div key={title}>
+            <div className="divider">{title}</div>
+            <div className="space-y-2">
+              {group.map((item) => {
+                const stat = itemStatLine(item);
+                return (
+                  <div key={item.id} className="border border-faded/20 rounded-sm p-2.5">
+                    <span className="font-bold">
+                      {item.name}
+                      <span className="chip ml-2 text-faded/80 border-faded/30">
+                        {KIND_LABEL[item.kind]}
+                      </span>
+                      {item.element && (
+                        <span className={`chip ml-2 ${ELEMENT_COLOR[item.element]}`}>
+                          {item.element}
+                        </span>
+                      )}
+                    </span>
+                    <p className="text-xs text-faded mt-0.5">{item.desc}</p>
+                    {stat && <p className="text-xs text-cream/80 mt-0.5 font-mono">{stat}</p>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

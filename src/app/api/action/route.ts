@@ -1,8 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql, userFromToken } from "@/lib/db";
-import { applyAction, applyRealTimeAging, newSave, SaveData } from "@/game/engine";
+import {
+  applyAction,
+  applyRealTimeAging,
+  newSave,
+  sectDamageMultOfStages,
+  SaveData,
+} from "@/game/engine";
+import { REALMS } from "@/game/data/realms";
 
 export const runtime = "nodejs";
+
+// 依宗門內(含自己)各成員境界,計算戰鬥傷害倍率(公式定義於 engine.ts,前端顯示用同一份)
+async function sectDamageMultOf(sectId: string): Promise<number> {
+  const rows = await sql`
+    SELECT (data->>'realmIdx')::int AS realm_idx
+    FROM saves
+    WHERE data->>'sectId' = ${sectId}
+      AND COALESCE((data->>'started')::boolean, false) = true
+      AND COALESCE((data->>'dead')::boolean, false) = false
+  `;
+  const stages = (rows as { realm_idx: number | null }[]).map((r) =>
+    r.realm_idx != null ? REALMS[r.realm_idx]?.stage : undefined,
+  );
+  return sectDamageMultOfStages(stages);
+}
 
 // 所有遊戲操作的唯一入口:伺服器讀檔 → 引擎運算 → 寫回 → 回傳
 export async function POST(req: NextRequest) {
@@ -40,7 +62,13 @@ export async function POST(req: NextRequest) {
   );
   if (hours > 0) applyRealTimeAging(save, hours);
 
-  const result = applyAction(save, type, payload ?? {});
+  // 宗門傷害加成:僅在實際造成傷害的行動時查詢,避免每次操作都打宗門聚合查詢
+  const finalPayload: Record<string, unknown> = { ...(payload ?? {}) };
+  if ((type === "attack" || type === "cast") && save.sectId) {
+    finalPayload.sectDamageMult = await sectDamageMultOf(save.sectId);
+  }
+
+  const result = applyAction(save, type, finalPayload);
 
   await sql`
     UPDATE saves SET data = ${JSON.stringify(result.save)}::jsonb, updated_at = now(),

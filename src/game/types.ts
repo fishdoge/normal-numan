@@ -190,9 +190,10 @@ export interface Region {
   name: string;
   desc: string;
   reqStage: number;
-  lordId?: string; // 該區域的地域王(妖獸領主)
-  hidden?: boolean; // 需透過探索秘境解鎖(金源仙域)
-  color?: "gold" | "fuchsia"; // 地圖標示色(北寒/金源=紫)
+  lordId?: string; // 該區域統一的地域王(妖獸領主);若各秘境領主不同,改用 Location.lordId
+  lordChance?: [number, number]; // 地域王遭遇機率區間 [下限, 上限],預設 [0.02, 0.03]
+  hidden?: boolean; // 需額外條件解鎖(金源仙域:雲遊探索秘境;蠻荒異界:集滿五色異星盤)
+  color?: "gold" | "fuchsia"; // 地圖標示色(北寒/金源/蠻荒=紫)
 }
 
 export interface Location {
@@ -202,6 +203,7 @@ export interface Location {
   region: string;
   reqStage: number;
   monsters: string[];
+  lordId?: string; // 本秘境專屬地域王(蠻荒異界四領地各自不同);未設定則沿用所屬 Region.lordId
   materials: string[]; // 可採集
   herbs: string[]; // 仙草
   manualChance: number; // 秘笈掉落率

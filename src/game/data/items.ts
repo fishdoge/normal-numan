@@ -16,6 +16,8 @@ export const ITEMS: ItemDef[] = [
   { id: "mojing", name: "魔道魔晶", kind: "material", desc: "魔修隕落後凝結的晶核,魔氣森然。", price: 42 },
   { id: "fenghuolin", name: "風火之鱗", kind: "material", desc: "天嵐妖鳥的翎鱗,蘊風火二性,煉風雷翅之基。", element: "火", price: 86 },
   { id: "longjinggu", name: "真龍精骨", kind: "material", desc: "上古真龍遺蛻之骨,一寸龍骨一寸金。", price: 99 },
+  { id: "jinyuan_lingsha", name: "金源靈砂", kind: "material", desc: "金源仙域特有的靈砂,金光流轉,乃頂階裝備必備爐料。", element: "金", price: 500 },
+  { id: "taiyi_jingjin", name: "太乙精金", kind: "material", desc: "金源仙域深處提煉的太乙精金,質地冠絕凡俗礦料。", element: "金", price: 900 },
 
   // ── 仙草 ──
   { id: "huanglongcao", name: "黃龍草", kind: "herb", desc: "常見靈草,煉製黃龍丹主藥。", price: 6, exp: 8 },
@@ -106,6 +108,20 @@ export const ITEMS: ItemDef[] = [
   { id: "jy_taiyi", name: "太乙金光劍", kind: "artifact", desc: "金源仙域至寶,太乙金光縱橫,無堅不摧。", element: "金", price: 0, atkBonus: 45000, defBonus: 8000, dropOnly: true, reqStage: 10 },
   { id: "jy_hunyuan", name: "混元仙袍", kind: "robe", desc: "金源仙域煉就的仙袍,萬法不侵。", price: 0, defBonus: 40000, dropOnly: true, reqStage: 10 },
 
+  // ── 金源仙域圖譜配方所煉裝備(1.6 版新增,需先由金源仙域怪物掉落對應圖譜) ──
+  { id: "jinyuan_ji", name: "金源戮神戟", kind: "artifact", desc: "以太乙精金反覆錘煉的戮神長戟,金源之力貫注戟身,一擊摧城。", element: "金", price: 0, atkBonus: 35000, defBonus: 5000, dropOnly: true, reqStage: 10 },
+  { id: "taixu_hunyuanjia", name: "太虛混元甲", kind: "robe", desc: "金源靈砂淬煉的護體重甲,萬法加身,固若金源本源。", price: 0, defBonus: 30000, dropOnly: true, reqStage: 10 },
+  { id: "jinyuan_hujing", name: "金源護道鏡", kind: "amulet", desc: "金源靈砂磨製的護道寶鏡,可映萬法、避凶趨吉。", price: 0, defBonus: 25000, speedBonus: 100, dropOnly: true, reqStage: 10 },
+  { id: "zhuxian_fu", name: "誅仙滅魂符", kind: "talisman", desc: "太乙精金為引凝成的殺伐仙符,一符出手,誅仙滅魂。", element: "金", price: 0, atkBonus: 20000, dropOnly: true, reqStage: 10 },
+  { id: "zaohua_jian", name: "造化戮仙劍", kind: "artifact", desc: "金源靈砂與太乙精金合煉的造化之劍,劍出無雙,戮仙屠魔。", element: "金", price: 0, atkBonus: 30000, defBonus: 8000, dropOnly: true, reqStage: 10 },
+
+  // ── 金源仙域圖譜(妖獸掉落,使用後解鎖上列裝備配方) ──
+  { id: "blueprint_jishen", name: "《金源戮神戟》煉器圖譜", kind: "recipe", desc: "記載金源戮神戟的煉製之法,參詳後可自行煉製。", price: 0, unlocksRecipe: "r_jinyuan_ji", dropOnly: true },
+  { id: "blueprint_hunyuanjia", name: "《太虛混元甲》煉器圖譜", kind: "recipe", desc: "記載太虛混元甲的煉製之法,參詳後可自行煉製。", price: 0, unlocksRecipe: "r_taixu_hunyuanjia", dropOnly: true },
+  { id: "blueprint_hudao", name: "《金源護道鏡》煉器圖譜", kind: "recipe", desc: "記載金源護道鏡的煉製之法,參詳後可自行煉製。", price: 0, unlocksRecipe: "r_jinyuan_hujing", dropOnly: true },
+  { id: "blueprint_zhuxian", name: "《誅仙滅魂符》煉器圖譜", kind: "recipe", desc: "記載誅仙滅魂符的煉製之法,參詳後可自行煉製。", price: 0, unlocksRecipe: "r_zhuxian_fu", dropOnly: true },
+  { id: "blueprint_zaohuajian", name: "《造化戮仙劍》煉器圖譜", kind: "recipe", desc: "記載造化戮仙劍的煉製之法,參詳後可自行煉製。", price: 0, unlocksRecipe: "r_zaohua_jian", dropOnly: true },
+
   // ── 命器(天命符 / 地運符,地域王稀有掉落,提升突破成功率,不分境界) ──
   { id: "tianmingfu", name: "天命符", kind: "mingqi", desc: "命格之力凝成的符籙,大晉噬天鬼帝身死方遺,窺得一線天機——不論何種境界,突破成功率 +5%。", price: 0, dropOnly: true, breakBonus: 0.05 },
   { id: "diyunfu", name: "地運符", kind: "mingqi", desc: "地脈氣運匯聚而成的符籙,萬鱗海皇秘藏之物——佩戴後借地氣相助,突破成功率 +3%。", price: 0, dropOnly: true, breakBonus: 0.03 },
@@ -116,8 +132,27 @@ export const ITEMS: ItemDef[] = [
   // ── 黑市限定(壽元每過 20~100 年,有機會出現的來路不明商販) ──
   { id: "heishi_wanshoudan", name: "黑市萬壽丹", kind: "pill", desc: "來路不明的黑市貨色,藥效遜於正宗萬壽丹,服之延壽五十載。", price: 0, life: 50 },
 
+  // ── 獨立黑市(常駐,不受壽元門檻限制) ──
+  { id: "changshenghe", name: "長生盒", kind: "special", desc: "獨立黑市常年販售的來路不明木盒,內藏各式延年益壽的丹藥,開啟後隨機得一味。", price: 300000 },
+
   // ── 北寒仙尊獨有:更強大的仙法秘笈 ──
   { id: "m_beiming", name: "《北冥玄天訣》", kind: "manual", desc: "北寒仙尊畢生所悟的無上仙法,水行之極,凍結仙靈。唯真仙可修。", price: 0, teaches: "beiming", dropOnly: true },
+
+  // ── 先天造化丹(金源仙域怪物稀有掉落,築基期服下直升煉虛期) ──
+  { id: "xiantian_zaohuadan", name: "先天造化丹", kind: "special", desc: "金源仙域孕育的造化奇丹,築基期修士服之,可連跨結丹、元嬰、化神三境,直升煉虛!藥性霸道,唯築基期可服。", price: 0 },
+
+  // ── 太乙精魂(蠻荒異界四大地域王專屬掉落,集滿四枚於太乙殿突破太乙境) ──
+  { id: "taiyi_jinghun_tianhu", name: "太乙精魂 - 天狐", kind: "special", desc: "天狐身隕凝成的精魂,赤焰流轉。集滿四枚太乙精魂,可於太乙殿突破太乙境。", element: "火", price: 0 },
+  { id: "taiyi_jinghun_zhenlong", name: "太乙精魂 - 真龍", kind: "special", desc: "真龍身隕凝成的精魂,龍威隱現。集滿四枚太乙精魂,可於太乙殿突破太乙境。", element: "木", price: 0 },
+  { id: "taiyi_jinghun_baxia", name: "太乙精魂 - 霸下", kind: "special", desc: "霸下身隕凝成的精魂,厚重渾樸。集滿四枚太乙精魂,可於太乙殿突破太乙境。", element: "土", price: 0 },
+  { id: "taiyi_jinghun_pixiu", name: "太乙精魂 - 黑眼貔貅", kind: "special", desc: "黑眼貔貅身隕凝成的精魂,幽光流轉。集滿四枚太乙精魂,可於太乙殿突破太乙境。", element: "金", price: 0 },
+
+  // ── 五色異星盤(金源仙域怪物稀有掉落,集滿金木水火土五枚可開啟蠻荒異界) ──
+  { id: "xingpan_jin", name: "異星盤(金)", kind: "special", desc: "金源仙域深處淬煉的異星圓盤,金光流轉。集滿五色異星盤,可開啟蠻荒異界之門。", element: "金", price: 0 },
+  { id: "xingpan_mu", name: "異星盤(木)", kind: "special", desc: "金源仙域深處淬煉的異星圓盤,木紋暗湧。集滿五色異星盤,可開啟蠻荒異界之門。", element: "木", price: 0 },
+  { id: "xingpan_shui", name: "異星盤(水)", kind: "special", desc: "金源仙域深處淬煉的異星圓盤,水波盪漾。集滿五色異星盤,可開啟蠻荒異界之門。", element: "水", price: 0 },
+  { id: "xingpan_huo", name: "異星盤(火)", kind: "special", desc: "金源仙域深處淬煉的異星圓盤,火紋灼灼。集滿五色異星盤,可開啟蠻荒異界之門。", element: "火", price: 0 },
+  { id: "xingpan_tu", name: "異星盤(土)", kind: "special", desc: "金源仙域深處淬煉的異星圓盤,土色渾厚。集滿五色異星盤,可開啟蠻荒異界之門。", element: "土", price: 0 },
 
   // ── 真仙 / 金仙頂尖仙法秘笈(極難取得,修煉數十萬載) ──
   { id: "m_hunyuan", name: "《混元一氣仙訣》殘卷", kind: "manual", desc: "開天混元至法,參悟需真仙之境,苦修三十萬載方能大成。金源仙帝身隕方出。", price: 0, teaches: "hunyuan_yiqi", dropOnly: true },

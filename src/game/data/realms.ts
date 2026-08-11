@@ -70,4 +70,15 @@ REALMS.push(
     breakChance: 0,
     lifespan: 99999999, // 金仙超脫,以金魂丹自真仙突破而成
   },
+  {
+    id: "taiyi_realm",
+    name: "太乙境",
+    stage: 12,
+    expNeed: 9999999999,
+    hpMax: 2000000,
+    mpMax: 2000000,
+    atk: 150000,
+    breakChance: 0,
+    lifespan: 99999999, // 太乙超脫,集齊蠻荒異界四大地域王的太乙精魂於浮屠塔太乙殿突破而成
+  },
 );

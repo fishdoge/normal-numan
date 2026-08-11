@@ -43,6 +43,7 @@ export interface SaveData {
   equippedMing: string | null; // 命器(天命符/地運符等,突破成功率加成)
   unlockedRecipes: string[]; // 已解鎖的圖譜配方 id
   jinyuanUnlocked: boolean; // 金源仙域是否已由探索秘境解鎖
+  manhuangUnlocked: boolean; // 蠻荒異界是否已集滿五色異星盤解鎖
   futuFloor: number; // 浮屠塔已通關的最高層數(幻象太歲天尊)
   kills: Record<string, number>;
   seen: string[];
@@ -155,6 +156,28 @@ export function breakChanceOf(s: SaveData): number {
   return Math.min(0.99, realm.breakChance + breakBonus);
 }
 
+// 宗門集體戰力:境界 stage → 每人每次疊加的戰鬥傷害加成比例(未列出的境界不貢獻)。
+// 同一份表由 /api/action(算真正套用的倍率)與前端(算顯示用的目前加成)共用,避免兩邊算法各寫一份而兜不起來。
+export const SECT_STAGE_BONUS: Record<number, number> = {
+  4: 0.05, // 元嬰
+  5: 0.07, // 化神
+  6: 0.09, // 煉虛
+  7: 0.11, // 合體
+  8: 0.15, // 大乘
+  10: 0.4, // 真仙
+  11: 0.6, // 金仙
+  12: 1.2, // 太乙境
+};
+
+// 依宗門成員的境界 stage 清單,算出戰鬥傷害倍率:1 + Σ(每人對應加成)
+export function sectDamageMultOfStages(stages: (number | null | undefined)[]): number {
+  let mult = 1;
+  for (const stage of stages) {
+    if (stage != null && SECT_STAGE_BONUS[stage]) mult += SECT_STAGE_BONUS[stage];
+  }
+  return mult;
+}
+
 const rand = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
 const monsterById = (id: string): Monster => MONSTERS.find((m) => m.id === id)!;
 
@@ -169,6 +192,11 @@ function elementMult(attacker: Element | undefined, defender: Element): number {
   if (COUNTERS[defender] === attacker) return 0.75;
   return 1;
 }
+
+// 蠻荒異界四大地域王的專屬異能(monster id 對照見 world.ts)
+const MONSTER_DODGE_CHANCE: Record<string, number> = { lord_tianhu: 0.3 }; // 天狐:三成機率避過玩家攻擊
+const MONSTER_TRIPLE_ATK_CHANCE: Record<string, number> = { lord_zhenlong: 0.2 }; // 真龍:兩成機率反擊 ×3
+const SPELL_SEALED_MONSTERS = new Set(["lord_pixiu"]); // 黑眼貔貅:封鎖玩家法術,無法施展仙法
 
 function log(s: SaveData, ...msgs: string[]) {
   s.log = [...s.log, ...msgs].slice(-MAX_LOG);
@@ -208,6 +236,7 @@ export function newSave(name: string, sectId: string): SaveData {
     equippedMing: null,
     unlockedRecipes: [],
     jinyuanUnlocked: false,
+    manhuangUnlocked: false,
     futuFloor: 0,
     kills: {},
     seen: [],
@@ -336,8 +365,9 @@ export function applyRealTimeAging(s: SaveData, hours: number) {
   maybeSpawnBlackMarket(s);
 }
 
-function monsterTurn(s: SaveData): string[] {
-  if (!s.combat) return [];
+// 回傳戰敗彈窗(defeat 有值時代表這回合被打到氣血歸零,呼叫端應以此彈窗取代靜默記錄)
+function monsterTurn(s: SaveData): { lines: string[]; defeat?: Modal } {
+  if (!s.combat) return { lines: [] };
   const lines: string[] = [];
   const mon = monsterById(s.combat.monsterId);
   const monAtk = s.combat.bossAtk ?? mon.atk;
@@ -347,20 +377,38 @@ function monsterTurn(s: SaveData): string[] {
   if (Math.random() < dodge) {
     lines.push(`${mon.name} 撲擊而來,你身形一晃,堪堪避過!(閃避 ${Math.round(dodge * 100)}%)`);
     log(s, ...lines);
-    return lines;
+    return { lines };
   }
-  const dmg = Math.max(1, rand(Math.floor(monAtk * 0.8), Math.floor(monAtk * 1.2)) - def);
-  lines.push(`${mon.name} 反擊,你受到 ${dmg} 點傷害。`);
+  let dmg = Math.max(1, rand(Math.floor(monAtk * 0.8), Math.floor(monAtk * 1.2)) - def);
+  const enraged = Math.random() < (MONSTER_TRIPLE_ATK_CHANCE[mon.id] ?? 0);
+  if (enraged) dmg *= 3;
+  lines.push(
+    `${mon.name} 反擊${enraged ? ",龍血狂暴,攻擊力驟增三倍" : ""},你受到 ${dmg} 點傷害。`,
+  );
   s.hp -= dmg;
   if (s.hp <= 0) {
     const lost = Math.floor(s.stones / 2);
+    const surviveHp = Math.max(1, Math.floor(hpMax * 0.3));
     lines.push(`你身受重傷不敵,倉皇遁走…… 遺失了 ${lost} 靈石。`);
-    s.hp = Math.max(1, Math.floor(hpMax * 0.3));
+    s.hp = surviveHp;
     s.stones -= lost;
     s.combat = null;
+    log(s, ...lines);
+    return {
+      lines,
+      defeat: {
+        title: "戰 敗 遁 走",
+        success: false,
+        lines: [
+          `不敵【${mon.name}】,身受重傷!`,
+          `受創 ${dmg} 點,氣血驟降至 ${surviveHp}/${hpMax}(僅剩三成)。`,
+          `倉皇遁走間,遺失靈石 ${lost} 枚。`,
+        ],
+      },
+    };
   }
   log(s, ...lines);
-  return lines;
+  return { lines };
 }
 
 function winCombat(s: SaveData): Modal {
@@ -584,6 +632,7 @@ function applyActionInner(
   if (s.equippedMing === undefined) s.equippedMing = null;
   if (!Array.isArray(s.unlockedRecipes)) s.unlockedRecipes = [];
   if (typeof s.jinyuanUnlocked !== "boolean") s.jinyuanUnlocked = false;
+  if (typeof s.manhuangUnlocked !== "boolean") s.manhuangUnlocked = false;
   if (typeof s.futuFloor !== "number") s.futuFloor = 0;
   // 1.6 版:黑市
   if (s.blackMarket === undefined) s.blackMarket = null;
@@ -766,8 +815,9 @@ function applyActionInner(
     case "breakthrough": {
       if (s.combat) return { save: s, error: "激戰之中,無法突破。" };
       const realm = REALMS[s.realmIdx];
-      if (s.realmIdx >= REALMS.length - 1) {
-        log(s, "你已白日飛昇,位列仙班。仙界的故事,是另一部書了……");
+      // 金仙/太乙皆非修為突破可及(金仙→太乙須集滿太乙精魂於太乙殿突破),一併攔下
+      if (s.realmIdx >= REALMS.length - 1 || realm.id === "jinxian_realm") {
+        log(s, "你已位列仙班,此境非修為突破可及,另有機緣方能更進一步。");
         return { save: s };
       }
       if (s.exp < realm.expNeed) {
@@ -862,6 +912,10 @@ function applyActionInner(
         return { save: s };
       }
       const pool = [...loc.materials, ...loc.herbs];
+      if (pool.length === 0) {
+        log(s, `${loc.name} 靈氣雖濃,卻無可供採集的靈材,唯有獵殺妖獸方有所得。`);
+        return { save: s };
+      }
       const found: string[] = [];
       const n = rand(1, 2);
       for (let i = 0; i < n; i++) {
@@ -891,11 +945,13 @@ function applyActionInner(
         log(s, `${loc.name} 兇險異常,以你現在的境界踏入必死無疑。`);
         return { save: s };
       }
-      // 2%~3% 機率遭遇地域王(妖獸領主)
+      // 機率遭遇地域王(妖獸領主);秘境專屬地域王(如蠻荒異界四領地)優先於區域統一地域王
       const region = REGIONS.find((r) => r.id === loc.region);
-      const lordChance = 0.02 + Math.random() * 0.01;
-      if (region?.lordId && Math.random() < lordChance) {
-        const lord = monsterById(region.lordId);
+      const lordId = loc.lordId ?? region?.lordId;
+      const [lcMin, lcMax] = region?.lordChance ?? [0.02, 0.03];
+      const lordChance = lcMin + Math.random() * (lcMax - lcMin);
+      if (lordId && Math.random() < lordChance) {
+        const lord = monsterById(lordId);
         s.combat = { monsterId: lord.id, monsterHp: lord.hp, locationId: loc.id, isLord: true };
         if (!s.seen.includes(lord.id)) s.seen.push(lord.id);
         if (!s.lordsSeen.includes(lord.id)) s.lordsSeen.push(lord.id);
@@ -921,6 +977,9 @@ function applyActionInner(
 
     case "cast": {
       if (!s.combat) return { save: s, error: "並無戰鬥" };
+      if (SPELL_SEALED_MONSTERS.has(s.combat.monsterId)) {
+        return { save: s, error: "黑眼貔貅雙目幽光暴閃,將你的法力波動盡數封鎖,此戰唯有以法器相搏!" };
+      }
       const techId = String(payload.techId ?? "");
       if (!s.learned.includes(techId)) return { save: s, error: "未習得此仙法" };
       const tech = techById(techId);
@@ -933,20 +992,27 @@ function applyActionInner(
       const mult = elementMult(tech.element, mon.element);
       const level = techLevelOf(s, techId);
       const lvlMult = techPowerMult(level);
-      const dmg = Math.max(
-        1,
-        Math.floor(atk * tech.power * lvlMult * mult * (0.9 + Math.random() * 0.2)),
-      );
+      const sectMult = Number(payload.sectDamageMult ?? 1);
       s.mp -= tech.mpCost;
-      log(
-        s,
-        `你施展【${tech.name}】(${level} 級),對 ${mon.name} 造成 ${formatDamage(dmg)}傷害` +
-          (mult > 1 ? "(五行相剋,威力大增!)" : mult < 1 ? "(屬性被剋,威力受阻)" : "") +
-          "。",
-      );
-      s.combat.monsterHp -= dmg;
+      if (Math.random() < (MONSTER_DODGE_CHANCE[mon.id] ?? 0)) {
+        log(s, `你施展【${tech.name}】,${mon.name} 身形一晃,竟憑空避過這一擊!`);
+      } else {
+        const dmg = Math.max(
+          1,
+          Math.floor(atk * tech.power * lvlMult * mult * sectMult * (0.9 + Math.random() * 0.2)),
+        );
+        log(
+          s,
+          `你施展【${tech.name}】(${level} 級),對 ${mon.name} 造成 ${formatDamage(dmg)}傷害` +
+            (mult > 1 ? "(五行相剋,威力大增!)" : mult < 1 ? "(屬性被剋,威力受阻)" : "") +
+            (sectMult > 1 ? `(宗門聲勢加持 ×${sectMult.toFixed(2)})` : "") +
+            "。",
+        );
+        s.combat.monsterHp -= dmg;
+      }
       if (s.combat.monsterHp <= 0) return { save: s, loot: winCombat(s) };
-      monsterTurn(s);
+      const turn = monsterTurn(s);
+      if (turn.defeat) return { save: s, loot: turn.defeat };
       return { save: s };
     }
 
@@ -955,11 +1021,20 @@ function applyActionInner(
       const mon = monsterById(s.combat.monsterId);
       const { atk, weaponEl } = statsOf(s);
       const mult = elementMult(weaponEl, mon.element);
-      const dmg = Math.max(1, Math.floor(atk * mult * (0.85 + Math.random() * 0.3)));
-      log(s, `你御使法器直取要害,對 ${mon.name} 造成 ${formatDamage(dmg)}傷害。`);
-      s.combat.monsterHp -= dmg;
+      const sectMult = Number(payload.sectDamageMult ?? 1);
+      if (Math.random() < (MONSTER_DODGE_CHANCE[mon.id] ?? 0)) {
+        log(s, `你御使法器直取要害,${mon.name} 身形一晃,竟憑空避過這一擊!`);
+      } else {
+        const dmg = Math.max(1, Math.floor(atk * mult * sectMult * (0.85 + Math.random() * 0.3)));
+        log(
+          s,
+          `你御使法器直取要害,對 ${mon.name} 造成 ${formatDamage(dmg)}傷害${sectMult > 1 ? `(宗門聲勢加持 ×${sectMult.toFixed(2)})` : ""}。`,
+        );
+        s.combat.monsterHp -= dmg;
+      }
       if (s.combat.monsterHp <= 0) return { save: s, loot: winCombat(s) };
-      monsterTurn(s);
+      const turn = monsterTurn(s);
+      if (turn.defeat) return { save: s, loot: turn.defeat };
       return { save: s };
     }
 
@@ -971,7 +1046,8 @@ function applyActionInner(
         log(s, `你祭出遁光,成功從 ${mon.name} 爪下逃離。`);
       } else {
         log(s, "遁走失敗!");
-        monsterTurn(s);
+        const turn = monsterTurn(s);
+        if (turn.defeat) return { save: s, loot: turn.defeat };
       }
       return { save: s };
     }
@@ -1007,6 +1083,76 @@ function applyActionInner(
         `⚠ 你踏上浮屠塔第 ${floor} 層——幻象太歲天尊自虛空凝形!(氣血 ${bossHp}、攻擊 ${bossAtk})`,
       );
       return { save: s };
+    }
+
+    case "unlockManhuang": {
+      if (s.manhuangUnlocked) {
+        log(s, "蠻荒異界之門早已為你敞開,無需再度開啟。");
+        return { save: s };
+      }
+      const disks = ["xingpan_jin", "xingpan_mu", "xingpan_shui", "xingpan_huo", "xingpan_tu"];
+      if (!disks.every((id) => (s.inventory[id] ?? 0) >= 1)) {
+        log(s, "五色異星盤尚未集滿(金木水火土),無法開啟蠻荒異界之門。");
+        return { save: s };
+      }
+      disks.forEach((id) => take(s, id));
+      s.manhuangUnlocked = true;
+      log(s, "金木水火土五色異星盤同時懸空、轟然共鳴——蠻荒異界之門訇然洞開!");
+      return {
+        save: s,
+        breakResult: {
+          success: true,
+          title: "蠻 荒 異 界 · 門 開",
+          lines: [
+            "五色異星盤共鳴,虛空裂開一道巨門——",
+            "蠻荒異界自此對你敞開,天狐、真龍、霸下、貔貅四大領地静候踏足。",
+          ],
+        },
+      };
+    }
+
+    case "ascendTaiyi": {
+      if (s.combat) return { save: s, error: "激戰之中,無法突破。" };
+      const taiyiIdx = REALMS.findIndex((r) => r.id === "taiyi_realm");
+      if (s.realmIdx >= taiyiIdx) {
+        log(s, "你已臻太乙之境,太乙殿於你已無用處。");
+        return { save: s };
+      }
+      if (REALMS[s.realmIdx].id !== "jinxian_realm") {
+        log(s, "太乙殿只渡金仙——唯有先臻金仙之境,方能於此突破太乙。");
+        return { save: s };
+      }
+      if (s.futuFloor < 20) {
+        log(s, "太乙殿深鎖,唯浮屠塔登臨第 20 層者方能窺見其門。");
+        return { save: s };
+      }
+      const souls = [
+        "taiyi_jinghun_tianhu",
+        "taiyi_jinghun_zhenlong",
+        "taiyi_jinghun_baxia",
+        "taiyi_jinghun_pixiu",
+      ];
+      if (!souls.every((id) => (s.inventory[id] ?? 0) >= 1)) {
+        log(s, "四枚太乙精魂(天狐/真龍/霸下/黑眼貔貅)尚未集滿,無法於太乙殿突破。");
+        return { save: s };
+      }
+      souls.forEach((id) => take(s, id));
+      s.realmIdx = taiyiIdx;
+      const { hpMax: nhp3, mpMax: nmp3 } = statsOf(s);
+      s.hp = nhp3;
+      s.mp = nmp3;
+      log(s, "四枚太乙精魂同祭太乙殿,金光暴漲、天地共鳴——你自金仙一步踏入【太乙境】!");
+      return {
+        save: s,
+        breakResult: {
+          success: true,
+          title: "太 乙 殿 · 飛 升 太 乙",
+          lines: [
+            "天狐、真龍、霸下、黑眼貔貅四道精魂同時祭入太乙殿——",
+            "你正式晉入【太乙境】,道行更勝金仙,亦為宗門帶來莫大聲勢!",
+          ],
+        },
+      };
     }
 
     case "useItem": {
@@ -1106,6 +1252,75 @@ function applyActionInner(
         };
       }
 
+      // 先天造化丹:築基期服下直升煉虛期,連跨結丹/元嬰/化神三大境界
+      if (item.kind === "special" && itemId === "xiantian_zaohuadan") {
+        if (REALMS[s.realmIdx].stage !== 2) {
+          log(
+            s,
+            "【先天造化丹】藥性霸道無匹,唯築基期修士可服——此刻服下,恐經脈俱裂、當場殞命,萬萬不可輕試。",
+          );
+          return { save: s };
+        }
+        take(s, itemId);
+        const targetIdx = REALMS.findIndex((r) => r.stage === 6);
+        s.realmIdx = targetIdx;
+        s.exp = 0;
+        const next = REALMS[targetIdx];
+        const gift = Math.floor(next.lifespan * 0.1);
+        s.lifeBonus += gift;
+        const { hpMax: nhp2, mpMax: nmp2 } = statsOf(s);
+        s.hp = nhp2;
+        s.mp = nmp2;
+        log(
+          s,
+          "你服下【先天造化丹】,丹入腹中霸道藥力橫衝直撞,經脈血肉一夕重塑——你自築基一步踏入煉虛之境!",
+        );
+        return {
+          save: s,
+          breakResult: {
+            success: true,
+            title: "先 天 造 化 · 連 越 三 境",
+            lines: [
+              "先天造化丹入腹,天地奇效霸道無雙——",
+              "你自【築基期】一舉躍入【煉虛期】,連跨結丹、元嬰、化神三大境界!",
+              `壽元上限躍升至 ${next.lifespan} 年,額外增壽 ${gift} 年。`,
+            ],
+          },
+        };
+      }
+
+      // 長生盒:獨立黑市常駐商品,開啟後隨機得一味延壽丹藥
+      if (item.kind === "special" && itemId === "changshenghe") {
+        take(s, itemId);
+        const pool: [string, number][] = [
+          ["heishi_wanshoudan", 0.5],
+          ["wanshoudan", 0.3],
+          ["yanshouguo", 0.15],
+          ["panlongtao", 0.05],
+        ];
+        const roll = Math.random();
+        let acc = 0;
+        let picked = pool[0][0];
+        for (const [id, w] of pool) {
+          acc += w;
+          if (roll < acc) {
+            picked = id;
+            break;
+          }
+        }
+        give(s, picked);
+        const pillName = itemById(picked).name;
+        log(s, `你開啟【長生盒】,一縷藥香浮動——盒中竟是一枚【${pillName}】!`);
+        return {
+          save: s,
+          loot: {
+            title: "長 生 盒 · 開 啟",
+            success: true,
+            lines: [`盒中所得:【${pillName}】`, "已收入儲物袋,可自行服用延壽。"],
+          },
+        };
+      }
+
       // 真仙之物:凝練仙靈力(需已飛昇)
       if (item.kind === "special" && item.xianli) {
         if (REALMS[s.realmIdx].stage < 10) {
@@ -1164,15 +1379,18 @@ function applyActionInner(
     case "buy": {
       const item = itemById(String(payload.itemId ?? ""));
       if (!item) return { save: s, error: "無此商品" };
+      // 長生盒:獨立黑市常駐商品,不受一般坊市規則限制(kind:special 但可購買)
+      const isChangshenghe = item.id === "changshenghe";
       if (
-        item.life ||
-        item.lifePct ||
-        item.kind === "manual" ||
-        item.kind === "special" ||
-        item.kind === "recipe" ||
-        item.kind === "pet" ||
-        item.dropOnly ||
-        (item.reqStage ?? 1) > 8
+        !isChangshenghe &&
+        (item.life ||
+          item.lifePct ||
+          item.kind === "manual" ||
+          item.kind === "special" ||
+          item.kind === "recipe" ||
+          item.kind === "pet" ||
+          item.dropOnly ||
+          (item.reqStage ?? 1) > 8)
       ) {
         return { save: s, error: "此物坊市不售,唯有斬妖奪寶方能得之" };
       }

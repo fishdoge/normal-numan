@@ -162,11 +162,20 @@ const BAG_SECTIONS: [string, ItemKind[]][] = [
   ["仙 草 · 丹 藥", ["herb", "pill"]],
   ["法 器 · 法 衣 · 護 身 符 · 符 籙", ["artifact", "robe", "treasure", "amulet", "talisman"]],
   ["靈 寵", ["pet"]],
+  ["命 器", ["mingqi"]],
   ["功 法 秘 笈 · 圖 譜", ["manual", "recipe"]],
   ["奇 珍 · 仙 物", ["special"]],
 ];
 
-const EQUIPPABLE: ItemKind[] = ["artifact", "robe", "treasure", "amulet", "talisman", "pet"];
+const EQUIPPABLE: ItemKind[] = [
+  "artifact",
+  "robe",
+  "treasure",
+  "amulet",
+  "talisman",
+  "pet",
+  "mingqi",
+];
 
 function BagTab() {
   const s = useGame((x) => x.save)!;
@@ -181,6 +190,7 @@ function BagTab() {
     s.equippedAmulet,
     s.equippedTalisman,
     s.equippedPet,
+    s.equippedMing,
   ];
 
   const row = ([id, n]: [string, number]) => {
@@ -838,6 +848,7 @@ interface PlayerProfile {
   equippedAmulet: string | null;
   equippedTalisman: string | null;
   equippedPet: string | null;
+  equippedMing: string | null;
 }
 
 function PlayerDetailCard({ profile, onClose }: { profile: PlayerProfile; onClose: () => void }) {
@@ -848,6 +859,7 @@ function PlayerDetailCard({ profile, onClose }: { profile: PlayerProfile; onClos
     ["護身符", profile.equippedAmulet],
     ["符籙", profile.equippedTalisman],
     ["靈寵", profile.equippedPet],
+    ["命器", profile.equippedMing],
   ];
   return (
     <div

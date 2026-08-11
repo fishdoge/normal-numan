@@ -40,6 +40,7 @@ export interface SaveData {
   equippedAmulet: string | null; // 護身符
   equippedTalisman: string | null; // 符籙
   equippedPet: string | null; // 靈寵
+  equippedMing: string | null; // 命器(天命符/地運符等,突破成功率加成)
   unlockedRecipes: string[]; // 已解鎖的圖譜配方 id
   jinyuanUnlocked: boolean; // 金源仙域是否已由探索秘境解鎖
   futuFloor: number; // 浮屠塔已通關的最高層數(幻象太歲天尊)
@@ -62,6 +63,8 @@ export interface SaveData {
   dead: boolean;
   log: string[];
   combat: CombatState | null;
+  blackMarket: { itemId: string; price: number } | null; // 當前出現中的黑市商品
+  nextBlackMarketAge: number; // 下次可能出現黑市的壽元門檻
 }
 
 export interface Modal {
@@ -104,14 +107,15 @@ export const maxLifeOf = (s: Pick<SaveData, "realmIdx" | "lifeBonus">) =>
 export function statsOf(s: SaveData) {
   const realm = REALMS[s.realmIdx];
   const sect = SECTS.find((x) => x.id === s.sectId);
-  // 各裝備槽(法器 / 法衣 / 護身符 / 符籙 / 靈寵)
+  // 各裝備槽(法器 / 法衣 / 護身符 / 符籙 / 靈寵 / 命器)
   const weapon = s.equippedWeapon ? itemById(s.equippedWeapon) : null;
   const robe =
     (s.equippedRobe ?? s.equippedArmor) ? itemById((s.equippedRobe ?? s.equippedArmor)!) : null;
   const amulet = s.equippedAmulet ? itemById(s.equippedAmulet) : null;
   const talisman = s.equippedTalisman ? itemById(s.equippedTalisman) : null;
   const pet = s.equippedPet ? itemById(s.equippedPet) : null;
-  const gear = [weapon, robe, amulet, talisman, pet];
+  const ming = s.equippedMing ? itemById(s.equippedMing) : null;
+  const gear = [weapon, robe, amulet, talisman, pet, ming];
   const sumAtk = gear.reduce((a, g) => a + (g?.atkBonus ?? 0), 0);
   const sumDef = gear.reduce((a, g) => a + (g?.defBonus ?? 0), 0);
   const sumSpeed = gear.reduce((a, g) => a + (g?.speedBonus ?? 0), 0);
@@ -124,6 +128,7 @@ export function statsOf(s: SaveData) {
   const mpMax = realm.mpMax + (sect?.bonus.mp ?? 0);
   const speed = realm.atk + Math.floor(sumSpeed) + realm.stage * 5 + (s.boonSpeed ?? 0);
   const stoneMult = pet?.stoneMult ?? 1;
+  const breakBonus = ming?.breakBonus ?? 0;
   return {
     realm,
     sect,
@@ -135,8 +140,19 @@ export function statsOf(s: SaveData) {
     mpMax,
     speed,
     stoneMult,
+    breakBonus,
     weaponEl: weapon?.element ?? talisman?.element,
   };
+}
+
+// 突破成功率:境界基礎值 + 命器(天命符/地運符等)加成,上限 99%。
+// 境界基礎值為 0(如真仙,僅能靠仙物突破)者一律鎖死為 0,命器加成不生效——
+// 避免玩家繞過「集齊真仙丹」等專屬機制,直接用命器把不可能的突破賭成小機率可行。
+export function breakChanceOf(s: SaveData): number {
+  const realm = REALMS[s.realmIdx];
+  if (realm.breakChance <= 0) return 0;
+  const { breakBonus } = statsOf(s);
+  return Math.min(0.99, realm.breakChance + breakBonus);
 }
 
 const rand = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
@@ -189,6 +205,7 @@ export function newSave(name: string, sectId: string): SaveData {
     equippedAmulet: null,
     equippedTalisman: null,
     equippedPet: null,
+    equippedMing: null,
     unlockedRecipes: [],
     jinyuanUnlocked: false,
     futuFloor: 0,
@@ -210,6 +227,8 @@ export function newSave(name: string, sectId: string): SaveData {
     dead: false,
     log: [],
     combat: null,
+    blackMarket: null,
+    nextBlackMarketAge: 16 + rand(20, 100),
   };
   const { hpMax, mpMax } = statsOf(s);
   s.hp = hpMax;
@@ -227,11 +246,17 @@ function maybeEncounter(s: SaveData) {
   const realm = REALMS[s.realmIdx];
   const roll = Math.random();
   if (roll < 0.03) {
-    const gain = Math.floor(realm.expNeed * 0.15);
+    // 真仙/金仙的 expNeed 是無法達成的巨大佔位值(用來鎖死「靠修為突破」這條路),
+    // 不可拿來換算獎勵,否則會灌出天量修為/靈石——改以 hpMax 為基準。
+    const gain =
+      realm.stage >= 10 ? Math.floor(realm.hpMax * 0.3) : Math.floor(realm.expNeed * 0.15);
     s.exp += gain;
     log(s, `打坐間心神空明,天地法則於眼前一閃而逝——頓悟!修為 +${gain}。`);
   } else if (roll < 0.05) {
-    const stones = Math.floor(realm.expNeed * 0.005) + rand(10, 100);
+    const stones =
+      realm.stage >= 10
+        ? Math.floor(realm.hpMax * 0.5) + rand(1000, 5000)
+        : Math.floor(realm.expNeed * 0.005) + rand(10, 100);
     s.stones += stones;
     log(s, `你偶遇一位隕落修士的遺蛻,收殮入土後,拾得遺留靈石 ${stones} 枚。`);
   } else if (roll < 0.075) {
@@ -265,6 +290,50 @@ function maybeEncounter(s: SaveData) {
     give(s, "panlongtao");
     log(s, "九天之上仙音縹緲,一枚龍紋壽桃自雲端墜落,正落你掌心——【蟠龍壽桃】!此乃仙界之物!");
   }
+}
+
+// 黑市:壽元每過 20~100 年,便有一次機會(50%)出現限時黑市,販售黑市萬壽丹(延壽 50 年)。
+// 錯過(下次門檻已到但商品還沒買)即散去,不會無限累積。
+function maybeSpawnBlackMarket(s: SaveData) {
+  if (s.age < s.nextBlackMarketAge) return;
+  if (s.blackMarket) {
+    s.blackMarket = null;
+    log(s, "黑市早已人去攤空,你錯過了這一輪的黑市。");
+  } else if (Math.random() < 0.5) {
+    const realm = REALMS[s.realmIdx];
+    // 同樣避免直接套用真仙/金仙的佔位 expNeed
+    const scaleBase = realm.stage >= 10 ? realm.hpMax : realm.expNeed;
+    const price = Math.max(300, Math.floor(scaleBase * 0.08));
+    s.blackMarket = { itemId: "heishi_wanshoudan", price };
+    log(
+      s,
+      `夜色中一座黑市悄然開張,攤上擺著幾瓶來路不明的丹藥,其中似有【${itemById("heishi_wanshoudan").name}】。`,
+    );
+  }
+  s.nextBlackMarketAge = s.age + rand(20, 100);
+}
+
+// 全伺服器統一時間戳:每 1 小時真實時間 = 1 年壽元,與 cultivate/rest/wander 原本的耗壽元並存。
+// 由 /api/action、/api/save 於每次請求時依 last_life_at 與現在時間的差距呼叫。
+export function applyRealTimeAging(s: SaveData, hours: number) {
+  if (hours <= 0 || !s.started || s.dead) return;
+  const cap = maxLifeOf(s);
+  s.age += hours;
+  s.day = s.age;
+  if (s.age >= cap) {
+    s.age = cap;
+    s.day = s.age;
+    s.dead = true;
+    s.combat = null;
+    log(
+      s,
+      "光陰似箭,任你道行通天,終究抵不過時光流逝——你在光陰荏苒間壽元耗盡。",
+      `享年 ${cap} 年,道隕於【${REALMS[s.realmIdx].name}】。`,
+    );
+    return;
+  }
+  log(s, `光陰荏苒,${hours} 年悄然流逝(現壽元 ${s.age}/${cap})。`);
+  maybeSpawnBlackMarket(s);
 }
 
 function monsterTurn(s: SaveData): string[] {
@@ -330,7 +399,10 @@ function winCombat(s: SaveData): Modal {
     return { title: `浮 屠 塔 · 第 ${floor} 層`, success: true, lines };
   }
 
-  const stones = Math.floor(rand(mon.stones[0], mon.stones[1]) * stoneMult);
+  // 靈石橫財:10% 機率雙倍靈石
+  let stones = Math.floor(rand(mon.stones[0], mon.stones[1]) * stoneMult);
+  const windfall = Math.random() < 0.1;
+  if (windfall) stones *= 2;
   const dropNames: string[] = [];
   for (const d of mon.drops) {
     if (Math.random() < d.chance) {
@@ -345,7 +417,7 @@ function winCombat(s: SaveData): Modal {
   s.combat = null;
   log(
     s,
-    `${isLord ? "歷經苦戰,你竟斬殺了地域之王 " : "你擊殺了 "}${mon.name}!獲得修為 ${mon.exp}、靈石 ${stones}${dropNames.length ? ",拾得:" + dropNames.join("、") : ""}。`,
+    `${isLord ? "歷經苦戰,你竟斬殺了地域之王 " : "你擊殺了 "}${mon.name}!獲得修為 ${mon.exp}、靈石 ${stones}${windfall ? "(靈石橫財,雙倍!)" : ""}${dropNames.length ? ",拾得:" + dropNames.join("、") : ""}。`,
   );
   return {
     title: isLord ? "地 域 王 授 首" : "戰 利 品",
@@ -353,7 +425,7 @@ function winCombat(s: SaveData): Modal {
     lines: [
       `${isLord ? "斬殺地域王" : "擊殺"}【${mon.name}】`,
       ...(mon.exp > 0 ? [`修為 +${mon.exp}`] : []),
-      `靈石 +${stones}`,
+      `靈石 +${stones}${windfall ? "(靈石橫財,雙倍!)" : ""}`,
       ...(dropNames.length
         ? [`拾得:${dropNames.join("、")}`]
         : [isLord ? "此王氣運深厚,竟未留下寶物,可惜!" : "妖獸未留下完整材料。"]),
@@ -380,6 +452,9 @@ function equipToSlot(s: SaveData, item: ItemDef): boolean {
     case "pet":
       s.equippedPet = item.id;
       return true;
+    case "mingqi":
+      s.equippedMing = item.id;
+      return true;
     default:
       return false;
   }
@@ -389,9 +464,11 @@ const slotVerb = (kind: string) =>
     ? "祭於身前,攻伐大增"
     : kind === "talisman"
       ? "貼身催動"
-      : kind === "pet"
-        ? "收為靈寵,伴隨左右"
-        : "穿戴護身";
+      : kind === "mingqi"
+        ? "佩於命宮,冥冥中似有天機牽引"
+        : kind === "pet"
+          ? "收為靈寵,伴隨左右"
+          : "穿戴護身";
 
 // 探索秘境(雲遊際遇,紫色):秘笈 / 靈石 / 法術 / 裝備 / 靈寵,並有機會解鎖金源仙域
 function exploreSecretRealm(s: SaveData): ActionResult {
@@ -504,9 +581,13 @@ function applyActionInner(
   if (s.equippedAmulet === undefined) s.equippedAmulet = null;
   if (s.equippedTalisman === undefined) s.equippedTalisman = null;
   if (s.equippedPet === undefined) s.equippedPet = null;
+  if (s.equippedMing === undefined) s.equippedMing = null;
   if (!Array.isArray(s.unlockedRecipes)) s.unlockedRecipes = [];
   if (typeof s.jinyuanUnlocked !== "boolean") s.jinyuanUnlocked = false;
   if (typeof s.futuFloor !== "number") s.futuFloor = 0;
+  // 1.6 版:黑市
+  if (s.blackMarket === undefined) s.blackMarket = null;
+  if (typeof s.nextBlackMarketAge !== "number") s.nextBlackMarketAge = s.age + rand(20, 100);
 
   if (s.dead && type !== "reset") return { save: s, error: "你已道隕,唯有轉世重修。" };
 
@@ -530,7 +611,10 @@ function applyActionInner(
       }
       s.age += cost;
       s.day = s.age; // 修行年限直接等於壽元
-      const base = realm.expNeed * (0.04 + Math.random() * 0.03);
+      // 真仙/金仙的 expNeed 是不可達成的巨大佔位值,打坐修為公式同樣不可直接套用,
+      // 否則會在真仙期一次打坐就灌出數億修為(詳見 1.6 版說明)。
+      const expBase = realm.stage >= 10 ? realm.hpMax * 0.02 : realm.expNeed;
+      const base = expBase * (0.04 + Math.random() * 0.03);
       const gain = Math.max(1, Math.floor(base * (1 + (sect?.bonus.exp ?? 0) / 100)));
       s.exp += gain;
       s.mp = Math.min(mpMax, s.mp + Math.floor(mpMax * 0.25));
@@ -550,6 +634,7 @@ function applyActionInner(
       }
       log(s, ...lines);
       maybeEncounter(s);
+      maybeSpawnBlackMarket(s);
       return { save: s };
     }
 
@@ -578,6 +663,7 @@ function applyActionInner(
       s.day = s.age;
       s.hp = hpMax;
       log(s, `你緩緩吐納,周天運轉,氣血盡復(耗壽元 ${restCost} 年,現 ${s.age}/${cap})。`);
+      maybeSpawnBlackMarket(s);
       return { save: s };
     }
 
@@ -597,9 +683,10 @@ function applyActionInner(
       s.stones -= WANDER_STONES;
       s.age += WANDER_LIFE;
       s.day = s.age;
+      maybeSpawnBlackMarket(s);
       const roll = Math.random();
-      // 1% 遭遇金仙境超級大 BOSS
-      if (roll < 0.01) {
+      // 3% 遭遇金仙境超級大 BOSS
+      if (roll < 0.03) {
         const boss = monsterById("jinxian");
         s.combat = {
           monsterId: boss.id,
@@ -616,11 +703,11 @@ function applyActionInner(
         return { save: s };
       }
       // 5% 探索秘境(紫色際遇):秘笈 / 靈石 / 法術 / 裝備,並有機會解鎖金源仙域
-      if (roll < 0.06) {
+      if (roll < 0.08) {
         return exploreSecretRealm(s);
       }
       // 2.5% 直接得天仙丹
-      if (roll < 0.085) {
+      if (roll < 0.105) {
         give(s, "tianxiandan");
         log(s, "雲遊至一處仙家洞府,你於塵封玉匣中尋得一枚【天仙丹】——曠世機緣!");
         return {
@@ -637,7 +724,7 @@ function applyActionInner(
         };
       }
       // 30% 永久屬性提升(固定比例:以「境界基礎值」的 3% 累加,非指數成長)
-      if (roll < 0.385) {
+      if (roll < 0.405) {
         const realm = REALMS[s.realmIdx];
         const kind = rand(0, 3);
         let line: string;
@@ -690,7 +777,16 @@ function applyActionInner(
         );
         return { save: s };
       }
-      if (Math.random() < realm.breakChance) {
+      // 渡劫→真仙:除修為外,還需一枚真仙丹(唯靈界地域王「太古龍祖」掉落)。
+      // 無論這次突破成敗,真仙丹都會被耗盡。
+      const needsZhenxian = realm.id === "dujie";
+      if (needsZhenxian && (s.inventory["zhenxiandan"] ?? 0) < 1) {
+        log(s, "天劫將至,然你尚未集得【真仙丹】——僅憑修為,道基終究不穩,無法渡劫飛昇。");
+        return { save: s };
+      }
+      if (needsZhenxian) take(s, "zhenxiandan");
+      const chance = breakChanceOf(s);
+      if (Math.random() < chance) {
         const next = REALMS[s.realmIdx + 1];
         s.realmIdx += 1;
         s.exp -= realm.expNeed;
@@ -946,8 +1042,8 @@ function applyActionInner(
         return { save: s };
       }
 
-      // 裝備:法器 / 法衣 / 護身符 / 符籙 / 靈寵
-      if (["artifact", "robe", "treasure", "amulet", "talisman", "pet"].includes(item.kind)) {
+      // 裝備:法器 / 法衣 / 護身符 / 符籙 / 靈寵 / 命器
+      if (["artifact", "robe", "treasure", "amulet", "talisman", "pet", "mingqi"].includes(item.kind)) {
         if ((item.reqStage ?? 1) > realm.stage) {
           log(s, `【${item.name}】非你此境界所能駕馭(需更高境界)。`);
           return { save: s };
@@ -1103,8 +1199,23 @@ function applyActionInner(
         if (s.equippedAmulet === item.id) s.equippedAmulet = null;
         if (s.equippedTalisman === item.id) s.equippedTalisman = null;
         if (s.equippedPet === item.id) s.equippedPet = null;
+        if (s.equippedMing === item.id) s.equippedMing = null;
       }
       log(s, `售出 ${item.name},得 ${gain} 靈石。`);
+      return { save: s };
+    }
+
+    case "buyBlackMarket": {
+      if (!s.blackMarket) return { save: s, error: "此刻並無黑市出現" };
+      if (s.stones < s.blackMarket.price) {
+        log(s, `靈石不足,黑市老板不肯賒帳(需 ${s.blackMarket.price})。`);
+        return { save: s };
+      }
+      const { itemId, price } = s.blackMarket;
+      s.stones -= price;
+      give(s, itemId);
+      log(s, `你自黑市購得【${itemById(itemId).name}】,花費 ${price} 靈石,老板旋即消失於人群之中。`);
+      s.blackMarket = null;
       return { save: s };
     }
 

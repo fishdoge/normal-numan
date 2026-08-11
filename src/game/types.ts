@@ -76,18 +76,20 @@ export type ItemKind =
   | "amulet" // 護身符(防禦,飾品槽)
   | "talisman" // 符籙(攻擊/輔助,符籙槽)
   | "pet" // 靈寵(寵物槽)
+  | "mingqi" // 命器(天命符/地運符等,突破成功率加成,命器槽)
   | "recipe" // 煉器圖譜(使用後解鎖配方)
   | "treasure" // 舊:護身之寶(向後相容,視為 robe)
   | "special";
 
 // 裝備槽定義(順序即人物欄顯示順序)
-export type EquipSlot = "weapon" | "robe" | "amulet" | "talisman" | "pet";
+export type EquipSlot = "weapon" | "robe" | "amulet" | "talisman" | "pet" | "ming";
 export const EQUIP_SLOTS: { slot: EquipSlot; label: string; kinds: ItemKind[] }[] = [
   { slot: "weapon", label: "法器", kinds: ["artifact"] },
   { slot: "robe", label: "法衣", kinds: ["robe", "treasure"] },
   { slot: "amulet", label: "護身符", kinds: ["amulet"] },
   { slot: "talisman", label: "符籙", kinds: ["talisman"] },
   { slot: "pet", label: "靈寵", kinds: ["pet"] },
+  { slot: "ming", label: "命器", kinds: ["mingqi"] },
 ];
 export const KIND_LABEL: Record<string, string> = {
   material: "材料",
@@ -99,6 +101,7 @@ export const KIND_LABEL: Record<string, string> = {
   amulet: "護身符",
   talisman: "符籙",
   pet: "靈寵",
+  mingqi: "命器",
   recipe: "圖譜",
   treasure: "法衣",
   special: "仙物",
@@ -130,6 +133,8 @@ export interface ItemDef {
   speedBonus?: number;
   // 靈寵專屬:靈石收益倍率(1.2 = +20%)
   stoneMult?: number;
+  // 命器專屬:突破成功率加成(0.05 = +5%),不分境界皆生效
+  breakBonus?: number;
   // 裝備 / 道具境界需求(stage);超過大乘(8)者僅能由妖獸掉落,坊市與煉器不得取得
   reqStage?: number;
   // 僅能由妖獸掉落(不可購買 / 一般煉器)

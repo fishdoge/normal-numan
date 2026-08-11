@@ -106,6 +106,16 @@ export const ITEMS: ItemDef[] = [
   { id: "jy_taiyi", name: "太乙金光劍", kind: "artifact", desc: "金源仙域至寶,太乙金光縱橫,無堅不摧。", element: "金", price: 0, atkBonus: 45000, defBonus: 8000, dropOnly: true, reqStage: 10 },
   { id: "jy_hunyuan", name: "混元仙袍", kind: "robe", desc: "金源仙域煉就的仙袍,萬法不侵。", price: 0, defBonus: 40000, dropOnly: true, reqStage: 10 },
 
+  // ── 命器(天命符 / 地運符,地域王稀有掉落,提升突破成功率,不分境界) ──
+  { id: "tianmingfu", name: "天命符", kind: "mingqi", desc: "命格之力凝成的符籙,大晉噬天鬼帝身死方遺,窺得一線天機——不論何種境界,突破成功率 +5%。", price: 0, dropOnly: true, breakBonus: 0.05 },
+  { id: "diyunfu", name: "地運符", kind: "mingqi", desc: "地脈氣運匯聚而成的符籙,萬鱗海皇秘藏之物——佩戴後借地氣相助,突破成功率 +3%。", price: 0, dropOnly: true, breakBonus: 0.03 },
+
+  // ── 真仙丹(渡劫飛昇必備,唯太古龍祖掉落;嘗試突破時無論成敗皆消耗) ──
+  { id: "zhenxiandan", name: "真仙丹", kind: "special", desc: "太古龍祖精血凝成的無上奇丹,渡劫飛昇的必備之物。嘗試渡劫時,無論突破成敗皆會耗盡藥力。", price: 0 },
+
+  // ── 黑市限定(壽元每過 20~100 年,有機會出現的來路不明商販) ──
+  { id: "heishi_wanshoudan", name: "黑市萬壽丹", kind: "pill", desc: "來路不明的黑市貨色,藥效遜於正宗萬壽丹,服之延壽五十載。", price: 0, life: 50 },
+
   // ── 北寒仙尊獨有:更強大的仙法秘笈 ──
   { id: "m_beiming", name: "《北冥玄天訣》", kind: "manual", desc: "北寒仙尊畢生所悟的無上仙法,水行之極,凍結仙靈。唯真仙可修。", price: 0, teaches: "beiming", dropOnly: true },
 

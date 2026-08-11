@@ -13,6 +13,7 @@ import {
   techPowerMult,
   MAX_TECH_LEVEL,
   XIANLI_MULT,
+  breakChanceOf,
 } from "./engine";
 
 export type { SaveData, Modal };
@@ -25,6 +26,7 @@ export {
   techPowerMult,
   MAX_TECH_LEVEL,
   XIANLI_MULT,
+  breakChanceOf,
 };
 
 interface ClientState {

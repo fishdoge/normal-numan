@@ -24,6 +24,7 @@ export function StatusPanel() {
     amulet: s.equippedAmulet,
     talisman: s.equippedTalisman,
     pet: s.equippedPet,
+    ming: s.equippedMing,
   };
 
   // 聚靈回力:按住即持續回力,鬆手停止

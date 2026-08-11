@@ -47,6 +47,7 @@ export async function GET(req: NextRequest) {
         equippedAmulet: equip("equippedAmulet"),
         equippedTalisman: equip("equippedTalisman"),
         equippedPet: equip("equippedPet"),
+        equippedMing: equip("equippedMing"),
       },
     });
   }

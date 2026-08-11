@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql, userFromToken } from "@/lib/db";
-import { applyAction, newSave, SaveData } from "@/game/engine";
+import { applyAction, applyRealTimeAging, newSave, SaveData } from "@/game/engine";
 
 export const runtime = "nodejs";
 
@@ -27,13 +27,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, save: null });
   }
 
-  const rows = await sql`SELECT data FROM saves WHERE user_id = ${user.id}`;
+  const rows = await sql`SELECT data, last_life_at FROM saves WHERE user_id = ${user.id}`;
   if (!rows.length) return NextResponse.json({ error: "尚未開始遊戲" }, { status: 400 });
 
-  const save = (rows[0] as { data: SaveData }).data;
+  const row = rows[0] as { data: SaveData; last_life_at: string };
+  const save = row.data;
+
+  // 全伺服器統一時間戳:每 1 小時真實時間 = 1 年壽元,與行動本身的耗壽元並存
+  const hours = Math.max(
+    0,
+    Math.floor((Date.now() - new Date(row.last_life_at).getTime()) / 3600000),
+  );
+  if (hours > 0) applyRealTimeAging(save, hours);
+
   const result = applyAction(save, type, payload ?? {});
 
-  await sql`UPDATE saves SET data = ${JSON.stringify(result.save)}::jsonb, updated_at = now() WHERE user_id = ${user.id}`;
+  await sql`
+    UPDATE saves SET data = ${JSON.stringify(result.save)}::jsonb, updated_at = now(),
+      last_life_at = last_life_at + make_interval(hours => ${hours})
+    WHERE user_id = ${user.id}`;
 
   return NextResponse.json({
     ok: !result.error,

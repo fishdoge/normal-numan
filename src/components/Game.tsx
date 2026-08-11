@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useGame, statsOf, maxLifeOf, cultCostOf, Modal } from "@/game/store";
+import { useGame, statsOf, maxLifeOf, cultCostOf, breakChanceOf, Modal } from "@/game/store";
 import { REALMS } from "@/game/data/realms";
+import { itemById } from "@/game/data/items";
+import { formatStones } from "@/game/types";
 import AuthGate from "./AuthGate";
 import CharCreate from "./CharCreate";
 import ActionTabs from "./ActionTabs";
@@ -72,8 +74,17 @@ function CultivationBar() {
   const { realm, hpMax } = statsOf(s);
   const inCombat = !!s.combat;
   const expNeed = realm.expNeed;
-  const canBreak = s.exp >= expNeed;
+  const needsZhenxian = realm.id === "dujie";
+  const hasZhenxian = (s.inventory["zhenxiandan"] ?? 0) >= 1;
+  const expReady = s.exp >= expNeed;
+  const canBreak = expReady && (!needsZhenxian || hasZhenxian);
   const cost = cultCostOf(s);
+  const chance = breakChanceOf(s);
+  const breakTitle = !expReady
+    ? `需修為 ${expNeed}`
+    : needsZhenxian && !hasZhenxian
+      ? "渡劫飛昇需先集得【真仙丹】(唯太古龍祖掉落)"
+      : `成功率 ${Math.round(chance * 100)}%`;
   return (
     <div className={`panel deco-frame ${canBreak ? "border-gold/70" : ""}`}>
       <div className="flex flex-wrap items-center gap-3">
@@ -96,7 +107,7 @@ function CultivationBar() {
           className="btn text-base px-5 py-2 border-fuchsia-400/50 text-fuchsia-300 hover:bg-fuchsia-400/15 hover:border-fuchsia-400"
           disabled={busy || inCombat || s.stones < 100000000}
           onClick={() => act("wander")}
-          title="消耗 5000 年壽元 + 100 極品靈石。約 5% 觸發探索秘境(紫色機緣),約 2.5% 直接得天仙丹,30% 得永久屬性,1% 遇金仙大 BOSS,餘則一無所獲。"
+          title="消耗 5000 年壽元 + 100 極品靈石。約 5% 觸發探索秘境(紫色機緣),約 2.5% 直接得天仙丹,30% 得永久屬性,3% 遇金仙大 BOSS,餘則一無所獲。"
         >
           雲遊四海
         </button>
@@ -104,14 +115,35 @@ function CultivationBar() {
           className={`btn text-base px-5 py-2 ${canBreak ? "border-gold text-gold animate-pulse" : ""}`}
           disabled={busy || inCombat || !canBreak}
           onClick={() => act("breakthrough")}
-          title={canBreak ? "" : `需修為 ${expNeed}`}
+          title={breakTitle}
         >
-          嘗試突破{canBreak ? "!" : ""}
+          嘗試突破{canBreak ? ` (${Math.round(chance * 100)}%)` : ""}
         </button>
         <span className="text-xs text-faded ml-auto font-mono">
-          修為 {s.exp}/{expNeed} · 突破失敗折損最大壽元 15%
+          修為 {s.exp}/{expNeed} · 突破成功率 {Math.round(chance * 100)}% · 失敗折損最大壽元 15%
         </span>
       </div>
+      {needsZhenxian && !hasZhenxian && (
+        <p className="text-xs text-fuchsia-300 mt-2">
+          渡劫飛昇需集得【真仙丹】——唯靈界地域王「太古龍祖」掉落,無論突破成敗皆會耗盡藥力。
+        </p>
+      )}
+      {s.blackMarket && (
+        <div className="mt-3 border border-amber-300/40 bg-amber-300/5 rounded-sm p-2.5 flex items-center justify-between flex-wrap gap-2">
+          <div className="min-w-0">
+            <span className="font-bold text-amber-300">黑 市</span>
+            <span className="text-sm text-cream ml-2">{itemById(s.blackMarket.itemId).name}</span>
+            <p className="text-xs text-faded mt-0.5">{itemById(s.blackMarket.itemId).desc}</p>
+          </div>
+          <button
+            className="btn shrink-0 border-amber-300/60 text-amber-300 hover:bg-amber-300/15"
+            disabled={busy || s.stones < s.blackMarket.price}
+            onClick={() => act("buyBlackMarket")}
+          >
+            購入 {formatStones(s.blackMarket.price)}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -137,9 +169,7 @@ export default function Game() {
       const j = await res.json();
       setSave(j.save ?? null);
       if (j.name) setUserName(j.name);
-      if (j.save && j.lifeGained > 0) {
-        useGame.getState().pushLog(`雲遊歸來,仙體自然溫養,增壽 ${j.lifeGained} 年。`);
-      }
+      // 離線期間流逝的壽元(lifeGained)已由伺服器寫入 save.log,無需前端重複提示
       if (j.save && j.credited) {
         useGame.getState().pushLog("交易行貨款已入帳。");
       }

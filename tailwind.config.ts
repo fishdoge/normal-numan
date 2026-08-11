@@ -24,8 +24,10 @@ const config: Config = {
         earth: "#b08040",
       },
       fontFamily: {
-        serif: ["var(--font-serif-tc)", "Noto Serif TC", "serif"],
-        mono: ["var(--font-mono)", "monospace"],
+        // 1.6 版:改用 @fontsource 自架(見 src/app/layout.tsx),直接引用字型家族名稱,
+        // 不再需要 next/font 的 CSS 變數轉接。
+        serif: ["Noto Serif TC", "serif"],
+        mono: ["JetBrains Mono", "monospace"],
       },
       keyframes: {
         floatUp: {

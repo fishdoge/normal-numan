@@ -5,7 +5,7 @@ import { useGame, statsOf, maxLifeOf, XIANLI_MULT, sectDamageMultOfStages } from
 import { REALMS } from "@/game/data/realms";
 import { SECTS } from "@/game/data/sects";
 import { MONSTERS } from "@/game/data/world";
-import { itemById } from "@/game/data/items";
+import { itemById, isXuantianArtifact } from "@/game/data/items";
 import { techById } from "@/game/data/techniques";
 import { ELEMENT_COLOR, ELEMENTS, XIANLI_COLOR, EQUIP_SLOTS, formatStones } from "@/game/types";
 
@@ -307,11 +307,12 @@ export function StatusPanel() {
         {EQUIP_SLOTS.map(({ slot, label }) => {
           const id = equipMap[slot];
           const it = id ? itemById(id) : null;
+          const xuantian = id ? isXuantianArtifact(id) : false;
           return (
             <div key={slot} className="contents">
               <span className="text-faded">{label}</span>
               <span
-                className={`text-right ${it ? (slot === "pet" ? "text-fuchsia-300" : "text-cream") : "text-faded/50"}`}
+                className={`text-right ${xuantian ? "text-xuantian" : it ? (slot === "pet" ? "text-fuchsia-300" : "text-cream") : "text-faded/50"}`}
               >
                 {it ? it.name : "—"}
               </span>

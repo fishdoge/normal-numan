@@ -105,7 +105,7 @@ export const TECHNIQUES: Technique[] = [
   },
   {
     id: "xuantian",
-    name: "玄天斬靈劍法",
+    name: "昊天斬靈劍法",
     element: "木",
     desc: "傳說中玄天之寶所載劍法,一劍斬靈。",
     mpCost: 80,

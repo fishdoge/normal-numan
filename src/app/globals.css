@@ -22,6 +22,25 @@ body::after {
   background: radial-gradient(ellipse at 50% 30%, transparent 55%, rgba(10, 6, 2, 0.55) 100%);
 }
 
+/* 玄天仙器專屬:流動紫色文字(蠻荒異界玄天殘片 + 太乙精魂煉成,唯太乙境可用) */
+@keyframes xuantianFlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+.text-xuantian {
+  background: linear-gradient(90deg, #c084fc, #f0abfc, #a855f7, #e9d5ff, #c084fc);
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: xuantianFlow 3s linear infinite;
+  font-weight: 700;
+}
+
 @layer components {
   .panel {
     @apply bg-coal/80 border border-faded/25 rounded-sm p-4 relative;

@@ -18,6 +18,7 @@ export const ITEMS: ItemDef[] = [
   { id: "longjinggu", name: "真龍精骨", kind: "material", desc: "上古真龍遺蛻之骨,一寸龍骨一寸金。", price: 99 },
   { id: "jinyuan_lingsha", name: "金源靈砂", kind: "material", desc: "金源仙域特有的靈砂,金光流轉,乃頂階裝備必備爐料。", element: "金", price: 500 },
   { id: "taiyi_jingjin", name: "太乙精金", kind: "material", desc: "金源仙域深處提煉的太乙精金,質地冠絕凡俗礦料。", element: "金", price: 900 },
+  { id: "xuantian_canpian", name: "玄天殘片", kind: "material", desc: "蠻荒異界怪物體內殘留的太古仙器碎片,玄光流轉,乃煉化玄天仙器的必備材料。", price: 3000 },
 
   // ── 仙草 ──
   { id: "huanglongcao", name: "黃龍草", kind: "herb", desc: "常見靈草,煉製黃龍丹主藥。", price: 6, exp: 8 },
@@ -62,7 +63,7 @@ export const ITEMS: ItemDef[] = [
   { id: "m_liehuo", name: "《烈火符陣》符書", kind: "manual", desc: "研讀後可習得烈火符陣。", price: 650, teaches: "liehuo" },
   { id: "m_dayan", name: "《大衍訣》石碑拓文", kind: "manual", desc: "研讀後可習得大衍訣。", price: 620, teaches: "dayan" },
   { id: "m_jinlei", name: "《金雷竹御雷真訣》", kind: "manual", desc: "研讀後可習得御雷真訣。需築基期。", price: 3000, teaches: "jinlei" },
-  { id: "m_xuantian", name: "《玄天斬靈劍法》", kind: "manual", desc: "玄天之寶所載無上劍法。需結丹期。", price: 12000, teaches: "xuantian" },
+  { id: "m_xuantian", name: "《昊天斬靈劍法》", kind: "manual", desc: "玄天之寶所載無上劍法。需結丹期。", price: 12000, teaches: "xuantian" },
   { id: "m_aohan", name: "《傲寒六訣》", kind: "manual", desc: "極寒魔功,六訣連環,寒潮滅世。需元嬰期。", price: 60000, teaches: "aohan" },
   { id: "m_dageng", name: "《大庚劍陣圖》", kind: "manual", desc: "古修士遺留的劍陣圖,金精所煉飛劍列陣,鋒銳無匹。需元嬰期。", price: 90000, teaches: "dageng" },
   { id: "m_yuanci", name: "《元磁神光錄》", kind: "manual", desc: "元磁山之力化神光,鎮壓萬法。需化神期。", price: 400000, teaches: "yuanci" },
@@ -141,6 +142,14 @@ export const ITEMS: ItemDef[] = [
   // ── 先天造化丹(金源仙域怪物稀有掉落,築基期服下直升煉虛期) ──
   { id: "xiantian_zaohuadan", name: "先天造化丹", kind: "special", desc: "金源仙域孕育的造化奇丹,築基期修士服之,可連跨結丹、元嬰、化神三境,直升煉虛!藥性霸道,唯築基期可服。", price: 0 },
 
+  // ── 玄天仙器(玄天殘片 + 太乙精魂煉成,隨機一種,唯太乙境可用,屬性隨煉化品質浮動 100%~300%) ──
+  { id: "xuantian_zhanling_jian", name: "玄天斬靈劍", kind: "artifact", desc: "玄天至寶,劍出斬靈,鋒芒所至萬法俱滅。", element: "金", price: 0, atkBonus: 300000, dropOnly: false, reqStage: 12 },
+  { id: "xuantian_hulu", name: "玄天葫蘆", kind: "artifact", desc: "玄天至寶,葫蘆納萬法於一體,攻守兼備。", price: 0, atkBonus: 160000, defBonus: 250000, dropOnly: false, reqStage: 12 },
+  { id: "potian_chui", name: "破天槌", kind: "artifact", desc: "玄天至寶,一槌落下,天穹為之破碎。", element: "土", price: 0, atkBonus: 450000, defBonus: 50000, dropOnly: false, reqStage: 12 },
+  { id: "tianhu_huaxie_ren", name: "天狐化血刃", kind: "artifact", desc: "玄天至寶,刃鋒過處血氣自燃,身法如影隨形。", element: "火", price: 0, atkBonus: 380000, speedBonus: 300, dropOnly: false, reqStage: 12 },
+  { id: "xuantian_zhanmo_jian", name: "玄天斬魔劍", kind: "artifact", desc: "玄天至寶,專誅心魔外道,劍意剛猛無儔。", element: "木", price: 0, atkBonus: 420000, defBonus: 80000, dropOnly: false, reqStage: 12 },
+  { id: "huantian_jing", name: "幻天鏡", kind: "artifact", desc: "玄天至寶,鏡面幻化萬千身法,虛實難辨。", element: "水", price: 0, atkBonus: 180000, defBonus: 350000, speedBonus: 400, dropOnly: false, reqStage: 12 },
+
   // ── 太乙精魂(蠻荒異界四大地域王專屬掉落,集滿四枚於太乙殿突破太乙境) ──
   { id: "taiyi_jinghun_tianhu", name: "太乙精魂 - 天狐", kind: "special", desc: "天狐身隕凝成的精魂,赤焰流轉。集滿四枚太乙精魂,可於太乙殿突破太乙境。", element: "火", price: 0 },
   { id: "taiyi_jinghun_zhenlong", name: "太乙精魂 - 真龍", kind: "special", desc: "真龍身隕凝成的精魂,龍威隱現。集滿四枚太乙精魂,可於太乙殿突破太乙境。", element: "木", price: 0 },
@@ -160,4 +169,35 @@ export const ITEMS: ItemDef[] = [
   { id: "m_zhutian", name: "《誅天神雷金仙法》仙簡", kind: "manual", desc: "唯金仙可修的無上殺伐仙法,修習需百萬載。傳說僅浮屠塔絕頂可得。", price: 0, teaches: "zhutian_shenlei", dropOnly: true },
 ];
 
-export const itemById = (id: string) => ITEMS.find((i) => i.id === id)!;
+// 玄天仙器(蠻荒異界玄天殘片 + 太乙精魂煉成,唯太乙境可用,屬性極強且浮動 100%~300%)
+export const XUANTIAN_ARTIFACT_IDS = new Set<string>([
+  "xuantian_zhanling_jian",
+  "xuantian_hulu",
+  "potian_chui",
+  "tianhu_huaxie_ren",
+  "xuantian_zhanmo_jian",
+  "huantian_jing",
+]);
+export const isXuantianArtifact = (id: string) => XUANTIAN_ARTIFACT_IDS.has(id.split("@")[0]);
+
+// 品質浮動道具:id 格式為 "基底id@品質百分比"(如 "qingsuo@113" = 113% 品質)。
+// 煉器(±30%)與玄天仙器煉化(100%~300%)皆透過此機制動態產生獨立的強化/減弱版本,
+// 而不需要為每個品質預先建立實體道具。攻/防/速依品質等比例縮放,名稱附註百分比。
+export function itemById(id: string): ItemDef {
+  const at = id.indexOf("@");
+  if (at === -1) return ITEMS.find((i) => i.id === id)!;
+  const baseId = id.slice(0, at);
+  const quality = Number(id.slice(at + 1));
+  const base = ITEMS.find((i) => i.id === baseId)!;
+  const scale = (v: number | undefined) =>
+    v === undefined ? undefined : Math.max(1, Math.round((v * quality) / 100));
+  const pct = quality - 100;
+  return {
+    ...base,
+    id,
+    name: `${base.name}(${pct >= 0 ? "+" : ""}${pct}%)`,
+    atkBonus: scale(base.atkBonus),
+    defBonus: scale(base.defBonus),
+    speedBonus: scale(base.speedBonus),
+  };
+}

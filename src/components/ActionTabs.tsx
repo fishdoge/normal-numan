@@ -13,7 +13,7 @@ import {
   Tab,
 } from "@/game/store";
 import { LOCATIONS, MONSTERS, RECIPES, REGIONS } from "@/game/data/world";
-import { ITEMS, itemById } from "@/game/data/items";
+import { ITEMS, itemById, isXuantianArtifact } from "@/game/data/items";
 import { MISSIONS } from "@/game/data/missions";
 import { REALMS } from "@/game/data/realms";
 import { SECTS } from "@/game/data/sects";
@@ -209,18 +209,21 @@ function BagTab() {
   const row = ([id, n]: [string, number]) => {
     const item = itemById(id);
     const equipped = equippedIds.includes(id);
+    const xuantian = isXuantianArtifact(id);
     return (
       <div
         key={id}
-        className="flex items-center justify-between border border-faded/20 rounded-sm p-2.5"
+        className={`flex items-center justify-between border rounded-sm p-2.5 ${xuantian ? "border-fuchsia-400/50" : "border-faded/20"}`}
       >
         <div className="min-w-0">
           <span className="font-bold">
-            {item.name} <span className="text-faded font-normal">×{n}</span>
+            <span className={xuantian ? "text-xuantian" : ""}>{item.name}</span>{" "}
+            <span className="text-faded font-normal">×{n}</span>
             <span className="chip ml-2 text-faded/80 border-faded/30">{KIND_LABEL[item.kind]}</span>
             {item.element && (
               <span className={`chip ml-2 ${ELEMENT_COLOR[item.element]}`}>{item.element}</span>
             )}
+            {xuantian && <span className="chip ml-2 text-xuantian border-fuchsia-400/50">玄天仙器</span>}
             {equipped && <span className="chip ml-2 text-gold border-gold/50">已裝備</span>}
             {item.kind === "manual" && item.teaches && (
               <span className="chip ml-2 text-azure border-azure/50">
@@ -405,11 +408,40 @@ function CraftTab() {
   const act = useGame((x) => x.act);
   const busy = useGame((x) => x.busy);
   const { realm } = statsOf(s);
+  const SOUL_IDS = [
+    "taiyi_jinghun_tianhu",
+    "taiyi_jinghun_zhenlong",
+    "taiyi_jinghun_baxia",
+    "taiyi_jinghun_pixiu",
+  ];
+  const soulCount = SOUL_IDS.reduce((a, id) => a + (s.inventory[id] ?? 0), 0);
+  const fragmentCount = s.inventory["xuantian_canpian"] ?? 0;
+
   return (
     <div className="space-y-2">
       <p className="text-xs text-faded">
-        煉器堂——藍框配方需先由妖獸掉落圖譜參悟後方能煉製。裝備分類已於名稱旁標示。
+        煉器堂——藍框配方需先由妖獸掉落圖譜參悟後方能煉製。裝備分類已於名稱旁標示,煉製屬性隨機浮動 ±30%。
       </p>
+      {realm.stage >= 12 && (
+        <div className="border border-fuchsia-400/50 bg-fuchsia-400/5 rounded-sm p-3">
+          <span className="font-bold text-xuantian">玄天仙器煉化</span>
+          <p className="text-sm text-faded mt-1">
+            以玄天殘片(蠻荒異界怪物掉落,需 10 枚)+ 太乙精魂(天狐/真龍/霸下/黑眼貔貅任一 1
+            枚)同淬爐火,隨機煉成【玄天斬靈劍】【玄天葫蘆】【破天槌】【天狐化血刃】【玄天斬魔劍】【幻天鏡】其中一種,屬性隨機浮動
+            100%~300%,唯太乙境可用。
+          </p>
+          <p className="text-xs font-mono mt-1 text-faded">
+            玄天殘片 {fragmentCount}/10 · 太乙精魂 {soulCount}/1
+          </p>
+          <button
+            className="btn mt-2 border-fuchsia-400/60 text-fuchsia-300 hover:bg-fuchsia-400/15"
+            disabled={busy || fragmentCount < 10 || soulCount < 1}
+            onClick={() => act("craftXuantian")}
+          >
+            煉 化 玄 天 仙 器
+          </button>
+        </div>
+      )}
       {RECIPES.map((rec) => {
         const result = itemById(rec.result);
         const locked = rec.dropOnly && !s.unlockedRecipes.includes(rec.id);
@@ -713,14 +745,16 @@ function TradeTab() {
         const item = itemById(l.item_id);
         if (!item) return null;
         const mine = l.seller_name === s.name;
+        const xuantian = isXuantianArtifact(l.item_id);
         return (
           <div
             key={l.id}
-            className="flex items-center justify-between border border-faded/20 rounded-sm p-2.5"
+            className={`flex items-center justify-between border rounded-sm p-2.5 ${xuantian ? "border-fuchsia-400/50" : "border-faded/20"}`}
           >
             <div className="min-w-0">
               <span className="font-bold">
-                {item.name} <span className="text-faded font-normal">×{l.qty}</span>
+                <span className={xuantian ? "text-xuantian" : ""}>{item.name}</span>{" "}
+                <span className="text-faded font-normal">×{l.qty}</span>
                 {mine && <span className="chip ml-2 text-gold border-gold/50">我的掛單</span>}
               </span>
               <p className="text-xs text-faded">
@@ -1147,6 +1181,7 @@ function itemStatLine(item: (typeof ITEMS)[number]): string {
 function WanlingTab() {
   const s = useGame((x) => x.save)!;
   const { realm } = statsOf(s);
+  const [filter, setFilter] = useState("全部");
 
   if (realm.stage < 10) {
     return (
@@ -1156,12 +1191,42 @@ function WanlingTab() {
     );
   }
 
+  const sectionsToShow =
+    filter === "全部" ? BAG_SECTIONS : BAG_SECTIONS.filter(([title]) => title === filter);
+
   return (
     <div className="space-y-2">
       <p className="text-xs text-faded">
         混沌萬靈榜,錄盡天地萬物,共 {ITEMS.length} 種,真仙以上方能查閱全貌。
       </p>
-      {BAG_SECTIONS.map(([title, kinds]) => {
+
+      <div className="flex flex-wrap gap-1.5 pt-1">
+        <button
+          onClick={() => setFilter("全部")}
+          className={`px-2.5 py-1 text-xs rounded-sm border transition-colors ${
+            filter === "全部"
+              ? "border-gold bg-gold/15 text-gold"
+              : "border-faded/30 text-faded hover:text-cream"
+          }`}
+        >
+          全部
+        </button>
+        {BAG_SECTIONS.map(([title]) => (
+          <button
+            key={title}
+            onClick={() => setFilter(title)}
+            className={`px-2.5 py-1 text-xs rounded-sm border transition-colors ${
+              filter === title
+                ? "border-gold bg-gold/15 text-gold"
+                : "border-faded/30 text-faded hover:text-cream"
+            }`}
+          >
+            {title.replace(/\s/g, "")}
+          </button>
+        ))}
+      </div>
+
+      {sectionsToShow.map(([title, kinds]) => {
         const group = ITEMS.filter((i) => kinds.includes(i.kind));
         if (!group.length) return null;
         return (
@@ -1170,16 +1235,25 @@ function WanlingTab() {
             <div className="space-y-2">
               {group.map((item) => {
                 const stat = itemStatLine(item);
+                const xuantian = isXuantianArtifact(item.id);
                 return (
-                  <div key={item.id} className="border border-faded/20 rounded-sm p-2.5">
+                  <div
+                    key={item.id}
+                    className={`border rounded-sm p-2.5 ${xuantian ? "border-fuchsia-400/40" : "border-faded/20"}`}
+                  >
                     <span className="font-bold">
-                      {item.name}
+                      <span className={xuantian ? "text-xuantian" : ""}>{item.name}</span>
                       <span className="chip ml-2 text-faded/80 border-faded/30">
                         {KIND_LABEL[item.kind]}
                       </span>
                       {item.element && (
                         <span className={`chip ml-2 ${ELEMENT_COLOR[item.element]}`}>
                           {item.element}
+                        </span>
+                      )}
+                      {xuantian && (
+                        <span className="chip ml-2 text-xuantian border-fuchsia-400/50">
+                          玄天仙器
                         </span>
                       )}
                     </span>

@@ -3,7 +3,7 @@ import { COUNTERS, Element, Monster, ItemDef, formatDamage } from "./types";
 import { REALMS } from "./data/realms";
 import { SECTS } from "./data/sects";
 import { techById } from "./data/techniques";
-import { itemById, ITEMS } from "./data/items";
+import { itemById, ITEMS, XUANTIAN_ARTIFACT_IDS } from "./data/items";
 import { LOCATIONS, MONSTERS, RECIPES, REGIONS } from "./data/world";
 import { MISSIONS } from "./data/missions";
 
@@ -1460,14 +1460,58 @@ function applyActionInner(
       }
       for (const m of rec.materials) take(s, m.id, m.n);
       s.stones -= rec.stones;
-      give(s, rec.result);
-      log(s, `爐火純青,三日三夜——你成功煉製出【${rec.name}】!`);
+      // 煉器屬性浮動 ±30%:每次出爐品質隨機,攻/防/速皆等比例縮放
+      const quality = rand(70, 130);
+      const rolledId = `${rec.result}@${quality}`;
+      give(s, rolledId);
+      const rolled = itemById(rolledId);
+      log(s, `爐火純青,三日三夜——你成功煉製出【${rolled.name}】!`);
       return {
         save: s,
         loot: {
           title: "煉 器 大 成",
           success: true,
-          lines: [`【${rec.name}】出爐!`, itemById(rec.result).desc],
+          lines: [`【${rolled.name}】出爐!`, rolled.desc],
+        },
+      };
+    }
+
+    case "craftXuantian": {
+      const { realm } = statsOf(s);
+      if (realm.stage < 12) {
+        return { save: s, error: "玄天仙器唯太乙境修士方能煉化,此刻你尚無資格。" };
+      }
+      const FRAGMENT_COST = 10;
+      if ((s.inventory["xuantian_canpian"] ?? 0) < FRAGMENT_COST) {
+        log(s, `煉化玄天仙器需玄天殘片 ${FRAGMENT_COST} 枚,你尚未集齊。`);
+        return { save: s };
+      }
+      const soulIds = [
+        "taiyi_jinghun_tianhu",
+        "taiyi_jinghun_zhenlong",
+        "taiyi_jinghun_baxia",
+        "taiyi_jinghun_pixiu",
+      ];
+      const haveSoul = soulIds.find((id) => (s.inventory[id] ?? 0) >= 1);
+      if (!haveSoul) {
+        log(s, "煉化玄天仙器需太乙精魂一枚(天狐/真龍/霸下/黑眼貔貅任一皆可),你尚未持有。");
+        return { save: s };
+      }
+      take(s, "xuantian_canpian", FRAGMENT_COST);
+      take(s, haveSoul);
+      const pool = Array.from(XUANTIAN_ARTIFACT_IDS);
+      const picked = pool[rand(0, pool.length - 1)];
+      const quality = rand(100, 300); // 玄天仙器屬性浮動 100%~300%
+      const rolledId = `${picked}@${quality}`;
+      give(s, rolledId);
+      const rolled = itemById(rolledId);
+      log(s, `玄天殘片與太乙精魂同淬爐火,天地紫氣暴湧——煉成【${rolled.name}】!`);
+      return {
+        save: s,
+        loot: {
+          title: "玄 天 仙 器 · 煉 成",
+          success: true,
+          lines: [`煉成【${rolled.name}】`, rolled.desc],
         },
       };
     }

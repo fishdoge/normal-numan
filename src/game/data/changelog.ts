@@ -9,6 +9,15 @@ export interface ChangelogEntry {
 // 新版在前
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.15",
+    date: "2026-08-13",
+    title: "修復先天造化丹無法使用",
+    highlights: [
+      "修復【先天造化丹】儲物袋內完全沒有可用按鈕的問題,新增專屬「服用直升煉虛」按鈕。",
+      "修正真仙丹、太乙精魂、異星盤等道具的提示文字誤導(原文字暗示要於仙法欄使用,實際並非如此)。",
+    ],
+  },
+  {
     version: "1.14",
     date: "2026-08-12",
     title: "突破失敗代價加重:修為直接歸零",

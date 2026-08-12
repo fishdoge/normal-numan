@@ -250,11 +250,27 @@ function BagTab() {
               服用晉金仙
             </button>
           )}
-          {item.kind === "special" && !item.xianli && id !== "jinhundan" && (
+          {item.kind === "special" && id === "xiantian_zaohuadan" && (
+            <button
+              className="btn border-gold/60 text-gold"
+              disabled={busy}
+              onClick={() => act("useItem", { itemId: id })}
+            >
+              服用直升煉虛
+            </button>
+          )}
+          {item.kind === "special" && id === "zenglingzhu" && (
             <span className="chip text-fuchsia-400 border-fuchsia-400/50 self-center">
               於仙法欄使用
             </span>
           )}
+          {item.kind === "special" &&
+            !item.xianli &&
+            !["jinhundan", "xiantian_zaohuadan", "zenglingzhu"].includes(id) && (
+              <span className="chip text-fuchsia-400 border-fuchsia-400/50 self-center">
+                集滿/達成條件後自動生效
+              </span>
+            )}
           {item.kind === "recipe" && (
             <button
               className="btn border-azure/60 text-azure"

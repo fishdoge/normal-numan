@@ -3,12 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { useGame, statsOf, maxLifeOf, cultCostOf, breakChanceOf, Modal } from "@/game/store";
 import { REALMS } from "@/game/data/realms";
-import { itemById } from "@/game/data/items";
 import { CHANGELOG } from "@/game/data/changelog";
-import { formatStones } from "@/game/types";
 import AuthGate from "./AuthGate";
 import CharCreate from "./CharCreate";
 import ActionTabs from "./ActionTabs";
+import SectPage from "./SectPage";
 import { StatusPanel, LogPanel, CombatPanel, RealmProgressPanel } from "./panels";
 
 // 更新公告:逐版列出 version/ 目錄的重點內容(精簡為玩家視角)
@@ -114,6 +113,7 @@ function CultivationBar() {
   const busy = useGame((x) => x.busy);
   const { realm, hpMax } = statsOf(s);
   const inCombat = !!s.combat;
+  const inDwelling = s.dwellingSlot != null;
   const expNeed = realm.expNeed;
   const needsZhenxian = realm.id === "dujie";
   const hasZhenxian = (s.inventory["zhenxiandan"] ?? 0) >= 1;
@@ -132,23 +132,29 @@ function CultivationBar() {
         <p className="panel-title mb-0 mr-2">修 煉</p>
         <button
           className="btn text-base px-5 py-2"
-          disabled={busy || inCombat}
+          disabled={busy || inCombat || inDwelling}
           onClick={() => act("cultivate")}
+          title={inDwelling ? "正於宗門仙境閉關潛修,須先離開仙境方可行動" : undefined}
         >
           打坐修煉 <span className="ml-1 font-mono text-xs">-{cost} 年壽元</span>
         </button>
         <button
           className="btn text-base px-5 py-2"
-          disabled={busy || inCombat || s.hp >= hpMax}
+          disabled={busy || inCombat || inDwelling || s.hp >= hpMax}
           onClick={() => act("rest")}
+          title={inDwelling ? "正於宗門仙境閉關潛修,須先離開仙境方可行動" : undefined}
         >
           調息(回復氣血)
         </button>
         <button
           className="btn text-base px-5 py-2 border-fuchsia-400/50 text-fuchsia-300 hover:bg-fuchsia-400/15 hover:border-fuchsia-400"
-          disabled={busy || inCombat || s.stones < 100000000}
+          disabled={busy || inCombat || inDwelling || s.stones < 100000000}
           onClick={() => act("wander")}
-          title="消耗 5000 年壽元 + 100 極品靈石。約 5% 觸發探索秘境(紫色機緣),約 2.5% 直接得天仙丹,30% 得永久屬性,3% 遇金仙大 BOSS,餘則一無所獲。"
+          title={
+            inDwelling
+              ? "正於宗門仙境閉關潛修,須先離開仙境方可行動"
+              : "消耗 5000 年壽元 + 100 極品靈石。約 5% 觸發探索秘境(紫色機緣),約 2.5% 直接得天仙丹,30% 得永久屬性,3% 遇金仙大 BOSS,餘則一無所獲。"
+          }
         >
           雲遊四海
         </button>
@@ -169,21 +175,10 @@ function CultivationBar() {
           渡劫飛昇需集得【真仙丹】——唯靈界地域王「太古龍祖」掉落,無論突破成敗皆會耗盡藥力。
         </p>
       )}
-      {s.blackMarket && (
-        <div className="mt-3 border border-amber-300/40 bg-amber-300/5 rounded-sm p-2.5 flex items-center justify-between flex-wrap gap-2">
-          <div className="min-w-0">
-            <span className="font-bold text-amber-300">黑 市</span>
-            <span className="text-sm text-cream ml-2">{itemById(s.blackMarket.itemId).name}</span>
-            <p className="text-xs text-faded mt-0.5">{itemById(s.blackMarket.itemId).desc}</p>
-          </div>
-          <button
-            className="btn shrink-0 border-amber-300/60 text-amber-300 hover:bg-amber-300/15"
-            disabled={busy || s.stones < s.blackMarket.price}
-            onClick={() => act("buyBlackMarket")}
-          >
-            購入 {formatStones(s.blackMarket.price)}
-          </button>
-        </div>
+      {inDwelling && (
+        <p className="text-xs text-fuchsia-300 mt-2">
+          你正停泊於宗門仙境中閉關潛修,無法採集靈材、獵殺妖獸、雲遊四海、打坐修煉或調息——須先於宗門頁面離開仙境方可行動。
+        </p>
       )}
     </div>
   );
@@ -197,6 +192,7 @@ export default function Game() {
   const closeLoot = useGame((x) => x.closeLoot);
   const closeBreak = useGame((x) => x.closeBreak);
   const act = useGame((x) => x.act);
+  const mainView = useGame((x) => x.mainView);
   const [auth, setAuth] = useState<"checking" | "anon" | "authed">("checking");
   const [userName, setUserName] = useState("");
   const [showChangelog, setShowChangelog] = useState(false);
@@ -238,6 +234,8 @@ export default function Game() {
   if (!save || !save.started) return <CharCreate name={userName} />;
 
   if (save.dead) return <DeathScreen />;
+
+  if (mainView === "sect") return <SectPage />;
 
   const isXian = REALMS[save.realmIdx]?.stage >= 10;
 

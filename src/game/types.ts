@@ -32,26 +32,41 @@ export function formatDamage(n: number): string {
   return `${n}`;
 }
 
-// 靈石面額:1 極品 = 100 上品 = 10,000 中品 = 1,000,000 下品
-export function formatStones(n: number): string {
-  if (n <= 0) return "0 下品";
-  const units: [string, number][] = [
-    ["極品", 1000000],
-    ["上品", 10000],
-    ["中品", 100],
-    ["下品", 1],
-  ];
-  const parts: string[] = [];
+// 靈石面額:1 仙元石 = 100 極品 = 10,000 上品 = 1,000,000 中品 = 100,000,000 下品
+// 原著設定:靈石積至百枚極品自動兌換為一枚仙元石,故顯示時一律優先折算為仙元石。
+export const STONE_UNITS: [string, number][] = [
+  ["仙元石", 100000000],
+  ["極品", 1000000],
+  ["上品", 10000],
+  ["中品", 100],
+  ["下品", 1],
+];
+
+export interface StonePart {
+  label: string;
+  qty: number;
+}
+
+// 拆解靈石數量為(最多)兩級面額,供純文字與著色顯示共用同一份換算邏輯
+export function stoneParts(n: number): StonePart[] {
+  if (n <= 0) return [{ label: "下品", qty: 0 }];
+  const parts: StonePart[] = [];
   let rest = n;
-  for (const [label, v] of units) {
+  for (const [label, v] of STONE_UNITS) {
     const q = Math.floor(rest / v);
     if (q > 0) {
-      parts.push(`${q} ${label}`);
+      parts.push({ label, qty: q });
       rest -= q * v;
     }
     if (parts.length >= 2) break; // 最多顯示兩級,避免冗長
   }
-  return parts.join(" ");
+  return parts;
+}
+
+export function formatStones(n: number): string {
+  return stoneParts(n)
+    .map((p) => `${p.qty} ${p.label}`)
+    .join(" ");
 }
 
 export interface Realm {
@@ -125,6 +140,8 @@ export interface ItemDef {
   xianli?: number; // 給予仙靈力點數(天仙丹、先天仙器,真仙專屬)
   // manual → 對應仙法
   teaches?: string;
+  // manual 專屬:設為 true 者可於坊市直接購買(其餘秘笈一律不販售,只能靠獵殺/任務/秘境取得)
+  shopSellable?: boolean;
   // recipe → 解鎖的煉器配方 id
   unlocksRecipe?: string;
   // 裝備屬性

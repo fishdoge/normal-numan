@@ -6,6 +6,7 @@ import { techById } from "./data/techniques";
 import { itemById, ITEMS, XUANTIAN_ARTIFACT_IDS } from "./data/items";
 import { LOCATIONS, MONSTERS, RECIPES, REGIONS } from "./data/world";
 import { MISSIONS } from "./data/missions";
+import { dwellingLevelOf } from "./data/sectTiers";
 
 export interface CombatState {
   monsterId: string;
@@ -64,8 +65,7 @@ export interface SaveData {
   dead: boolean;
   log: string[];
   combat: CombatState | null;
-  blackMarket: { itemId: string; price: number } | null; // 當前出現中的黑市商品
-  nextBlackMarketAge: number; // 下次可能出現黑市的壽元門檻
+  dwellingSlot: number | null; // 目前停泊的宗門仙境位置(slot_idx),未停泊為 null
 }
 
 export interface Modal {
@@ -256,8 +256,7 @@ export function newSave(name: string, sectId: string): SaveData {
     dead: false,
     log: [],
     combat: null,
-    blackMarket: null,
-    nextBlackMarketAge: 16 + rand(20, 100),
+    dwellingSlot: null,
   };
   const { hpMax, mpMax } = statsOf(s);
   s.hp = hpMax;
@@ -321,27 +320,6 @@ function maybeEncounter(s: SaveData) {
   }
 }
 
-// 黑市:壽元每過 20~100 年,便有一次機會(50%)出現限時黑市,販售黑市百壽丹(延壽 50 年)。
-// 錯過(下次門檻已到但商品還沒買)即散去,不會無限累積。
-function maybeSpawnBlackMarket(s: SaveData) {
-  if (s.age < s.nextBlackMarketAge) return;
-  if (s.blackMarket) {
-    s.blackMarket = null;
-    log(s, "黑市早已人去攤空,你錯過了這一輪的黑市。");
-  } else if (Math.random() < 0.5) {
-    const realm = REALMS[s.realmIdx];
-    // 同樣避免直接套用真仙/金仙的佔位 expNeed
-    const scaleBase = realm.stage >= 10 ? realm.hpMax : realm.expNeed;
-    const price = Math.max(300, Math.floor(scaleBase * 0.08));
-    s.blackMarket = { itemId: "heishi_wanshoudan", price };
-    log(
-      s,
-      `夜色中一座黑市悄然開張,攤上擺著幾瓶來路不明的丹藥,其中似有【${itemById("heishi_wanshoudan").name}】。`,
-    );
-  }
-  s.nextBlackMarketAge = s.age + rand(20, 100);
-}
-
 // 全伺服器統一時間戳:每 1 小時真實時間 = 1 年壽元,與 cultivate/rest/wander 原本的耗壽元並存。
 // 由 /api/action、/api/save 於每次請求時依 last_life_at 與現在時間的差距呼叫。
 export function applyRealTimeAging(s: SaveData, hours: number) {
@@ -362,7 +340,16 @@ export function applyRealTimeAging(s: SaveData, hours: number) {
     return;
   }
   log(s, `光陰荏苒,${hours} 年悄然流逝(現壽元 ${s.age}/${cap})。`);
-  maybeSpawnBlackMarket(s);
+}
+
+// 宗門仙境:停泊中的位置每小時真實時間緩慢增長修為,由 /api/action 依各位置目前等級結算。
+// 由伺服器依 saves.dwelling_since 與現在時間的差距呼叫,level 由呼叫端查詢 sect_dwelling 表後傳入。
+export function applyDwellingExp(s: SaveData, hours: number, level: number) {
+  if (hours <= 0 || !s.started || s.dead) return;
+  const gain = Math.floor(hours * dwellingLevelOf(level).expPerHour);
+  if (gain <= 0) return;
+  s.exp += gain;
+  log(s, `你於宗門仙境靜心潛修 ${hours} 個時辰,修為 +${gain}。`);
 }
 
 // 回傳戰敗彈窗(defeat 有值時代表這回合被打到氣血歸零,呼叫端應以此彈窗取代靜默記錄)
@@ -634,11 +621,17 @@ function applyActionInner(
   if (typeof s.jinyuanUnlocked !== "boolean") s.jinyuanUnlocked = false;
   if (typeof s.manhuangUnlocked !== "boolean") s.manhuangUnlocked = false;
   if (typeof s.futuFloor !== "number") s.futuFloor = 0;
-  // 1.6 版:黑市
-  if (s.blackMarket === undefined) s.blackMarket = null;
-  if (typeof s.nextBlackMarketAge !== "number") s.nextBlackMarketAge = s.age + rand(20, 100);
+  if (s.dwellingSlot === undefined) s.dwellingSlot = null;
 
   if (s.dead && type !== "reset") return { save: s, error: "你已道隕,唯有轉世重修。" };
+
+  // 停泊宗門仙境靜心潛修時,無法分心他顧——採集/獵殺/雲遊/打坐/調息一律不可行
+  if (
+    s.dwellingSlot != null &&
+    (type === "gather" || type === "hunt" || type === "wander" || type === "cultivate" || type === "rest")
+  ) {
+    return { save: s, error: "你正於宗門仙境中閉關潛修,無法分心他顧,須先離開仙境方可行動。" };
+  }
 
   switch (type) {
     case "cultivate": {
@@ -683,7 +676,6 @@ function applyActionInner(
       }
       log(s, ...lines);
       maybeEncounter(s);
-      maybeSpawnBlackMarket(s);
       return { save: s };
     }
 
@@ -712,7 +704,6 @@ function applyActionInner(
       s.day = s.age;
       s.hp = hpMax;
       log(s, `你緩緩吐納,周天運轉,氣血盡復(耗壽元 ${restCost} 年,現 ${s.age}/${cap})。`);
-      maybeSpawnBlackMarket(s);
       return { save: s };
     }
 
@@ -732,7 +723,6 @@ function applyActionInner(
       s.stones -= WANDER_STONES;
       s.age += WANDER_LIFE;
       s.day = s.age;
-      maybeSpawnBlackMarket(s);
       const roll = Math.random();
       // 3% 遭遇金仙境超級大 BOSS
       if (roll < 0.03) {
@@ -1141,7 +1131,9 @@ function applyActionInner(
       const { hpMax: nhp3, mpMax: nmp3 } = statsOf(s);
       s.hp = nhp3;
       s.mp = nmp3;
+      give(s, "m_taiyi_hunyuan_lu", 1);
       log(s, "四枚太乙精魂同祭太乙殿,金光暴漲、天地共鳴——你自金仙一步踏入【太乙境】!");
+      log(s, "太乙殿感應道行圓滿,饋贈《太乙葫蘆天地訣》仙簡一份。");
       return {
         save: s,
         breakResult: {
@@ -1289,38 +1281,6 @@ function applyActionInner(
         };
       }
 
-      // 長生盒:獨立黑市常駐商品,開啟後隨機得一味延壽丹藥
-      if (item.kind === "special" && itemId === "changshenghe") {
-        take(s, itemId);
-        const pool: [string, number][] = [
-          ["heishi_wanshoudan", 0.5],
-          ["wanshoudan", 0.3],
-          ["yanshouguo", 0.15],
-          ["panlongtao", 0.05],
-        ];
-        const roll = Math.random();
-        let acc = 0;
-        let picked = pool[0][0];
-        for (const [id, w] of pool) {
-          acc += w;
-          if (roll < acc) {
-            picked = id;
-            break;
-          }
-        }
-        give(s, picked);
-        const pillName = itemById(picked).name;
-        log(s, `你開啟【長生盒】,一縷藥香浮動——盒中竟是一枚【${pillName}】!`);
-        return {
-          save: s,
-          loot: {
-            title: "長 生 盒 · 開 啟",
-            success: true,
-            lines: [`盒中所得:【${pillName}】`, "已收入儲物袋,可自行服用延壽。"],
-          },
-        };
-      }
-
       // 真仙之物:凝練仙靈力(需已飛昇)
       if (item.kind === "special" && item.xianli) {
         if (REALMS[s.realmIdx].stage < 10) {
@@ -1379,18 +1339,15 @@ function applyActionInner(
     case "buy": {
       const item = itemById(String(payload.itemId ?? ""));
       if (!item) return { save: s, error: "無此商品" };
-      // 長生盒:獨立黑市常駐商品,不受一般坊市規則限制(kind:special 但可購買)
-      const isChangshenghe = item.id === "changshenghe";
       if (
-        !isChangshenghe &&
-        (item.life ||
-          item.lifePct ||
-          item.kind === "manual" ||
-          item.kind === "special" ||
-          item.kind === "recipe" ||
-          item.kind === "pet" ||
-          item.dropOnly ||
-          (item.reqStage ?? 1) > 8)
+        item.life ||
+        item.lifePct ||
+        (item.kind === "manual" && !item.shopSellable) ||
+        item.kind === "special" ||
+        item.kind === "recipe" ||
+        item.kind === "pet" ||
+        item.dropOnly ||
+        (item.reqStage ?? 1) > 8
       ) {
         return { save: s, error: "此物坊市不售,唯有斬妖奪寶方能得之" };
       }
@@ -1420,20 +1377,6 @@ function applyActionInner(
         if (s.equippedMing === item.id) s.equippedMing = null;
       }
       log(s, `售出 ${item.name},得 ${gain} 靈石。`);
-      return { save: s };
-    }
-
-    case "buyBlackMarket": {
-      if (!s.blackMarket) return { save: s, error: "此刻並無黑市出現" };
-      if (s.stones < s.blackMarket.price) {
-        log(s, `靈石不足,黑市老板不肯賒帳(需 ${s.blackMarket.price})。`);
-        return { save: s };
-      }
-      const { itemId, price } = s.blackMarket;
-      s.stones -= price;
-      give(s, itemId);
-      log(s, `你自黑市購得【${itemById(itemId).name}】,花費 ${price} 靈石,老板旋即消失於人群之中。`);
-      s.blackMarket = null;
       return { save: s };
     }
 

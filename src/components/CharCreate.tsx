@@ -1,15 +1,45 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useGame } from "@/game/store";
 import { SECTS } from "@/game/data/sects";
 import { techById } from "@/game/data/techniques";
 import { ELEMENT_COLOR } from "@/game/types";
 
+interface SectSummary {
+  id: string;
+  tierName: string;
+  memberCap: number;
+  memberCount: number;
+}
+
 export default function CharCreate({ name }: { name?: string }) {
   const act = useGame((s) => s.act);
   const busy = useGame((s) => s.busy);
   const [sectId, setSectId] = useState<string | null>(null);
+  const [summary, setSummary] = useState<Record<string, SectSummary>>({});
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const j = await (await fetch("/api/sect?all=1")).json();
+        if (j.ok) {
+          const map: Record<string, SectSummary> = {};
+          for (const s of j.sects ?? []) {
+            map[s.id] = {
+              id: s.id,
+              tierName: s.tierName,
+              memberCap: s.memberCap,
+              memberCount: s.memberCount,
+            };
+          }
+          setSummary(map);
+        }
+      } catch {
+        /* 名額資訊僅供參考,取得失敗不影響選擇門派 */
+      }
+    })();
+  }, []);
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-12">
@@ -37,12 +67,19 @@ export default function CharCreate({ name }: { name?: string }) {
           {SECTS.map((sect) => {
             const tech = techById(sect.startTech);
             const active = sectId === sect.id;
+            const sum = summary[sect.id];
+            const full = !!sum && sum.memberCount >= sum.memberCap;
             return (
               <button
                 key={sect.id}
-                onClick={() => setSectId(sect.id)}
+                disabled={full}
+                onClick={() => !full && setSectId(sect.id)}
                 className={`text-left border rounded-sm p-3 transition-colors ${
-                  active ? "border-gold bg-gold/10" : "border-faded/25 hover:border-faded/60"
+                  full
+                    ? "border-faded/15 opacity-50 cursor-not-allowed"
+                    : active
+                      ? "border-gold bg-gold/10"
+                      : "border-faded/25 hover:border-faded/60"
                 }`}
               >
                 <div className="flex items-baseline justify-between">
@@ -56,6 +93,11 @@ export default function CharCreate({ name }: { name?: string }) {
                   {sect.bonus.hp ? `氣血 +${sect.bonus.hp} ` : ""}
                   {sect.bonus.mp ? `法力 +${sect.bonus.mp}` : ""}
                 </p>
+                {sum && (
+                  <p className={`text-xs mt-1.5 ${full ? "text-vermillion" : "text-faded/70"}`}>
+                    {sum.tierName} · {sum.memberCount}/{sum.memberCap} 人{full ? "(已滿員)" : ""}
+                  </p>
+                )}
               </button>
             );
           })}

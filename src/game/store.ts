@@ -41,11 +41,12 @@ export type Tab =
   | "craft"
   | "market"
   | "trade"
-  | "mission"
-  | "sect"
   | "dex"
   | "wanling"
   | "rank";
+
+// 主畫面切換:遊戲主頁 / 宗門獨立頁面(1.8 版新增,宗門改為全螢幕切換,不再是行動頁籤之一)
+export type MainView = "game" | "sect";
 
 interface ClientState {
   save: SaveData | null;
@@ -53,6 +54,7 @@ interface ClientState {
   breakResult: Modal | null; // 突破結果彈窗
   busy: boolean;
   activeTab: Tab;
+  mainView: MainView;
 
   act: (type: string, payload?: Record<string, unknown>) => Promise<void>;
   setSave: (save: SaveData | null) => void;
@@ -60,6 +62,7 @@ interface ClientState {
   closeBreak: () => void;
   pushLog: (msg: string) => void;
   setActiveTab: (tab: Tab) => void;
+  setMainView: (view: MainView) => void;
 }
 
 export const useGame = create<ClientState>()((set, get) => ({
@@ -68,11 +71,13 @@ export const useGame = create<ClientState>()((set, get) => ({
   breakResult: null,
   busy: false,
   activeTab: "explore",
+  mainView: "game",
 
   setSave: (save) => set({ save }),
   closeLoot: () => set({ loot: null }),
   closeBreak: () => set({ breakResult: null }),
   setActiveTab: (tab) => set({ activeTab: tab }),
+  setMainView: (view) => set({ mainView: view }),
   pushLog: (msg) => {
     const s = get().save;
     if (s) set({ save: { ...s, log: [...s.log, msg].slice(-60) } });

@@ -40,13 +40,14 @@ export const ITEMS: ItemDef[] = [
   { id: "panlongtaoshu", name: "玄命果", kind: "herb", desc: "逆天改命，延長壽源，源壽無疆。", price: 50000000, life: 20000 },
 
   // ── 領主獎勵(地域王掉落,坊市不售) ──
-  { id: "zengyuandan", name: "增元丹", kind: "pill", desc: "地域王內丹煉成的奇丹,服之壯大本源,壽元上限永久增加 5%。", price: 100000, lifePct: 0.05 },
+  { id: "zengyuandan", name: "增元丹", kind: "pill", desc: "地域王內丹煉成的奇丹,服之壯大本源,屬於福天地之造化,壽元上限永久增加 5%。", price: 100000, lifePct: 0.05 },
   { id: "zenglingzhu", name: "增靈珠", kind: "special", desc: "蘊含精純法則之力的靈珠,可於「仙法」欄位強化一門仙法一個等級(法術最高七級)。", price: 150000 },
 
   // ── 真仙之物(飛昇後,坊市不售,極難獲得) ──
   { id: "tianxiandan", name: "天仙丹", kind: "special", desc: "仙界秘傳,唯真仙可煉化。服之凝練一點仙靈力,攻伐之力倍增。", price: 0, xianli: 1 },
   { id: "xiantian_zhong", name: "先天玄靈鐘", kind: "special", desc: "北寒仙域中孕育的先天仙器,煉化可得二點仙靈力。", price: 0, xianli: 2 },
   { id: "xiantian_qi", name: "破天丹", kind: "special", desc: "開天遺留的至寶,煉化可得三點仙靈力。", price: 0, xianli: 3 },
+  { id: "thantian_lu", name: "參天造化露", kind: "special", desc: "掌天瓶凝聚之露水，具有法則具象化的力量，煉化後可以獲得十五點先靈力。", price: 0, xianli: 15 },
   { id: "jinhundan", name: "金魂丹", kind: "special", desc: "太上金仙隕落後凝成的金色魂丹,唯真仙可服。服之魂魄蛻變,可自真仙突破至金仙之境!", price: 0 },
 
   // ── 丹藥 ──
@@ -60,7 +61,7 @@ export const ITEMS: ItemDef[] = [
   { id: "pojiedan", name: "破界丹", kind: "pill", desc: "衝擊大乘瓶頸的無上靈丹,以皇極天髓為引。", price: 4100, exp: 26000 },
 
   // ── 仙法秘笈 ──
-  { id: "m_qingzhufeng", name: "《青竹蜂雲劍訣》殘卷", kind: "manual", desc: "研讀後可習得青竹蜂雲劍訣。", price: 800, teaches: "qingzhufeng" },
+  { id: "m_qingzhufeng", name: "《青竹風雲劍訣》殘卷", kind: "manual", desc: "研讀後可習得青竹風雲劍訣。", price: 800, teaches: "qingzhufeng" },
   { id: "m_leidun", name: "《雷遁術》玉簡", kind: "manual", desc: "研讀後可習得雷遁術。", price: 600, teaches: "leidun" },
   { id: "m_hanbing", name: "《寒冰破》秘笈", kind: "manual", desc: "研讀後可習得寒冰破。", price: 550, teaches: "hanbing" },
   { id: "m_liehuo", name: "《烈火符陣》符書", kind: "manual", desc: "研讀後可習得烈火符陣。", price: 650, teaches: "liehuo" },
@@ -73,13 +74,34 @@ export const ITEMS: ItemDef[] = [
   { id: "m_sanyan", name: "《三焰化火真經》", kind: "manual", desc: "三色靈焰合一,焚山煮海。需煉虛期。", price: 1500000, teaches: "sanyan" },
   { id: "m_zhenlong", name: "《真龍九變》", kind: "manual", desc: "化身真龍的無上神通,大乘可修。", price: 8000000, teaches: "zhenlong" },
 
+  // ── 1.8 版新增 15 門仙法秘笈,取得管道各異(坊市購買/妖獸掉落/宗門任務/太乙殿饋贈) ──
+  // 坊市直售(唯此三部秘笈坊市有售,其餘一律不販售)
+  { id: "m_chiyan_fentian", name: "《赤炎焚天訣》抄本", kind: "manual", desc: "結丹修士常修的火系進階秘法,坊市有售。", price: 700, teaches: "chiyan_fentian", shopSellable: true },
+  { id: "m_jingji_jiaohun", name: "《荊棘絞魂咒》抄本", kind: "manual", desc: "元嬰修士常修的木系秘法,坊市有售。需元嬰期。", price: 3200, teaches: "jingji_jiaohun", shopSellable: true },
+  { id: "m_houtu_suohun", name: "《厚土鎖魂陣》圖譜", kind: "manual", desc: "元嬰修士常修的土系秘法,坊市有售。需元嬰期。", price: 3200, teaches: "houtu_suohun", shopSellable: true },
+  // 妖獸掉落
+  { id: "m_jinwu_zhuori", name: "《金烏灼日訣》殘卷", kind: "manual", desc: "化神修士常修的金系秘法,天嵐妖鳥藏書。需化神期。", price: 420000, teaches: "jinwu_zhuori", dropOnly: true },
+  { id: "m_fentian_liyu", name: "《焚天煉獄》秘卷", kind: "manual", desc: "化神修士常修的火系秘法,魔化修士殘留。需化神期。", price: 420000, teaches: "fentian_liyu", dropOnly: true },
+  { id: "m_hanyuan_wanli", name: "《寒淵萬里凍》玉冊", kind: "manual", desc: "煉虛修士常修的水系秘法,鬼母藏珍。需煉虛期。", price: 1600000, teaches: "hanyuan_wanli", dropOnly: true },
+  { id: "m_wanteng_tianluo", name: "《萬藤天羅陣》圖譜", kind: "manual", desc: "煉虛修士常修的木系秘法,魔血尊者遺物。需煉虛期。", price: 1600000, teaches: "wanteng_tianluo", dropOnly: true },
+  { id: "m_canghai_niliu", name: "《滄海逆流訣》秘笈", kind: "manual", desc: "合體修士常修的水系秘法,真靈衛守護。需合體期。", price: 8500000, teaches: "canghai_niliu", dropOnly: true },
+  { id: "m_shanhe_zhenhun", name: "《山河鎮魂術》古卷", kind: "manual", desc: "合體修士常修的土系秘法,混元凶獸藏書。需合體期。", price: 8500000, teaches: "shanhe_zhenhun", dropOnly: true },
+  { id: "m_xuanbing_mieshi", name: "《玄冰滅世訣》仙冊", kind: "manual", desc: "大乘修士常修的水系秘法,太虛人仙傳承。需大乘期。", price: 8500000, teaches: "xuanbing_mieshi", dropOnly: true },
+  { id: "m_tianjie_shafa", name: "《天劫殺伐訣》雷卷", kind: "manual", desc: "借天劫雷靈之威悟出的殺伐秘法,唯天劫雷靈掉落。需渡劫期。", price: 30000000, teaches: "tianjie_shafa", dropOnly: true },
+  { id: "m_houtu_fengtian", name: "《厚土封天訣》龍冊", kind: "manual", desc: "渡劫修士常修的頂尖秘法,上古真龍殘魂藏珍。需渡劫期。", price: 30000000, teaches: "houtu_fengtian", dropOnly: true },
+  // 宗門任務獎勵
+  { id: "m_lusheng_jianjue", name: "《戮神劍訣》執事密傳", kind: "manual", desc: "合體修士常修的金系秘法,執事堂高階任務獎勵。需合體期。", price: 8500000, teaches: "lusheng_jianjue", dropOnly: true },
+  { id: "m_jiutian_fenyang", name: "《九天焚陽訣》執事密傳", kind: "manual", desc: "大乘修士常修的火系秘法,執事堂高階任務獎勵。需大乘期。", price: 8500000, teaches: "jiutian_fenyang", dropOnly: true },
+  // 太乙殿突破當下的饋贈(僅由 ascendTaiyi 直接授予,無其他取得管道)
+  { id: "m_taiyi_hunyuan_lu", name: "《太乙葫蘆天地訣》仙簡", kind: "manual", desc: "唯太乙境可修的至高仙法,太乙殿突破當下的饋贈。", price: 0, teaches: "taiyi_hunyuan_lu", dropOnly: true },
+
   // ── 法器(煉製所得) ──
   { id: "qingsuo", name: "青索劍", kind: "artifact", desc: "青光如索的木系飛劍。", element: "木", price: 100, atkBonus: 6 },
   { id: "jinjian", name: "金光巨劍", kind: "artifact", desc: "巨劍門制式法器,沉重鋒銳。", element: "金", price: 120, atkBonus: 7 },
   { id: "hanbingzhui", name: "寒冰錐", kind: "artifact", desc: "寒玉精煉成的冰錐法器。", element: "水", price: 110, atkBonus: 5, defBonus: 2 },
   { id: "huolingqi", name: "火靈旗", kind: "artifact", desc: "火蟒鱗煉製的赤色小旗,揮動間烈焰騰空。", element: "火", price: 130, atkBonus: 8 },
   { id: "hutudun", name: "厚土盾", kind: "artifact", desc: "溫玉為心的土黃圓盾,防禦驚人。", element: "土", price: 110, atkBonus: 2, defBonus: 8 },
-  { id: "qingzhufengjian", name: "青竹蜂雲劍", kind: "artifact", desc: "以金雷竹煉製的本命飛劍,可一化為多。韓立的成名法寶。", element: "金", price: 600, atkBonus: 16, defBonus: 3 },
+  { id: "qingzhufengjian", name: "青竹風雲劍", kind: "artifact", desc: "以金雷竹煉製的本命飛劍,可一化為多。韓立的成名法寶。", element: "金", price: 600, atkBonus: 16, defBonus: 3 },
   { id: "dagengjian", name: "大庚劍陣", kind: "artifact", desc: "七十二口金色小劍結成的劍陣,青蒙山金精所煉。", element: "金", price: 4700, atkBonus: 170, defBonus: 28 },
   { id: "sanyanshan", name: "三焰扇", kind: "artifact", desc: "三色火鳥翎羽所製寶扇,一扇之威,焚天滅地。", element: "火", price: 12000, atkBonus: 750, defBonus: 75 },
   { id: "yuancishan", name: "元磁神山", kind: "artifact", desc: "萬丈元磁山煉成寸許小山,祭出時鎮壓一切飛遁。", element: "土", price: 60000, atkBonus: 3800, defBonus: 1400 },
@@ -133,11 +155,6 @@ export const ITEMS: ItemDef[] = [
   // ── 真仙丹(渡劫飛昇必備,唯太古龍祖掉落;嘗試突破時無論成敗皆消耗) ──
   { id: "zhenxiandan", name: "真仙丹", kind: "special", desc: "太古龍祖精血凝成的無上奇丹,渡劫飛昇的必備之物。嘗試渡劫時,無論突破成敗皆會耗盡藥力。", price: 0 },
 
-  // ── 黑市限定(壽元每過 20~100 年,有機會出現的來路不明商販) ──
-  { id: "heishi_wanshoudan", name: "黑市百壽丹", kind: "pill", desc: "來路不明的黑市貨色,藥效遜於正宗百壽丹,服之延壽五十載。", price: 0, life: 50 },
-
-  // ── 獨立黑市(常駐,不受壽元門檻限制) ──
-  { id: "changshenghe", name: "長生盒", kind: "special", desc: "獨立黑市常年販售的來路不明木盒,內藏各式延年益壽的丹藥,開啟後隨機得一味。", price: 300000 },
 
   // ── 北寒仙尊獨有:更強大的仙法秘笈 ──
   { id: "m_beiming", name: "《北冥玄天訣》", kind: "manual", desc: "北寒仙尊畢生所悟的無上仙法,水行之極,凍結仙靈。唯真仙可修。", price: 0, teaches: "beiming", dropOnly: true },

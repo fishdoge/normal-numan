@@ -7,7 +7,8 @@ import { SECTS } from "@/game/data/sects";
 import { MONSTERS } from "@/game/data/world";
 import { itemById, isXuantianArtifact } from "@/game/data/items";
 import { techById } from "@/game/data/techniques";
-import { ELEMENT_COLOR, ELEMENTS, XIANLI_COLOR, EQUIP_SLOTS, formatStones } from "@/game/types";
+import { ELEMENT_COLOR, ELEMENTS, XIANLI_COLOR, EQUIP_SLOTS } from "@/game/types";
+import StoneAmount from "./StoneAmount";
 
 // 五色異星盤(集滿解鎖蠻荒異界),五行 → 道具 id 對照
 const XINGPAN_ID_OF: Record<string, string> = {
@@ -122,12 +123,12 @@ export function RealmProgressPanel() {
 
 export function StatusPanel() {
   const s = useGame((x) => x.save)!;
-  const { realm, atk, def, hpMax, mpMax, speed } = statsOf(s);
+  const { realm, atk, baseAtk, def, hpMax, mpMax, speed } = statsOf(s);
   const sect = SECTS.find((x) => x.id === s.sectId);
   const expNeed = REALMS[s.realmIdx].expNeed;
   const isXian = realm.stage >= 10;
   const act = useGame((x) => x.act);
-  const setActiveTab = useGame((x) => x.setActiveTab);
+  const setMainView = useGame((x) => x.setMainView);
 
   // 宗門集體戰力:輪詢同門境界分佈,算出目前的宗門傷害加成供顯示(實際套用仍以伺服器戰鬥當下重算為準)
   const [sectMult, setSectMult] = useState(1);
@@ -207,25 +208,14 @@ export function StatusPanel() {
   return (
     <div className="panel deco-frame">
       <p className="panel-title">道 籍</p>
-      <div className="flex items-baseline justify-between mb-1">
+      <div className="flex items-baseline justify-between mb-1 gap-2">
         <span
           className={`text-xl font-bold ${isXian ? "text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 via-amber-200 to-fuchsia-300" : ""}`}
         >
           {s.name}
         </span>
-        <button
-          className="text-sm text-faded hover:text-gold transition-colors"
-          onClick={() => setActiveTab("sect")}
-          title="查看宗門名錄與共享靈石庫"
-        >
-          {sect?.name ?? "散修"} ▸
-        </button>
+        <span className="text-xs text-fuchsia-300/90 truncate">{sect?.name ?? "散修"}</span>
       </div>
-      {sect && (
-        <p className="text-xs text-fuchsia-300/90 mb-1">
-          宗門加成 戰鬥傷害 ×{sectMult.toFixed(2)}
-        </p>
-      )}
       <p className={`mb-3 ${isXian ? "text-fuchsia-300 font-bold" : "text-gold"}`}>{realm.name}</p>
 
       <div className="space-y-2 text-sm">
@@ -258,12 +248,30 @@ export function StatusPanel() {
         </div>
       </div>
 
+      <button
+        onClick={() => setMainView("sect")}
+        title="開啟宗門獨立頁面"
+        className="w-full mt-3 mb-1 flex items-center justify-between gap-2 rounded-sm border-2 border-fuchsia-400/50 bg-gradient-to-r from-fuchsia-400/15 via-gold/10 to-fuchsia-400/15 px-3 py-2.5 transition-colors hover:border-fuchsia-400 hover:from-fuchsia-400/25 hover:to-fuchsia-400/25"
+      >
+        <span className="min-w-0 text-left">
+          <span className="block text-base font-bold text-fuchsia-300">
+            {sect?.name ?? "散修"} 宗門殿堂
+          </span>
+          {sect && (
+            <span className="block text-xs text-cream/80 mt-0.5">
+              戰鬥傷害 ×{sectMult.toFixed(2)} · 進入查看名錄/仙境/任務
+            </span>
+          )}
+        </span>
+        <span className="shrink-0 text-lg text-fuchsia-300">▸</span>
+      </button>
+
       <div className="divider">◆</div>
 
       <div className="grid grid-cols-2 gap-y-1 text-sm">
         <span className="text-faded">壽元</span>
         <span
-          className={`text-right ${maxLifeOf(s) - s.age <= REALMS[s.realmIdx].lifespan * 0.2 ? "text-vermillion" : ""}`}
+          className={`text-right ${maxLifeOf(s) - s.age <= maxLifeOf(s) * 0.2 ? "text-vermillion" : ""}`}
         >
           {s.age}/{maxLifeOf(s)} 年
         </span>
@@ -277,8 +285,19 @@ export function StatusPanel() {
             </span>
           </>
         )}
-        <span className="text-faded">攻擊</span>
-        <span className={`text-right ${s.xianli > 0 ? XIANLI_COLOR : ""}`}>{atk}</span>
+        {baseAtk !== atk ? (
+          <>
+            <span className="text-faded">基礎攻擊</span>
+            <span className="text-right text-faded">{baseAtk}</span>
+            <span className="text-faded">攻擊(加乘後)</span>
+            <span className={`text-right font-bold ${XIANLI_COLOR}`}>{atk}</span>
+          </>
+        ) : (
+          <>
+            <span className="text-faded">攻擊</span>
+            <span className="text-right">{atk}</span>
+          </>
+        )}
         <span className="text-faded">防禦</span>
         <span className="text-right">{def}</span>
         <span className="text-faded">速度</span>
@@ -299,7 +318,9 @@ export function StatusPanel() {
           </>
         )}
         <span className="text-faded">靈石</span>
-        <span className="text-right text-gold">{formatStones(s.stones)}</span>
+        <span className="text-right text-gold">
+          <StoneAmount n={s.stones} />
+        </span>
       </div>
 
       <div className="divider">裝 備</div>
@@ -361,8 +382,8 @@ export function LogPanel() {
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [log]);
   return (
-    <div className="panel h-64 lg:h-full flex flex-col">
-      <p className="panel-title">見 聞 錄</p>
+    <div className="panel flex flex-col resize-y overflow-hidden h-[50rem] min-h-[12rem] max-h-[85vh]">
+      <p className="panel-title shrink-0">見 聞 錄</p>
       <div ref={boxRef} className="flex-1 overflow-y-auto space-y-1.5 pr-1 text-sm leading-relaxed">
         {log.length === 0 && <p className="text-faded/50">仙路漫漫,一切由此開始……</p>}
         {log.map((l, i) => (

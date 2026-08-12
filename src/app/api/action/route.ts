@@ -3,11 +3,13 @@ import { sql, userFromToken } from "@/lib/db";
 import {
   applyAction,
   applyRealTimeAging,
+  applyDwellingExp,
   newSave,
   sectDamageMultOfStages,
   SaveData,
 } from "@/game/engine";
 import { REALMS } from "@/game/data/realms";
+import { sectTierOf } from "@/game/data/sectTiers";
 
 export const runtime = "nodejs";
 
@@ -36,6 +38,23 @@ export async function POST(req: NextRequest) {
   if (type === "start") {
     const name = String(payload?.name ?? "").trim() || user.name;
     const sectId = String(payload?.sectId ?? "");
+    if (sectId) {
+      const [{ n }] = (await sql`
+        SELECT count(*)::int AS n FROM saves
+        WHERE data->>'sectId' = ${sectId}
+          AND COALESCE((data->>'started')::boolean, false) = true
+          AND user_id != ${user.id}`) as { n: number }[];
+      const [tierRow] = (await sql`SELECT tier FROM sect_tier WHERE sect_id = ${sectId}`) as {
+        tier: number;
+      }[];
+      const cap = sectTierOf(tierRow?.tier ?? 1).memberCap;
+      if (n >= cap) {
+        return NextResponse.json(
+          { error: `該宗門已滿員(上限 ${cap} 人),請選擇其他宗門` },
+          { status: 400 },
+        );
+      }
+    }
     const save = newSave(name, sectId);
     await sql`
       INSERT INTO saves (user_id, data) VALUES (${user.id}, ${JSON.stringify(save)}::jsonb)
@@ -49,10 +68,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, save: null });
   }
 
-  const rows = await sql`SELECT data, last_life_at FROM saves WHERE user_id = ${user.id}`;
+  const rows =
+    await sql`SELECT data, last_life_at, dwelling_since FROM saves WHERE user_id = ${user.id}`;
   if (!rows.length) return NextResponse.json({ error: "尚未開始遊戲" }, { status: 400 });
 
-  const row = rows[0] as { data: SaveData; last_life_at: string };
+  const row = rows[0] as { data: SaveData; last_life_at: string; dwelling_since: string | null };
   const save = row.data;
 
   // 全伺服器統一時間戳:每 1 小時真實時間 = 1 年壽元,與行動本身的耗壽元並存
@@ -61,6 +81,21 @@ export async function POST(req: NextRequest) {
     Math.floor((Date.now() - new Date(row.last_life_at).getTime()) / 3600000),
   );
   if (hours > 0) applyRealTimeAging(save, hours);
+
+  // 宗門仙境:停泊中的位置每小時真實時間緩慢增長修為
+  let dwellingHours = 0;
+  if (save.dwellingSlot != null && save.sectId && row.dwelling_since) {
+    dwellingHours = Math.max(
+      0,
+      Math.floor((Date.now() - new Date(row.dwelling_since).getTime()) / 3600000),
+    );
+    if (dwellingHours > 0) {
+      const lvlRows = await sql`
+        SELECT level FROM sect_dwelling WHERE sect_id = ${save.sectId} AND slot_idx = ${save.dwellingSlot}`;
+      const level = (lvlRows[0] as { level: number } | undefined)?.level ?? 1;
+      applyDwellingExp(save, dwellingHours, level);
+    }
+  }
 
   // 宗門傷害加成:僅在實際造成傷害的行動時查詢,避免每次操作都打宗門聚合查詢
   const finalPayload: Record<string, unknown> = { ...(payload ?? {}) };
@@ -72,7 +107,9 @@ export async function POST(req: NextRequest) {
 
   await sql`
     UPDATE saves SET data = ${JSON.stringify(result.save)}::jsonb, updated_at = now(),
-      last_life_at = last_life_at + make_interval(hours => ${hours})
+      last_life_at = last_life_at + make_interval(hours => ${hours}),
+      dwelling_since = CASE WHEN dwelling_since IS NOT NULL
+        THEN dwelling_since + make_interval(hours => ${dwellingHours}) ELSE dwelling_since END
     WHERE user_id = ${user.id}`;
 
   return NextResponse.json({

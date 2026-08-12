@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 // 自架字型(1.6 版):改用 @fontsource 自架,取代 next/font/google——
 // next/font/google 會在「建置當下」連線 Google Fonts 下載字型檔,Vercel 建置機偶發連不上時整個 build 會失敗
 // (NextFontError: Failed to fetch ... from Google Fonts)。@fontsource 把字型檔案打包在 npm 套件裡,
@@ -16,10 +17,27 @@ export const metadata: Metadata = {
   description: "凡人流文字修仙遊戲 — 靈石、法力、五行法術、煉器、門派、探索洞窟。",
 };
 
+// Google Analytics(GA4)追蹤 ID
+const GA_MEASUREMENT_ID = "G-1XN7D5199D";
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="zh-Hant">
-      <body className="font-serif bg-ink text-parchment min-h-screen">{children}</body>
+      <body className="font-serif bg-ink text-parchment min-h-screen">
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+          strategy="afterInteractive"
+        />
+        <Script id="ga4-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${GA_MEASUREMENT_ID}');
+          `}
+        </Script>
+        {children}
+      </body>
     </html>
   );
 }

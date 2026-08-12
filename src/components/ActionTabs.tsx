@@ -416,6 +416,7 @@ function CraftTab() {
   ];
   const soulCount = SOUL_IDS.reduce((a, id) => a + (s.inventory[id] ?? 0), 0);
   const fragmentCount = s.inventory["xuantian_canpian"] ?? 0;
+  const fragmentMintCount = s.inventory["poshou_jinhow"] ?? 0;
 
   return (
     <div className="space-y-2">
@@ -431,7 +432,7 @@ function CraftTab() {
             100%~300%,唯太乙境可用。
           </p>
           <p className="text-xs font-mono mt-1 text-faded">
-            玄天殘片 {fragmentCount}/10 · 太乙精魂 {soulCount}/1
+            玄天殘片 {fragmentCount}/10 · 破曉精華 {fragmentMintCount}/20 · 太乙精魂 {soulCount}/1
           </p>
           <button
             className="btn mt-2 border-fuchsia-400/60 text-fuchsia-300 hover:bg-fuchsia-400/15"

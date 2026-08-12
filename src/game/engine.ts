@@ -311,7 +311,7 @@ function maybeEncounter(s: SaveData) {
     log(s, `地動山搖,一座上古洞府破土而出!你搶在群修之前取走【${itemById(m).name}】,遁光而去。`);
   } else if (roll < 0.143) {
     give(s, "wanshoudan");
-    log(s, "你於一處無名廢墟中掘出一只丹盒,盒中靜臥一枚【萬壽丹】——延壽百載的奇丹!");
+    log(s, "你於一處無名廢墟中掘出一只丹盒,盒中靜臥一枚【百壽丹】——延壽百載的奇丹!");
   } else if (roll < 0.146) {
     give(s, "yanshouguo");
     log(s, "懸崖之下異香撲鼻——竟是一株萬載一熟的【延壽果】!你顫抖著雙手將其摘下。");
@@ -321,7 +321,7 @@ function maybeEncounter(s: SaveData) {
   }
 }
 
-// 黑市:壽元每過 20~100 年,便有一次機會(50%)出現限時黑市,販售黑市萬壽丹(延壽 50 年)。
+// 黑市:壽元每過 20~100 年,便有一次機會(50%)出現限時黑市,販售黑市百壽丹(延壽 50 年)。
 // 錯過(下次門檻已到但商品還沒買)即散去,不會無限累積。
 function maybeSpawnBlackMarket(s: SaveData) {
   if (s.age < s.nextBlackMarketAge) return;
@@ -1482,8 +1482,13 @@ function applyActionInner(
         return { save: s, error: "玄天仙器唯太乙境修士方能煉化,此刻你尚無資格。" };
       }
       const FRAGMENT_COST = 10;
+      const FRAGMENT_COST2 = 20;
       if ((s.inventory["xuantian_canpian"] ?? 0) < FRAGMENT_COST) {
         log(s, `煉化玄天仙器需玄天殘片 ${FRAGMENT_COST} 枚,你尚未集齊。`);
+        return { save: s };
+      }
+      if ((s.inventory["poshou_jinhow"] ?? 0) < FRAGMENT_COST2) {
+        log(s, `煉化玄天仙器需破曉精華 ${FRAGMENT_COST2} 枚,你尚未集齊。`);
         return { save: s };
       }
       const soulIds = [
@@ -1498,6 +1503,7 @@ function applyActionInner(
         return { save: s };
       }
       take(s, "xuantian_canpian", FRAGMENT_COST);
+      take(s, "poshou_jinhow", FRAGMENT_COST2);
       take(s, haveSoul);
       const pool = Array.from(XUANTIAN_ARTIFACT_IDS);
       const picked = pool[rand(0, pool.length - 1)];

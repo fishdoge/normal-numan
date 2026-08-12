@@ -18,23 +18,26 @@ export const ITEMS: ItemDef[] = [
   { id: "longjinggu", name: "真龍精骨", kind: "material", desc: "上古真龍遺蛻之骨,一寸龍骨一寸金。", price: 99 },
   { id: "jinyuan_lingsha", name: "金源靈砂", kind: "material", desc: "金源仙域特有的靈砂,金光流轉,乃頂階裝備必備爐料。", element: "金", price: 500 },
   { id: "taiyi_jingjin", name: "太乙精金", kind: "material", desc: "金源仙域深處提煉的太乙精金,質地冠絕凡俗礦料。", element: "金", price: 900 },
-  { id: "xuantian_canpian", name: "玄天殘片", kind: "material", desc: "蠻荒異界怪物體內殘留的太古仙器碎片,玄光流轉,乃煉化玄天仙器的必備材料。", price: 3000 },
+  { id: "xuantian_canpian", name: "玄天殘片", kind: "material", desc: "蠻荒異界怪物體內殘留的太古仙器碎片,玄光流轉,乃煉化玄天仙器的必備材料。", price: 15000 },
+  { id: "poshou_jinhow", name: "破曉精華", kind: "material", desc: "創世之初，天地誕生時第一滴精華。", price: 33000 },
 
   // ── 仙草 ──
   { id: "huanglongcao", name: "黃龍草", kind: "herb", desc: "常見靈草,煉製黃龍丹主藥。", price: 6, exp: 8 },
-  { id: "zhuguo", name: "朱果", kind: "herb", desc: "百年一熟的靈果,服之可增修為。", price: 13, exp: 16 },
-  { id: "tianlingguo", name: "天靈果", kind: "herb", desc: "傳說中的靈果,凡人服之可開靈根,修士服之修為大進。", price: 36, exp: 48 },
-  { id: "zijinhua", name: "紫金花", kind: "herb", desc: "生於絕壁的奇花,可入丹,微量回復法力。", price: 7, mp: 11 },
+  { id: "zhuguo", name: "朱果", kind: "herb", desc: "百年一熟的靈果,服之可增修為。", price: 13, exp: 26 },
+  { id: "tianlingguo", name: "地靈果", kind: "herb", desc: "傳說中的靈果,凡人服之可開靈根,修士服之修為大進。", price: 36, exp: 48 },
+  { id: "zijinhua", name: "紫金花", kind: "herb", desc: "生於絕壁的奇花,可入丹,微量回復法力。", price: 7, mp: 50 },
   { id: "xuelingzhi", name: "血靈芝", kind: "herb", desc: "赤紅如血的靈芝,生機盎然,可直接服用療傷。", price: 9, heal: 29 },
-  { id: "qiannianlingru", name: "千年靈乳", kind: "herb", desc: "石鐘乳萬載凝成,一滴便可洗髓伐骨。", price: 180, exp: 300 },
-  { id: "ziyuanhua", name: "紫猿花", kind: "herb", desc: "南疆奇花,煉製凝嬰丹的主藥。", price: 240, exp: 470 },
+  { id: "qiannianlingru", name: "千年靈乳", kind: "herb", desc: "石鐘乳萬載凝成,一滴便可洗髓伐骨。", price: 180, exp: 400 },
+  { id: "ziyuanhua", name: "紫猿花", kind: "herb", desc: "南疆奇花,煉製凝嬰丹的主藥。", price: 240, exp: 870 },
   { id: "longlinguo", name: "龍鱗果", kind: "herb", desc: "形如龍鱗的靈果,服之肉身堅如蛟龍。", price: 880, exp: 2400 },
   { id: "huangjitiansui", name: "皇極天髓", kind: "herb", desc: "天地開闢時遺留的一縷精髓,化神以上方能承受。", price: 6900, exp: 21000 },
+  { id: "nimetanti", name: "古龍真血", kind: "herb", desc: "遠古龍族遺留真血，提供破天修為。", price: 36900, exp: 160000 },
 
   // ── 延壽極品(坊市不售,可遇不可求) ──
-  { id: "wanshoudan", name: "萬壽丹", kind: "pill", desc: "以百種靈藥煉成的延壽奇丹,服之增壽百載。", price: 20000, life: 100 },
+  { id: "wanshoudan", name: "百壽丹", kind: "pill", desc: "以百種靈藥煉成的延壽奇丹,服之增壽百載。", price: 20000, life: 100 },
   { id: "yanshouguo", name: "延壽果", kind: "herb", desc: "萬載一熟的延壽靈果,服之增壽三百載,可遇不可求。", price: 80000, life: 300 },
   { id: "panlongtao", name: "蟠龍壽桃", kind: "herb", desc: "傳說仙界流落的壽桃,龍紋盤繞,一枚增壽千載。", price: 500000, life: 1000 },
+  { id: "panlongtaoshu", name: "玄命果", kind: "herb", desc: "逆天改命，延長壽源，源壽無疆。", price: 50000000, life: 20000 },
 
   // ── 領主獎勵(地域王掉落,坊市不售) ──
   { id: "zengyuandan", name: "增元丹", kind: "pill", desc: "地域王內丹煉成的奇丹,服之壯大本源,壽元上限永久增加 5%。", price: 100000, lifePct: 0.05 },
@@ -43,18 +46,18 @@ export const ITEMS: ItemDef[] = [
   // ── 真仙之物(飛昇後,坊市不售,極難獲得) ──
   { id: "tianxiandan", name: "天仙丹", kind: "special", desc: "仙界秘傳,唯真仙可煉化。服之凝練一點仙靈力,攻伐之力倍增。", price: 0, xianli: 1 },
   { id: "xiantian_zhong", name: "先天玄靈鐘", kind: "special", desc: "北寒仙域中孕育的先天仙器,煉化可得二點仙靈力。", price: 0, xianli: 2 },
-  { id: "xiantian_qi", name: "先天太清旗", kind: "special", desc: "開天遺留的先天至寶,煉化可得三點仙靈力。", price: 0, xianli: 3 },
+  { id: "xiantian_qi", name: "破天丹", kind: "special", desc: "開天遺留的至寶,煉化可得三點仙靈力。", price: 0, xianli: 3 },
   { id: "jinhundan", name: "金魂丹", kind: "special", desc: "太上金仙隕落後凝成的金色魂丹,唯真仙可服。服之魂魄蛻變,可自真仙突破至金仙之境!", price: 0 },
 
   // ── 丹藥 ──
-  { id: "huanglongdan", name: "黃龍丹", kind: "pill", desc: "煉氣期修士常用補氣丹藥,增長修為。", price: 30, exp: 34 },
-  { id: "huiyuandan", name: "回元丹", kind: "pill", desc: "迅速回復法力的丹藥。", price: 9, mp: 29 },
+  { id: "huanglongdan", name: "黃龍丹", kind: "pill", desc: "煉氣期修士常用補氣丹藥,增長修為。", price: 30, exp: 40 },
+  { id: "huiyuandan", name: "回元丹", kind: "pill", desc: "迅速回復法力的丹藥。", price: 9, mp: 50 },
   { id: "liaoshangdan", name: "療傷丹", kind: "pill", desc: "外敷內服皆可,癒合傷勢。", price: 22, heal: 120 },
   { id: "zhujidan", name: "築基丹", kind: "pill", desc: "傳說服之可大增築基成功率的靈丹,有價無市。", price: 520, exp: 390 },
   { id: "ningyingdan", name: "凝嬰丹", kind: "pill", desc: "結丹修士凝結元嬰的輔藥,紫猿花所煉。", price: 1800, exp: 1500 },
   { id: "dahuandan", name: "大還丹", kind: "pill", desc: "起死回生的靈丹,重傷垂死亦可救回。", price: 5000, heal: 99999 },
   { id: "jiuqulingshen", name: "九曲靈參丹", kind: "pill", desc: "九曲靈參煉製,法力如潮湧回。", price: 3000, mp: 99999 },
-  { id: "pojiedan", name: "破界丹", kind: "pill", desc: "衝擊大乘瓶頸的無上靈丹,以皇極天髓為引。", price: 4100, exp: 16000 },
+  { id: "pojiedan", name: "破界丹", kind: "pill", desc: "衝擊大乘瓶頸的無上靈丹,以皇極天髓為引。", price: 4100, exp: 26000 },
 
   // ── 仙法秘笈 ──
   { id: "m_qingzhufeng", name: "《青竹蜂雲劍訣》殘卷", kind: "manual", desc: "研讀後可習得青竹蜂雲劍訣。", price: 800, teaches: "qingzhufeng" },
@@ -80,7 +83,7 @@ export const ITEMS: ItemDef[] = [
   { id: "dagengjian", name: "大庚劍陣", kind: "artifact", desc: "七十二口金色小劍結成的劍陣,青蒙山金精所煉。", element: "金", price: 4700, atkBonus: 170, defBonus: 28 },
   { id: "sanyanshan", name: "三焰扇", kind: "artifact", desc: "三色火鳥翎羽所製寶扇,一扇之威,焚天滅地。", element: "火", price: 12000, atkBonus: 750, defBonus: 75 },
   { id: "yuancishan", name: "元磁神山", kind: "artifact", desc: "萬丈元磁山煉成寸許小山,祭出時鎮壓一切飛遁。", element: "土", price: 60000, atkBonus: 3800, defBonus: 1400 },
-  { id: "zhenlongyin", name: "真龍璽", kind: "artifact", desc: "真龍精骨所刻帝璽,蓋落之處,山河俱碎。", price: 160000, atkBonus: 12000, defBonus: 3900 },
+  { id: "zhenlongyin", name: "真龍璽", kind: "artifact", desc: "真龍精骨所刻帝璽,蓋落之處,山河俱碎。", price: 360000, atkBonus: 12000, defBonus: 3900 },
 
   // ── 護身之寶 ──
   { id: "hushenfu", name: "護身符", kind: "amulet", desc: "注入法力後可擋一次致命攻擊的符籙。", price: 110, defBonus: 7 },
@@ -89,10 +92,10 @@ export const ITEMS: ItemDef[] = [
   { id: "jinganghu", name: "金剛璃甲", kind: "robe", desc: "蛟龍之鱗綴玄天寒鐵而成,刀劍難傷。", price: 2400, defBonus: 230 },
 
   // ── 符籙(攻擊/輔助,符籙槽;高階由妖獸掉落) ──
-  { id: "fu_liehuo", name: "烈火焚天符", kind: "talisman", desc: "貼身催動,火靈附刃,攻擊大增。", element: "火", price: 320, atkBonus: 12 },
-  { id: "fu_wulei", name: "五雷正法符", kind: "talisman", desc: "五雷轟頂,攻速兼備的雷系符籙。", element: "金", price: 3200, atkBonus: 180, speedBonus: 20 },
-  { id: "fu_xuanyin", name: "玄陰噬魂符", kind: "talisman", desc: "陰煞凝符,攻伐凌厲,大乘修士所用。", price: 42000, atkBonus: 2600, dropOnly: true, reqStage: 8 },
-  { id: "fu_taixu", name: "太虛混元符", kind: "talisman", desc: "仙家符籙,唯真仙可禦,攻伐之力超凡。", price: 0, atkBonus: 18000, dropOnly: true, reqStage: 10 },
+  { id: "fu_liehuo", name: "烈火焚天符", kind: "talisman", desc: "貼身催動,火靈附刃,攻擊大增。", element: "火", price: 320, atkBonus: 20 },
+  { id: "fu_wulei", name: "五雷正法符", kind: "talisman", desc: "五雷轟頂,攻速兼備的雷系符籙。", element: "金", price: 12000, atkBonus: 180, speedBonus: 20 },
+  { id: "fu_xuanyin", name: "玄陰噬魂符", kind: "talisman", desc: "陰煞凝符,攻伐凌厲,大乘修士所用。", price: 342000, atkBonus: 2600, dropOnly: true, reqStage: 8 },
+  { id: "fu_taixu", name: "太虛混元符", kind: "talisman", desc: "仙家符籙,唯真仙可禦,攻伐之力超凡。", price: 1600000, atkBonus: 18000, dropOnly: true, reqStage: 10 },
 
   // ── 靈寵(寵物槽,僅探索秘境 5% 獲得;增益靈石收益與攻防) ──
   { id: "pet_linghu", name: "赤煉靈狐", kind: "pet", desc: "元嬰級靈寵,通人性,伴主嗅寶——靈石收益 ×1.2,略增攻防。", price: 0, stoneMult: 1.2, atkBonus: 120, defBonus: 80, reqStage: 4, dropOnly: true },
@@ -131,7 +134,7 @@ export const ITEMS: ItemDef[] = [
   { id: "zhenxiandan", name: "真仙丹", kind: "special", desc: "太古龍祖精血凝成的無上奇丹,渡劫飛昇的必備之物。嘗試渡劫時,無論突破成敗皆會耗盡藥力。", price: 0 },
 
   // ── 黑市限定(壽元每過 20~100 年,有機會出現的來路不明商販) ──
-  { id: "heishi_wanshoudan", name: "黑市萬壽丹", kind: "pill", desc: "來路不明的黑市貨色,藥效遜於正宗萬壽丹,服之延壽五十載。", price: 0, life: 50 },
+  { id: "heishi_wanshoudan", name: "黑市百壽丹", kind: "pill", desc: "來路不明的黑市貨色,藥效遜於正宗百壽丹,服之延壽五十載。", price: 0, life: 50 },
 
   // ── 獨立黑市(常駐,不受壽元門檻限制) ──
   { id: "changshenghe", name: "長生盒", kind: "special", desc: "獨立黑市常年販售的來路不明木盒,內藏各式延年益壽的丹藥,開啟後隨機得一味。", price: 300000 },

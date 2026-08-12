@@ -61,6 +61,14 @@ export function ensureSchema() {
         updated_at TIMESTAMPTZ DEFAULT now(),
         PRIMARY KEY (sect_id, slot_idx)
       )`;
+      // 全服對話集:所有玩家皆可發言的公開聊天室
+      await sql`CREATE TABLE IF NOT EXISTS chat_messages (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        message TEXT NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT now()
+      )`;
     })();
   }
   return ready;

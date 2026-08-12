@@ -8,7 +8,9 @@ import AuthGate from "./AuthGate";
 import CharCreate from "./CharCreate";
 import ActionTabs from "./ActionTabs";
 import SectPage from "./SectPage";
-import { StatusPanel, LogPanel, CombatPanel, RealmProgressPanel } from "./panels";
+import LogChatPanel from "./LogChatPanel";
+import GuideModal from "./GuideModal";
+import { StatusPanel, CombatPanel, RealmProgressPanel } from "./panels";
 
 // 更新公告:逐版列出 version/ 目錄的重點內容(精簡為玩家視角)
 function ChangelogModal({ onClose }: { onClose: () => void }) {
@@ -159,15 +161,15 @@ function CultivationBar() {
           雲遊四海
         </button>
         <button
-          className={`btn text-base px-5 py-2 ${canBreak ? "border-gold text-gold animate-pulse" : ""}`}
-          disabled={busy || inCombat || !canBreak}
+          className={`btn text-base px-5 py-2 ${canBreak && !inDwelling ? "border-gold text-gold animate-pulse" : ""}`}
+          disabled={busy || inCombat || inDwelling || !canBreak}
           onClick={() => act("breakthrough")}
-          title={breakTitle}
+          title={inDwelling ? "正於宗門仙境閉關潛修,須先離開仙境方可行動" : breakTitle}
         >
-          嘗試突破{canBreak ? ` (${Math.round(chance * 100)}%)` : ""}
+          嘗試突破{canBreak && !inDwelling ? ` (${Math.round(chance * 100)}%)` : ""}
         </button>
         <span className="text-xs text-faded ml-auto font-mono">
-          修為 {s.exp}/{expNeed} · 突破成功率 {Math.round(chance * 100)}% · 失敗折損最大壽元 15%
+          修為 {s.exp}/{expNeed} · 突破成功率 {Math.round(chance * 100)}% · 失敗修為歸零、折損最大壽元 15%
         </span>
       </div>
       {needsZhenxian && !hasZhenxian && (
@@ -177,7 +179,7 @@ function CultivationBar() {
       )}
       {inDwelling && (
         <p className="text-xs text-fuchsia-300 mt-2">
-          你正停泊於宗門仙境中閉關潛修,無法採集靈材、獵殺妖獸、雲遊四海、打坐修煉或調息——須先於宗門頁面離開仙境方可行動。
+          你正停泊於宗門仙境中閉關潛修,無法採集靈材、獵殺妖獸、雲遊四海、打坐修煉、調息或嘗試突破——須先於宗門頁面離開仙境方可行動。
         </p>
       )}
     </div>
@@ -196,6 +198,7 @@ export default function Game() {
   const [auth, setAuth] = useState<"checking" | "anon" | "authed">("checking");
   const [userName, setUserName] = useState("");
   const [showChangelog, setShowChangelog] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
 
   const loadSave = useCallback(async () => {
     try {
@@ -244,6 +247,7 @@ export default function Game() {
       {breakResult && <ResultModal modal={breakResult} onClose={closeBreak} />}
       {!breakResult && loot && <ResultModal modal={loot} onClose={closeLoot} />}
       {showChangelog && <ChangelogModal onClose={() => setShowChangelog(false)} />}
+      {showGuide && <GuideModal onClose={() => setShowGuide(false)} />}
       <header className="flex items-baseline justify-between mb-5">
         <div>
           <h1
@@ -256,6 +260,12 @@ export default function Game() {
           </p>
         </div>
         <div className="flex gap-4 items-baseline">
+          <button
+            className="text-xs text-faded/60 hover:text-gold transition-colors"
+            onClick={() => setShowGuide(true)}
+          >
+            修仙入門錄
+          </button>
           <button
             className="text-xs text-faded/60 hover:text-gold transition-colors"
             onClick={() => setShowChangelog(true)}
@@ -295,7 +305,7 @@ export default function Game() {
           <CombatPanel />
           <ActionTabs />
         </div>
-        <LogPanel />
+        <LogChatPanel />
       </div>
     </main>
   );

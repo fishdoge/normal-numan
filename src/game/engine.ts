@@ -625,10 +625,15 @@ function applyActionInner(
 
   if (s.dead && type !== "reset") return { save: s, error: "你已道隕,唯有轉世重修。" };
 
-  // 停泊宗門仙境靜心潛修時,無法分心他顧——採集/獵殺/雲遊/打坐/調息一律不可行
+  // 停泊宗門仙境靜心潛修時,無法分心他顧——採集/獵殺/雲遊/打坐/調息/突破一律不可行
   if (
     s.dwellingSlot != null &&
-    (type === "gather" || type === "hunt" || type === "wander" || type === "cultivate" || type === "rest")
+    (type === "gather" ||
+      type === "hunt" ||
+      type === "wander" ||
+      type === "cultivate" ||
+      type === "rest" ||
+      type === "breakthrough")
   ) {
     return { save: s, error: "你正於宗門仙境中閉關潛修,無法分心他顧,須先離開仙境方可行動。" };
   }
@@ -724,8 +729,8 @@ function applyActionInner(
       s.age += WANDER_LIFE;
       s.day = s.age;
       const roll = Math.random();
-      // 3% 遭遇金仙境超級大 BOSS
-      if (roll < 0.03) {
+      // 4% 遭遇金仙境超級大 BOSS
+      if (roll < 0.04) {
         const boss = monsterById("jinxian");
         s.combat = {
           monsterId: boss.id,
@@ -864,14 +869,14 @@ function applyActionInner(
         log(s, ...breakResult.lines);
         return { save: s, breakResult };
       }
-      // 失敗
-      const lost = Math.floor(realm.expNeed * 0.2);
+      // 失敗:修為直接歸零,道基折損最大壽元 15%
+      const lost = s.exp;
       const lifeCut = Math.floor(maxLifeOf(s) * 0.15);
-      s.exp = Math.max(0, s.exp - lost);
+      s.exp = 0;
       s.lifeBonus -= lifeCut;
       const cap = maxLifeOf(s);
       const lines = [
-        `靈氣暴走,經脈俱震!修為損失 ${lost}。`,
+        `靈氣暴走,經脈俱震!修為盡數潰散,歸零損失 ${lost}。`,
         `道基受創,最大壽元折損 ${lifeCut} 年(現上限 ${cap} 年)。`,
       ];
       if (s.age >= cap) {

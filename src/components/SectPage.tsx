@@ -183,6 +183,78 @@ export default function SectPage() {
   const missionProgress = (m: (typeof MISSIONS)[number]) =>
     m.kind === "kill" ? (s.kills[m.targetId] ?? 0) - s.missionBase : (s.inventory[m.targetId] ?? 0);
 
+  // 貢獻靈石 + 宗門等級晉升(併入「宗門任務」分頁內)
+  const contributeSection = (
+    <div className="border border-gold/40 bg-gold/5 rounded-sm p-3">
+      <div className="flex items-baseline justify-between flex-wrap gap-2">
+        <span className="font-bold text-gold">貢獻靈石(不可取回)</span>
+        <span className="text-sm font-mono text-gold">
+          <StoneAmount n={contribution} /> {nextTier && <>/ <StoneAmount n={nextTier.contribution} /></>}
+        </span>
+      </div>
+      <p className="text-sm text-faded mt-1">
+        貢獻的靈石歸宗門所有、不可提領,唯一用途是累積晉升下一等級所需的門檻。現有靈石:
+        <span className="text-gold">
+          <StoneAmount n={s.stones} />
+        </span>
+      </p>
+      <div className="mt-2 flex flex-wrap gap-2 items-center">
+        <input
+          type="number"
+          min={1}
+          value={amount}
+          onChange={(e) => setAmount(Math.max(1, +e.target.value || 1))}
+          className="w-32 bg-smoke border border-faded/30 rounded-sm px-2 py-1.5 text-sm text-parchment"
+        />
+        <button className="btn" disabled={busy} onClick={() => post({ action: "contribute", amount })}>
+          貢獻
+        </button>
+      </div>
+
+      {nextTier ? (
+        <>
+          <div className="stat-bar mt-3">
+            <div
+              className="h-full bg-gold/70"
+              style={{
+                width: `${Math.max(0, Math.min(100, (contribution / nextTier.contribution) * 100))}%`,
+              }}
+            />
+          </div>
+          <p className="text-sm text-faded mt-2">
+            下一階:<span className="text-cream">{nextTier.name}</span>(名額上限 {nextTier.memberCap}
+            人,仙境 {nextTier.dwellingSlots} 位)
+            {nextTier.requireStage && nextTier.requireCount && (
+              <>
+                ,需同門中至少 {nextTier.requireCount} 人達到
+                <span className="text-fuchsia-300">
+                  {SECT_TIER_REQ_LABEL[nextTier.requireStage] ?? `境界${nextTier.requireStage}`}
+                </span>
+              </>
+            )}
+          </p>
+          {nextTier.missingMaterials.length > 0 && (
+            <p className="text-sm text-vermillion mt-1">
+              倉庫尚缺:
+              {nextTier.missingMaterials.map((m) => `${m.name} ${m.have}/${m.need}`).join("、")}
+              (存入宗門倉庫,見「宗門倉庫」分頁)
+            </p>
+          )}
+          <button
+            className="btn mt-2"
+            disabled={busy || !nextTier.ready}
+            onClick={() => post({ action: "upgradeTier" })}
+            title={nextTier.blockedBy.join("、") || "晉升宗門等級"}
+          >
+            晉升【{nextTier.name}】{nextTier.blockedBy.length > 0 ? `(${nextTier.blockedBy.join("、")})` : ""}
+          </button>
+        </>
+      ) : (
+        <p className="text-sm text-faded mt-2">已臻宗門最高等級【{curTier.name}】。</p>
+      )}
+    </div>
+  );
+
   return (
     <main className="max-w-5xl mx-auto px-4 py-6">
       <div className="flex items-baseline justify-between mb-5">
@@ -210,82 +282,10 @@ export default function SectPage() {
             刷新
           </button>
         </div>
-        <p className="text-xs text-faded">
+        <p className="text-sm text-faded">
           宗門聲勢隨在世高階同門人數增長,越多元嬰以上同門在世,全宗門戰鬥傷害越高。
           目前宗門加成:<span className="text-fuchsia-300 font-bold">戰鬥傷害 ×{sectMult.toFixed(2)}</span>
         </p>
-
-        {/* 貢獻靈石 + 宗門等級晉升 */}
-        <div className="border border-gold/40 bg-gold/5 rounded-sm p-3">
-          <div className="flex items-baseline justify-between flex-wrap gap-2">
-            <span className="font-bold text-gold">貢獻靈石(不可取回)</span>
-            <span className="text-sm font-mono text-gold">
-              <StoneAmount n={contribution} /> {nextTier && <>/ <StoneAmount n={nextTier.contribution} /></>}
-            </span>
-          </div>
-          <p className="text-xs text-faded mt-1">
-            貢獻的靈石歸宗門所有、不可提領,唯一用途是累積晉升下一等級所需的門檻。現有靈石:
-            <span className="text-gold">
-              <StoneAmount n={s.stones} />
-            </span>
-          </p>
-          <div className="mt-2 flex flex-wrap gap-2 items-center">
-            <input
-              type="number"
-              min={1}
-              value={amount}
-              onChange={(e) => setAmount(Math.max(1, +e.target.value || 1))}
-              className="w-32 bg-smoke border border-faded/30 rounded-sm px-2 py-1.5 text-sm text-parchment"
-            />
-            <button className="btn" disabled={busy} onClick={() => post({ action: "contribute", amount })}>
-              貢獻
-            </button>
-          </div>
-
-          {nextTier ? (
-            <>
-              <div className="stat-bar mt-3">
-                <div
-                  className="h-full bg-gold/70"
-                  style={{
-                    width: `${Math.max(0, Math.min(100, (contribution / nextTier.contribution) * 100))}%`,
-                  }}
-                />
-              </div>
-              <p className="text-xs text-faded mt-2">
-                下一階:<span className="text-cream">{nextTier.name}</span>(名額上限 {nextTier.memberCap}
-                人,仙境 {nextTier.dwellingSlots} 位)
-                {nextTier.requireStage && nextTier.requireCount && (
-                  <>
-                    ,需同門中至少 {nextTier.requireCount} 人達到
-                    <span className="text-fuchsia-300">
-                      {SECT_TIER_REQ_LABEL[nextTier.requireStage] ?? `境界${nextTier.requireStage}`}
-                    </span>
-                  </>
-                )}
-              </p>
-              {nextTier.missingMaterials.length > 0 && (
-                <p className="text-xs text-vermillion mt-1">
-                  倉庫尚缺:
-                  {nextTier.missingMaterials
-                    .map((m) => `${m.name} ${m.have}/${m.need}`)
-                    .join("、")}
-                  (存入宗門倉庫,見下方「宗門倉庫」分頁)
-                </p>
-              )}
-              <button
-                className="btn mt-2"
-                disabled={busy || !nextTier.ready}
-                onClick={() => post({ action: "upgradeTier" })}
-                title={nextTier.blockedBy.join("、") || "晉升宗門等級"}
-              >
-                晉升【{nextTier.name}】{nextTier.blockedBy.length > 0 ? `(${nextTier.blockedBy.join("、")})` : ""}
-              </button>
-            </>
-          ) : (
-            <p className="text-xs text-faded mt-2">已臻宗門最高等級【{curTier.name}】。</p>
-          )}
-        </div>
 
         {err && <p className="text-sm text-vermillion">{err}</p>}
 
@@ -304,7 +304,7 @@ export default function SectPage() {
             <button
               key={v}
               onClick={() => setView(v)}
-              className={`px-2.5 py-1 text-xs rounded-sm border transition-colors ${
+              className={`px-2.5 py-1 text-sm rounded-sm border transition-colors ${
                 view === v
                   ? "border-fuchsia-400 bg-fuchsia-400/15 text-fuchsia-300"
                   : "border-faded/30 text-faded hover:text-cream"
@@ -319,7 +319,7 @@ export default function SectPage() {
 
         {!loading && view === "dwelling" && (
           <div className="space-y-2">
-            <p className="text-xs text-faded">
+            <p className="text-sm text-faded">
               宗門仙境:可將角色停泊於此靜心潛修,每小時真實時間緩慢增長修為,離線亦持續累積。位置數僅與宗門等級有關(目前
               {dwellingSlots} 位),各位置等級則需消耗宗門倉庫素材個別升級,任何同門皆可出資。
             </p>
@@ -354,7 +354,7 @@ export default function SectPage() {
                       </span>
                       {mine && <span className="chip text-gold border-gold/50">你</span>}
                     </div>
-                    <p className="text-xs text-faded mt-1">
+                    <p className="text-sm text-faded mt-1">
                       {occupied ? `停泊中:${d.occupantName}` : "空位"}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-2">
@@ -380,7 +380,7 @@ export default function SectPage() {
                         </button>
                       )}
                       {!d.nextLevel && (
-                        <span className="text-xs text-faded">已臻最高等級(Lv.{DWELLING_MAX_LEVEL})</span>
+                        <span className="text-sm text-faded">已臻最高等級(Lv.{DWELLING_MAX_LEVEL})</span>
                       )}
                     </div>
                   </div>
@@ -392,11 +392,15 @@ export default function SectPage() {
 
         {!loading && view === "mission" && (
           <div className="space-y-3">
+            {contributeSection}
+
+            <div className="divider">執 事 堂 任 務</div>
+
             {activeMission ? (
               <div className="border border-gold/40 bg-gold/5 rounded-sm p-3">
                 <div className="flex items-baseline justify-between">
                   <span className="font-bold text-gold">{activeMission.name}</span>
-                  <span className="text-xs font-mono text-faded">
+                  <span className="text-sm font-mono text-faded">
                     進度 {Math.min(missionProgress(activeMission), activeMission.n)}/{activeMission.n}
                   </span>
                 </div>
@@ -415,7 +419,7 @@ export default function SectPage() {
                 </div>
               </div>
             ) : (
-              <p className="text-xs text-faded">執事堂告示欄上貼著數張任務令,同一時間僅可領取一件。</p>
+              <p className="text-sm text-faded">執事堂告示欄上貼著數張任務令,同一時間僅可領取一件。</p>
             )}
             <div className="divider">告 示 欄</div>
             {MISSIONS.map((m) => {
@@ -436,11 +440,11 @@ export default function SectPage() {
                         {m.kind === "kill" ? "獵殺" : "繳納"} {target} ×{m.n}
                       </span>
                     </span>
-                    <span className="text-xs font-mono text-gold">
+                    <span className="text-sm font-mono text-gold">
                       {m.stones} 靈石 · 修為 {m.exp}
                     </span>
                   </div>
-                  <p className="text-xs text-faded mt-1">
+                  <p className="text-sm text-faded mt-1">
                     {m.desc}
                     {m.item && <span className="text-cream"> 另賜:{itemById(m.item).name}</span>}
                   </p>
@@ -466,7 +470,7 @@ export default function SectPage() {
                   戰鬥傷害 ×{sectMult.toFixed(2)}
                 </span>
               </div>
-              <p className="text-xs text-faded mt-1">
+              <p className="text-sm text-faded mt-1">
                 基準倍率 ×1.00,依下列各境界在世同門人數逐一疊加。
               </p>
             </div>
@@ -522,7 +526,7 @@ export default function SectPage() {
                   </div>
                   <span className="text-sm text-cream shrink-0 ml-3">
                     {REALMS[m.realm_idx]?.name ?? "??"}
-                    <span className="text-xs text-faded ml-2">修為 {m.exp}</span>
+                    <span className="text-sm text-faded ml-2">修為 {m.exp}</span>
                   </span>
                 </div>
               );
@@ -534,7 +538,7 @@ export default function SectPage() {
           <div className="space-y-3">
             <div className="border border-faded/25 rounded-sm p-3">
               <p className="font-bold mb-2">宗門物品倉庫</p>
-              <p className="text-xs text-faded mb-2">
+              <p className="text-sm text-faded mb-2">
                 存入的道具歸全宗門共用,任何同門都能直接提領使用;素材類存於此處亦是宗門晉升等級與仙境升級的消耗來源。
               </p>
               <div className="flex flex-wrap gap-2 items-center mb-2">
@@ -623,12 +627,12 @@ export default function SectPage() {
                   {expanded === os.id && (
                     <div className="mt-2 space-y-1 border-t border-faded/15 pt-2">
                       {os.members.length === 0 && (
-                        <p className="text-xs text-faded">暫無在冊同門。</p>
+                        <p className="text-sm text-faded">暫無在冊同門。</p>
                       )}
                       {os.members.map((m, i) => (
                         <div key={m.name + i} className="flex items-center justify-between text-sm">
                           <span>{m.name}</span>
-                          <span className="text-faded text-xs">{REALMS[m.realm_idx]?.name ?? "??"}</span>
+                          <span className="text-faded text-sm">{REALMS[m.realm_idx]?.name ?? "??"}</span>
                         </div>
                       ))}
                     </div>

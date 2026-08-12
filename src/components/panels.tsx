@@ -374,29 +374,6 @@ export function StatusPanel() {
   );
 }
 
-export function LogPanel() {
-  const log = useGame((x) => x.save?.log ?? []);
-  const boxRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = boxRef.current;
-    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-  }, [log]);
-  return (
-    <div className="panel flex flex-col resize-y overflow-hidden h-[50rem] min-h-[12rem] max-h-[85vh]">
-      <p className="panel-title shrink-0">見 聞 錄</p>
-      <div ref={boxRef} className="flex-1 overflow-y-auto space-y-1.5 pr-1 text-sm leading-relaxed">
-        {log.length === 0 && <p className="text-faded/50">仙路漫漫,一切由此開始……</p>}
-        {log.map((l, i) => (
-          <p key={i} className="animate-floatUp">
-            <span className="text-faded/50 font-mono text-xs mr-1">▸</span>
-            {l}
-          </p>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export function CombatPanel() {
   const s = useGame((x) => x.save)!;
   const act = useGame((x) => x.act);

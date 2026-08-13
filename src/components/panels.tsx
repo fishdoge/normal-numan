@@ -139,9 +139,10 @@ export function StatusPanel() {
       try {
         const j = await (await fetch("/api/sect")).json();
         if (!cancelled && j.ok) {
-          const stages = (j.members ?? []).map(
-            (m: { realm_idx: number }) => REALMS[m.realm_idx]?.stage,
-          );
+          // 已隕落的同門不參與傷害加成(與伺服器戰鬥當下的實際套用邏輯一致)
+          const stages = (j.members ?? [])
+            .filter((m: { dead: boolean }) => !m.dead)
+            .map((m: { realm_idx: number }) => REALMS[m.realm_idx]?.stage);
           setSectMult(sectDamageMultOfStages(stages));
         }
       } catch {

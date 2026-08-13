@@ -19,8 +19,11 @@ export async function GET(req: NextRequest) {
     WHERE user_id = ${user.id} AND pending_stones > 0
     RETURNING pending_stones`;
 
+  const userRows = await sql`SELECT revival_used FROM users WHERE id = ${user.id}`;
+  const revivalUsed = !!(userRows[0] as { revival_used: boolean } | undefined)?.revival_used;
+
   const rows = await sql`SELECT data, last_life_at FROM saves WHERE user_id = ${user.id}`;
-  if (!rows.length) return NextResponse.json({ ok: true, save: null, name: user.name });
+  if (!rows.length) return NextResponse.json({ ok: true, save: null, name: user.name, revivalUsed });
 
   const row = rows[0] as { data: SaveData; last_life_at: string };
   const hours = Math.max(
@@ -43,6 +46,7 @@ export async function GET(req: NextRequest) {
     ok: true,
     save,
     name: user.name,
+    revivalUsed,
     // 語意變更(1.6 版):此為離線期間流逝的壽元年數,非額外贈與的壽元
     lifeGained: ageGained,
     credited: credited.length > 0,

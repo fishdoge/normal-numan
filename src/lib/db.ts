@@ -69,6 +69,17 @@ export function ensureSchema() {
         message TEXT NOT NULL,
         created_at TIMESTAMPTZ DEFAULT now()
       )`;
+      // 向仙班祈禱 · 六道輪迴盤(付費復活):終身僅可使用一次,用過即永久失效,不因轉世重修而重置
+      await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS revival_used BOOLEAN NOT NULL DEFAULT false`;
+      // 每次點擊「向仙班祈禱」建立一筆待付款請求,token = Polar checkout session id,貫穿付款流程與 webhook 回呼,
+      // pending → processing(webhook 已收到、原子搶佔中)→ done(已成功復活)/ failed(付款成功但無法套用,需人工處理)
+      await sql`CREATE TABLE IF NOT EXISTS revival_requests (
+        token TEXT PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_at TIMESTAMPTZ DEFAULT now(),
+        updated_at TIMESTAMPTZ DEFAULT now()
+      )`;
     })();
   }
   return ready;

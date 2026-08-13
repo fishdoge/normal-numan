@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useGame, statsOf, maxLifeOf, cultCostOf, breakChanceOf, Modal } from "@/game/store";
 import { REALMS } from "@/game/data/realms";
 import { CHANGELOG } from "@/game/data/changelog";
+import { REVIVAL_PRICE_USD } from "@/lib/payments";
 import AuthGate from "./AuthGate";
 import CharCreate from "./CharCreate";
 import ActionTabs from "./ActionTabs";
@@ -52,6 +53,81 @@ function ChangelogModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+// 向仙班祈禱 · 六道輪迴盤:死亡畫面上的付費復活流程(終身限一次)
+function PrayForRevival() {
+  const setSave = useGame((x) => x.setSave);
+  const revivalUsed = useGame((x) => x.revivalUsed);
+  const setRevivalUsed = useGame((x) => x.setRevivalUsed);
+  const [praying, setPraying] = useState(false);
+  const [err, setErr] = useState("");
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => () => {
+    if (pollRef.current) clearInterval(pollRef.current);
+  }, []);
+
+  const startPray = async () => {
+    setErr("");
+    try {
+      const res = await fetch("/api/revive", { method: "POST" });
+      const j = await res.json();
+      if (!res.ok) {
+        setErr(j.error ?? "祈禱失敗,請稍後再試");
+        return;
+      }
+      window.open(j.url, "_blank", "noopener");
+      setPraying(true);
+      pollRef.current = setInterval(async () => {
+        try {
+          const r = await (await fetch(`/api/revive?token=${j.token}`)).json();
+          if (r.status === "done") {
+            if (pollRef.current) clearInterval(pollRef.current);
+            const saveRes = await (await fetch("/api/save")).json();
+            if (saveRes.save) setSave(saveRes.save);
+            setRevivalUsed(true);
+            setPraying(false);
+          } else if (r.status === "failed") {
+            if (pollRef.current) clearInterval(pollRef.current);
+            setErr("付款已收到,但復活未能順利套用,請聯繫客服處理。");
+            setPraying(false);
+          }
+        } catch {
+          /* 靜默重試 */
+        }
+      }, 3000);
+    } catch {
+      setErr("無法連線至伺服器,請稍後再試");
+    }
+  };
+
+  if (revivalUsed) {
+    return (
+      <p className="text-xs text-faded mt-4">
+        六道輪迴盤終身僅可一用,你已用盡此劫機緣,唯有轉世重修。
+      </p>
+    );
+  }
+
+  return (
+    <div className="mt-6">
+      {!praying ? (
+        <button
+          className="btn border-fuchsia-400/60 text-fuchsia-300 hover:bg-fuchsia-400/15 text-base"
+          onClick={startPray}
+
+        >
+          使用 六道輪迴盤 復活 , 重列仙班  一共 {REVIVAL_PRICE_USD} 塊大美利堅靈石
+        </button>
+      ) : (
+        <p className="text-sm text-fuchsia-300 animate-pulse">
+          輪迴道祖正推演天機……付款完成後將自動接引你死而復生,請勿關閉此頁。
+        </p>
+      )}
+      {err && <p className="text-xs text-vermillion mt-2">{err}</p>}
+    </div>
+  );
+}
+
 function DeathScreen() {
   const s = useGame((x) => x.save)!;
   const act = useGame((x) => x.act);
@@ -72,6 +148,7 @@ function DeathScreen() {
       <button className="btn text-lg px-10 py-3" onClick={() => act("reset")}>
         轉 世 重 修
       </button>
+      <PrayForRevival />
     </main>
   );
 }
@@ -193,7 +270,6 @@ export default function Game() {
   const breakResult = useGame((x) => x.breakResult);
   const closeLoot = useGame((x) => x.closeLoot);
   const closeBreak = useGame((x) => x.closeBreak);
-  const act = useGame((x) => x.act);
   const mainView = useGame((x) => x.mainView);
   const [auth, setAuth] = useState<"checking" | "anon" | "authed">("checking");
   const [userName, setUserName] = useState("");
@@ -210,6 +286,7 @@ export default function Game() {
       const j = await res.json();
       setSave(j.save ?? null);
       if (j.name) setUserName(j.name);
+      useGame.getState().setRevivalUsed(!!j.revivalUsed);
       // 離線期間流逝的壽元(lifeGained)已由伺服器寫入 save.log,無需前端重複提示
       if (j.save && j.credited) {
         useGame.getState().pushLog("交易行貨款已入帳。");
@@ -272,14 +349,7 @@ export default function Game() {
           >
             更新公告
           </button>
-          <button
-            className="text-xs text-faded/60 hover:text-vermillion transition-colors"
-            onClick={() => {
-              if (confirm("兵解重修將抹去一切進度,確定?")) act("reset");
-            }}
-          >
-            兵解重修
-          </button>
+
           <button
             className="text-xs text-faded/60 hover:text-gold transition-colors"
             onClick={async () => {

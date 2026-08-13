@@ -352,6 +352,25 @@ export function applyDwellingExp(s: SaveData, hours: number, level: number) {
   log(s, `你於宗門仙境靜心潛修 ${hours} 個時辰,修為 +${gain}。`);
 }
 
+// 向仙班祈禱 · 六道輪迴盤:確認付款成功後由 /api/webhooks/payments 呼叫,使道隕的角色死而復生。
+// 終身僅可一次(由呼叫端的 users.revival_used 把關),此函式本身只負責復活時的存檔狀態還原。
+export function reviveSave(s: SaveData): void {
+  if (!s.dead) return;
+  const cap = maxLifeOf(s);
+  s.dead = false;
+  s.combat = null;
+  // 壽元退回上限的八成,留出喘息空間,而非卡在死亡當下的臨界值
+  s.age = Math.max(0, cap - Math.floor(cap * 0.2));
+  s.day = s.age;
+  const { hpMax, mpMax } = statsOf(s);
+  s.hp = hpMax;
+  s.mp = mpMax;
+  log(
+    s,
+    "六道輪迴盤光華大盛,輪迴道祖以【輪迴天生術】自死劫中將你的道基重新接引回來——你死而復生!",
+  );
+}
+
 // 回傳戰敗彈窗(defeat 有值時代表這回合被打到氣血歸零,呼叫端應以此彈窗取代靜默記錄)
 function monsterTurn(s: SaveData): { lines: string[]; defeat?: Modal } {
   if (!s.combat) return { lines: [] };

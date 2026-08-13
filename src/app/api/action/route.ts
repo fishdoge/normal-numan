@@ -39,10 +39,12 @@ export async function POST(req: NextRequest) {
     const name = String(payload?.name ?? "").trim() || user.name;
     const sectId = String(payload?.sectId ?? "");
     if (sectId) {
+      // 已隕落、尚未轉世重修的舊角色不佔用名額,避免宗門被無法再活動的殭屍帳號軟鎖滿員
       const [{ n }] = (await sql`
         SELECT count(*)::int AS n FROM saves
         WHERE data->>'sectId' = ${sectId}
           AND COALESCE((data->>'started')::boolean, false) = true
+          AND COALESCE((data->>'dead')::boolean, false) = false
           AND user_id != ${user.id}`) as { n: number }[];
       const [tierRow] = (await sql`SELECT tier FROM sect_tier WHERE sect_id = ${sectId}`) as {
         tier: number;
@@ -63,6 +65,8 @@ export async function POST(req: NextRequest) {
   }
 
   if (type === "reset") {
+    // 轉世重修前先騰出宗門仙境位置,避免留下永遠無人能收回的殭屍佔位(舊帳號 user_id 不會變、但舊存檔即將刪除)
+    await sql`UPDATE sect_dwelling SET occupant_user_id = NULL, updated_at = now() WHERE occupant_user_id = ${user.id}`;
     await sql`DELETE FROM saves WHERE user_id = ${user.id}`;
     await sql`DELETE FROM listings WHERE seller_id = ${user.id}`;
     return NextResponse.json({ ok: true, save: null });

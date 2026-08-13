@@ -55,6 +55,7 @@ interface ClientState {
   busy: boolean;
   activeTab: Tab;
   mainView: MainView;
+  revivalUsed: boolean; // 六道輪迴盤(付費復活)是否已終身用過一次
 
   act: (type: string, payload?: Record<string, unknown>) => Promise<void>;
   setSave: (save: SaveData | null) => void;
@@ -63,6 +64,7 @@ interface ClientState {
   pushLog: (msg: string) => void;
   setActiveTab: (tab: Tab) => void;
   setMainView: (view: MainView) => void;
+  setRevivalUsed: (used: boolean) => void;
 }
 
 export const useGame = create<ClientState>()((set, get) => ({
@@ -72,12 +74,14 @@ export const useGame = create<ClientState>()((set, get) => ({
   busy: false,
   activeTab: "explore",
   mainView: "game",
+  revivalUsed: false,
 
   setSave: (save) => set({ save }),
   closeLoot: () => set({ loot: null }),
   closeBreak: () => set({ breakResult: null }),
   setActiveTab: (tab) => set({ activeTab: tab }),
   setMainView: (view) => set({ mainView: view }),
+  setRevivalUsed: (used) => set({ revivalUsed: used }),
   pushLog: (msg) => {
     const s = get().save;
     if (s) set({ save: { ...s, log: [...s.log, msg].slice(-60) } });

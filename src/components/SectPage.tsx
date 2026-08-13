@@ -93,17 +93,19 @@ export default function SectPage() {
 
   const sect = SECTS.find((x) => x.id === s.sectId);
 
+  // 已隕落的同門不參與傷害加成(與伺服器戰鬥當下的實際套用邏輯一致),兩處計算皆須排除
+  const livingMembers = useMemo(() => members.filter((m) => !m.dead), [members]);
   const stageCounts = useMemo(() => {
     const counts: Record<number, number> = {};
-    for (const m of members) {
+    for (const m of livingMembers) {
       const stage = REALMS[m.realm_idx]?.stage;
       if (stage != null) counts[stage] = (counts[stage] ?? 0) + 1;
     }
     return counts;
-  }, [members]);
+  }, [livingMembers]);
   const sectMult = useMemo(
-    () => sectDamageMultOfStages(members.map((m) => REALMS[m.realm_idx]?.stage)),
-    [members],
+    () => sectDamageMultOfStages(livingMembers.map((m) => REALMS[m.realm_idx]?.stage)),
+    [livingMembers],
   );
   const curTier = sectTierOf(tier);
 

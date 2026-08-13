@@ -236,6 +236,17 @@ export async function POST(req: NextRequest) {
           { status: 400 },
         );
       }
+    }
+    // 樂觀併發鎖:僅在目前等級仍為 tier 時才寫入,避免重複點擊重複晉升。
+    // 務必先搶佔等級變更、成功後才消耗素材——若順序相反,兩個同門同時點擊晉升時,
+    // 只有一方能真正晉升,但兩邊都會各自扣一次素材,倉庫平白損失且晉升未必成功。
+    const rows = await sql`
+      INSERT INTO sect_tier (sect_id, tier, contribution) VALUES (${sectId}, ${next.tier}, ${contribution})
+      ON CONFLICT (sect_id) DO UPDATE SET tier = ${next.tier}, updated_at = now()
+      WHERE sect_tier.tier = ${tier}
+      RETURNING tier`;
+    if (!rows.length) return NextResponse.json({ error: "晉升失敗,請重試" }, { status: 400 });
+    if (next.materials && next.materials.length > 0) {
       // 依序扣除倉庫素材(逐一 jsonb_set,數量不多,單一宗門晉升次數稀少,效能無虞)
       for (const m of next.materials) {
         await sql`UPDATE sect_bank SET items = jsonb_set(
@@ -243,13 +254,6 @@ export async function POST(req: NextRequest) {
         ), updated_at = now() WHERE sect_id = ${sectId}`;
       }
     }
-    // 樂觀併發鎖:僅在目前等級仍為 tier 時才寫入,避免重複點擊重複晉升
-    const rows = await sql`
-      INSERT INTO sect_tier (sect_id, tier, contribution) VALUES (${sectId}, ${next.tier}, ${contribution})
-      ON CONFLICT (sect_id) DO UPDATE SET tier = ${next.tier}, updated_at = now()
-      WHERE sect_tier.tier = ${tier}
-      RETURNING tier`;
-    if (!rows.length) return NextResponse.json({ error: "晉升失敗,請重試" }, { status: 400 });
     return NextResponse.json({ ok: true, tier: next.tier, tierName: next.name });
   }
 
@@ -293,6 +297,26 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "depositItem") {
+      // 已裝備之物須先卸下方可存入宗門倉庫——否則裝備欄仍持續生效,卻同時被另一位同門提領裝備,等同憑空複製一件裝備的效果
+      const saveRows = await sql`SELECT data FROM saves WHERE user_id = ${user.id}`;
+      const saveData = (saveRows[0] as { data: SaveData } | undefined)?.data;
+      const equippedIds = saveData
+        ? [
+            saveData.equippedWeapon,
+            saveData.equippedRobe ?? saveData.equippedArmor,
+            saveData.equippedAmulet,
+            saveData.equippedTalisman,
+            saveData.equippedPet,
+            saveData.equippedMing,
+          ]
+        : [];
+      if (equippedIds.includes(itemId)) {
+        return NextResponse.json(
+          { error: "此物尚裝備於身,須先卸下(裝備其他物品替換)方可存入宗門倉庫。" },
+          { status: 400 },
+        );
+      }
+
       const rows = await sql`
         WITH upd AS (
           UPDATE saves SET data = jsonb_set(
@@ -397,15 +421,16 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
+    // 樂觀併發鎖:先搶佔等級變更、成功後才消耗素材(理由同宗門等級晉升,避免併發重複扣料卻升級失敗)
+    const upd = await sql`UPDATE sect_dwelling SET level = ${next.level}, updated_at = now()
+      WHERE sect_id = ${sectId} AND slot_idx = ${slotIdx} AND level = ${level}
+      RETURNING level`;
+    if (!upd.length) return NextResponse.json({ error: "升級失敗,請重試" }, { status: 400 });
     for (const m of next.materials) {
       await sql`UPDATE sect_bank SET items = jsonb_set(
         items, ARRAY[${m.id}], to_jsonb(GREATEST(0, COALESCE((items->>${m.id})::int, 0) - ${m.n}))
       ), updated_at = now() WHERE sect_id = ${sectId}`;
     }
-    const upd = await sql`UPDATE sect_dwelling SET level = ${next.level}, updated_at = now()
-      WHERE sect_id = ${sectId} AND slot_idx = ${slotIdx} AND level = ${level}
-      RETURNING level`;
-    if (!upd.length) return NextResponse.json({ error: "升級失敗,請重試" }, { status: 400 });
     return NextResponse.json({ ok: true, level: next.level });
   }
 

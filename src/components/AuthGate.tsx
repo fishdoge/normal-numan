@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useT } from "@/i18n/useT";
 
 export default function AuthGate({ onAuthed }: { onAuthed: (name: string) => void }) {
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -9,6 +10,7 @@ export default function AuthGate({ onAuthed }: { onAuthed: (name: string) => voi
   const [name, setName] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
+  const t = useT();
 
   const submit = async () => {
     setBusy(true);
@@ -23,12 +25,12 @@ export default function AuthGate({ onAuthed }: { onAuthed: (name: string) => voi
       });
       const j = await res.json();
       if (!res.ok) {
-        setErr(j.error ?? "發生錯誤");
+        setErr(j.error ?? t("authErrGeneric"));
         return;
       }
       onAuthed(j.name);
     } catch {
-      setErr("無法連線至伺服器");
+      setErr(t("authErrNet"));
     } finally {
       setBusy(false);
     }
@@ -37,11 +39,9 @@ export default function AuthGate({ onAuthed }: { onAuthed: (name: string) => voi
   return (
     <main className="max-w-md mx-auto px-4 py-20">
       <header className="text-center mb-10">
-        <p className="font-mono text-xs tracking-[0.5em] text-gold/70 mb-3">
-          A MORTAL&apos;S JOURNEY
-        </p>
-        <h1 className="text-5xl font-black tracking-widest text-parchment">凡人修仙傳</h1>
-        <p className="mt-4 text-faded text-sm">仙籍存於雲端道藏,天涯海角,登入即續前緣。</p>
+        <p className="font-mono text-xs tracking-[0.5em] text-gold/70 mb-3">{t("authTagline")}</p>
+        <h1 className="text-5xl font-black tracking-widest text-parchment">{t("authTitle")}</h1>
+        <p className="mt-4 text-faded text-sm">{t("authSubtitle")}</p>
       </header>
 
       <section className="panel deco-frame">
@@ -59,7 +59,7 @@ export default function AuthGate({ onAuthed }: { onAuthed: (name: string) => voi
                   : "text-faded hover:text-cream"
               }`}
             >
-              {m === "login" ? "登入" : "註冊仙籍"}
+              {m === "login" ? t("authLogin") : t("authRegister")}
             </button>
           ))}
         </div>
@@ -67,7 +67,7 @@ export default function AuthGate({ onAuthed }: { onAuthed: (name: string) => voi
         <div className="space-y-3">
           {mode === "register" && (
             <div>
-              <p className="text-xs text-faded mb-1">道號(遊戲中顯示的名字)</p>
+              <p className="text-xs text-faded mb-1">{t("authDaoName")}</p>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -78,7 +78,7 @@ export default function AuthGate({ onAuthed }: { onAuthed: (name: string) => voi
             </div>
           )}
           <div>
-            <p className="text-xs text-faded mb-1">帳號</p>
+            <p className="text-xs text-faded mb-1">{t("authAccount")}</p>
             <input
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -88,26 +88,24 @@ export default function AuthGate({ onAuthed }: { onAuthed: (name: string) => voi
             />
           </div>
           <div>
-            <p className="text-xs text-faded mb-1">密碼</p>
+            <p className="text-xs text-faded mb-1">{t("authPassword")}</p>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="至少 4 位"
+              placeholder={t("authPasswordPlaceholder")}
               onKeyDown={(e) => e.key === "Enter" && submit()}
               className="w-full bg-smoke border border-faded/30 rounded-sm px-3 py-2 text-parchment placeholder-faded/40 focus:outline-none focus:border-gold/60"
             />
           </div>
           {err && <p className="text-sm text-vermillion">{err}</p>}
           <button className="btn w-full py-2.5 text-base" disabled={busy} onClick={submit}>
-            {busy ? "……" : mode === "login" ? "登 入" : "註 冊 並 踏 上 仙 途"}
+            {busy ? "……" : mode === "login" ? t("authSubmitLogin") : t("authSubmitRegister")}
           </button>
         </div>
       </section>
 
-      <p className="text-center text-xs text-faded/60 mt-6">
-        註冊後,仙體每一小時自然增壽一年(離線亦然)。
-      </p>
+      <p className="text-center text-xs text-faded/60 mt-6">{t("authFooterNote")}</p>
     </main>
   );
 }

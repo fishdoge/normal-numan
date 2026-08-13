@@ -4,6 +4,7 @@
 // 前端不再持有任何遊戲邏輯或 localStorage 存檔
 import { create } from "zustand";
 import type { SaveData, Modal } from "./engine";
+import { DICT, type Language } from "@/i18n/dict";
 import {
   statsOf,
   maxLifeOf,
@@ -48,6 +49,13 @@ export type Tab =
 // 主畫面切換:遊戲主頁 / 宗門獨立頁面(1.8 版新增,宗門改為全螢幕切換,不再是行動頁籤之一)
 export type MainView = "game" | "sect";
 
+// 純前端顯示偏好,存於 localStorage,不經過伺服器(伺服器端存檔內容不分語言)
+const LANG_KEY = "lang";
+const getInitialLanguage = (): Language => {
+  if (typeof window === "undefined") return "zh";
+  return localStorage.getItem(LANG_KEY) === "en" ? "en" : "zh";
+};
+
 interface ClientState {
   save: SaveData | null;
   loot: Modal | null; // 採集/戰利品/任務彈窗
@@ -57,6 +65,7 @@ interface ClientState {
   activeTab: Tab;
   mainView: MainView;
   revivalUsed: boolean; // 六道輪迴盤(付費復活)是否已終身用過一次
+  language: Language; // 介面顯示語言(中文 / English),見 src/i18n
 
   act: (type: string, payload?: Record<string, unknown>) => Promise<void>;
   setSave: (save: SaveData | null) => void;
@@ -68,6 +77,7 @@ interface ClientState {
   setActiveTab: (tab: Tab) => void;
   setMainView: (view: MainView) => void;
   setRevivalUsed: (used: boolean) => void;
+  setLanguage: (lang: Language) => void;
 }
 
 export const useGame = create<ClientState>()((set, get) => ({
@@ -79,6 +89,7 @@ export const useGame = create<ClientState>()((set, get) => ({
   activeTab: "explore",
   mainView: "game",
   revivalUsed: false,
+  language: getInitialLanguage(),
 
   setSave: (save) => set({ save }),
   closeLoot: () => set({ loot: null }),
@@ -88,6 +99,10 @@ export const useGame = create<ClientState>()((set, get) => ({
   setActiveTab: (tab) => set({ activeTab: tab }),
   setMainView: (view) => set({ mainView: view }),
   setRevivalUsed: (used) => set({ revivalUsed: used }),
+  setLanguage: (lang) => {
+    if (typeof window !== "undefined") localStorage.setItem(LANG_KEY, lang);
+    set({ language: lang });
+  },
   pushLog: (msg) => {
     const s = get().save;
     if (s) set({ save: { ...s, log: [...s.log, msg].slice(-60) } });
@@ -112,7 +127,7 @@ export const useGame = create<ClientState>()((set, get) => ({
         if (s) set({ save: { ...s, log: [...s.log, `【${j.error}】`].slice(-60) } });
       }
     } catch {
-      get().pushLog("【無法連線至伺服器,請稍後再試】");
+      get().pushLog(DICT[get().language].actionNetErr);
     } finally {
       set({ busy: false });
     }

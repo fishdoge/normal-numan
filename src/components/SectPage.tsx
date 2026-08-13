@@ -9,6 +9,18 @@ import { MISSIONS } from "@/game/data/missions";
 import { itemById } from "@/game/data/items";
 import { sectTierOf, SECT_TIER_REQ_LABEL, DWELLING_MAX_LEVEL } from "@/game/data/sectTiers";
 import { ELEMENT_COLOR } from "@/game/types";
+import { useT } from "@/i18n/useT";
+import { itemDisplayName } from "@/i18n/itemText";
+import { monsterDisplayName } from "@/i18n/monsterText";
+import { realmDisplayName } from "@/i18n/realmText";
+import {
+  sectDisplayName,
+  sectTierDisplayName,
+  sectTierReqLabel,
+  missionDisplayName,
+  missionDisplayDesc,
+} from "@/i18n/sectText";
+import { stageLabel } from "@/i18n/realmText";
 import StoneAmount from "./StoneAmount";
 
 const SECT_STAGE_LABEL: Record<number, string> = {
@@ -68,6 +80,8 @@ export default function SectPage() {
   const setMainView = useGame((x) => x.setMainView);
   const act = useGame((x) => x.act);
   const busyAct = useGame((x) => x.busy);
+  const t = useT();
+  const lang = useGame((x) => x.language);
 
   const [members, setMembers] = useState<SectMember[]>([]);
   const [items, setItems] = useState<Record<string, number>>({});
@@ -124,10 +138,10 @@ export default function SectPage() {
         setNextTier(j.nextTier ?? null);
         setErr("");
       } else {
-        setErr(j.error ?? "查詢失敗");
+        setErr(j.error ?? t("sectLookupFailed"));
       }
     } catch {
-      setErr("查詢失敗");
+      setErr(t("sectLookupFailed"));
     }
     setLoading(false);
   };
@@ -169,7 +183,7 @@ export default function SectPage() {
         body: JSON.stringify(body),
       });
       const j = await res.json();
-      setErr(res.ok ? "" : (j.error ?? "操作失敗"));
+      setErr(res.ok ? "" : (j.error ?? t("sectActionFailed")));
       await Promise.all([refresh(), reloadSave()]);
       return res.ok;
     } finally {
@@ -189,13 +203,13 @@ export default function SectPage() {
   const contributeSection = (
     <div className="border border-gold/40 bg-gold/5 rounded-sm p-3">
       <div className="flex items-baseline justify-between flex-wrap gap-2">
-        <span className="font-bold text-gold">貢獻靈石(不可取回)</span>
+        <span className="font-bold text-gold">{t("contributeTitle")}</span>
         <span className="text-sm font-mono text-gold">
           <StoneAmount n={contribution} /> {nextTier && <>/ <StoneAmount n={nextTier.contribution} /></>}
         </span>
       </div>
       <p className="text-sm text-faded mt-1">
-        貢獻的靈石歸宗門所有、不可提領,唯一用途是累積晉升下一等級所需的門檻。現有靈石:
+        {t("contributeDesc")}
         <span className="text-gold">
           <StoneAmount n={s.stones} />
         </span>
@@ -209,7 +223,7 @@ export default function SectPage() {
           className="w-32 bg-smoke border border-faded/30 rounded-sm px-2 py-1.5 text-sm text-parchment"
         />
         <button className="btn" disabled={busy} onClick={() => post({ action: "contribute", amount })}>
-          貢獻
+          {t("btnContribute")}
         </button>
       </div>
 
@@ -224,35 +238,46 @@ export default function SectPage() {
             />
           </div>
           <p className="text-sm text-faded mt-2">
-            下一階:<span className="text-cream">{nextTier.name}</span>(名額上限 {nextTier.memberCap}
-            人,仙境 {nextTier.dwellingSlots} 位)
+            {t("nextTierLine")
+              .replace("{name}", sectTierDisplayName(nextTier, lang))
+              .replace("{cap}", String(nextTier.memberCap))
+              .replace("{slots}", String(nextTier.dwellingSlots))}
             {nextTier.requireStage && nextTier.requireCount && (
               <>
-                ,需同門中至少 {nextTier.requireCount} 人達到
+                {t("nextTierReqLine").replace("{n}", String(nextTier.requireCount))}
                 <span className="text-fuchsia-300">
-                  {SECT_TIER_REQ_LABEL[nextTier.requireStage] ?? `境界${nextTier.requireStage}`}
+                  {sectTierReqLabel(
+                    nextTier.requireStage,
+                    SECT_TIER_REQ_LABEL[nextTier.requireStage] ?? `境界${nextTier.requireStage}`,
+                    lang,
+                  )}
                 </span>
               </>
             )}
           </p>
           {nextTier.missingMaterials.length > 0 && (
             <p className="text-sm text-vermillion mt-1">
-              倉庫尚缺:
-              {nextTier.missingMaterials.map((m) => `${m.name} ${m.have}/${m.need}`).join("、")}
-              (存入宗門倉庫,見「宗門倉庫」分頁)
+              {t("warehouseMissing")}
+              {nextTier.missingMaterials
+                .map((m) => `${itemDisplayName({ id: m.id, name: m.name }, lang)} ${m.have}/${m.need}`)
+                .join("、")}
+              {t("warehouseMissingNote")}
             </p>
           )}
           <button
             className="btn mt-2"
             disabled={busy || !nextTier.ready}
             onClick={() => post({ action: "upgradeTier" })}
-            title={nextTier.blockedBy.join("、") || "晉升宗門等級"}
+            title={nextTier.blockedBy.join("、") || t("upgradeTierTooltip")}
           >
-            晉升【{nextTier.name}】{nextTier.blockedBy.length > 0 ? `(${nextTier.blockedBy.join("、")})` : ""}
+            {t("btnUpgradeTier").replace("{name}", sectTierDisplayName(nextTier, lang))}
+            {nextTier.blockedBy.length > 0 ? `(${nextTier.blockedBy.join("、")})` : ""}
           </button>
         </>
       ) : (
-        <p className="text-sm text-faded mt-2">已臻宗門最高等級【{curTier.name}】。</p>
+        <p className="text-sm text-faded mt-2">
+          {t("maxTierReached").replace("{name}", sectTierDisplayName(curTier, lang))}
+        </p>
       )}
     </div>
   );
@@ -261,11 +286,11 @@ export default function SectPage() {
     <main className="max-w-5xl mx-auto px-4 py-6">
       <div className="flex items-baseline justify-between mb-5">
         <div>
-          <h1 className="text-2xl font-black tracking-[0.35em]">宗 門</h1>
+          <h1 className="text-2xl font-black tracking-[0.35em]">{t("sectTitle")}</h1>
           <p className="font-mono text-[10px] tracking-[0.4em] text-faded">SECT HALL</p>
         </div>
         <button className="btn" onClick={() => setMainView("game")}>
-          ◂ 返回主頁
+          {t("sectBack")}
         </button>
       </div>
 
@@ -273,20 +298,22 @@ export default function SectPage() {
         <div className="flex items-baseline justify-between flex-wrap gap-2">
           <p className="text-lg font-bold">
             <span className={ELEMENT_COLOR[(sect?.element ?? "金") as keyof typeof ELEMENT_COLOR]}>
-              {sect?.name ?? "散修"}
+              {sect ? sectDisplayName(sect, lang) : t("statLoose")}
             </span>
-            <span className="chip ml-3 text-gold border-gold/40">{curTier.name}</span>
+            <span className="chip ml-3 text-gold border-gold/40">{sectTierDisplayName(curTier, lang)}</span>
             <span className="chip ml-2 text-faded/80 border-faded/30">
-              {members.length}/{curTier.memberCap} 人
+              {t("sectPeopleCount")
+                .replace("{count}", String(members.length))
+                .replace("{cap}", String(curTier.memberCap))}
             </span>
           </p>
           <button className="chip hover:text-gold py-1.5 px-2.5" onClick={refresh}>
-            刷新
+            {t("btnRefresh")}
           </button>
         </div>
         <p className="text-sm text-faded">
-          宗門聲勢隨在世高階同門人數增長,越多元嬰以上同門在世,全宗門戰鬥傷害越高。
-          目前宗門加成:<span className="text-fuchsia-300 font-bold">戰鬥傷害 ×{sectMult.toFixed(2)}</span>
+          {t("sectDamageNote")}
+          <span className="text-fuchsia-300 font-bold">{t("combatDamage")} ×{sectMult.toFixed(2)}</span>
         </p>
 
         {err && <p className="text-sm text-vermillion">{err}</p>}
@@ -295,12 +322,12 @@ export default function SectPage() {
         <div className="flex gap-1.5 flex-wrap">
           {(
             [
-              ["dwelling", "宗門仙境"],
-              ["mission", "宗門任務"],
-              ["damage", "傷害加成來源"],
-              ["members", "同門名錄"],
-              ["warehouse", "宗門倉庫"],
-              ["list", "宗門列表"],
+              ["dwelling", t("sectTabDwelling")],
+              ["mission", t("sectTabMission")],
+              ["damage", t("sectTabDamage")],
+              ["members", t("sectTabMembers")],
+              ["warehouse", t("sectTabWarehouse")],
+              ["list", t("sectTabList")],
             ] as [typeof view, string][]
           ).map(([v, label]) => (
             <button
@@ -317,21 +344,18 @@ export default function SectPage() {
           ))}
         </div>
 
-        {loading && <p className="text-sm text-faded">查詢中…</p>}
+        {loading && <p className="text-sm text-faded">{t("querying")}</p>}
 
         {!loading && view === "dwelling" && (
           <div className="space-y-2">
-            <p className="text-sm text-faded">
-              宗門仙境:可將角色停泊於此靜心潛修,每小時真實時間緩慢增長修為,離線亦持續累積。位置數僅與宗門等級有關(目前
-              {dwellingSlots} 位),各位置等級則需消耗宗門倉庫素材個別升級,任何同門皆可出資。
-            </p>
+            <p className="text-sm text-faded">{t("dwellingIntro").replace("{n}", String(dwellingSlots))}</p>
             {myDwellingSlot != null && (
               <button
                 className="btn btn-danger"
                 disabled={busy}
                 onClick={() => post({ action: "leaveDwelling" })}
               >
-                離開仙境(第 {myDwellingSlot + 1} 位)
+                {t("btnLeaveDwelling").replace("{n}", String(myDwellingSlot + 1))}
               </button>
             )}
             <div className="grid gap-2 sm:grid-cols-2">
@@ -351,13 +375,13 @@ export default function SectPage() {
                   >
                     <div className="flex items-baseline justify-between">
                       <span className="font-bold">
-                        第 {d.slotIdx + 1} 位
+                        {t("dwellingSlotLabel").replace("{n}", String(d.slotIdx + 1))}
                         <span className="chip ml-2 text-gold border-gold/40">Lv.{d.level}</span>
                       </span>
-                      {mine && <span className="chip text-gold border-gold/50">你</span>}
+                      {mine && <span className="chip text-gold border-gold/50">{t("youTag2")}</span>}
                     </div>
                     <p className="text-sm text-faded mt-1">
-                      {occupied ? `停泊中:${d.occupantName}` : "空位"}
+                      {occupied ? t("dwellingOccupied").replace("{name}", d.occupantName!) : t("dwellingVacant")}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {!occupied && myDwellingSlot == null && (
@@ -366,7 +390,7 @@ export default function SectPage() {
                           disabled={busy}
                           onClick={() => post({ action: "assignDwelling", slotIdx: d.slotIdx })}
                         >
-                          停泊於此
+                          {t("btnDwellHere")}
                         </button>
                       )}
                       {d.nextLevel && (
@@ -375,14 +399,21 @@ export default function SectPage() {
                           disabled={busy}
                           onClick={() => post({ action: "upgradeDwelling", slotIdx: d.slotIdx })}
                           title={d.nextLevel.materials
-                            .map((m) => `${itemById(m.id)?.name ?? m.id} ${items[m.id] ?? 0}/${m.n}`)
+                            .map((m) => {
+                              const it = itemById(m.id);
+                              return `${it ? itemDisplayName(it, lang) : m.id} ${items[m.id] ?? 0}/${m.n}`;
+                            })
                             .join("、")}
                         >
-                          升級至 Lv.{d.nextLevel.level}(修為+{d.nextLevel.expPerHour}/時)
+                          {t("btnUpgradeDwelling")
+                            .replace("{lv}", String(d.nextLevel.level))
+                            .replace("{exp}", String(d.nextLevel.expPerHour))}
                         </button>
                       )}
                       {!d.nextLevel && (
-                        <span className="text-sm text-faded">已臻最高等級(Lv.{DWELLING_MAX_LEVEL})</span>
+                        <span className="text-sm text-faded">
+                          {t("dwellingMaxed").replace("{n}", String(DWELLING_MAX_LEVEL))}
+                        </span>
                       )}
                     </div>
                   </div>
@@ -396,40 +427,42 @@ export default function SectPage() {
           <div className="space-y-3">
             {contributeSection}
 
-            <div className="divider">執 事 堂 任 務</div>
+            <div className="divider">{t("stewardMissionsDivider")}</div>
 
             {activeMission ? (
               <div className="border border-gold/40 bg-gold/5 rounded-sm p-3">
                 <div className="flex items-baseline justify-between">
-                  <span className="font-bold text-gold">{activeMission.name}</span>
+                  <span className="font-bold text-gold">{missionDisplayName(activeMission, lang)}</span>
                   <span className="text-sm font-mono text-faded">
-                    進度 {Math.min(missionProgress(activeMission), activeMission.n)}/{activeMission.n}
+                    {t("missionProgress")
+                      .replace("{cur}", String(Math.min(missionProgress(activeMission), activeMission.n)))
+                      .replace("{max}", String(activeMission.n))}
                   </span>
                 </div>
-                <p className="text-sm text-faded mt-1">{activeMission.desc}</p>
+                <p className="text-sm text-faded mt-1">{missionDisplayDesc(activeMission, lang)}</p>
                 <div className="mt-2 flex gap-2">
                   <button className="btn" disabled={busyAct} onClick={() => act("completeMission")}>
-                    繳令覆命
+                    {t("btnCompleteMission")}
                   </button>
                   <button
                     className="btn btn-danger"
                     disabled={busyAct}
                     onClick={() => act("abandonMission")}
                   >
-                    放棄任務
+                    {t("btnAbandonMission")}
                   </button>
                 </div>
               </div>
             ) : (
-              <p className="text-sm text-faded">執事堂告示欄上貼著數張任務令,同一時間僅可領取一件。</p>
+              <p className="text-sm text-faded">{t("noActiveMission")}</p>
             )}
-            <div className="divider">告 示 欄</div>
+            <div className="divider">{t("noticeBoardDivider")}</div>
             {MISSIONS.map((m) => {
               const locked = realm.stage < m.reqStage;
               const target =
                 m.kind === "kill"
-                  ? MONSTERS.find((x) => x.id === m.targetId)!.name
-                  : itemById(m.targetId).name;
+                  ? monsterDisplayName(MONSTERS.find((x) => x.id === m.targetId)!, lang)
+                  : itemDisplayName(itemById(m.targetId), lang);
               return (
                 <div
                   key={m.id}
@@ -437,25 +470,29 @@ export default function SectPage() {
                 >
                   <div className="flex items-baseline justify-between">
                     <span className="font-bold">
-                      {m.name}
+                      {missionDisplayName(m, lang)}
                       <span className="chip ml-2">
-                        {m.kind === "kill" ? "獵殺" : "繳納"} {target} ×{m.n}
+                        {m.kind === "kill" ? t("missionKindKill") : t("missionKindGather")} {target} ×{m.n}
                       </span>
                     </span>
                     <span className="text-sm font-mono text-gold">
-                      {m.stones} 靈石 · 修為 {m.exp}
+                      {t("missionRewardLine").replace("{stones}", String(m.stones)).replace("{exp}", String(m.exp))}
                     </span>
                   </div>
                   <p className="text-sm text-faded mt-1">
-                    {m.desc}
-                    {m.item && <span className="text-cream"> 另賜:{itemById(m.item).name}</span>}
+                    {missionDisplayDesc(m, lang)}
+                    {m.item && (
+                      <span className="text-cream">
+                        {t("missionExtraReward").replace("{item}", itemDisplayName(itemById(m.item), lang))}
+                      </span>
+                    )}
                   </p>
                   <button
                     className="btn mt-2"
                     disabled={busyAct || locked || !!s.missionId}
                     onClick={() => act("acceptMission", { missionId: m.id })}
                   >
-                    {locked ? "境界不足" : "領取"}
+                    {locked ? t("stageInsufficient") : t("btnAcceptMission")}
                   </button>
                 </div>
               );
@@ -467,14 +504,12 @@ export default function SectPage() {
           <div className="space-y-2">
             <div className="border border-fuchsia-400/30 bg-fuchsia-400/5 rounded-sm p-3">
               <div className="flex items-baseline justify-between">
-                <span className="font-bold text-fuchsia-300">宗門總加成</span>
+                <span className="font-bold text-fuchsia-300">{t("sectTotalBonusTitle")}</span>
                 <span className="text-sm font-mono text-fuchsia-300">
-                  戰鬥傷害 ×{sectMult.toFixed(2)}
+                  {t("combatDamage")} ×{sectMult.toFixed(2)}
                 </span>
               </div>
-              <p className="text-sm text-faded mt-1">
-                基準倍率 ×1.00,依下列各境界在世同門人數逐一疊加。
-              </p>
+              <p className="text-sm text-faded mt-1">{t("baseMultNote")}</p>
             </div>
             {Object.entries(SECT_STAGE_BONUS)
               .map(([stage, bonus]) => [Number(stage), bonus] as [number, number])
@@ -490,13 +525,14 @@ export default function SectPage() {
                     }`}
                   >
                     <span className="font-bold">
-                      {SECT_STAGE_LABEL[stage] ?? `境界${stage}`}
+                      {stageLabel(stage, SECT_STAGE_LABEL[stage] ?? `境界${stage}`, lang)}
                       <span className="chip ml-2 text-faded/80 border-faded/30">
-                        每人 +{Math.round(bonus * 100)}%
+                        {t("perPersonBonus").replace("{n}", String(Math.round(bonus * 100)))}
                       </span>
                     </span>
                     <span className="text-sm font-mono text-cream shrink-0 ml-3">
-                      {n} 人 <span className="text-fuchsia-300 ml-2">+{Math.round(subtotal * 100)}%</span>
+                      {t("peopleWithBonus").replace("{n}", String(n))}{" "}
+                      <span className="text-fuchsia-300 ml-2">+{Math.round(subtotal * 100)}%</span>
                     </span>
                   </div>
                 );
@@ -507,7 +543,7 @@ export default function SectPage() {
         {!loading && view === "members" && (
           <div className="space-y-2">
             {members.length === 0 && !err && (
-              <p className="text-sm text-faded">宗門暫無其他在冊同門。</p>
+              <p className="text-sm text-faded">{t("noOtherMembers")}</p>
             )}
             {members.map((m, i) => {
               const me = m.name === s.name;
@@ -521,14 +557,14 @@ export default function SectPage() {
                 >
                   <div className="min-w-0">
                     <span className={`font-bold ${isXian ? "text-fuchsia-300" : ""}`}>{m.name}</span>
-                    {me && <span className="chip ml-2 text-gold border-gold/50">你</span>}
+                    {me && <span className="chip ml-2 text-gold border-gold/50">{t("youTag2")}</span>}
                     {m.dead && (
-                      <span className="chip ml-2 text-vermillion border-vermillion/50">已隕落</span>
+                      <span className="chip ml-2 text-vermillion border-vermillion/50">{t("deadTag")}</span>
                     )}
                   </div>
                   <span className="text-sm text-cream shrink-0 ml-3">
-                    {REALMS[m.realm_idx]?.name ?? "??"}
-                    <span className="text-sm text-faded ml-2">修為 {m.exp}</span>
+                    {realmDisplayName(REALMS[m.realm_idx], lang)}
+                    <span className="text-sm text-faded ml-2">{t("memberExpLine").replace("{n}", String(m.exp))}</span>
                   </span>
                 </div>
               );
@@ -539,22 +575,23 @@ export default function SectPage() {
         {!loading && view === "warehouse" && (
           <div className="space-y-3">
             <div className="border border-faded/25 rounded-sm p-3">
-              <p className="font-bold mb-2">宗門物品倉庫</p>
-              <p className="text-sm text-faded mb-2">
-                存入的道具歸全宗門共用,任何同門都能直接提領使用;素材類存於此處亦是宗門晉升等級與仙境升級的消耗來源。
-              </p>
+              <p className="font-bold mb-2">{t("warehouseTitle")}</p>
+              <p className="text-sm text-faded mb-2">{t("warehouseDesc")}</p>
               <div className="flex flex-wrap gap-2 items-center mb-2">
                 <select
                   value={itemId}
                   onChange={(e) => setItemId(e.target.value)}
                   className="bg-smoke border border-faded/30 rounded-sm px-2 py-1.5 text-sm text-parchment"
                 >
-                  <option value="">選擇物品…</option>
-                  {myInventoryItems.map(([id, n]) => (
-                    <option key={id} value={id}>
-                      {itemById(id)?.name ?? id} × {n}
-                    </option>
-                  ))}
+                  <option value="">{t("selectItemPlaceholder")}</option>
+                  {myInventoryItems.map(([id, n]) => {
+                    const it = itemById(id);
+                    return (
+                      <option key={id} value={id}>
+                        {it ? itemDisplayName(it, lang) : id} × {n}
+                      </option>
+                    );
+                  })}
                 </select>
                 <input
                   type="number"
@@ -568,23 +605,25 @@ export default function SectPage() {
                   disabled={busy || !itemId}
                   onClick={() => post({ action: "depositItem", itemId, qty: itemQty })}
                 >
-                  存入倉庫
+                  {t("btnDeposit")}
                 </button>
               </div>
 
               {Object.entries(items).filter(([, n]) => n > 0).length === 0 ? (
-                <p className="text-sm text-faded">倉庫暫無物品。</p>
+                <p className="text-sm text-faded">{t("warehouseEmpty")}</p>
               ) : (
                 <div className="space-y-1.5">
                   {Object.entries(items)
                     .filter(([, n]) => n > 0)
-                    .map(([id, n]) => (
+                    .map(([id, n]) => {
+                      const it = itemById(id);
+                      return (
                       <div
                         key={id}
                         className="flex items-center justify-between border border-faded/20 rounded-sm p-2"
                       >
                         <span>
-                          {itemById(id)?.name ?? id}
+                          {it ? itemDisplayName(it, lang) : id}
                           <span className="chip ml-2 text-faded/80 border-faded/30">× {n}</span>
                         </span>
                         <button
@@ -592,10 +631,11 @@ export default function SectPage() {
                           disabled={busy}
                           onClick={() => post({ action: "withdrawItem", itemId: id, qty: 1 })}
                         >
-                          提領一件
+                          {t("btnWithdrawOne")}
                         </button>
                       </div>
-                    ))}
+                      );
+                    })}
                 </div>
               )}
             </div>
@@ -604,7 +644,7 @@ export default function SectPage() {
 
         {view === "list" && (
           <div className="space-y-2">
-            {listLoading && <p className="text-sm text-faded">查詢中…</p>}
+            {listLoading && <p className="text-sm text-faded">{t("querying")}</p>}
             {!listLoading &&
               otherSects.map((os) => (
                 <div key={os.id} className="border border-faded/20 rounded-sm p-2.5">
@@ -614,27 +654,31 @@ export default function SectPage() {
                   >
                     <span className="font-bold">
                       <span className={ELEMENT_COLOR[os.element as keyof typeof ELEMENT_COLOR]}>
-                        {os.name}
+                        {sectDisplayName(os, lang)}
                       </span>
                       {os.id === s.sectId && (
-                        <span className="chip ml-2 text-gold border-gold/50">本門</span>
+                        <span className="chip ml-2 text-gold border-gold/50">{t("homeSectTag")}</span>
                       )}
-                      <span className="chip ml-2 text-gold border-gold/40">{os.tierName}</span>
+                      <span className="chip ml-2 text-gold border-gold/40">
+                        {sectTierDisplayName({ tier: os.tier, name: os.tierName }, lang)}
+                      </span>
                     </span>
                     <span className="text-sm font-mono text-cream shrink-0 ml-3">
-                      {os.memberCount}/{os.memberCap} 人
+                      {t("sectPeopleCount")
+                        .replace("{count}", String(os.memberCount))
+                        .replace("{cap}", String(os.memberCap))}
                       <span className="text-fuchsia-300 ml-2">×{os.mult.toFixed(2)}</span>
                     </span>
                   </button>
                   {expanded === os.id && (
                     <div className="mt-2 space-y-1 border-t border-faded/15 pt-2">
                       {os.members.length === 0 && (
-                        <p className="text-sm text-faded">暫無在冊同門。</p>
+                        <p className="text-sm text-faded">{t("noMembersRegistered")}</p>
                       )}
                       {os.members.map((m, i) => (
                         <div key={m.name + i} className="flex items-center justify-between text-sm">
                           <span>{m.name}</span>
-                          <span className="text-faded text-sm">{REALMS[m.realm_idx]?.name ?? "??"}</span>
+                          <span className="text-faded text-sm">{realmDisplayName(REALMS[m.realm_idx], lang)}</span>
                         </div>
                       ))}
                     </div>

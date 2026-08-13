@@ -11,10 +11,63 @@ import "@fontsource/noto-serif-tc/900.css";
 import "@fontsource/jetbrains-mono/400.css";
 import "@fontsource/jetbrains-mono/500.css";
 import "./globals.css";
+import Footer from "@/components/Footer";
+
+const SITE_URL = "https://www.immortality.website";
+const SITE_TITLE = "凡人修仙傳 · 文字修仙 RPG";
+const SITE_DESCRIPTION =
+  "以《凡人修仙傳》韓立的修仙之路為藍本的免費線上文字修仙冒險遊戲。從煉氣期一路修煉至金仙、太乙境,習得青竹風雲劍等仙法秘笈,煉丹煉器、遊歷天南亂星海、加入宗門並肩闖蕩——支援繁體中文與英文雙語介面。";
+const KEYWORDS = [
+  "修仙",
+  "修仙遊戲",
+  "文字冒險",
+  "文字遊戲",
+  "凡人修仙傳",
+  "青竹風雲劍",
+  "韓立",
+  "仙俠",
+  "線上遊戲",
+  "煉氣期",
+  "文字RPG",
+  "immortal cultivation game",
+  "text-based RPG",
+];
 
 export const metadata: Metadata = {
-  title: "凡人修仙傳 · 文字修仙",
-  description: "凡人流文字修仙遊戲 — 靈石、法力、五行法術、煉器、門派、探索洞窟。",
+  metadataBase: new URL(SITE_URL),
+  title: { default: SITE_TITLE, template: `%s · ${SITE_TITLE}` },
+  description: SITE_DESCRIPTION,
+  keywords: KEYWORDS,
+  authors: [{ name: "閎旺科技" }],
+  creator: "閎旺科技",
+  alternates: { canonical: "/" },
+  robots: { index: true, follow: true },
+  openGraph: {
+    type: "website",
+    locale: "zh_TW",
+    url: SITE_URL,
+    siteName: SITE_TITLE,
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+  },
+};
+
+const JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "Game",
+  name: "凡人修仙傳",
+  alternateName: "A Mortal's Journey to Immortality",
+  description: SITE_DESCRIPTION,
+  url: SITE_URL,
+  applicationCategory: "Game",
+  genre: ["文字冒險", "修仙", "RPG"],
+  inLanguage: ["zh-Hant", "en"],
+  author: { "@type": "Organization", name: "閎旺科技" },
 };
 
 // Google Analytics(GA4)追蹤 ID
@@ -23,7 +76,11 @@ const GA_MEASUREMENT_ID = "G-1XN7D5199D";
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="zh-Hant">
-      <body className="font-serif bg-ink text-parchment min-h-screen">
+      <body className="font-serif bg-ink text-parchment min-h-screen flex flex-col">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
+        />
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
           strategy="afterInteractive"
@@ -36,7 +93,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             gtag('config', '${GA_MEASUREMENT_ID}');
           `}
         </Script>
-        {children}
+        <div className="flex-1">{children}</div>
+        <Footer />
       </body>
     </html>
   );

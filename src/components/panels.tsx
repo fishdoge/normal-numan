@@ -8,7 +8,23 @@ import { MONSTERS } from "@/game/data/world";
 import { itemById, isXuantianArtifact } from "@/game/data/items";
 import { techById } from "@/game/data/techniques";
 import { ELEMENT_COLOR, ELEMENTS, XIANLI_COLOR, EQUIP_SLOTS } from "@/game/types";
+import { useT } from "@/i18n/useT";
+import { itemDisplayName } from "@/i18n/itemText";
+import { monsterDisplayName, monsterDisplayDesc } from "@/i18n/monsterText";
+import { techDisplayName, techDisplayDesc } from "@/i18n/techText";
+import { realmDisplayName } from "@/i18n/realmText";
+import { sectDisplayName } from "@/i18n/sectText";
+import { elementLabel, equipSlotLabel } from "@/i18n/labelText";
+import { MONSTER_TEXT_EN } from "@/i18n/monsterText";
 import StoneAmount from "./StoneAmount";
+
+// 太乙精魂對應的地域王 id(供英文翻譯查詢用,中文沿用既有 label)
+const TAIYI_SOUL_LORD_ID: Record<string, string> = {
+  taiyi_jinghun_tianhu: "lord_tianhu",
+  taiyi_jinghun_zhenlong: "lord_zhenlong",
+  taiyi_jinghun_baxia: "lord_baxia",
+  taiyi_jinghun_pixiu: "lord_pixiu",
+};
 
 // 五色異星盤(集滿解鎖蠻荒異界),五行 → 道具 id 對照
 const XINGPAN_ID_OF: Record<string, string> = {
@@ -32,6 +48,8 @@ export function RealmProgressPanel() {
   const s = useGame((x) => x.save)!;
   const act = useGame((x) => x.act);
   const busy = useGame((x) => x.busy);
+  const t = useT();
+  const lang = useGame((x) => x.language);
   const { realm } = statsOf(s);
   const inCombat = !!s.combat;
 
@@ -45,14 +63,12 @@ export function RealmProgressPanel() {
       {showManhuang && (
         <div className="panel deco-frame border-fuchsia-400/40">
           <div className="flex items-baseline justify-between">
-            <span className="font-bold text-fuchsia-300">蠻 荒 異 界 · 五 色 異 星 盤</span>
+            <span className="font-bold text-fuchsia-300">{t("manhuangTitle")}</span>
             <span className="text-xs font-mono text-fuchsia-300/80">
               {ELEMENTS.filter((el) => (s.inventory[XINGPAN_ID_OF[el]] ?? 0) >= 1).length}/5
             </span>
           </div>
-          <p className="text-sm text-faded mt-1">
-            集滿金木水火土五色異星盤(金源仙域怪物稀有掉落),即可開啟蠻荒異界之門,內有天狐、真龍、霸下、貔貅四大領地。
-          </p>
+          <p className="text-sm text-faded mt-1">{t("manhuangDesc")}</p>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {ELEMENTS.map((el) => {
               const has = (s.inventory[XINGPAN_ID_OF[el]] ?? 0) >= 1;
@@ -61,7 +77,7 @@ export function RealmProgressPanel() {
                   key={el}
                   className={`chip ${has ? ELEMENT_COLOR[el] : "text-faded/40 border-faded/20"}`}
                 >
-                  {el}
+                  {elementLabel(el, lang)}
                 </span>
               );
             })}
@@ -73,31 +89,30 @@ export function RealmProgressPanel() {
             }
             onClick={() => act("unlockManhuang")}
           >
-            開 啟 蠻 荒 異 界 之 門
+            {t("manhuangBtn")}
           </button>
         </div>
       )}
       {showTaiyi && (
         <div className="panel deco-frame border-fuchsia-400/40">
           <div className="flex items-baseline justify-between">
-            <span className="font-bold text-fuchsia-300">太 乙 殿</span>
+            <span className="font-bold text-fuchsia-300">{t("taiyiHallTitle")}</span>
             <span className="text-xs font-mono text-fuchsia-300/80">
-              {TAIYI_SOULS.filter((t) => (s.inventory[t.id] ?? 0) >= 1).length}/4 太乙精魂
+              {TAIYI_SOULS.filter((ts) => (s.inventory[ts.id] ?? 0) >= 1).length}/4 {t("taiyiSoulSuffix")}
             </span>
           </div>
-          <p className="text-sm text-faded mt-1">
-            浮屠塔登臨第 20 層後開啟。集滿蠻荒異界四大地域王(天狐/真龍/霸下/黑眼貔貅)身隕所遺的太乙精魂,
-            金仙可於此突破【太乙境】,並為宗門帶來 +120% 額外戰鬥傷害。
-          </p>
+          <p className="text-sm text-faded mt-1">{t("taiyiDesc")}</p>
           <div className="mt-2 flex flex-wrap gap-1.5">
-            {TAIYI_SOULS.map((t) => {
-              const has = (s.inventory[t.id] ?? 0) >= 1;
+            {TAIYI_SOULS.map((ts) => {
+              const has = (s.inventory[ts.id] ?? 0) >= 1;
+              const label =
+                lang === "en" ? (MONSTER_TEXT_EN[TAIYI_SOUL_LORD_ID[ts.id]]?.name ?? ts.label) : ts.label;
               return (
                 <span
-                  key={t.id}
-                  className={`chip ${has ? ELEMENT_COLOR[itemById(t.id).element!] : "text-faded/40 border-faded/20"}`}
+                  key={ts.id}
+                  className={`chip ${has ? ELEMENT_COLOR[itemById(ts.id).element!] : "text-faded/40 border-faded/20"}`}
                 >
-                  {t.label}
+                  {label}
                 </span>
               );
             })}
@@ -108,12 +123,12 @@ export function RealmProgressPanel() {
               inCombat ||
               busy ||
               REALMS[s.realmIdx]?.id !== "jinxian_realm" ||
-              TAIYI_SOULS.some((t) => (s.inventory[t.id] ?? 0) < 1)
+              TAIYI_SOULS.some((ts) => (s.inventory[ts.id] ?? 0) < 1)
             }
-            title={REALMS[s.realmIdx]?.id !== "jinxian_realm" ? "唯金仙可於太乙殿突破" : ""}
+            title={REALMS[s.realmIdx]?.id !== "jinxian_realm" ? t("taiyiBtnLocked") : ""}
             onClick={() => act("ascendTaiyi")}
           >
-            飛 升 太 乙
+            {t("taiyiBtn")}
           </button>
         </div>
       )}
@@ -129,6 +144,8 @@ export function StatusPanel() {
   const isXian = realm.stage >= 10;
   const act = useGame((x) => x.act);
   const setMainView = useGame((x) => x.setMainView);
+  const t = useT();
+  const lang = useGame((x) => x.language);
 
   // 宗門集體戰力:輪詢同門境界分佈,算出目前的宗門傷害加成供顯示(實際套用仍以伺服器戰鬥當下重算為準)
   const [sectMult, setSectMult] = useState(1);
@@ -208,21 +225,23 @@ export function StatusPanel() {
 
   return (
     <div className="panel deco-frame">
-      <p className="panel-title">道 籍</p>
+      <p className="panel-title">{t("statusTitle")}</p>
       <div className="flex items-baseline justify-between mb-1 gap-2">
         <span
           className={`text-xl font-bold ${isXian ? "text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 via-amber-200 to-fuchsia-300" : ""}`}
         >
           {s.name}
         </span>
-        <span className="text-xs text-fuchsia-300/90 truncate">{sect?.name ?? "散修"}</span>
+        <span className="text-xs text-fuchsia-300/90 truncate">
+          {sect ? sectDisplayName(sect, lang) : t("statLoose")}
+        </span>
       </div>
-      <p className={`mb-3 ${isXian ? "text-fuchsia-300 font-bold" : "text-gold"}`}>{realm.name}</p>
+      <p className={`mb-3 ${isXian ? "text-fuchsia-300 font-bold" : "text-gold"}`}>{realmDisplayName(realm, lang)}</p>
 
       <div className="space-y-2 text-sm">
         <div>
           <div className="flex justify-between text-xs text-faded mb-0.5">
-            <span>氣血</span>
+            <span>{t("statHp")}</span>
             <span>
               {s.hp}/{hpMax}
             </span>
@@ -231,7 +250,7 @@ export function StatusPanel() {
         </div>
         <div>
           <div className="flex justify-between text-xs text-faded mb-0.5">
-            <span>法力</span>
+            <span>{t("statMp")}</span>
             <span>
               {s.mp}/{mpMax}
             </span>
@@ -240,7 +259,7 @@ export function StatusPanel() {
         </div>
         <div>
           <div className="flex justify-between text-xs text-faded mb-0.5">
-            <span>修為</span>
+            <span>{t("statExp")}</span>
             <span>
               {s.exp}/{expNeed}
             </span>
@@ -251,16 +270,16 @@ export function StatusPanel() {
 
       <button
         onClick={() => setMainView("sect")}
-        title="開啟宗門獨立頁面"
+        title={t("sectHallTooltip")}
         className="w-full mt-3 mb-1 flex items-center justify-between gap-2 rounded-sm border-2 border-fuchsia-400/50 bg-gradient-to-r from-fuchsia-400/15 via-gold/10 to-fuchsia-400/15 px-3 py-2.5 transition-colors hover:border-fuchsia-400 hover:from-fuchsia-400/25 hover:to-fuchsia-400/25"
       >
         <span className="min-w-0 text-left">
           <span className="block text-base font-bold text-fuchsia-300">
-            {sect?.name ?? "散修"} 宗門殿堂
+            {sect ? sectDisplayName(sect, lang) : t("statLoose")} {t("sectHall")}
           </span>
           {sect && (
             <span className="block text-xs text-cream/80 mt-0.5">
-              戰鬥傷害 ×{sectMult.toFixed(2)} · 進入查看名錄/仙境/任務
+              {t("combatDamage")} ×{sectMult.toFixed(2)} · {t("sectHallDetail")}
             </span>
           )}
         </span>
@@ -270,61 +289,64 @@ export function StatusPanel() {
       <div className="divider">◆</div>
 
       <div className="grid grid-cols-2 gap-y-1 text-sm">
-        <span className="text-faded">壽元</span>
+        <span className="text-faded">{t("statLife")}</span>
         <span
           className={`text-right ${maxLifeOf(s) - s.age <= maxLifeOf(s) * 0.2 ? "text-vermillion" : ""}`}
         >
-          {s.age}/{maxLifeOf(s)} 年
+          {s.age}/{maxLifeOf(s)}
+          {t("yearsSuffix")}
         </span>
-        <span className="text-faded">修行</span>
-        <span className="text-right">第 {s.day} 年</span>
+        <span className="text-faded">{t("statDay")}</span>
+        <span className="text-right">{t("statDayValue").replace("{n}", String(s.day))}</span>
         {s.xianli > 0 && (
           <>
-            <span className="text-faded">仙靈力</span>
+            <span className="text-faded">{t("statXianli")}</span>
             <span className={`text-right font-bold ${XIANLI_COLOR}`}>
-              {s.xianli} 點 (攻擊 ×{(1 + s.xianli * XIANLI_MULT).toFixed(1)})
+              {t("xianliValue")
+                .replace("{n}", String(s.xianli))
+                .replace("{mult}", (1 + s.xianli * XIANLI_MULT).toFixed(1))}
             </span>
           </>
         )}
         {baseAtk !== atk ? (
           <>
-            <span className="text-faded">基礎攻擊</span>
+            <span className="text-faded">{t("statBaseAtk")}</span>
             <span className="text-right text-faded">{baseAtk}</span>
-            <span className="text-faded">攻擊(加乘後)</span>
+            <span className="text-faded">{t("statAtkBoosted")}</span>
             <span className={`text-right font-bold ${XIANLI_COLOR}`}>{atk}</span>
           </>
         ) : (
           <>
-            <span className="text-faded">攻擊</span>
+            <span className="text-faded">{t("statAtk")}</span>
             <span className="text-right">{atk}</span>
           </>
         )}
-        <span className="text-faded">防禦</span>
+        <span className="text-faded">{t("statDef")}</span>
         <span className="text-right">{def}</span>
-        <span className="text-faded">速度</span>
+        <span className="text-faded">{t("statSpeed")}</span>
         <span className="text-right">{speed}</span>
         {s.boonHp + s.boonAtk + s.boonDef + s.boonSpeed > 0 && (
           <>
-            <span className="text-fuchsia-300">雲遊所得</span>
+            <span className="text-fuchsia-300">{t("statBoon")}</span>
             <span className="text-right text-fuchsia-300 text-xs">
               {[
-                s.boonHp && `血+${s.boonHp}`,
-                s.boonAtk && `攻+${s.boonAtk}`,
-                s.boonDef && `防+${s.boonDef}`,
-                s.boonSpeed && `速+${s.boonSpeed}`,
+                s.boonHp && (lang === "en" ? `HP+${s.boonHp}` : `血+${s.boonHp}`),
+                s.boonAtk && (lang === "en" ? `ATK+${s.boonAtk}` : `攻+${s.boonAtk}`),
+                s.boonDef && (lang === "en" ? `DEF+${s.boonDef}` : `防+${s.boonDef}`),
+                s.boonSpeed && (lang === "en" ? `SPD+${s.boonSpeed}` : `速+${s.boonSpeed}`),
               ]
                 .filter(Boolean)
                 .join(" ")}
             </span>
           </>
         )}
-        <span className="text-faded">靈石</span>
+        <span className="text-faded">{t("statStones")}</span>
         <span className="text-right text-gold">
           <StoneAmount n={s.stones} />
         </span>
       </div>
 
-      <div className="divider">裝 備</div>
+      <div className="divider">{t("statEquip")}</div>
       <div className="grid grid-cols-2 gap-y-1 text-sm">
         {EQUIP_SLOTS.map(({ slot, label }) => {
           const id = equipMap[slot];
@@ -332,11 +354,11 @@ export function StatusPanel() {
           const xuantian = id ? isXuantianArtifact(id) : false;
           return (
             <div key={slot} className="contents">
-              <span className="text-faded">{label}</span>
+              <span className="text-faded">{equipSlotLabel(slot, label, lang)}</span>
               <span
                 className={`text-right ${xuantian ? "text-xuantian" : it ? (slot === "pet" ? "text-fuchsia-300" : "text-cream") : "text-faded/50"}`}
               >
-                {it ? it.name : "—"}
+                {it ? itemDisplayName(it, lang) : "—"}
               </span>
             </div>
           );
@@ -348,10 +370,12 @@ export function StatusPanel() {
           <div className="divider">◆</div>
           <div className="text-sm">
             <div className="flex items-baseline justify-between">
-              <span className="text-azure font-bold">修習中</span>
-              <span className="text-xs font-mono text-faded">尚需 {s.learning.remain} 年</span>
+              <span className="text-azure font-bold">{t("learningLabel")}</span>
+              <span className="text-xs font-mono text-faded">
+                {t("learningRemain").replace("{n}", String(s.learning.remain))}
+              </span>
             </div>
-            <p className="text-cream mt-0.5">{techById(s.learning.techId).name}</p>
+            <p className="text-cream mt-0.5">{techDisplayName(techById(s.learning.techId), lang)}</p>
           </div>
         </>
       )}
@@ -368,7 +392,7 @@ export function StatusPanel() {
           onPointerCancel={stopHold}
           disabled={!!s.combat || s.mp >= mpMax}
         >
-          聚靈回力(按住持續耗靈石回法力)
+          {t("btnGatherMp")}
         </button>
       </div>
     </div>
@@ -379,15 +403,26 @@ export function CombatPanel() {
   const s = useGame((x) => x.save)!;
   const act = useGame((x) => x.act);
   const busy = useGame((x) => x.busy);
+  const t = useT();
+  const lang = useGame((x) => x.language);
   const combat = s.combat;
+
+  // 手機版單欄排版時,遭遇戰鬥當下自動把畫面捲到戰況欄(桌面版通常已在可視範圍內,scrollIntoView 不會有明顯動作)
+  const panelRef = useRef<HTMLDivElement>(null);
+  const hadCombatRef = useRef(false);
+  useEffect(() => {
+    const hasCombat = !!combat;
+    if (hasCombat && !hadCombatRef.current) {
+      panelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    hadCombatRef.current = hasCombat;
+  }, [combat]);
 
   if (!combat) {
     return (
       <div className="panel deco-frame">
-        <p className="panel-title">戰 況</p>
-        <p className="text-sm text-faded">
-          四下無事,靈風拂面。前往秘境「獵殺妖獸」,或採集時遭遇襲擊,戰況將顯示於此。
-        </p>
+        <p className="panel-title">{t("combatTitle")}</p>
+        <p className="text-sm text-faded">{t("combatIdle")}</p>
       </div>
     );
   }
@@ -396,30 +431,34 @@ export function CombatPanel() {
   const usable = s.learned.map(techById);
   const isLord = combat.isLord || mon.isLord;
   const hpMaxMon = combat.bossHpMax ?? mon.hp; // 浮屠塔動態 BOSS 用其實際上限
-  const displayName = combat.futuFloor ? `${mon.name} · 第 ${combat.futuFloor} 層` : mon.name;
+  const monName = monsterDisplayName(mon, lang);
+  const displayName = combat.futuFloor ? `${monName} · 第 ${combat.futuFloor} 層` : monName;
 
   return (
     <div
+      ref={panelRef}
       className={`panel deco-frame ${isLord ? "border-fuchsia-400/70 shadow-[0_0_18px_rgba(232,121,249,0.25)]" : "border-vermillion/40"}`}
     >
       <p className={`panel-title ${isLord ? "text-fuchsia-300" : "text-cinnabar"}`}>
-        {combat.futuFloor ? "⚠ 浮 屠 塔" : isLord ? "⚠ 王 者 降 臨" : "激 戰"}
+        {combat.futuFloor ? t("combatFutu") : isLord ? t("combatLordArrives") : t("combatFierce")}
       </p>
       <div className="flex items-baseline justify-between">
         <span className={`text-lg font-bold ${isLord ? "text-fuchsia-300" : ""}`}>
           {isLord && (
             <span className="chip mr-2 text-fuchsia-400 border-fuchsia-400/60">
-              {combat.futuFloor ? "幻象" : "地域王"}
+              {combat.futuFloor ? t("combatIllusionChip") : t("combatLordChip")}
             </span>
           )}
           {displayName}
         </span>
-        <span className={`chip ${ELEMENT_COLOR[mon.element]}`}>{mon.element}屬性</span>
+        <span className={`chip ${ELEMENT_COLOR[mon.element]}`}>
+          {lang === "en" ? elementLabel(mon.element, lang) : `${mon.element}屬性`}
+        </span>
       </div>
-      <p className="text-sm text-faded mt-1">{mon.desc}</p>
+      <p className="text-sm text-faded mt-1">{monsterDisplayDesc(mon, lang)}</p>
       <div className="mt-3">
         <div className="flex justify-between text-xs text-faded mb-0.5">
-          <span>妖獸氣血</span>
+          <span>{t("combatMonHp")}</span>
           <span>
             {combat.monsterHp}/{hpMaxMon}
           </span>
@@ -434,7 +473,7 @@ export function CombatPanel() {
 
       <div className="mt-4 flex flex-wrap gap-2">
         <button className="btn" disabled={busy} onClick={() => act("attack")}>
-          法器攻擊
+          {t("btnWeaponAttack")}
         </button>
         {usable.map((t) => (
           <button
@@ -442,20 +481,18 @@ export function CombatPanel() {
             className="btn"
             disabled={busy || s.mp < t.mpCost}
             onClick={() => act("cast", { techId: t.id })}
-            title={t.desc}
+            title={techDisplayDesc(t, lang)}
           >
-            <span className={`mr-1 ${ELEMENT_COLOR[t.element]}`}>{t.element}</span>
-            {t.name}
+            <span className={`mr-1 ${ELEMENT_COLOR[t.element]}`}>{elementLabel(t.element, lang)}</span>
+            {techDisplayName(t, lang)}
             <span className="ml-1 text-xs text-faded">({t.mpCost})</span>
           </button>
         ))}
         <button className="btn btn-danger" disabled={busy} onClick={() => act("flee")}>
-          遁走
+          {t("btnFlee")}
         </button>
       </div>
-      <p className="text-xs text-faded/60 mt-3">
-        五行相剋:金克木 · 木克土 · 土克水 · 水克火 · 火克金 —— 相剋傷害 ×1.5
-      </p>
+      <p className="text-xs text-faded/60 mt-3">{t("counterNote")}</p>
     </div>
   );
 }

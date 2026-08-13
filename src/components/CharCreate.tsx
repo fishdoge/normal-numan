@@ -5,6 +5,10 @@ import { useGame } from "@/game/store";
 import { SECTS } from "@/game/data/sects";
 import { techById } from "@/game/data/techniques";
 import { ELEMENT_COLOR } from "@/game/types";
+import { sectDisplayName, sectDisplayDesc } from "@/i18n/sectText";
+import { techDisplayName } from "@/i18n/techText";
+import { elementLabel } from "@/i18n/labelText";
+import { useT } from "@/i18n/useT";
 
 interface SectSummary {
   id: string;
@@ -16,6 +20,8 @@ interface SectSummary {
 export default function CharCreate({ name }: { name?: string }) {
   const act = useGame((s) => s.act);
   const busy = useGame((s) => s.busy);
+  const lang = useGame((s) => s.language);
+  const t = useT();
   const [sectId, setSectId] = useState<string | null>(null);
   const [summary, setSummary] = useState<Record<string, SectSummary>>({});
 
@@ -47,22 +53,22 @@ export default function CharCreate({ name }: { name?: string }) {
         <p className="font-mono text-xs tracking-[0.5em] text-gold/70 mb-3">
           A MORTAL&apos;S JOURNEY
         </p>
-        <h1 className="text-5xl font-black tracking-widest text-parchment">凡人修仙傳</h1>
+        <h1 className="text-5xl font-black tracking-widest text-parchment">{t("appTitle")}</h1>
         <p className="mt-4 text-faded">
-          山村窮小子,資質平庸,唯有一縷不屈道心。
+          {t("charTagline")}
           <br />
-          靈石為財,法力為刃,五行相生相剋 —— 凡人亦可問鼎仙途。
+          {t("charTagline2")}
         </p>
       </header>
 
       <section className="panel deco-frame mb-6 text-center">
-        <p className="panel-title">道 號</p>
-        <p className="text-2xl font-bold text-gold">{name || "無名散修"}</p>
-        <p className="text-xs text-faded mt-2">此道號於註冊仙籍時已定,將伴你一生仙途。</p>
+        <p className="panel-title">{t("charDaoName")}</p>
+        <p className="text-2xl font-bold text-gold">{name || t("charDaoNameFallback")}</p>
+        <p className="text-xs text-faded mt-2">{t("charDaoNameNote")}</p>
       </section>
 
       <section className="panel deco-frame mb-8">
-        <p className="panel-title">拜入門派</p>
+        <p className="panel-title">{t("charJoinSect")}</p>
         <div className="grid gap-3 sm:grid-cols-2">
           {SECTS.map((sect) => {
             const tech = techById(sect.startTech);
@@ -83,19 +89,25 @@ export default function CharCreate({ name }: { name?: string }) {
                 }`}
               >
                 <div className="flex items-baseline justify-between">
-                  <span className="text-lg font-bold">{sect.name}</span>
-                  <span className={`chip ${ELEMENT_COLOR[sect.element]}`}>{sect.element}行</span>
+                  <span className="text-lg font-bold">{sectDisplayName(sect, lang)}</span>
+                  <span className={`chip ${ELEMENT_COLOR[sect.element]}`}>
+                    {elementLabel(sect.element, lang)}
+                    {lang !== "en" && "行"}
+                  </span>
                 </div>
-                <p className="text-sm text-faded mt-1 leading-relaxed">{sect.desc}</p>
+                <p className="text-sm text-faded mt-1 leading-relaxed">{sectDisplayDesc(sect, lang)}</p>
                 <p className="text-xs mt-2 text-cream/80">
-                  入門仙法:{tech.name} · {sect.bonus.exp ? `修煉效率 +${sect.bonus.exp}%` : ""}
-                  {sect.bonus.atk ? `攻擊 +${sect.bonus.atk}` : ""}
-                  {sect.bonus.hp ? `氣血 +${sect.bonus.hp} ` : ""}
-                  {sect.bonus.mp ? `法力 +${sect.bonus.mp}` : ""}
+                  {t("charStartTech")}:{techDisplayName(tech, lang)} ·{" "}
+                  {sect.bonus.exp ? (lang === "en" ? `Cultivation Rate +${sect.bonus.exp}% ` : `修煉效率 +${sect.bonus.exp}%`) : ""}
+                  {sect.bonus.atk ? (lang === "en" ? `ATK +${sect.bonus.atk} ` : `攻擊 +${sect.bonus.atk}`) : ""}
+                  {sect.bonus.hp ? (lang === "en" ? `HP +${sect.bonus.hp} ` : `氣血 +${sect.bonus.hp} `) : ""}
+                  {sect.bonus.mp ? (lang === "en" ? `MP +${sect.bonus.mp}` : `法力 +${sect.bonus.mp}`) : ""}
                 </p>
                 {sum && (
                   <p className={`text-xs mt-1.5 ${full ? "text-vermillion" : "text-faded/70"}`}>
-                    {sum.tierName} · {sum.memberCount}/{sum.memberCap} 人{full ? "(已滿員)" : ""}
+                    {sum.tierName} · {sum.memberCount}/{sum.memberCap}
+                    {lang !== "en" && " 人"}
+                    {full ? t("charFull") : ""}
                   </p>
                 )}
               </button>
@@ -110,7 +122,7 @@ export default function CharCreate({ name }: { name?: string }) {
           disabled={!sectId || busy}
           onClick={() => sectId && act("start", { sectId })}
         >
-          踏 上 仙 途
+          {t("charBegin")}
         </button>
       </div>
     </main>

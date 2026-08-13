@@ -5,6 +5,8 @@ import { useGame, statsOf, maxLifeOf, cultCostOf, breakChanceOf, Modal } from "@
 import { REALMS } from "@/game/data/realms";
 import { CHANGELOG } from "@/game/data/changelog";
 import { REVIVAL_PRICE_USD } from "@/game/data/blackMarket";
+import { useT } from "@/i18n/useT";
+import { realmDisplayName } from "@/i18n/realmText";
 import AuthGate from "./AuthGate";
 import CharCreate from "./CharCreate";
 import ActionTabs from "./ActionTabs";
@@ -13,8 +15,9 @@ import LogChatPanel from "./LogChatPanel";
 import GuideModal from "./GuideModal";
 import { StatusPanel, CombatPanel, RealmProgressPanel } from "./panels";
 
-// 更新公告:逐版列出 version/ 目錄的重點內容(精簡為玩家視角)
+// 更新公告:逐版列出 version/ 目錄的重點內容(精簡為玩家視角)——條列內容(entry.title/highlights)本身仍為中文,尚未翻譯
 function ChangelogModal({ onClose }: { onClose: () => void }) {
+  const t = useT();
   return (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-ink/80 backdrop-blur-sm p-4"
@@ -25,9 +28,9 @@ function ChangelogModal({ onClose }: { onClose: () => void }) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-baseline justify-between mb-2">
-          <p className="panel-title mb-0">更 新 公 告</p>
+          <p className="panel-title mb-0">{t("changelogTitle")}</p>
           <button className="chip hover:text-gold py-1.5 px-2.5" onClick={onClose}>
-            關閉 ✕
+            {t("btnClose")}
           </button>
         </div>
         <div className="flex-1 overflow-y-auto space-y-4 pr-1">
@@ -35,7 +38,7 @@ function ChangelogModal({ onClose }: { onClose: () => void }) {
             <div key={entry.version} className="border border-faded/20 rounded-sm p-3">
               <div className="flex items-baseline justify-between">
                 <span className="font-bold text-gold">
-                  版本 {entry.version}
+                  {t("versionLabel").replace("{v}", entry.version)}
                   <span className="text-cream font-normal ml-2">{entry.title}</span>
                 </span>
                 <span className="text-xs text-faded font-mono shrink-0 ml-3">{entry.date}</span>
@@ -59,6 +62,7 @@ function PrayForRevival() {
   const revivalUsed = useGame((x) => x.revivalUsed);
   const setRevivalUsed = useGame((x) => x.setRevivalUsed);
   const setPurchaseResult = useGame((x) => x.setPurchaseResult);
+  const t = useT();
   const [praying, setPraying] = useState(false);
   const [err, setErr] = useState("");
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -73,7 +77,7 @@ function PrayForRevival() {
       const res = await fetch("/api/revive", { method: "POST" });
       const j = await res.json();
       if (!res.ok) {
-        setErr(j.error ?? "祈禱失敗,請稍後再試");
+        setErr(j.error ?? t("prayFailGeneric"));
         return;
       }
       window.open(j.url, "_blank", "noopener");
@@ -89,20 +93,17 @@ function PrayForRevival() {
             setPraying(false);
             setPurchaseResult({
               success: true,
-              title: "死 而 復 生",
-              lines: [
-                "六道輪迴盤光華大盛,輪迴道祖以【輪迴天生術】接引你重返陽壽——",
-                "你已死而復生,修為、境界、裝備、庫存原封不動。",
-              ],
+              title: t("revivalDoneTitle"),
+              lines: [t("revivalDoneLine1"), t("revivalDoneLine2")],
             });
           } else if (r.status === "failed") {
             if (pollRef.current) clearInterval(pollRef.current);
-            setErr("付款已收到,但復活未能順利套用,請聯繫客服處理。");
+            setErr(t("revivalFailErr"));
             setPraying(false);
             setPurchaseResult({
               success: false,
-              title: "復 活 未 能 套 用",
-              lines: ["付款已確認收到,但復活未能順利套用,請聯繫客服處理,勿重複付款。"],
+              title: t("revivalFailTitle"),
+              lines: [t("revivalFailLine")],
             });
           }
         } catch {
@@ -110,16 +111,12 @@ function PrayForRevival() {
         }
       }, 3000);
     } catch {
-      setErr("無法連線至伺服器,請稍後再試");
+      setErr(t("netErr"));
     }
   };
 
   if (revivalUsed) {
-    return (
-      <p className="text-xs text-faded mt-4">
-        六道輪迴盤終身僅可一用,你已用盡此劫機緣,唯有轉世重修。
-      </p>
-    );
+    return <p className="text-xs text-faded mt-4">{t("revivalOnceOnly")}</p>;
   }
 
   return (
@@ -130,15 +127,13 @@ function PrayForRevival() {
           onClick={startPray}
           title={`USD ${REVIVAL_PRICE_USD}`}
         >
-          <span className="text-base font-bold">向仙班祈禱 · 六道輪迴盤復活</span>
+          <span className="text-base font-bold">{t("revivalPrayBtn")}</span>
           <span className="text-xs text-fuchsia-300/70 mt-0.5">
-            {REVIVAL_PRICE_USD} 美利堅靈石(終身限用一次)
+            {t("revivalPrayPrice").replace("{n}", String(REVIVAL_PRICE_USD))}
           </span>
         </button>
       ) : (
-        <p className="text-sm text-fuchsia-300 animate-pulse">
-          輪迴道祖正推演天機……付款完成後將自動接引你死而復生,請勿關閉此頁。
-        </p>
+        <p className="text-sm text-fuchsia-300 animate-pulse">{t("revivalPraying")}</p>
       )}
       {err && <p className="text-xs text-vermillion mt-2">{err}</p>}
     </div>
@@ -148,22 +143,27 @@ function PrayForRevival() {
 function DeathScreen() {
   const s = useGame((x) => x.save)!;
   const act = useGame((x) => x.act);
+  const t = useT();
+  const lang = useGame((x) => x.language);
+  const line1 = t("deathLine1")
+    .replace("{age}", String(maxLifeOf(s)))
+    .replace("{realm}", realmDisplayName(REALMS[s.realmIdx], lang));
   return (
     <main className="max-w-2xl mx-auto px-4 py-24 text-center">
       <p className="font-mono text-xs tracking-[0.5em] text-faded mb-4">HERE LIES A CULTIVATOR</p>
-      <h1 className="text-5xl font-black tracking-widest text-vermillion mb-6">壽 元 已 盡</h1>
+      <h1 className="text-5xl font-black tracking-widest text-vermillion mb-6">{t("deathHeadline")}</h1>
       <div className="panel deco-frame text-left mx-auto max-w-md mb-8">
-        <p className="panel-title">墓 誌 銘</p>
+        <p className="panel-title">{t("deathEpitaphTitle")}</p>
         <p className="leading-loose text-cream">
-          {s.name},享年 {maxLifeOf(s)} 年,道隕於【{REALMS[s.realmIdx].name}】。
+          {s.name},{line1}
           <br />
-          修行 {s.day} 年,終究未能問鼎大道。
+          {t("deathLine2").replace("{day}", String(s.day))}
           <br />
-          仙路盡頭誰為峰?一見無始道成空。
+          {t("deathLine3")}
         </p>
       </div>
       <button className="btn text-lg px-10 py-3" onClick={() => act("reset")}>
-        轉 世 重 修
+        {t("navReset")}
       </button>
       <PrayForRevival />
     </main>
@@ -172,6 +172,7 @@ function DeathScreen() {
 
 // 通用彈窗(突破結果 / 戰利品 / 採集所得)
 function ResultModal({ modal, onClose }: { modal: Modal; onClose: () => void }) {
+  const t = useT();
   const ok = modal.success !== false;
   return (
     <div
@@ -195,7 +196,7 @@ function ResultModal({ modal, onClose }: { modal: Modal; onClose: () => void }) 
           ))}
         </div>
         <button className="btn px-8 mb-2" onClick={onClose}>
-          知 曉
+          {t("btnAcknowledge")}
         </button>
       </div>
     </div>
@@ -207,6 +208,7 @@ function CultivationBar() {
   const s = useGame((x) => x.save)!;
   const act = useGame((x) => x.act);
   const busy = useGame((x) => x.busy);
+  const t = useT();
   const { realm, hpMax } = statsOf(s);
   const inCombat = !!s.combat;
   const inDwelling = s.dwellingSlot != null;
@@ -218,64 +220,61 @@ function CultivationBar() {
   const cost = cultCostOf(s);
   const chance = breakChanceOf(s);
   const breakTitle = !expReady
-    ? `需修為 ${expNeed}`
+    ? t("breakNeedExp").replace("{n}", String(expNeed))
     : needsZhenxian && !hasZhenxian
-      ? "渡劫飛昇需先集得【真仙丹】(唯太古龍祖掉落)"
-      : `成功率 ${Math.round(chance * 100)}%`;
+      ? t("breakNeedZhenxian")
+      : t("breakChancePct").replace("{n}", String(Math.round(chance * 100)));
   return (
     <div className={`panel deco-frame ${canBreak ? "border-gold/70" : ""}`}>
       <div className="flex flex-wrap items-center gap-3">
-        <p className="panel-title mb-0 mr-2">修 煉</p>
+        <p className="panel-title mb-0 mr-2">{t("cultivateTitle")}</p>
         <button
           className="btn text-base px-5 py-2"
           disabled={busy || inCombat || inDwelling}
           onClick={() => act("cultivate")}
-          title={inDwelling ? "正於宗門仙境閉關潛修,須先離開仙境方可行動" : undefined}
+          title={inDwelling ? t("inDwellingTip") : undefined}
         >
-          打坐修煉 <span className="ml-1 font-mono text-xs">-{cost} 年壽元</span>
+          {t("btnCultivate")}{" "}
+          <span className="ml-1 font-mono text-xs">
+            -{cost} {t("lifeCostSuffix")}
+          </span>
         </button>
         <button
           className="btn text-base px-5 py-2"
           disabled={busy || inCombat || inDwelling || s.hp >= hpMax}
           onClick={() => act("rest")}
-          title={inDwelling ? "正於宗門仙境閉關潛修,須先離開仙境方可行動" : undefined}
+          title={inDwelling ? t("inDwellingTip") : undefined}
         >
-          調息(回復氣血)
+          {t("btnRest")}
         </button>
         <button
           className="btn text-base px-5 py-2 border-fuchsia-400/50 text-fuchsia-300 hover:bg-fuchsia-400/15 hover:border-fuchsia-400"
           disabled={busy || inCombat || inDwelling || s.stones < 100000000}
           onClick={() => act("wander")}
-          title={
-            inDwelling
-              ? "正於宗門仙境閉關潛修,須先離開仙境方可行動"
-              : "消耗 5000 年壽元 + 100 極品靈石。約 5% 觸發探索秘境(紫色機緣),約 2.5% 直接得天仙丹,30% 得永久屬性,3% 遇金仙大 BOSS,餘則一無所獲。"
-          }
+          title={inDwelling ? t("inDwellingTip") : t("wanderTooltip")}
         >
-          雲遊四海
+          {t("btnWander")}
         </button>
         <button
           className={`btn text-base px-5 py-2 ${canBreak && !inDwelling ? "border-gold text-gold animate-pulse" : ""}`}
           disabled={busy || inCombat || inDwelling || !canBreak}
           onClick={() => act("breakthrough")}
-          title={inDwelling ? "正於宗門仙境閉關潛修,須先離開仙境方可行動" : breakTitle}
+          title={inDwelling ? t("inDwellingTip") : breakTitle}
         >
-          嘗試突破{canBreak && !inDwelling ? ` (${Math.round(chance * 100)}%)` : ""}
+          {t("btnBreakthrough")}
+          {canBreak && !inDwelling ? ` (${Math.round(chance * 100)}%)` : ""}
         </button>
         <span className="text-xs text-faded ml-auto font-mono">
-          修為 {s.exp}/{expNeed} · 突破成功率 {Math.round(chance * 100)}% · 失敗修為歸零、折損最大壽元 15%
+          {t("cultivationSummaryLine")
+            .replace("{exp}", String(s.exp))
+            .replace("{need}", String(expNeed))
+            .replace("{chance}", String(Math.round(chance * 100)))}
         </span>
       </div>
       {needsZhenxian && !hasZhenxian && (
-        <p className="text-xs text-fuchsia-300 mt-2">
-          渡劫飛昇需集得【真仙丹】——唯靈界地域王「太古龍祖」掉落,無論突破成敗皆會耗盡藥力。
-        </p>
+        <p className="text-xs text-fuchsia-300 mt-2">{t("zhenxianNote")}</p>
       )}
-      {inDwelling && (
-        <p className="text-xs text-fuchsia-300 mt-2">
-          你正停泊於宗門仙境中閉關潛修,無法採集靈材、獵殺妖獸、雲遊四海、打坐修煉、調息或嘗試突破——須先於宗門頁面離開仙境方可行動。
-        </p>
-      )}
+      {inDwelling && <p className="text-xs text-fuchsia-300 mt-2">{t("dwellingActiveNote")}</p>}
     </div>
   );
 }
@@ -290,6 +289,9 @@ export default function Game() {
   const closeBreak = useGame((x) => x.closeBreak);
   const closePurchaseResult = useGame((x) => x.closePurchaseResult);
   const mainView = useGame((x) => x.mainView);
+  const language = useGame((x) => x.language);
+  const setLanguage = useGame((x) => x.setLanguage);
+  const t = useT();
   const [auth, setAuth] = useState<"checking" | "anon" | "authed">("checking");
   const [userName, setUserName] = useState("");
   const [showChangelog, setShowChangelog] = useState(false);
@@ -308,13 +310,13 @@ export default function Game() {
       useGame.getState().setRevivalUsed(!!j.revivalUsed);
       // 離線期間流逝的壽元(lifeGained)已由伺服器寫入 save.log,無需前端重複提示
       if (j.save && j.credited) {
-        useGame.getState().pushLog("交易行貨款已入帳。");
+        useGame.getState().pushLog(t("tradeCredited"));
       }
       setAuth("authed");
     } catch {
       setAuth("anon");
     }
-  }, [setSave]);
+  }, [setSave, t]);
 
   useEffect(() => {
     loadSave();
@@ -323,7 +325,7 @@ export default function Game() {
   if (auth === "checking") {
     return (
       <main className="flex items-center justify-center min-h-screen">
-        <p className="font-mono text-faded tracking-[0.4em] animate-pulse">道 藏 開 啟 中 …</p>
+        <p className="font-mono text-faded tracking-[0.4em] animate-pulse">{t("loadingScreen")}</p>
       </main>
     );
   }
@@ -350,24 +352,31 @@ export default function Game() {
           <h1
             className={`text-2xl font-black tracking-[0.35em] ${isXian ? "text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 via-amber-200 to-cyan-200" : ""}`}
           >
-            凡人修仙傳
+            {t("appTitle")}
           </h1>
           <p className="font-mono text-[10px] tracking-[0.4em] text-faded">
-            {isXian ? "ASCENDED · 得 道 成 仙" : "A MORTAL\u2019S JOURNEY TO IMMORTALITY"}
+            {isXian ? t("appSubtitleAscended") : t("appSubtitle")}
           </p>
         </div>
         <div className="flex flex-wrap gap-4 items-baseline">
           <button
+            className="text-xs text-faded/60 hover:text-gold transition-colors border border-faded/30 rounded-sm px-1.5"
+            onClick={() => setLanguage(language === "zh" ? "en" : "zh")}
+            title={t("langToggleTooltip")}
+          >
+            {t("langToggle")}
+          </button>
+          <button
             className="text-xs text-faded/60 hover:text-gold transition-colors"
             onClick={() => setShowGuide(true)}
           >
-            修仙入門錄
+            {t("navGuide")}
           </button>
           <button
             className="text-xs text-faded/60 hover:text-gold transition-colors"
             onClick={() => setShowChangelog(true)}
           >
-            更新公告
+            {t("navChangelog")}
           </button>
 
           <button
@@ -377,7 +386,7 @@ export default function Game() {
               location.reload();
             }}
           >
-            登出
+            {t("navLogout")}
           </button>
         </div>
       </header>

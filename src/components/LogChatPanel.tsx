@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useGame } from "@/game/store";
+import { useT } from "@/i18n/useT";
 
 interface ChatMessage {
   id: number;
@@ -20,6 +21,7 @@ export default function LogChatPanel() {
   const [tab, setTab] = useState<"log" | "chat">("log");
   const log = useGame((x) => x.save?.log ?? []);
   const myName = useGame((x) => x.save?.name ?? "");
+  const tt = useT();
 
   const logBoxRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -74,13 +76,13 @@ export default function LogChatPanel() {
       });
       const j = await res.json();
       if (!res.ok) {
-        setChatErr(j.error ?? "發送失敗");
+        setChatErr(j.error ?? tt("sendFailGeneric"));
       } else {
         setText("");
         await poll(false);
       }
     } catch {
-      setChatErr("發送失敗,請稍後再試");
+      setChatErr(tt("sendFailRetry"));
     } finally {
       setSending(false);
     }
@@ -91,8 +93,8 @@ export default function LogChatPanel() {
       <div className="flex gap-1.5 mb-2 shrink-0">
         {(
           [
-            ["log", "見 聞 錄"],
-            ["chat", "對 話 集"],
+            ["log", tt("logTitle")],
+            ["chat", tt("chatTitle")],
           ] as [typeof tab, string][]
         ).map(([t, label]) => (
           <button
@@ -111,7 +113,7 @@ export default function LogChatPanel() {
 
       {tab === "log" && (
         <div ref={logBoxRef} className="flex-1 overflow-y-auto space-y-1.5 pr-1 text-sm leading-relaxed">
-          {log.length === 0 && <p className="text-faded/50">仙路漫漫,一切由此開始……</p>}
+          {log.length === 0 && <p className="text-faded/50">{tt("logEmptyMsg")}</p>}
           {log.map((l, i) => (
             <p key={i} className="animate-floatUp">
               <span className="text-faded/50 font-mono text-xs mr-1">▸</span>
@@ -124,7 +126,7 @@ export default function LogChatPanel() {
       {tab === "chat" && (
         <div className="flex-1 flex flex-col min-h-0">
           <div ref={chatBoxRef} className="flex-1 overflow-y-auto space-y-1.5 pr-1 text-sm leading-relaxed">
-            {messages.length === 0 && <p className="text-faded/50">尚無人開口,搶頭香吧。</p>}
+            {messages.length === 0 && <p className="text-faded/50">{tt("chatEmptyMsg")}</p>}
             {messages.map((m) => (
               <p key={m.id}>
                 <span className="text-faded/50 font-mono text-xs mr-1">{fmtTime(m.created_at)}</span>
@@ -141,7 +143,7 @@ export default function LogChatPanel() {
               type="text"
               value={text}
               maxLength={200}
-              placeholder="與同道說些什麼……"
+              placeholder={tt("chatPlaceholder")}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") send();
@@ -149,7 +151,7 @@ export default function LogChatPanel() {
               className="flex-1 min-w-0 bg-smoke border border-faded/30 rounded-sm px-2 py-1.5 text-sm text-parchment"
             />
             <button className="btn shrink-0" disabled={sending || !text.trim()} onClick={send}>
-              發送
+              {tt("btnSend")}
             </button>
           </div>
         </div>

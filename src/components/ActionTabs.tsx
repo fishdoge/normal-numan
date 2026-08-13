@@ -16,23 +16,33 @@ import { REALMS } from "@/game/data/realms";
 import { SECTS } from "@/game/data/sects";
 import { techById } from "@/game/data/techniques";
 import { BLACK_MARKET_CATALOG } from "@/game/data/blackMarket";
-import { ELEMENT_COLOR, ItemKind, KIND_LABEL, formatStones } from "@/game/types";
+import { ELEMENT_COLOR, ItemKind, formatStones } from "@/game/types";
+import { useT } from "@/i18n/useT";
+import type { DictKey } from "@/i18n/dict";
+import { itemDisplayName, itemDisplayDesc } from "@/i18n/itemText";
+import { monsterDisplayName, monsterDisplayDesc } from "@/i18n/monsterText";
+import { techDisplayName, techDisplayDesc } from "@/i18n/techText";
+import { regionDisplayName, regionDisplayDesc, locationDisplayName, locationDisplayDesc, recipeDisplayDesc } from "@/i18n/worldText";
+import { realmDisplayName } from "@/i18n/realmText";
+import { sectDisplayName } from "@/i18n/sectText";
+import { kindLabel, elementLabel } from "@/i18n/labelText";
 import StoneAmount from "./StoneAmount";
 
 export default function ActionTabs() {
   // 分頁狀態提到 store,讓道籍面板的「宗門」按鈕也能切換過來
   const tab = useGame((x) => x.activeTab);
   const setTab = useGame((x) => x.setActiveTab);
+  const tt = useT(); // 命名為 tt,避免與下方 tabs.map(([t, label]) => ...) 的頁籤代號變數 t 衝突
   const tabs: [Tab, string][] = [
-    ["explore", "遊歷探索"],
-    ["bag", "儲物袋"],
-    ["tech", "仙法"],
-    ["craft", "煉器"],
-    ["market", "坊市"],
-    ["trade", "交易行"],
-    ["dex", "妖獸圖鑑"],
-    ["wanling", "混沌萬靈榜"],
-    ["rank", "排行榜"],
+    ["explore", tt("tabExplore")],
+    ["bag", tt("tabBag")],
+    ["tech", tt("tabTech")],
+    ["craft", tt("tabCraft")],
+    ["market", tt("tabMarket")],
+    ["trade", tt("tabTrade")],
+    ["dex", tt("tabDex")],
+    ["wanling", tt("tabWanling")],
+    ["rank", tt("tabRank")],
   ];
   return (
     <div className="panel">
@@ -68,6 +78,8 @@ function ExploreTab() {
   const s = useGame((x) => x.save)!;
   const act = useGame((x) => x.act);
   const busy = useGame((x) => x.busy);
+  const lang = useGame((x) => x.language);
+  const t = useT();
   const { realm } = statsOf(s);
   const inCombat = !!s.combat;
   const inDwelling = s.dwellingSlot != null;
@@ -77,7 +89,7 @@ function ExploreTab() {
 
   return (
     <div className="space-y-3">
-      <div className="divider">大 陸 遊 歷</div>
+      <div className="divider">{t("exploreTitle")}</div>
       <div className="flex flex-wrap gap-1.5">
         {REGIONS.filter(
           (r) =>
@@ -91,7 +103,7 @@ function ExploreTab() {
             <button
               key={r.id}
               onClick={() => !rLocked && setRegionId(r.id)}
-              title={rLocked ? `需 ${r.reqStage} 階境界` : r.desc}
+              title={rLocked ? t("exploreStageLocked").replace("{n}", String(r.reqStage)) : regionDisplayDesc(r, lang)}
               className={`px-2.5 py-1 text-xs rounded-sm border transition-colors ${
                 regionId === r.id
                   ? isPurple
@@ -104,29 +116,30 @@ function ExploreTab() {
                       : "border-faded/30 text-cream hover:border-gold/60"
               }`}
             >
-              {r.name}
+              {regionDisplayName(r, lang)}
               {rLocked && " 🔒"}
             </button>
           );
         })}
       </div>
-      <p className="text-xs text-faded">{region.desc}</p>
+      <p className="text-xs text-faded">{regionDisplayDesc(region, lang)}</p>
       {regionId === "jinyuan" && s.jinyuanUnlocked && realm.stage >= 10 && (
         <div className="border border-amber-300/50 bg-amber-300/5 rounded-sm p-3">
           <div className="flex items-baseline justify-between">
-            <span className="font-bold text-amber-300">浮 屠 塔</span>
-            <span className="text-xs font-mono text-amber-300/80">已通關第 {s.futuFloor} 層</span>
+            <span className="font-bold text-amber-300">{t("futuTitle")}</span>
+            <span className="text-xs font-mono text-amber-300/80">
+              {t("futuCleared").replace("{n}", String(s.futuFloor))}
+            </span>
           </div>
           <p className="text-sm text-faded mt-1">
-            塔中是一尊幻象太歲天尊,每打過一層便更強(氣血 ×1.5、攻擊 ×1.2),永無止境。挑戰下一層(第{" "}
-            {s.futuFloor + 1} 層)——每 5 層得天仙丹、每 10 層得金魂丹,高層更藏頂尖仙法。
+            {t("futuDesc").replace(/\{n\}/g, String(s.futuFloor + 1))}
           </p>
           <button
             className="btn mt-2 border-amber-300/60 text-amber-300 hover:bg-amber-300/15"
             disabled={inCombat || busy}
             onClick={() => act("challengeFutu")}
           >
-            登 塔 · 挑戰第 {s.futuFloor + 1} 層
+            {t("futuBtn").replace("{n}", String(s.futuFloor + 1))}
           </button>
         </div>
       )}
@@ -138,26 +151,26 @@ function ExploreTab() {
             className={`border border-faded/20 rounded-sm p-3 ${locked ? "opacity-45" : ""}`}
           >
             <div className="flex items-baseline justify-between">
-              <span className="font-bold">{loc.name}</span>
-              {locked && <span className="chip">境界不足</span>}
+              <span className="font-bold">{locationDisplayName(loc, lang)}</span>
+              {locked && <span className="chip">{t("stageInsufficient")}</span>}
             </div>
-            <p className="text-sm text-faded mt-1">{loc.desc}</p>
+            <p className="text-sm text-faded mt-1">{locationDisplayDesc(loc, lang)}</p>
             <div className="mt-2 flex gap-2">
               <button
                 className="btn"
                 disabled={locked || inCombat || busy || inDwelling}
                 onClick={() => act("gather", { locationId: loc.id })}
-                title={inDwelling ? "正於宗門仙境閉關潛修,須先離開仙境方可行動" : undefined}
+                title={inDwelling ? t("inDwellingTip") : undefined}
               >
-                採集靈材
+                {t("btnGather")}
               </button>
               <button
                 className="btn btn-danger"
                 disabled={locked || inCombat || busy || inDwelling}
                 onClick={() => act("hunt", { locationId: loc.id })}
-                title={inDwelling ? "正於宗門仙境閉關潛修,須先離開仙境方可行動" : undefined}
+                title={inDwelling ? t("inDwellingTip") : undefined}
               >
-                獵殺妖獸
+                {t("btnHunt")}
               </button>
             </div>
           </div>
@@ -167,14 +180,15 @@ function ExploreTab() {
   );
 }
 
-const BAG_SECTIONS: [string, ItemKind[]][] = [
-  ["材 料", ["material"]],
-  ["仙 草 · 丹 藥", ["herb", "pill"]],
-  ["法 器 · 法 衣 · 護 身 符 · 符 籙", ["artifact", "robe", "treasure", "amulet", "talisman"]],
-  ["靈 寵", ["pet"]],
-  ["命 器", ["mingqi"]],
-  ["功 法 秘 笈 · 圖 譜", ["manual", "recipe"]],
-  ["奇 珍 · 仙 物", ["special"]],
+// 分類鍵改用語言無關的 DictKey 當識別碼(而非中文標題本身),避免篩選狀態隨語言切換而失效
+const BAG_SECTIONS: [DictKey, ItemKind[]][] = [
+  ["bagSecMaterial", ["material"]],
+  ["bagSecHerbPill", ["herb", "pill"]],
+  ["bagSecGear", ["artifact", "robe", "treasure", "amulet", "talisman"]],
+  ["bagSecPet", ["pet"]],
+  ["bagSecMing", ["mingqi"]],
+  ["bagSecManual", ["manual", "recipe"]],
+  ["bagSecSpecial", ["special"]],
 ];
 
 const EQUIPPABLE: ItemKind[] = [
@@ -191,9 +205,11 @@ function BagTab() {
   const s = useGame((x) => x.save)!;
   const act = useGame((x) => x.act);
   const busy = useGame((x) => x.busy);
+  const lang = useGame((x) => x.language);
+  const t = useT();
   const entries = Object.entries(s.inventory);
-  const [filter, setFilter] = useState("全部");
-  if (entries.length === 0) return <p className="text-faded text-sm">儲物袋空空如也。</p>;
+  const [filter, setFilter] = useState<DictKey | "filterAll">("filterAll");
+  if (entries.length === 0) return <p className="text-faded text-sm">{t("bagEmpty")}</p>;
 
   const equippedIds = [
     s.equippedWeapon,
@@ -215,31 +231,31 @@ function BagTab() {
       >
         <div className="min-w-0">
           <span className="font-bold">
-            <span className={xuantian ? "text-xuantian" : ""}>{item.name}</span>{" "}
+            <span className={xuantian ? "text-xuantian" : ""}>{itemDisplayName(item, lang)}</span>{" "}
             <span className="text-faded font-normal">×{n}</span>
-            <span className="chip ml-2 text-faded/80 border-faded/30">{KIND_LABEL[item.kind]}</span>
+            <span className="chip ml-2 text-faded/80 border-faded/30">{kindLabel(item.kind, lang)}</span>
             {item.element && (
               <span className={`chip ml-2 ${ELEMENT_COLOR[item.element]}`}>{item.element}</span>
             )}
-            {xuantian && <span className="chip ml-2 text-xuantian border-fuchsia-400/50">玄天仙器</span>}
-            {equipped && <span className="chip ml-2 text-gold border-gold/50">已裝備</span>}
+            {xuantian && <span className="chip ml-2 text-xuantian border-fuchsia-400/50">{t("xuantianTag")}</span>}
+            {equipped && <span className="chip ml-2 text-gold border-gold/50">{t("equippedTag")}</span>}
             {item.kind === "manual" && item.teaches && (
               <span className="chip ml-2 text-azure border-azure/50">
-                修習 {learnYears(item.teaches)} 年
+                {t("learnYearsTag").replace("{n}", String(learnYears(item.teaches)))}
               </span>
             )}
           </span>
-          <p className="text-xs text-faded truncate">{item.desc}</p>
+          <p className="text-xs text-faded truncate">{itemDisplayDesc(item, lang)}</p>
         </div>
         <div className="flex gap-1.5 shrink-0 ml-3">
           {(item.kind === "pill" || item.kind === "herb") && (
             <button className="btn" disabled={busy} onClick={() => act("useItem", { itemId: id })}>
-              服用
+              {t("btnUse")}
             </button>
           )}
           {item.kind === "special" && item.xianli && (
             <button className="btn" disabled={busy} onClick={() => act("useItem", { itemId: id })}>
-              煉化
+              {t("btnRefine")}
             </button>
           )}
           {item.kind === "special" && id === "jinhundan" && (
@@ -248,7 +264,7 @@ function BagTab() {
               disabled={busy}
               onClick={() => act("useItem", { itemId: id })}
             >
-              服用晉金仙
+              {t("btnUseAscendGold")}
             </button>
           )}
           {item.kind === "special" && id === "xiantian_zaohuadan" && (
@@ -257,19 +273,19 @@ function BagTab() {
               disabled={busy}
               onClick={() => act("useItem", { itemId: id })}
             >
-              服用直升煉虛
+              {t("btnUseAscendVoid")}
             </button>
           )}
           {item.kind === "special" && id === "zenglingzhu" && (
             <span className="chip text-fuchsia-400 border-fuchsia-400/50 self-center">
-              於仙法欄使用
+              {t("useInTechTab")}
             </span>
           )}
           {item.kind === "special" &&
             !item.xianli &&
             !["jinhundan", "xiantian_zaohuadan", "zenglingzhu"].includes(id) && (
               <span className="chip text-fuchsia-400 border-fuchsia-400/50 self-center">
-                集滿/達成條件後自動生效
+                {t("autoOnCondition")}
               </span>
             )}
           {item.kind === "recipe" && (
@@ -278,22 +294,22 @@ function BagTab() {
               disabled={busy}
               onClick={() => act("useItem", { itemId: id })}
             >
-              參悟圖譜
+              {t("btnStudyBlueprint")}
             </button>
           )}
           {item.kind === "manual" && (
             <button
               className="btn"
               disabled={busy || !!s.learning}
-              title={s.learning ? "已在修習其他仙法" : ""}
+              title={s.learning ? t("learningOther") : ""}
               onClick={() => act("useItem", { itemId: id })}
             >
-              {s.learning ? "修習中…" : "開始修習"}
+              {s.learning ? t("btnStudying") : t("btnStartStudy")}
             </button>
           )}
           {EQUIPPABLE.includes(item.kind) && !equipped && (
             <button className="btn" disabled={busy} onClick={() => act("equip", { itemId: id })}>
-              {item.kind === "pet" ? "收為靈寵" : "裝備"}
+              {item.kind === "pet" ? t("btnAdoptPet") : t("btnEquip")}
             </button>
           )}
           {item.kind !== "special" && item.kind !== "recipe" && (
@@ -302,7 +318,7 @@ function BagTab() {
               disabled={busy}
               onClick={() => act("sell", { itemId: id })}
             >
-              售 {Math.max(1, Math.floor(item.price * 0.6))}
+              {t("btnSell").replace("{n}", String(Math.max(1, Math.floor(item.price * 0.6))))}
             </button>
           )}
         </div>
@@ -315,41 +331,41 @@ function BagTab() {
     entries.some(([id]) => kinds.includes(itemById(id).kind)),
   );
   const sectionsToShow =
-    filter === "全部" ? availableSections : availableSections.filter(([title]) => title === filter);
+    filter === "filterAll" ? availableSections : availableSections.filter(([key]) => key === filter);
 
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap gap-1.5 pb-1">
         <button
-          onClick={() => setFilter("全部")}
+          onClick={() => setFilter("filterAll")}
           className={`px-2.5 py-1 text-xs rounded-sm border transition-colors ${
-            filter === "全部"
+            filter === "filterAll"
               ? "border-gold bg-gold/15 text-gold"
               : "border-faded/30 text-faded hover:text-cream"
           }`}
         >
-          全部
+          {t("filterAll")}
         </button>
-        {availableSections.map(([title]) => (
+        {availableSections.map(([key]) => (
           <button
-            key={title}
-            onClick={() => setFilter(title)}
+            key={key}
+            onClick={() => setFilter(key)}
             className={`px-2.5 py-1 text-xs rounded-sm border transition-colors ${
-              filter === title
+              filter === key
                 ? "border-gold bg-gold/15 text-gold"
                 : "border-faded/30 text-faded hover:text-cream"
             }`}
           >
-            {title.replace(/\s/g, "")}
+            {t(key).replace(/\s/g, "")}
           </button>
         ))}
       </div>
-      {sectionsToShow.map(([title, kinds]) => {
+      {sectionsToShow.map(([key, kinds]) => {
         const group = entries.filter(([id]) => kinds.includes(itemById(id).kind));
         if (!group.length) return null;
         return (
-          <div key={title}>
-            <div className="divider">{title}</div>
+          <div key={key}>
+            <div className="divider">{t(key)}</div>
             <div className="space-y-2">{group.map(row)}</div>
           </div>
         );
@@ -362,57 +378,63 @@ function TechTab() {
   const s = useGame((x) => x.save)!;
   const act = useGame((x) => x.act);
   const busy = useGame((x) => x.busy);
+  const lang = useGame((x) => x.language);
+  const t = useT();
   const zenglingzhu = s.inventory["zenglingzhu"] ?? 0;
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <p className="text-xs text-faded">法術最高 7 級,以增靈珠強化,每級威力大增。</p>
-        <span className="chip text-fuchsia-400 border-fuchsia-400/50">增靈珠 ×{zenglingzhu}</span>
+        <p className="text-xs text-faded">{t("techCapNote")}</p>
+        <span className="chip text-fuchsia-400 border-fuchsia-400/50">
+          {itemDisplayName(itemById("zenglingzhu"), lang)} ×{zenglingzhu}
+        </span>
       </div>
       {s.learning && (
         <div className="border border-azure/40 bg-azure/5 rounded-sm p-3">
           <div className="flex items-baseline justify-between">
-            <span className="font-bold text-azure">修習中:{techById(s.learning.techId).name}</span>
+            <span className="font-bold text-azure">
+              {t("techLearningLabel").replace("{name}", techDisplayName(techById(s.learning.techId), lang))}
+            </span>
             <span className="text-xs font-mono text-faded">
-              尚需 {s.learning.remain} 年(打坐推進)
+              {t("techLearningRemain").replace("{n}", String(s.learning.remain))}
             </span>
           </div>
         </div>
       )}
-      {s.learned.length === 0 && <p className="text-faded text-sm">尚未習得任何仙法。</p>}
+      {s.learned.length === 0 && <p className="text-faded text-sm">{t("techNoneLearned")}</p>}
       {s.learned.map((id) => {
-        const t = techById(id);
+        const tech = techById(id);
         const level = techLevelOf(s, id);
         const maxed = level >= MAX_TECH_LEVEL;
         return (
           <div key={id} className="border border-faded/20 rounded-sm p-3">
             <div className="flex items-baseline justify-between">
               <span className="font-bold">
-                <span className={`mr-2 ${ELEMENT_COLOR[t.element]}`}>【{t.element}】</span>
-                {t.name}
+                <span className={`mr-2 ${ELEMENT_COLOR[tech.element]}`}>【{elementLabel(tech.element, lang)}】</span>
+                {techDisplayName(tech, lang)}
                 <span className="chip ml-2 text-fuchsia-400 border-fuchsia-400/50">
-                  {level} / {MAX_TECH_LEVEL} 級
+                  {t("techLevelTag").replace("{lv}", String(level)).replace("{max}", String(MAX_TECH_LEVEL))}
                 </span>
               </span>
               <span className="text-xs text-faded font-mono">
-                威力 ×{(t.power * techPowerMult(level)).toFixed(1)} · 法力 {t.mpCost}
+                {t("techPowerLine")
+                  .replace("{power}", (tech.power * techPowerMult(level)).toFixed(1))
+                  .replace("{mp}", String(tech.mpCost))}
               </span>
             </div>
-            <p className="text-sm text-faded mt-1">{t.desc}</p>
+            <p className="text-sm text-faded mt-1">{techDisplayDesc(tech, lang)}</p>
             <button
               className="btn mt-2"
               disabled={busy || maxed || zenglingzhu <= 0}
-              title={maxed ? "已達最高等級" : zenglingzhu <= 0 ? "需要增靈珠" : ""}
+              title={maxed ? t("techMaxed") : zenglingzhu <= 0 ? t("techNeedBead") : ""}
               onClick={() => act("upgradeTech", { techId: id })}
             >
-              {maxed ? "已達七級大圓滿" : `以增靈珠強化 → ${level + 1} 級`}
+              {maxed ? t("techMaxedBtn") : t("techUpgradeBtn").replace("{lv}", String(level + 1))}
             </button>
           </div>
         );
       })}
-      <p className="text-xs text-faded/60 mt-2">
-        秘笈需「開始修習」後,以打坐推進年月,期滿方成。一次僅能修習一部。增靈珠由地域王掉落。
-      </p>
+      <p className="text-xs text-faded/60 mt-2">{t("techFooterNote")}</p>
     </div>
   );
 }
@@ -421,6 +443,8 @@ function CraftTab() {
   const s = useGame((x) => x.save)!;
   const act = useGame((x) => x.act);
   const busy = useGame((x) => x.busy);
+  const lang = useGame((x) => x.language);
+  const t = useT();
   const { realm } = statsOf(s);
   const SOUL_IDS = [
     "taiyi_jinghun_tianhu",
@@ -434,26 +458,22 @@ function CraftTab() {
 
   return (
     <div className="space-y-2">
-      <p className="text-xs text-faded">
-        煉器堂——藍框配方需先由妖獸掉落圖譜參悟後方能煉製。裝備分類已於名稱旁標示,煉製屬性隨機浮動 ±30%。
-      </p>
+      <p className="text-xs text-faded">{t("craftHeaderNote")}</p>
       {realm.stage >= 12 && (
         <div className="border border-fuchsia-400/50 bg-fuchsia-400/5 rounded-sm p-3">
-          <span className="font-bold text-xuantian">玄天仙器煉化</span>
-          <p className="text-sm text-faded mt-1">
-            以玄天殘片(蠻荒異界怪物掉落,需 10 枚)+ 太乙精魂(天狐/真龍/霸下/黑眼貔貅任一 1
-            枚)同淬爐火,隨機煉成【玄天斬靈劍】【玄天葫蘆】【破天槌】【天狐化血刃】【玄天斬魔劍】【幻天鏡】其中一種,屬性隨機浮動
-            100%~300%,唯太乙境可用。
-          </p>
+          <span className="font-bold text-xuantian">{t("xuantianCraftTitle")}</span>
+          <p className="text-sm text-faded mt-1">{t("xuantianCraftDesc")}</p>
           <p className="text-xs font-mono mt-1 text-faded">
-            玄天殘片 {fragmentCount}/10 · 破曉精華 {fragmentMintCount}/20 · 太乙精魂 {soulCount}/1
+            {itemDisplayName(itemById("xuantian_canpian"), lang)} {fragmentCount}/10 ·{" "}
+            {itemDisplayName(itemById("poshou_jinhow"), lang)} {fragmentMintCount}/20 ·{" "}
+            {t("taiyiSoulSuffix")} {soulCount}/1
           </p>
           <button
             className="btn mt-2 border-fuchsia-400/60 text-fuchsia-300 hover:bg-fuchsia-400/15"
             disabled={busy || fragmentCount < 10 || soulCount < 1}
             onClick={() => act("craftXuantian")}
           >
-            煉 化 玄 天 仙 器
+            {t("xuantianCraftBtn")}
           </button>
         </div>
       )}
@@ -470,24 +490,24 @@ function CraftTab() {
           >
             <div className="flex items-baseline justify-between">
               <span className="font-bold">
-                {rec.name}
+                {itemDisplayName(result, lang)}
                 <span className="chip ml-2 text-faded/80 border-faded/30">
-                  {KIND_LABEL[result.kind]}
+                  {kindLabel(result.kind, lang)}
                 </span>
                 {result.element && (
                   <span className={`chip ml-2 ${ELEMENT_COLOR[result.element]}`}>
-                    {result.element}
+                    {elementLabel(result.element, lang)}
                   </span>
                 )}
                 {rec.dropOnly && (
-                  <span className="chip ml-2 text-azure border-azure/60">圖譜配方</span>
+                  <span className="chip ml-2 text-azure border-azure/60">{t("blueprintTag")}</span>
                 )}
               </span>
               <span className={`text-xs font-mono ${canStones ? "text-gold" : "text-vermillion"}`}>
                 {formatStones(rec.stones)}
               </span>
             </div>
-            <p className="text-xs text-faded mt-1">{rec.desc}</p>
+            <p className="text-xs text-faded mt-1">{recipeDisplayDesc(rec, lang)}</p>
             <p className="text-xs mt-1.5">
               {rec.materials.map((m) => {
                 const have = s.inventory[m.id] ?? 0;
@@ -496,25 +516,25 @@ function CraftTab() {
                     key={m.id}
                     className={`mr-3 ${have >= m.n ? "text-jade" : "text-vermillion"}`}
                   >
-                    {itemById(m.id).name} {have}/{m.n}
+                    {itemDisplayName(itemById(m.id), lang)} {have}/{m.n}
                   </span>
                 );
               })}
               <span className="text-faded">
-                → {result.atkBonus ? `攻+${result.atkBonus} ` : ""}
-                {result.defBonus ? `防+${result.defBonus} ` : ""}
-                {result.speedBonus ? `速+${result.speedBonus}` : ""}
+                → {result.atkBonus ? (lang === "en" ? `ATK+${result.atkBonus} ` : `攻+${result.atkBonus} `) : ""}
+                {result.defBonus ? (lang === "en" ? `DEF+${result.defBonus} ` : `防+${result.defBonus} `) : ""}
+                {result.speedBonus ? (lang === "en" ? `SPD+${result.speedBonus}` : `速+${result.speedBonus}`) : ""}
               </span>
             </p>
             <button
               className="btn mt-2"
               disabled={busy || !canStones || !canMats || locked || stageLocked}
               title={
-                locked ? "需先取得對應圖譜研讀" : stageLocked ? `需 ${rec.reqStage} 階境界` : ""
+                locked ? t("blueprintLocked") : stageLocked ? t("exploreStageLocked").replace("{n}", String(rec.reqStage)) : ""
               }
               onClick={() => act("craft", { recipeId: rec.id })}
             >
-              {locked ? "🔒 未參透圖譜" : stageLocked ? "境界不足" : "煉製"}
+              {locked ? t("craftBtnLocked") : stageLocked ? t("stageInsufficient") : t("craftBtn")}
             </button>
           </div>
         );
@@ -527,6 +547,8 @@ function CraftTab() {
 function BlackMarketSection() {
   const setSave = useGame((x) => x.setSave);
   const setPurchaseResult = useGame((x) => x.setPurchaseResult);
+  const lang = useGame((x) => x.language);
+  const t = useT();
   const [buyingId, setBuyingId] = useState<string | null>(null);
   const [err, setErr] = useState("");
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -545,7 +567,7 @@ function BlackMarketSection() {
       });
       const j = await res.json();
       if (!res.ok) {
-        setErr(j.error ?? "購買失敗,請稍後再試");
+        setErr(j.error ?? t("buyFailGeneric"));
         return;
       }
       window.open(j.url, "_blank", "noopener");
@@ -560,17 +582,17 @@ function BlackMarketSection() {
             setBuyingId(null);
             setPurchaseResult({
               success: true,
-              title: "購 買 成 功",
-              lines: [`黑市老板將【${r.itemName ?? itemId}】遞來,已收入儲物袋。`],
+              title: t("purchaseSuccessTitle"),
+              lines: [t("blackMarketDelivered").replace("{item}", itemDisplayName(itemById(itemId), lang))],
             });
           } else if (r.status === "failed") {
             if (pollRef.current) clearInterval(pollRef.current);
-            setErr("付款已收到,但道具未能順利發放,請聯繫客服處理。");
+            setErr(t("purchaseFailErr"));
             setBuyingId(null);
             setPurchaseResult({
               success: false,
-              title: "購 買 未 能 發 放",
-              lines: ["付款已確認收到,但道具未能順利發放,請聯繫客服處理,勿重複付款。"],
+              title: t("purchaseFailTitle"),
+              lines: [t("purchaseFailLine")],
             });
           }
         } catch {
@@ -578,15 +600,13 @@ function BlackMarketSection() {
         }
       }, 3000);
     } catch {
-      setErr("無法連線至伺服器,請稍後再試");
+      setErr(t("netErr"));
     }
   };
 
   return (
     <div className="space-y-2">
-      <p className="text-xs text-faded">
-        黑市不收靈石,只認真金白銀(Polar 金流,美金計價)。消耗型命器裝備後,下一次嘗試突破無論成敗皆會自動消耗。
-      </p>
+      <p className="text-xs text-faded">{t("blackMarketNote")}</p>
       {BLACK_MARKET_CATALOG.map(({ itemId, priceUsd }) => {
         const item = itemById(itemId);
         if (!item) return null;
@@ -597,17 +617,17 @@ function BlackMarketSection() {
           >
             <div className="min-w-0">
               <span className="font-bold">
-                {item.name}
+                {itemDisplayName(item, lang)}
                 <span className="chip ml-2 text-faded/80 border-faded/30">
-                  {KIND_LABEL[item.kind]}
+                  {kindLabel(item.kind, lang)}
                 </span>
                 {item.breakBonus && (
                   <span className="chip ml-2 text-fuchsia-300 border-fuchsia-400/50">
-                    突破 +{Math.round(item.breakBonus * 100)}%
+                    {t("breakBonusTag").replace("{n}", String(Math.round(item.breakBonus * 100)))}
                   </span>
                 )}
               </span>
-              <p className="text-xs text-faded truncate">{item.desc}</p>
+              <p className="text-xs text-faded truncate">{itemDisplayDesc(item, lang)}</p>
             </div>
             <button
               className="btn shrink-0 ml-3 border-fuchsia-400/60 text-fuchsia-300 hover:bg-fuchsia-400/15"
@@ -615,7 +635,7 @@ function BlackMarketSection() {
               onClick={() => buy(itemId)}
               title={`USD ${priceUsd}`}
             >
-              {buyingId === itemId ? "付款中…" : `${priceUsd} 美利堅靈石`}
+              {buyingId === itemId ? t("payingBtn") : `${priceUsd} ${t("usSpiritStones")}`}
             </button>
           </div>
         );
@@ -629,6 +649,8 @@ function MarketTab() {
   const s = useGame((x) => x.save)!;
   const act = useGame((x) => x.act);
   const busy = useGame((x) => x.busy);
+  const lang = useGame((x) => x.language);
+  const t = useT();
   const [marketView, setMarketView] = useState<"shop" | "blackmarket">("shop");
   const wares = ITEMS.filter(
     (i) =>
@@ -644,8 +666,8 @@ function MarketTab() {
       <div className="flex gap-1.5">
         {(
           [
-            ["shop", "商鋪"],
-            ["blackmarket", "黑市"],
+            ["shop", t("marketViewShop")],
+            ["blackmarket", t("marketViewBlackmarket")],
           ] as [typeof marketView, string][]
         ).map(([v, label]) => (
           <button
@@ -665,7 +687,7 @@ function MarketTab() {
       {marketView === "shop" && (
         <div className="space-y-2">
           <p className="text-xs text-faded">
-            坊市為宗門官營,明碼標價。大乘以上的仙家至寶坊市不售,唯有斬妖奪寶方能得之。現有靈石:
+            {t("shopNote")}
             <span className="text-gold">
               {" "}
               <StoneAmount n={s.stones} />
@@ -679,17 +701,17 @@ function MarketTab() {
             >
               <div className="min-w-0">
                 <span className="font-bold">
-                  {item.name}
+                  {itemDisplayName(item, lang)}
                   <span className="chip ml-2 text-faded/80 border-faded/30">
-                    {KIND_LABEL[item.kind]}
+                    {kindLabel(item.kind, lang)}
                   </span>
                   {item.element && (
                     <span className={`chip ml-2 ${ELEMENT_COLOR[item.element]}`}>
-                      {item.element}
+                      {elementLabel(item.element, lang)}
                     </span>
                   )}
                 </span>
-                <p className="text-xs text-faded truncate">{item.desc}</p>
+                <p className="text-xs text-faded truncate">{itemDisplayDesc(item, lang)}</p>
               </div>
               <button
                 className="btn shrink-0 ml-3"
@@ -721,6 +743,8 @@ function TradeTab() {
   const s = useGame((x) => x.save)!;
   const setSave = useGame((x) => x.setSave);
   const pushLog = useGame((x) => x.pushLog);
+  const lang = useGame((x) => x.language);
+  const t = useT();
   const [listings, setListings] = useState<Listing[]>([]);
   const [busy, setBusy] = useState(false);
   const [sellItem, setSellItem] = useState<string>("");
@@ -763,11 +787,14 @@ function TradeTab() {
       const j = await res.json();
       if (res.ok) {
         pushLog(
-          `你將 ${itemById(sellItem).name} ×${sellQty} 掛上交易行,單價 ${formatStones(sellPrice)}。`,
+          t("listSuccessLog")
+            .replace("{item}", itemDisplayName(itemById(sellItem), lang))
+            .replace("{qty}", String(sellQty))
+            .replace("{price}", formatStones(sellPrice)),
         );
         setSellItem("");
       } else {
-        pushLog("掛賣失敗:" + (j.error ?? "未知錯誤"));
+        pushLog(t("listFailLog").replace("{err}", j.error ?? t("listFailGeneric")));
       }
       await Promise.all([refresh(), reloadSave()]);
     } finally {
@@ -786,10 +813,14 @@ function TradeTab() {
       const j = await res.json();
       if (res.ok) {
         pushLog(
-          `你以 ${formatStones(j.total)} 購得 ${itemById(j.itemId).name} ×${j.qty}(售自 ${l.seller_name})。`,
+          t("buySuccessLog")
+            .replace("{total}", formatStones(j.total))
+            .replace("{item}", itemDisplayName(itemById(j.itemId), lang))
+            .replace("{qty}", String(j.qty))
+            .replace("{seller}", l.seller_name),
         );
       } else {
-        pushLog("購買失敗:" + (j.error ?? "已被他人買走"));
+        pushLog(t("buyFailLog").replace("{err}", j.error ?? t("alreadyBoughtErr")));
       }
       await Promise.all([refresh(), reloadSave()]);
     } finally {
@@ -807,9 +838,13 @@ function TradeTab() {
       });
       const j = await res.json();
       if (res.ok) {
-        pushLog(`你將 ${itemById(l.item_id).name} ×${l.qty} 自交易行取回。`);
+        pushLog(
+          t("cancelSuccessLog")
+            .replace("{item}", itemDisplayName(itemById(l.item_id), lang))
+            .replace("{qty}", String(l.qty)),
+        );
       } else {
-        pushLog("下架失敗:" + (j.error ?? "未知錯誤"));
+        pushLog(t("cancelFailLog").replace("{err}", j.error ?? t("listFailGeneric")));
       }
       await Promise.all([refresh(), reloadSave()]);
     } finally {
@@ -820,32 +855,32 @@ function TradeTab() {
   return (
     <div className="space-y-3">
       <p className="text-xs text-faded">
-        萬寶樓交易行——修士自由掛賣,靈石結算,全服互通。 現有靈石:
+        {t("tradeNote")}
         <span className="text-gold">
           <StoneAmount n={s.stones} />
         </span>
         <button className="chip ml-3 hover:text-gold py-1.5 px-2.5" onClick={refresh}>
-          刷新
+          {t("btnRefresh")}
         </button>
       </p>
 
       <div className="border border-faded/25 rounded-sm p-3">
-        <p className="text-xs text-gold/80 font-mono tracking-widest mb-2">掛 賣</p>
+        <p className="text-xs text-gold/80 font-mono tracking-widest mb-2">{t("tradeListTitle")}</p>
         <div className="flex flex-wrap gap-2 items-center">
           <select
             value={sellItem}
             onChange={(e) => setSellItem(e.target.value)}
             className="bg-smoke border border-faded/30 rounded-sm px-2 py-1.5 text-sm text-parchment"
           >
-            <option value="">選擇物品…</option>
+            <option value="">{t("selectItemPlaceholder")}</option>
             {myItems.map(([id, n]) => (
               <option key={id} value={id}>
-                {itemById(id).name} ×{n}
+                {itemDisplayName(itemById(id), lang)} ×{n}
               </option>
             ))}
           </select>
           <label className="text-xs text-faded">
-            數量
+            {t("tradeQty")}
             <input
               type="number"
               min={1}
@@ -855,7 +890,7 @@ function TradeTab() {
             />
           </label>
           <label className="text-xs text-faded">
-            單價(下品)
+            {t("tradeUnitPrice")}
             <input
               type="number"
               min={1}
@@ -865,14 +900,14 @@ function TradeTab() {
             />
           </label>
           <button className="btn" disabled={busy || !sellItem} onClick={list}>
-            掛賣
+            {t("btnList")}
           </button>
         </div>
       </div>
 
-      <div className="divider">在 售</div>
+      <div className="divider">{t("onSaleTitle")}</div>
       {listings.length === 0 && (
-        <p className="text-sm text-faded">交易行暫無掛單,或許正是你囤貨居奇之時。</p>
+        <p className="text-sm text-faded">{t("noListings")}</p>
       )}
       {listings.map((l) => {
         const item = itemById(l.item_id);
@@ -886,19 +921,21 @@ function TradeTab() {
           >
             <div className="min-w-0">
               <span className="font-bold">
-                <span className={xuantian ? "text-xuantian" : ""}>{item.name}</span>{" "}
+                <span className={xuantian ? "text-xuantian" : ""}>{itemDisplayName(item, lang)}</span>{" "}
                 <span className="text-faded font-normal">×{l.qty}</span>
-                {mine && <span className="chip ml-2 text-gold border-gold/50">我的掛單</span>}
+                {mine && <span className="chip ml-2 text-gold border-gold/50">{t("myListingTag")}</span>}
               </span>
               <p className="text-xs text-faded">
-                賣家:{l.seller_name} · 單價 {formatStones(l.price)} · 總價{" "}
+                {t("listingSellerLine")
+                  .replace("{seller}", l.seller_name)
+                  .replace("{price}", formatStones(l.price))}{" "}
                 <span className="text-gold">{formatStones(l.qty * l.price)}</span>
               </p>
             </div>
             <div className="shrink-0 ml-3">
               {mine ? (
                 <button className="btn btn-danger" disabled={busy} onClick={() => cancel(l)}>
-                  下架
+                  {t("btnDelist")}
                 </button>
               ) : (
                 <button
@@ -906,7 +943,7 @@ function TradeTab() {
                   disabled={busy || s.stones < l.qty * l.price}
                   onClick={() => buy(l)}
                 >
-                  購買
+                  {t("btnBuy")}
                 </button>
               )}
             </div>
@@ -919,6 +956,8 @@ function TradeTab() {
 
 function DexTab() {
   const s = useGame((x) => x.save)!;
+  const lang = useGame((x) => x.language);
+  const t = useT();
   const normals = MONSTERS.filter((m) => !m.isLord);
   const lords = MONSTERS.filter((m) => m.isLord);
 
@@ -933,7 +972,7 @@ function DexTab() {
         >
           <span className="font-bold text-faded">???</span>
           <p className="text-xs text-faded/60 mt-1">
-            {mon.isLord ? "傳說中的地域之王,尚未現身。" : "尚未遭遇的妖獸,蹤跡成謎。"}
+            {mon.isLord ? t("dexUnknownLord") : t("dexUnknownMonster")}
           </p>
         </div>
       );
@@ -945,16 +984,21 @@ function DexTab() {
         <div className="flex items-baseline justify-between">
           <span className="font-bold">
             {mon.isLord && (
-              <span className="chip mr-2 text-fuchsia-400 border-fuchsia-400/50">地域王</span>
+              <span className="chip mr-2 text-fuchsia-400 border-fuchsia-400/50">{t("lordTag")}</span>
             )}
-            {mon.name}
-            <span className={`chip ml-2 ${ELEMENT_COLOR[mon.element]}`}>{mon.element}屬性</span>
+            {monsterDisplayName(mon, lang)}
+            <span className={`chip ml-2 ${ELEMENT_COLOR[mon.element]}`}>
+              {lang === "en" ? elementLabel(mon.element, lang) : `${mon.element}屬性`}
+            </span>
           </span>
           <span className="text-xs font-mono text-faded">
-            氣血 {mon.hp} · 攻擊 {mon.atk} · 已獵殺 {kills}
+            {t("monsterStatLine")
+              .replace("{hp}", String(mon.hp))
+              .replace("{atk}", String(mon.atk))
+              .replace("{kills}", String(kills))}
           </span>
         </div>
-        <p className="text-xs text-faded mt-1">{mon.desc}</p>
+        <p className="text-xs text-faded mt-1">{monsterDisplayDesc(mon, lang)}</p>
       </div>
     );
   };
@@ -962,14 +1006,17 @@ function DexTab() {
   return (
     <div className="space-y-2">
       <p className="text-xs text-faded">
-        已目擊 {s.seen.length}/{MONSTERS.length} 種妖獸。遭遇即錄入圖鑑。
+        {t("dexSeenNote")
+          .replace("{seen}", String(s.seen.length))
+          .replace("{total}", String(MONSTERS.length))}
       </p>
-      <div className="divider">妖 獸</div>
+      <div className="divider">{t("dexMonsterDivider")}</div>
       {normals.map(monsterRow)}
-      <div className="divider text-fuchsia-400/70">領 主</div>
+      <div className="divider text-fuchsia-400/70">{t("dexLordDivider")}</div>
       <p className="text-xs text-faded">
-        地域王極為稀有,獵殺妖獸時約 2%~3% 機率遭遇。已遇 {s.lordsSeen?.length ?? 0}/{lords.length}{" "}
-        位,斬之掉落豐厚——增元丹、增靈珠、高階符籙與圖譜。北寒仙尊更有機率傳下無上仙法;金源仙帝、太上金仙則掉落金魂丹等仙緣。
+        {t("dexLordNote")
+          .replace("{seen}", String(s.lordsSeen?.length ?? 0))
+          .replace("{total}", String(lords.length))}
       </p>
       {lords.map(monsterRow)}
     </div>
@@ -977,82 +1024,78 @@ function DexTab() {
 }
 
 // 混沌萬靈榜:全物品一覽,唯真仙以上境界(stage >= 10)可查閱
-function itemStatLine(item: (typeof ITEMS)[number]): string {
+function itemStatLine(item: (typeof ITEMS)[number], t: (k: DictKey) => string): string {
   const parts: string[] = [];
-  if (item.price) parts.push(`售價 ${formatStones(item.price)}`);
-  if (item.heal) parts.push(`回氣血 ${item.heal}`);
-  if (item.mp) parts.push(`回法力 ${item.mp}`);
-  if (item.exp) parts.push(`修為 +${item.exp}`);
-  if (item.life) parts.push(`延壽 +${item.life} 年`);
-  if (item.lifePct) parts.push(`延壽 +${Math.round(item.lifePct * 100)}%`);
-  if (item.xianli) parts.push(`仙靈力 +${item.xianli}`);
-  if (item.atkBonus) parts.push(`攻 +${item.atkBonus}`);
-  if (item.defBonus) parts.push(`防 +${item.defBonus}`);
-  if (item.speedBonus) parts.push(`速 +${item.speedBonus}`);
-  if (item.stoneMult) parts.push(`靈石 ×${item.stoneMult}`);
-  if (item.breakBonus) parts.push(`突破 +${Math.round(item.breakBonus * 100)}%`);
-  if (item.reqStage) parts.push(`需 ${item.reqStage} 階境界`);
-  if (item.dropOnly) parts.push("僅妖獸掉落");
+  if (item.price) parts.push(t("statLinePrice").replace("{n}", formatStones(item.price)));
+  if (item.heal) parts.push(t("statLineHeal").replace("{n}", String(item.heal)));
+  if (item.mp) parts.push(t("statLineMp").replace("{n}", String(item.mp)));
+  if (item.exp) parts.push(t("statLineExp").replace("{n}", String(item.exp)));
+  if (item.life) parts.push(t("statLineLife").replace("{n}", String(item.life)));
+  if (item.lifePct) parts.push(t("statLineLifePct").replace("{n}", String(Math.round(item.lifePct * 100))));
+  if (item.xianli) parts.push(t("statLineXianli").replace("{n}", String(item.xianli)));
+  if (item.atkBonus) parts.push(t("statLineAtk").replace("{n}", String(item.atkBonus)));
+  if (item.defBonus) parts.push(t("statLineDef").replace("{n}", String(item.defBonus)));
+  if (item.speedBonus) parts.push(t("statLineSpeed").replace("{n}", String(item.speedBonus)));
+  if (item.stoneMult) parts.push(t("statLineStoneMult").replace("{n}", String(item.stoneMult)));
+  if (item.breakBonus) parts.push(t("statLineBreakBonus").replace("{n}", String(Math.round(item.breakBonus * 100))));
+  if (item.reqStage) parts.push(t("statLineReqStage").replace("{n}", String(item.reqStage)));
+  if (item.dropOnly) parts.push(t("statLineDropOnly"));
   return parts.join(" · ");
 }
 
 function WanlingTab() {
   const s = useGame((x) => x.save)!;
+  const lang = useGame((x) => x.language);
+  const t = useT();
   const { realm } = statsOf(s);
-  const [filter, setFilter] = useState("全部");
+  const [filter, setFilter] = useState<DictKey | "filterAll">("filterAll");
 
   if (realm.stage < 10) {
-    return (
-      <p className="text-sm text-faded">
-        【混沌萬靈榜】乃仙界至寶,窺盡天地萬物,唯真仙以上境界方能查閱——你尚未飛昇,無緣得見其貌。
-      </p>
-    );
+    return <p className="text-sm text-faded">{t("wanlingLocked")}</p>;
   }
 
   const sectionsToShow =
-    filter === "全部" ? BAG_SECTIONS : BAG_SECTIONS.filter(([title]) => title === filter);
+    filter === "filterAll" ? BAG_SECTIONS : BAG_SECTIONS.filter(([key]) => key === filter);
 
   return (
     <div className="space-y-2">
-      <p className="text-xs text-faded">
-        混沌萬靈榜,錄盡天地萬物,共 {ITEMS.length} 種,真仙以上方能查閱全貌。
-      </p>
+      <p className="text-xs text-faded">{t("wanlingNote").replace("{n}", String(ITEMS.length))}</p>
 
       <div className="flex flex-wrap gap-1.5 pt-1">
         <button
-          onClick={() => setFilter("全部")}
+          onClick={() => setFilter("filterAll")}
           className={`px-2.5 py-1 text-xs rounded-sm border transition-colors ${
-            filter === "全部"
+            filter === "filterAll"
               ? "border-gold bg-gold/15 text-gold"
               : "border-faded/30 text-faded hover:text-cream"
           }`}
         >
-          全部
+          {t("filterAll")}
         </button>
-        {BAG_SECTIONS.map(([title]) => (
+        {BAG_SECTIONS.map(([key]) => (
           <button
-            key={title}
-            onClick={() => setFilter(title)}
+            key={key}
+            onClick={() => setFilter(key)}
             className={`px-2.5 py-1 text-xs rounded-sm border transition-colors ${
-              filter === title
+              filter === key
                 ? "border-gold bg-gold/15 text-gold"
                 : "border-faded/30 text-faded hover:text-cream"
             }`}
           >
-            {title.replace(/\s/g, "")}
+            {t(key).replace(/\s/g, "")}
           </button>
         ))}
       </div>
 
-      {sectionsToShow.map(([title, kinds]) => {
+      {sectionsToShow.map(([key, kinds]) => {
         const group = ITEMS.filter((i) => kinds.includes(i.kind));
         if (!group.length) return null;
         return (
-          <div key={title}>
-            <div className="divider">{title}</div>
+          <div key={key}>
+            <div className="divider">{t(key)}</div>
             <div className="space-y-2">
               {group.map((item) => {
-                const stat = itemStatLine(item);
+                const stat = itemStatLine(item, t);
                 const xuantian = isXuantianArtifact(item.id);
                 return (
                   <div
@@ -1060,22 +1103,22 @@ function WanlingTab() {
                     className={`border rounded-sm p-2.5 ${xuantian ? "border-fuchsia-400/40" : "border-faded/20"}`}
                   >
                     <span className="font-bold">
-                      <span className={xuantian ? "text-xuantian" : ""}>{item.name}</span>
+                      <span className={xuantian ? "text-xuantian" : ""}>{itemDisplayName(item, lang)}</span>
                       <span className="chip ml-2 text-faded/80 border-faded/30">
-                        {KIND_LABEL[item.kind]}
+                        {kindLabel(item.kind, lang)}
                       </span>
                       {item.element && (
                         <span className={`chip ml-2 ${ELEMENT_COLOR[item.element]}`}>
-                          {item.element}
+                          {elementLabel(item.element, lang)}
                         </span>
                       )}
                       {xuantian && (
                         <span className="chip ml-2 text-xuantian border-fuchsia-400/50">
-                          玄天仙器
+                          {t("xuantianTag")}
                         </span>
                       )}
                     </span>
-                    <p className="text-xs text-faded mt-0.5">{item.desc}</p>
+                    <p className="text-xs text-faded mt-0.5">{itemDisplayDesc(item, lang)}</p>
                     {stat && <p className="text-xs text-cream/80 mt-0.5 font-mono">{stat}</p>}
                   </div>
                 );
@@ -1119,14 +1162,16 @@ interface PlayerProfile {
 }
 
 function PlayerDetailCard({ profile, onClose }: { profile: PlayerProfile; onClose: () => void }) {
+  const lang = useGame((x) => x.language);
+  const t = useT();
   const isXian = REALMS[profile.realmIdx]?.stage >= 10;
-  const gear: [string, string | null][] = [
-    ["法器", profile.equippedWeapon],
-    ["法衣", profile.equippedRobe],
-    ["護身符", profile.equippedAmulet],
-    ["符籙", profile.equippedTalisman],
-    ["靈寵", profile.equippedPet],
-    ["命器", profile.equippedMing],
+  const gear: [DictKey, string | null][] = [
+    ["slotWeapon", profile.equippedWeapon],
+    ["slotRobe", profile.equippedRobe],
+    ["slotAmulet", profile.equippedAmulet],
+    ["slotTalisman", profile.equippedTalisman],
+    ["slotPet", profile.equippedPet],
+    ["slotMing", profile.equippedMing],
   ];
   return (
     <div
@@ -1138,54 +1183,66 @@ function PlayerDetailCard({ profile, onClose }: { profile: PlayerProfile; onClos
         >
           {profile.name}
           {profile.dead && (
-            <span className="chip ml-2 text-vermillion border-vermillion/50">已隕落</span>
+            <span className="chip ml-2 text-vermillion border-vermillion/50">{t("deadTag")}</span>
           )}
         </span>
         <button className="chip hover:text-cream py-1.5 px-2.5" onClick={onClose}>
-          關閉 ✕
+          {t("profileClose")}
         </button>
       </div>
       <div className="grid grid-cols-2 gap-y-1 text-sm">
-        <span className="text-faded">境界</span>
+        <span className="text-faded">{t("profileRealm")}</span>
         <span className={`text-right ${isXian ? "text-fuchsia-300" : ""}`}>
-          {REALMS[profile.realmIdx]?.name ?? "??"}
+          {realmDisplayName(REALMS[profile.realmIdx], lang)}
         </span>
-        <span className="text-faded">門派</span>
+        <span className="text-faded">{t("profileSect")}</span>
         <span className="text-right">
-          {SECTS.find((x) => x.id === profile.sectId)?.name ?? "散修"}
+          {(() => {
+            const sect = SECTS.find((x) => x.id === profile.sectId);
+            return sect ? sectDisplayName(sect, lang) : t("statLoose");
+          })()}
         </span>
-        <span className="text-faded">修為</span>
+        <span className="text-faded">{t("profileExp")}</span>
         <span className="text-right font-mono">{profile.exp}</span>
         {profile.xianli > 0 && (
           <>
-            <span className="text-faded">仙靈力</span>
-            <span className="text-right font-bold text-fuchsia-400">{profile.xianli} 點</span>
+            <span className="text-faded">{t("profileXianli")}</span>
+            <span className="text-right font-bold text-fuchsia-400">
+              {t("profileXianliUnit").replace("{n}", String(profile.xianli))}
+            </span>
           </>
         )}
         {profile.futuFloor > 0 && (
           <>
-            <span className="text-faded">浮屠塔</span>
-            <span className="text-right font-bold text-amber-300">第 {profile.futuFloor} 層</span>
+            <span className="text-faded">{t("profileFutu")}</span>
+            <span className="text-right font-bold text-amber-300">
+              {t("profileFutuValue").replace("{n}", String(profile.futuFloor))}
+            </span>
           </>
         )}
-        <span className="text-faded">壽元 / 修行</span>
+        <span className="text-faded">{t("profileLifeCult")}</span>
         <span className="text-right">
-          {profile.age} 年 · 修行 {profile.day} 載
+          {t("profileLifeCultValue")
+            .replace("{age}", String(profile.age))
+            .replace("{day}", String(profile.day))}
         </span>
-        <span className="text-faded">圖鑑 · 領主 · 仙法</span>
+        <span className="text-faded">{t("profileDexRank")}</span>
         <span className="text-right text-xs">
-          妖獸 {profile.seenCount} · 領主 {profile.lordsSeenCount} · 仙法 {profile.learnedCount}
+          {t("profileDexRankValue")
+            .replace("{seen}", String(profile.seenCount))
+            .replace("{lords}", String(profile.lordsSeenCount))
+            .replace("{learned}", String(profile.learnedCount))}
         </span>
       </div>
-      <div className="divider">裝 備</div>
+      <div className="divider">{t("profileEquip")}</div>
       <div className="grid grid-cols-2 gap-y-1 text-sm">
-        {gear.map(([label, id]) => (
-          <div key={label} className="contents">
-            <span className="text-faded">{label}</span>
+        {gear.map(([labelKey, id]) => (
+          <div key={labelKey} className="contents">
+            <span className="text-faded">{t(labelKey)}</span>
             <span
-              className={`text-right ${id ? (label === "靈寵" ? "text-fuchsia-300" : "text-cream") : "text-faded/50"}`}
+              className={`text-right ${id ? (labelKey === "slotPet" ? "text-fuchsia-300" : "text-cream") : "text-faded/50"}`}
             >
-              {id ? itemById(id).name : "—"}
+              {id ? itemDisplayName(itemById(id), lang) : "—"}
             </span>
           </div>
         ))}
@@ -1195,6 +1252,7 @@ function PlayerDetailCard({ profile, onClose }: { profile: PlayerProfile; onClos
 }
 
 function usePlayerLookup() {
+  const t = useT();
   const [profile, setProfile] = useState<PlayerProfile | null>(null);
   const [err, setErr] = useState("");
   const lookup = async (name: string) => {
@@ -1207,10 +1265,10 @@ function usePlayerLookup() {
       if (j.ok) setProfile(j.profile);
       else {
         setProfile(null);
-        setErr(j.error ?? "查無此修士");
+        setErr(j.error ?? t("playerNotFound"));
       }
     } catch {
-      setErr("查詢失敗");
+      setErr(t("lookupFailed"));
     }
   };
   return { profile, setProfile, err, lookup };
@@ -1220,6 +1278,8 @@ type Board = "xiu" | "exp" | "futu";
 
 function RankTab() {
   const s = useGame((x) => x.save)!;
+  const lang = useGame((x) => x.language);
+  const t = useT();
   const [board, setBoard] = useState<Board>("xiu");
   const [players, setPlayers] = useState<RankPlayer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1227,9 +1287,9 @@ function RankTab() {
   const { profile, setProfile, err, lookup } = usePlayerLookup();
 
   const boards: [Board, string, string][] = [
-    ["xiu", "修仙榜", "按境界高低、仙靈力、修為綜合排序"],
-    ["exp", "修為榜", "純以修為深淺論高下"],
-    ["futu", "浮屠塔榜", "以浮屠塔通關層數論英雄"],
+    ["xiu", t("boardXiu"), t("boardXiuDesc")],
+    ["exp", t("boardExp"), t("boardExpDesc")],
+    ["futu", t("boardFutu"), t("boardFutuDesc")],
   ];
   const boardMeta = boards.find((b) => b[0] === board)!;
 
@@ -1254,19 +1314,27 @@ function RankTab() {
   // 各榜右側顯示的主數值
   const rightValue = (p: RankPlayer) => {
     if (board === "futu")
-      return <span className="text-amber-300 font-bold">第 {p.futu_floor} 層</span>;
+      return (
+        <span className="text-amber-300 font-bold">
+          {t("futuFloorValue").replace("{n}", String(p.futu_floor))}
+        </span>
+      );
     if (board === "exp")
       return (
         <>
-          <span className="text-jade font-mono">修為 {p.exp}</span>
-          <span className="text-xs text-faded ml-2">{REALMS[p.realm_idx]?.name ?? "??"}</span>
+          <span className="text-jade font-mono">{t("expValue").replace("{n}", String(p.exp))}</span>
+          <span className="text-xs text-faded ml-2">{realmDisplayName(REALMS[p.realm_idx], lang)}</span>
         </>
       );
     // 修仙榜
     return (
       <>
-        <span>{REALMS[p.realm_idx]?.name ?? "??"}</span>
-        {p.xianli > 0 && <span className="text-xs text-fuchsia-400 ml-2">仙靈力 {p.xianli}</span>}
+        <span>{realmDisplayName(REALMS[p.realm_idx], lang)}</span>
+        {p.xianli > 0 && (
+          <span className="text-xs text-fuchsia-400 ml-2">
+            {t("xianliValueShort").replace("{n}", String(p.xianli))}
+          </span>
+        )}
       </>
     );
   };
@@ -1297,11 +1365,13 @@ function RankTab() {
         {boardMeta[2]}。
         {myRank > 0 && (
           <>
-            你當前名列第<span className={`text-${accent}`}> {myRank} </span>位。
+            {t("yourRankLine")}
+            <span className={`text-${accent}`}> {myRank} </span>
+            {t("yourRankSuffix")}
           </>
         )}
         <button className="chip ml-3 hover:text-gold py-1.5 px-2.5" onClick={() => refresh()}>
-          刷新
+          {t("btnRefresh")}
         </button>
       </p>
       <div className="flex gap-2 items-center">
@@ -1309,19 +1379,19 @@ function RankTab() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && lookup(query)}
-          placeholder="搜尋修士道號…"
+          placeholder={t("searchPlaceholder")}
           className="flex-1 bg-smoke border border-faded/30 rounded-sm px-2 py-1.5 text-sm text-parchment"
         />
         <button className="btn" onClick={() => lookup(query)}>
-          查詢
+          {t("btnSearch")}
         </button>
       </div>
       {err && <p className="text-sm text-vermillion">{err}</p>}
       {profile && <PlayerDetailCard profile={profile} onClose={() => setProfile(null)} />}
-      {loading && <p className="text-sm text-faded">榜文更新中…</p>}
+      {loading && <p className="text-sm text-faded">{t("boardUpdating")}</p>}
       {!loading && players.length === 0 && (
         <p className="text-sm text-faded">
-          {isFutuBoard ? "浮屠塔尚無人登臨,你將是第一位挑戰者。" : "榜上無人,你將是第一位留名者。"}
+          {isFutuBoard ? t("futuBoardEmpty") : t("boardEmpty")}
         </p>
       )}
       {players.map((p, i) => {
@@ -1347,9 +1417,9 @@ function RankTab() {
               </span>
               <div className="min-w-0">
                 <span className={`font-bold ${me ? topColor : ""}`}>{p.name}</span>
-                {me && <span className={`text-xs ${topColor}/70 ml-2`}>(你)</span>}
+                {me && <span className={`text-xs ${topColor}/70 ml-2`}>{t("youTag")}</span>}
                 {p.dead && (
-                  <span className="chip ml-2 text-vermillion border-vermillion/50">已隕落</span>
+                  <span className="chip ml-2 text-vermillion border-vermillion/50">{t("deadTag")}</span>
                 )}
               </div>
             </div>

@@ -280,7 +280,7 @@ export default function SectPage() {
               {members.length}/{curTier.memberCap} 人
             </span>
           </p>
-          <button className="chip hover:text-gold" onClick={refresh}>
+          <button className="chip hover:text-gold py-1.5 px-2.5" onClick={refresh}>
             刷新
           </button>
         </div>
@@ -362,7 +362,7 @@ export default function SectPage() {
                     <div className="mt-2 flex flex-wrap gap-2">
                       {!occupied && myDwellingSlot == null && (
                         <button
-                          className="chip hover:text-gold"
+                          className="chip hover:text-gold py-1.5 px-2.5"
                           disabled={busy}
                           onClick={() => post({ action: "assignDwelling", slotIdx: d.slotIdx })}
                         >
@@ -371,7 +371,7 @@ export default function SectPage() {
                       )}
                       {d.nextLevel && (
                         <button
-                          className="chip hover:text-gold"
+                          className="chip hover:text-gold py-1.5 px-2.5"
                           disabled={busy}
                           onClick={() => post({ action: "upgradeDwelling", slotIdx: d.slotIdx })}
                           title={d.nextLevel.materials
@@ -588,7 +588,7 @@ export default function SectPage() {
                           <span className="chip ml-2 text-faded/80 border-faded/30">× {n}</span>
                         </span>
                         <button
-                          className="chip hover:text-gold"
+                          className="chip hover:text-gold py-1.5 px-2.5"
                           disabled={busy}
                           onClick={() => post({ action: "withdrawItem", itemId: id, qty: 1 })}
                         >

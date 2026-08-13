@@ -202,7 +202,7 @@ function log(s: SaveData, ...msgs: string[]) {
   s.log = [...s.log, ...msgs].slice(-MAX_LOG);
 }
 
-function give(s: SaveData, id: string, n = 1) {
+export function give(s: SaveData, id: string, n = 1) {
   s.inventory[id] = (s.inventory[id] ?? 0) + n;
 }
 
@@ -850,6 +850,14 @@ function applyActionInner(
       }
       if (needsZhenxian) take(s, "zhenxiandan");
       const chance = breakChanceOf(s);
+      // 消耗型命器:機率已計入本次 chance,只要確實擲骰嘗試,無論成敗都會化為飛灰
+      if (s.equippedMing) {
+        const mingItem = itemById(s.equippedMing);
+        if (mingItem?.consumable) {
+          take(s, s.equippedMing);
+          s.equippedMing = null;
+        }
+      }
       if (Math.random() < chance) {
         const next = REALMS[s.realmIdx + 1];
         s.realmIdx += 1;

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useGame, statsOf, maxLifeOf, cultCostOf, breakChanceOf, Modal } from "@/game/store";
 import { REALMS } from "@/game/data/realms";
 import { CHANGELOG } from "@/game/data/changelog";
-import { REVIVAL_PRICE_USD } from "@/lib/payments";
+import { REVIVAL_PRICE_USD } from "@/game/data/blackMarket";
 import AuthGate from "./AuthGate";
 import CharCreate from "./CharCreate";
 import ActionTabs from "./ActionTabs";
@@ -26,7 +26,7 @@ function ChangelogModal({ onClose }: { onClose: () => void }) {
       >
         <div className="flex items-baseline justify-between mb-2">
           <p className="panel-title mb-0">更 新 公 告</p>
-          <button className="chip hover:text-gold" onClick={onClose}>
+          <button className="chip hover:text-gold py-1.5 px-2.5" onClick={onClose}>
             關閉 ✕
           </button>
         </div>
@@ -58,6 +58,7 @@ function PrayForRevival() {
   const setSave = useGame((x) => x.setSave);
   const revivalUsed = useGame((x) => x.revivalUsed);
   const setRevivalUsed = useGame((x) => x.setRevivalUsed);
+  const setPurchaseResult = useGame((x) => x.setPurchaseResult);
   const [praying, setPraying] = useState(false);
   const [err, setErr] = useState("");
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -86,10 +87,23 @@ function PrayForRevival() {
             if (saveRes.save) setSave(saveRes.save);
             setRevivalUsed(true);
             setPraying(false);
+            setPurchaseResult({
+              success: true,
+              title: "死 而 復 生",
+              lines: [
+                "六道輪迴盤光華大盛,輪迴道祖以【輪迴天生術】接引你重返陽壽——",
+                "你已死而復生,修為、境界、裝備、庫存原封不動。",
+              ],
+            });
           } else if (r.status === "failed") {
             if (pollRef.current) clearInterval(pollRef.current);
             setErr("付款已收到,但復活未能順利套用,請聯繫客服處理。");
             setPraying(false);
+            setPurchaseResult({
+              success: false,
+              title: "復 活 未 能 套 用",
+              lines: ["付款已確認收到,但復活未能順利套用,請聯繫客服處理,勿重複付款。"],
+            });
           }
         } catch {
           /* 靜默重試 */
@@ -112,11 +126,14 @@ function PrayForRevival() {
     <div className="mt-6">
       {!praying ? (
         <button
-          className="btn border-fuchsia-400/60 text-fuchsia-300 hover:bg-fuchsia-400/15 text-base"
+          className="btn border-fuchsia-400/60 text-fuchsia-300 hover:bg-fuchsia-400/15 flex-col !items-start text-left px-5 py-3"
           onClick={startPray}
-
+          title={`USD ${REVIVAL_PRICE_USD}`}
         >
-          使用 六道輪迴盤 復活 , 重列仙班  一共 {REVIVAL_PRICE_USD} 塊大美利堅靈石
+          <span className="text-base font-bold">向仙班祈禱 · 六道輪迴盤復活</span>
+          <span className="text-xs text-fuchsia-300/70 mt-0.5">
+            {REVIVAL_PRICE_USD} 美利堅靈石(終身限用一次)
+          </span>
         </button>
       ) : (
         <p className="text-sm text-fuchsia-300 animate-pulse">
@@ -268,8 +285,10 @@ export default function Game() {
   const setSave = useGame((x) => x.setSave);
   const loot = useGame((x) => x.loot);
   const breakResult = useGame((x) => x.breakResult);
+  const purchaseResult = useGame((x) => x.purchaseResult);
   const closeLoot = useGame((x) => x.closeLoot);
   const closeBreak = useGame((x) => x.closeBreak);
+  const closePurchaseResult = useGame((x) => x.closePurchaseResult);
   const mainView = useGame((x) => x.mainView);
   const [auth, setAuth] = useState<"checking" | "anon" | "authed">("checking");
   const [userName, setUserName] = useState("");
@@ -321,11 +340,12 @@ export default function Game() {
 
   return (
     <main className={`max-w-6xl mx-auto px-4 py-6 relative ${isXian ? "xian-aura" : ""}`}>
-      {breakResult && <ResultModal modal={breakResult} onClose={closeBreak} />}
-      {!breakResult && loot && <ResultModal modal={loot} onClose={closeLoot} />}
+      {purchaseResult && <ResultModal modal={purchaseResult} onClose={closePurchaseResult} />}
+      {!purchaseResult && breakResult && <ResultModal modal={breakResult} onClose={closeBreak} />}
+      {!purchaseResult && !breakResult && loot && <ResultModal modal={loot} onClose={closeLoot} />}
       {showChangelog && <ChangelogModal onClose={() => setShowChangelog(false)} />}
       {showGuide && <GuideModal onClose={() => setShowGuide(false)} />}
-      <header className="flex items-baseline justify-between mb-5">
+      <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 mb-5">
         <div>
           <h1
             className={`text-2xl font-black tracking-[0.35em] ${isXian ? "text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 via-amber-200 to-cyan-200" : ""}`}
@@ -336,7 +356,7 @@ export default function Game() {
             {isXian ? "ASCENDED · 得 道 成 仙" : "A MORTAL\u2019S JOURNEY TO IMMORTALITY"}
           </p>
         </div>
-        <div className="flex gap-4 items-baseline">
+        <div className="flex flex-wrap gap-4 items-baseline">
           <button
             className="text-xs text-faded/60 hover:text-gold transition-colors"
             onClick={() => setShowGuide(true)}
@@ -366,16 +386,18 @@ export default function Game() {
         <CultivationBar />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[300px_1fr_340px]">
+      <div className="grid gap-4 md:grid-cols-[300px_1fr] lg:grid-cols-[300px_1fr_340px]">
         <div className="space-y-4">
           <StatusPanel />
           <RealmProgressPanel />
         </div>
-        <div className="space-y-4">
+        <div className="space-y-4 md:col-start-2">
           <CombatPanel />
           <ActionTabs />
         </div>
-        <LogChatPanel />
+        <div className="md:col-start-2 lg:col-start-3">
+          <LogChatPanel />
+        </div>
       </div>
     </main>
   );

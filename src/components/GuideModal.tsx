@@ -64,7 +64,7 @@ export default function GuideModal({ onClose }: { onClose: () => void }) {
       >
         <div className="flex items-baseline justify-between mb-2">
           <p className="panel-title mb-0">修 仙 入 門 錄</p>
-          <button className="chip hover:text-gold" onClick={onClose}>
+          <button className="chip hover:text-gold py-1.5 px-2.5" onClick={onClose}>
             關閉 ✕
           </button>
         </div>

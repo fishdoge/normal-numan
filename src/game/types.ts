@@ -156,6 +156,8 @@ export interface ItemDef {
   reqStage?: number;
   // 僅能由妖獸掉落(不可購買 / 一般煉器)
   dropOnly?: boolean;
+  // 消耗型命器專屬:裝備後,下一次「嘗試突破」無論成敗皆會自動卸下並消耗一枚(見 engine.ts 的 breakthrough case)
+  consumable?: boolean;
 }
 
 export interface Technique {

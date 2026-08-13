@@ -87,7 +87,7 @@ export default function LogChatPanel() {
   };
 
   return (
-    <div className="panel flex flex-col resize-y overflow-hidden h-[50rem] min-h-[12rem] max-h-[85vh]">
+    <div className="panel flex flex-col resize-y overflow-hidden h-[22rem] lg:h-[50rem] min-h-[12rem] max-h-[85vh]">
       <div className="flex gap-1.5 mb-2 shrink-0">
         {(
           [

@@ -148,9 +148,14 @@ export const ITEMS: ItemDef[] = [
   { id: "blueprint_zhuxian", name: "《誅仙滅魂符》煉器圖譜", kind: "recipe", desc: "記載誅仙滅魂符的煉製之法,參詳後可自行煉製。", price: 0, unlocksRecipe: "r_zhuxian_fu", dropOnly: true },
   { id: "blueprint_zaohuajian", name: "《造化戮仙劍》煉器圖譜", kind: "recipe", desc: "記載造化戮仙劍的煉製之法,參詳後可自行煉製。", price: 0, unlocksRecipe: "r_zaohua_jian", dropOnly: true },
 
-  // ── 命器(天命符 / 地運符,地域王稀有掉落,提升突破成功率,不分境界) ──
+  // ── 命器(舊·天命符 / 地運符,已停止由妖獸掉落,僅為相容既有存檔保留定義,不會再有新玩家取得) ──
   { id: "tianmingfu", name: "天命符", kind: "mingqi", desc: "命格之力凝成的符籙,大晉噬天鬼帝身死方遺,窺得一線天機——不論何種境界,突破成功率 +5%。", price: 0, dropOnly: true, breakBonus: 0.05 },
   { id: "diyunfu", name: "地運符", kind: "mingqi", desc: "地脈氣運匯聚而成的符籙,萬鱗海皇秘藏之物——佩戴後借地氣相助,突破成功率 +3%。", price: 0, dropOnly: true, breakBonus: 0.03 },
+
+  // ── 命器(黑市限定,消耗型:裝備後,下一次嘗試突破無論成敗皆會自動消耗一枚) ──
+  { id: "diminfu", name: "地命符", kind: "mingqi", desc: "黑市秘傳的消耗型命器,裝備後下一次嘗試突破成功率 +3%,無論成敗,突破後即化為飛灰。", price: 0, dropOnly: true, breakBonus: 0.03, consumable: true },
+  { id: "tianyunfu", name: "天運符", kind: "mingqi", desc: "黑市秘傳的消耗型命器,裝備後下一次嘗試突破成功率 +5%,無論成敗,突破後即化為飛灰。", price: 0, dropOnly: true, breakBonus: 0.05, consumable: true },
+  { id: "tianjifu", name: "天極符", kind: "mingqi", desc: "黑市秘傳的消耗型命器,裝備後下一次嘗試突破成功率 +8%,無論成敗,突破後即化為飛灰。", price: 0, dropOnly: true, breakBonus: 0.08, consumable: true },
 
   // ── 真仙丹(渡劫飛昇必備,唯太古龍祖掉落;嘗試突破時無論成敗皆消耗) ──
   { id: "zhenxiandan", name: "真仙丹", kind: "special", desc: "太古龍祖精血凝成的無上奇丹,渡劫飛昇的必備之物。嘗試渡劫時,無論突破成敗皆會耗盡藥力。", price: 0 },

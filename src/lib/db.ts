@@ -80,6 +80,16 @@ export function ensureSchema() {
         created_at TIMESTAMPTZ DEFAULT now(),
         updated_at TIMESTAMPTZ DEFAULT now()
       )`;
+      // 黑市購買(消耗型命器/玄命果,皆以 USD 透過 Polar 購買):token = Polar checkout session id,
+      // 狀態機與 revival_requests 相同(pending → processing → done / failed)
+      await sql`CREATE TABLE IF NOT EXISTS item_purchase_requests (
+        token TEXT PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        item_id TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_at TIMESTAMPTZ DEFAULT now(),
+        updated_at TIMESTAMPTZ DEFAULT now()
+      )`;
     })();
   }
   return ready;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   useGame,
   statsOf,
@@ -15,6 +15,7 @@ import { ITEMS, itemById, isXuantianArtifact } from "@/game/data/items";
 import { REALMS } from "@/game/data/realms";
 import { SECTS } from "@/game/data/sects";
 import { techById } from "@/game/data/techniques";
+import { BLACK_MARKET_CATALOG } from "@/game/data/blackMarket";
 import { ELEMENT_COLOR, ItemKind, KIND_LABEL, formatStones } from "@/game/types";
 import StoneAmount from "./StoneAmount";
 
@@ -522,10 +523,113 @@ function CraftTab() {
   );
 }
 
+// 黑市:消耗型命器(地命符/天運符/天極符)+ 玄命果,皆以 USD 透過 Polar 購買,買到即直接加入儲物袋
+function BlackMarketSection() {
+  const setSave = useGame((x) => x.setSave);
+  const setPurchaseResult = useGame((x) => x.setPurchaseResult);
+  const [buyingId, setBuyingId] = useState<string | null>(null);
+  const [err, setErr] = useState("");
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => () => {
+    if (pollRef.current) clearInterval(pollRef.current);
+  }, []);
+
+  const buy = async (itemId: string) => {
+    setErr("");
+    try {
+      const res = await fetch("/api/blackmarket", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itemId }),
+      });
+      const j = await res.json();
+      if (!res.ok) {
+        setErr(j.error ?? "購買失敗,請稍後再試");
+        return;
+      }
+      window.open(j.url, "_blank", "noopener");
+      setBuyingId(itemId);
+      pollRef.current = setInterval(async () => {
+        try {
+          const r = await (await fetch(`/api/blackmarket?token=${j.token}`)).json();
+          if (r.status === "done") {
+            if (pollRef.current) clearInterval(pollRef.current);
+            const saveRes = await (await fetch("/api/save")).json();
+            if (saveRes.save) setSave(saveRes.save);
+            setBuyingId(null);
+            setPurchaseResult({
+              success: true,
+              title: "購 買 成 功",
+              lines: [`黑市老板將【${r.itemName ?? itemId}】遞來,已收入儲物袋。`],
+            });
+          } else if (r.status === "failed") {
+            if (pollRef.current) clearInterval(pollRef.current);
+            setErr("付款已收到,但道具未能順利發放,請聯繫客服處理。");
+            setBuyingId(null);
+            setPurchaseResult({
+              success: false,
+              title: "購 買 未 能 發 放",
+              lines: ["付款已確認收到,但道具未能順利發放,請聯繫客服處理,勿重複付款。"],
+            });
+          }
+        } catch {
+          /* 靜默重試 */
+        }
+      }, 3000);
+    } catch {
+      setErr("無法連線至伺服器,請稍後再試");
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-faded">
+        黑市不收靈石,只認真金白銀(Polar 金流,美金計價)。消耗型命器裝備後,下一次嘗試突破無論成敗皆會自動消耗。
+      </p>
+      {BLACK_MARKET_CATALOG.map(({ itemId, priceUsd }) => {
+        const item = itemById(itemId);
+        if (!item) return null;
+        return (
+          <div
+            key={itemId}
+            className="flex items-center justify-between border border-fuchsia-400/30 bg-fuchsia-400/5 rounded-sm p-2.5"
+          >
+            <div className="min-w-0">
+              <span className="font-bold">
+                {item.name}
+                <span className="chip ml-2 text-faded/80 border-faded/30">
+                  {KIND_LABEL[item.kind]}
+                </span>
+                {item.breakBonus && (
+                  <span className="chip ml-2 text-fuchsia-300 border-fuchsia-400/50">
+                    突破 +{Math.round(item.breakBonus * 100)}%
+                  </span>
+                )}
+              </span>
+              <p className="text-xs text-faded truncate">{item.desc}</p>
+            </div>
+            <button
+              className="btn shrink-0 ml-3 border-fuchsia-400/60 text-fuchsia-300 hover:bg-fuchsia-400/15"
+              disabled={buyingId === itemId}
+              onClick={() => buy(itemId)}
+              title={`USD ${priceUsd}`}
+            >
+              {buyingId === itemId ? "付款中…" : `${priceUsd} 美利堅靈石`}
+            </button>
+          </div>
+        );
+      })}
+      {err && <p className="text-xs text-vermillion">{err}</p>}
+    </div>
+  );
+}
+
 function MarketTab() {
   const s = useGame((x) => x.save)!;
   const act = useGame((x) => x.act);
   const busy = useGame((x) => x.busy);
+  const [marketView, setMarketView] = useState<"shop" | "blackmarket">("shop");
   const wares = ITEMS.filter(
     (i) =>
       (["pill", "herb", "robe", "amulet", "talisman"].includes(i.kind) ||
@@ -536,41 +640,70 @@ function MarketTab() {
       (i.reqStage ?? 1) <= 8,
   );
   return (
-    <div className="space-y-2">
-      <p className="text-xs text-faded">
-        坊市為宗門官營,明碼標價。大乘以上的仙家至寶坊市不售,唯有斬妖奪寶方能得之。現有靈石:
-        <span className="text-gold">
-          {" "}
-          <StoneAmount n={s.stones} />
-        </span>
-      </p>
-
-      {wares.map((item) => (
-        <div
-          key={item.id}
-          className="flex items-center justify-between border border-faded/20 rounded-sm p-2.5"
-        >
-          <div className="min-w-0">
-            <span className="font-bold">
-              {item.name}
-              <span className="chip ml-2 text-faded/80 border-faded/30">
-                {KIND_LABEL[item.kind]}
-              </span>
-              {item.element && (
-                <span className={`chip ml-2 ${ELEMENT_COLOR[item.element]}`}>{item.element}</span>
-              )}
-            </span>
-            <p className="text-xs text-faded truncate">{item.desc}</p>
-          </div>
+    <div className="space-y-3">
+      <div className="flex gap-1.5">
+        {(
+          [
+            ["shop", "商鋪"],
+            ["blackmarket", "黑市"],
+          ] as [typeof marketView, string][]
+        ).map(([v, label]) => (
           <button
-            className="btn shrink-0 ml-3"
-            disabled={busy || s.stones < item.price}
-            onClick={() => act("buy", { itemId: item.id })}
+            key={v}
+            onClick={() => setMarketView(v)}
+            className={`px-3 py-1 text-sm rounded-sm border transition-colors ${
+              marketView === v
+                ? "border-fuchsia-400 bg-fuchsia-400/15 text-fuchsia-300"
+                : "border-faded/30 text-faded hover:text-cream"
+            }`}
           >
-            {formatStones(item.price)}
+            {label}
           </button>
+        ))}
+      </div>
+
+      {marketView === "shop" && (
+        <div className="space-y-2">
+          <p className="text-xs text-faded">
+            坊市為宗門官營,明碼標價。大乘以上的仙家至寶坊市不售,唯有斬妖奪寶方能得之。現有靈石:
+            <span className="text-gold">
+              {" "}
+              <StoneAmount n={s.stones} />
+            </span>
+          </p>
+
+          {wares.map((item) => (
+            <div
+              key={item.id}
+              className="flex items-center justify-between border border-faded/20 rounded-sm p-2.5"
+            >
+              <div className="min-w-0">
+                <span className="font-bold">
+                  {item.name}
+                  <span className="chip ml-2 text-faded/80 border-faded/30">
+                    {KIND_LABEL[item.kind]}
+                  </span>
+                  {item.element && (
+                    <span className={`chip ml-2 ${ELEMENT_COLOR[item.element]}`}>
+                      {item.element}
+                    </span>
+                  )}
+                </span>
+                <p className="text-xs text-faded truncate">{item.desc}</p>
+              </div>
+              <button
+                className="btn shrink-0 ml-3"
+                disabled={busy || s.stones < item.price}
+                onClick={() => act("buy", { itemId: item.id })}
+              >
+                {formatStones(item.price)}
+              </button>
+            </div>
+          ))}
         </div>
-      ))}
+      )}
+
+      {marketView === "blackmarket" && <BlackMarketSection />}
     </div>
   );
 }
@@ -691,7 +824,7 @@ function TradeTab() {
         <span className="text-gold">
           <StoneAmount n={s.stones} />
         </span>
-        <button className="chip ml-3 hover:text-gold" onClick={refresh}>
+        <button className="chip ml-3 hover:text-gold py-1.5 px-2.5" onClick={refresh}>
           刷新
         </button>
       </p>
@@ -1008,7 +1141,7 @@ function PlayerDetailCard({ profile, onClose }: { profile: PlayerProfile; onClos
             <span className="chip ml-2 text-vermillion border-vermillion/50">已隕落</span>
           )}
         </span>
-        <button className="chip hover:text-cream" onClick={onClose}>
+        <button className="chip hover:text-cream py-1.5 px-2.5" onClick={onClose}>
           關閉 ✕
         </button>
       </div>
@@ -1167,7 +1300,7 @@ function RankTab() {
             你當前名列第<span className={`text-${accent}`}> {myRank} </span>位。
           </>
         )}
-        <button className="chip ml-3 hover:text-gold" onClick={() => refresh()}>
+        <button className="chip ml-3 hover:text-gold py-1.5 px-2.5" onClick={() => refresh()}>
           刷新
         </button>
       </p>

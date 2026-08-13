@@ -49,7 +49,7 @@ body::after {
     @apply font-mono text-xs tracking-[0.3em] text-gold/80 uppercase mb-3;
   }
   .btn {
-    @apply inline-flex items-center justify-center px-3 py-1.5 border border-gold/40 text-cream text-sm
+    @apply inline-flex items-center justify-center px-3 py-2 border border-gold/40 text-cream text-sm
       hover:bg-gold/15 hover:border-gold transition-colors rounded-sm disabled:opacity-30 disabled:pointer-events-none;
   }
   .btn-danger {

@@ -52,6 +52,7 @@ interface ClientState {
   save: SaveData | null;
   loot: Modal | null; // 採集/戰利品/任務彈窗
   breakResult: Modal | null; // 突破結果彈窗
+  purchaseResult: Modal | null; // 付費復活 / 黑市購買結果彈窗(Polar webhook 回報後顯示)
   busy: boolean;
   activeTab: Tab;
   mainView: MainView;
@@ -61,6 +62,8 @@ interface ClientState {
   setSave: (save: SaveData | null) => void;
   closeLoot: () => void;
   closeBreak: () => void;
+  closePurchaseResult: () => void;
+  setPurchaseResult: (modal: Modal | null) => void;
   pushLog: (msg: string) => void;
   setActiveTab: (tab: Tab) => void;
   setMainView: (view: MainView) => void;
@@ -71,6 +74,7 @@ export const useGame = create<ClientState>()((set, get) => ({
   save: null,
   loot: null,
   breakResult: null,
+  purchaseResult: null,
   busy: false,
   activeTab: "explore",
   mainView: "game",
@@ -79,6 +83,8 @@ export const useGame = create<ClientState>()((set, get) => ({
   setSave: (save) => set({ save }),
   closeLoot: () => set({ loot: null }),
   closeBreak: () => set({ breakResult: null }),
+  closePurchaseResult: () => set({ purchaseResult: null }),
+  setPurchaseResult: (modal) => set({ purchaseResult: modal }),
   setActiveTab: (tab) => set({ activeTab: tab }),
   setMainView: (view) => set({ mainView: view }),
   setRevivalUsed: (used) => set({ revivalUsed: used }),

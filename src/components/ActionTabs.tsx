@@ -540,8 +540,15 @@ function CraftTab() {
                   <span className="chip ml-2 text-azure border-azure/60">{t("blueprintTag")}</span>
                 )}
               </span>
-              <span className={`text-xs font-mono ${canStones ? "text-gold" : "text-vermillion"}`}>
-                {formatStones(rec.stones)}
+              <span className="shrink-0 flex items-center gap-2">
+                {rec.lifeCost ? (
+                  <span className="text-xs font-mono text-faded">
+                    -{rec.lifeCost} {t("lifeCostSuffix")}
+                  </span>
+                ) : null}
+                <span className={`text-xs font-mono ${canStones ? "text-gold" : "text-vermillion"}`}>
+                  {formatStones(rec.stones)}
+                </span>
               </span>
             </div>
             <p className="text-xs text-faded mt-1">{recipeDisplayDesc(rec, lang)}</p>
@@ -558,9 +565,20 @@ function CraftTab() {
                 );
               })}
               <span className="text-faded">
-                → {result.atkBonus ? (lang === "en" ? `ATK+${result.atkBonus} ` : `攻+${result.atkBonus} `) : ""}
+                →{" "}
+                {result.atkBonus ? (lang === "en" ? `ATK+${result.atkBonus} ` : `攻+${result.atkBonus} `) : ""}
                 {result.defBonus ? (lang === "en" ? `DEF+${result.defBonus} ` : `防+${result.defBonus} `) : ""}
                 {result.speedBonus ? (lang === "en" ? `SPD+${result.speedBonus}` : `速+${result.speedBonus}`) : ""}
+                {result.heal ? (lang === "en" ? `HP+${result.heal} ` : `氣血+${result.heal} `) : ""}
+                {result.mp ? (lang === "en" ? `MP+${result.mp} ` : `法力+${result.mp} `) : ""}
+                {result.exp ? (lang === "en" ? `Exp+${result.exp} ` : `修為+${result.exp} `) : ""}
+                {result.life ? (lang === "en" ? `Lifespan+${result.life} ` : `壽元上限+${result.life} `) : ""}
+                {result.lifePct
+                  ? lang === "en"
+                    ? `Lifespan+${Math.round(result.lifePct * 100)}% `
+                    : `壽元上限+${Math.round(result.lifePct * 100)}% `
+                  : ""}
+                {result.xianli ? (lang === "en" ? `Immortal Qi+${result.xianli}` : `仙靈力+${result.xianli}`) : ""}
               </span>
             </p>
             <button

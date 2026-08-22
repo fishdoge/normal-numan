@@ -195,13 +195,14 @@ export interface Technique {
 
 export interface Recipe {
   id: string;
-  result: string; // 產出裝備 item id
+  result: string; // 產出道具 id(裝備或丹藥皆可,「煉器＆煉丹」共用同一套配方機制)
   name: string;
   materials: { id: string; n: number }[];
   stones: number; // 靈石費用
   desc: string;
-  dropOnly?: boolean; // 需由妖獸掉落圖譜解鎖後方可煉製(高階裝備)
+  dropOnly?: boolean; // 需由妖獸掉落圖譜解鎖後方可煉製(高階裝備/丹藥皆適用)
   reqStage?: number; // 需要境界
+  lifeCost?: number; // 煉丹配方額外消耗壽元(載);煉器類配方不填即可,向後相容
 }
 
 export interface Sect {

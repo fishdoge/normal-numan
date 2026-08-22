@@ -15,7 +15,7 @@ export const REGIONS: Region[] = [
 
 export const MONSTERS: Monster[] = [
   // ── 天南(一至二階) ──
-  { id: "shulang", name: "赤目鼠狼", element: "土", hp: 14, atk: 2, exp: 3, stones: [1, 2], drops: [{ id: "huanglongcao", chance: 0.4 }], desc: "一階最低等妖獸,雙目赤紅,成群出沒。" },
+  { id: "shulang", name: "赤目鼠狼", element: "土", hp: 14, atk: 2, exp: 3, stones: [1, 2], drops: [{ id: "huanglongcao", chance: 0.4 }, { id: "qingyunshi", chance: 0.15 }], desc: "一階最低等妖獸,雙目赤紅,成群出沒。" },
   { id: "qinglang", name: "青背狼", element: "木", hp: 25, atk: 4, exp: 6, stones: [1, 3], drops: [{ id: "qingmu", chance: 0.2 }, { id: "yaodan", chance: 0.1 }], desc: "背生青毛的狼型妖獸,行動迅捷。" },
   { id: "tiejiachong", name: "鐵甲蟲群", element: "金", hp: 32, atk: 5, exp: 8, stones: [1, 4], drops: [{ id: "tiekuang", chance: 0.5 }], desc: "甲殼堅硬如鐵的蟲群,尋常法術難傷。" },
   { id: "hanshuimang", name: "寒水蟒", element: "水", hp: 58, atk: 7, exp: 14, stones: [3, 6], drops: [{ id: "hanjing", chance: 0.3 }, { id: "yaodan", chance: 0.2 }], desc: "潛伏寒潭的巨蟒,吐息成冰。" },
@@ -27,28 +27,28 @@ export const MONSTERS: Monster[] = [
   { id: "duyanchan", name: "毒眼蟾", element: "水", hp: 95, atk: 10, exp: 25, stones: [4, 10], drops: [{ id: "yaodan", chance: 0.3 }, { id: "yinsha", chance: 0.2 }], desc: "獨目巨蟾,口吐毒霧,潛伏於沼澤陰處。" },
   { id: "huoyanju", name: "火鬃巨犀", element: "火", hp: 165, atk: 16, exp: 55, stones: [9, 20], drops: [{ id: "huoyu", chance: 0.4 }, { id: "wenyu", chance: 0.25 }], desc: "鬃毛燃燒不熄的巨犀,一撞裂石開山。" },
   // ── 血色禁地(結丹級) ──
-  { id: "xuejiao", name: "血蛟", element: "水", hp: 600, atk: 68, exp: 220, stones: [36, 84], drops: [{ id: "jiaolin", chance: 0.6 }, { id: "m_qingzhufeng", chance: 0.02 }], desc: "欲化龍而未成的血色蛟龍,盤踞禁地血河。" },
+  { id: "xuejiao", name: "血蛟", element: "水", hp: 600, atk: 68, exp: 220, stones: [36, 84], drops: [{ id: "jiaolin", chance: 0.6 }, { id: "m_qingzhufeng", chance: 0.02 }, { id: "xueyu", chance: 0.15 }], desc: "欲化龍而未成的血色蛟龍,盤踞禁地血河。" },
   { id: "shengui", name: "禁地石龜", element: "土", hp: 1000, atk: 78, exp: 310, stones: [48, 110], drops: [{ id: "wenyu", chance: 0.7 }, { id: "qiannianlingru", chance: 0.3 }], desc: "馱著半座山的巨龜,甲上刻滿上古符文。" },
   { id: "guhuolao", name: "古洞樹妖", element: "火", hp: 1600, atk: 110, exp: 500, stones: [96, 190], drops: [{ id: "tianlingguo", chance: 0.5 }, { id: "m_jinlei", chance: 0.02 }, { id: "zhujidan", chance: 0.15 }], desc: "盤踞禁地萬年的妖王,結丹圓滿威壓。" },
   { id: "xuewuzhu", name: "血霧蛛", element: "木", hp: 780, atk: 72, exp: 260, stones: [40, 95], drops: [{ id: "jiaolin", chance: 0.35 }, { id: "qiannianlingru", chance: 0.2 }], desc: "吐血色蛛絲結網的巨蛛,獵物入網頃刻化血。" },
   { id: "kulouwang", name: "枯骨魔將", element: "金", hp: 1250, atk: 95, exp: 400, stones: [70, 150], drops: [{ id: "yinsha", chance: 0.5 }, { id: "m_xuantian", chance: 0.02 }], desc: "禁地枯骨凝聚的魔將,執一柄骨矛,刀槍不入。" },
   { id: "chihuoya", name: "赤火鴉群", element: "火", hp: 900, atk: 88, exp: 340, stones: [55, 130], drops: [{ id: "huoyu", chance: 0.5 }, { id: "tianlingguo", chance: 0.25 }], desc: "遮天蔽日的火鴉群,所過之處林木成炭。" },
   // ── 亂星海(元嬰級) ──
-  { id: "haimujing", name: "海母巨鯨", element: "水", hp: 4700, atk: 300, exp: 940, stones: [180, 410], drops: [{ id: "xuantiehan", chance: 0.4 }, { id: "ziyuanhua", chance: 0.3 }], desc: "吞吐海潮的巨鯨,背上寄生著整座珊瑚島。" },
+  { id: "haimujing", name: "海母巨鯨", element: "水", hp: 4700, atk: 300, exp: 940, stones: [180, 410], drops: [{ id: "xuantiehan", chance: 0.4 }, { id: "ziyuanhua", chance: 0.3 }, { id: "haixinzhu", chance: 0.15 }], desc: "吞吐海潮的巨鯨,背上寄生著整座珊瑚島。" },
   { id: "xingchenguai", name: "隕星傀儡", element: "金", hp: 7000, atk: 420, exp: 1400, stones: [300, 590], drops: [{ id: "xingchengang", chance: 0.6 }, { id: "m_dageng", chance: 0.02 }], desc: "星宮以隕星之核驅動的戰傀,金光射目。" },
   { id: "wangtianhou", name: "望天吼", element: "木", hp: 11000, atk: 570, exp: 2200, stones: [470, 940], drops: [{ id: "ningyingdan", chance: 0.35 }, { id: "m_aohan", chance: 0.02 }], desc: "仰天長嘯可裂雲海的上古凶獸後裔。" },
   { id: "canghaijiao", name: "滄海蛟龍", element: "水", hp: 6200, atk: 360, exp: 1200, stones: [240, 500], drops: [{ id: "jiaolin", chance: 0.4 }, { id: "xuantiehan", chance: 0.3 }], desc: "亂星海深處的蛟龍,捲起千丈狂濤,吞舟裂島。" },
   { id: "jinyuxie", name: "金羽蠍王", element: "金", hp: 8800, atk: 500, exp: 1800, stones: [380, 760], drops: [{ id: "xingchengang", chance: 0.45 }, { id: "ziyuanhua", chance: 0.25 }], desc: "披金色甲羽的巨蠍,尾刺一擊可洞穿法器。" },
   { id: "youmingzhang", name: "幽冥章魚", element: "水", hp: 9600, atk: 540, exp: 2000, stones: [420, 850], drops: [{ id: "xuantiehan", chance: 0.4 }, { id: "longlinguo", chance: 0.15 }], desc: "萬丈海溝爬出的幽冥巨章,觸手纏繞星辰。" },
   // ── 大晉(化神/煉虛級) ──
-  { id: "mohua", name: "魔化修士", element: "火", hp: 34000, atk: 1800, exp: 7700, stones: [1400, 3200], drops: [{ id: "mojing", chance: 0.7 }, { id: "m_yuanci", chance: 0.02 }, { id: "m_fentian_liyu", chance: 0.02 }], desc: "修煉魔功走火入魔的煉虛修士,神智全失,兇性滔天。" },
+  { id: "mohua", name: "魔化修士", element: "火", hp: 34000, atk: 1800, exp: 7700, stones: [1400, 3200], drops: [{ id: "mojing", chance: 0.7 }, { id: "m_yuanci", chance: 0.02 }, { id: "m_fentian_liyu", chance: 0.02 }, { id: "moyanjing", chance: 0.15 }], desc: "修煉魔功走火入魔的煉虛修士,神智全失,兇性滔天。" },
   { id: "tianlanyao", name: "天嵐妖鳥", element: "火", hp: 61000, atk: 2900, exp: 16000, stones: [2800, 5600], drops: [{ id: "fenghuolin", chance: 0.5 }, { id: "m_sanyan", chance: 0.02 }, { id: "m_jinwu_zhuori", chance: 0.02 }], desc: "風火雙翼遮天蔽日,大晉妖族的圖騰聖獸。" },
   { id: "guimu", name: "鬼母", element: "水", hp: 72000, atk: 3800, exp: 22000, stones: [3800, 7500], drops: [{ id: "huangjitiansui", chance: 0.3 }, { id: "dahuandan", chance: 0.5 }, { id: "wanshoudan", chance: 0.08 }, { id: "m_hanyuan_wanli", chance: 0.02 }], desc: "陰界裂縫爬出的存在,萬鬼朝拜,煉虛巔峰。" },
   { id: "moxuejun", name: "魔血尊者", element: "火", hp: 46000, atk: 2400, exp: 11000, stones: [2000, 4200], drops: [{ id: "mojing", chance: 0.6 }, { id: "longlinguo", chance: 0.2 }, { id: "m_wanteng_tianluo", chance: 0.02 }], desc: "以魔血淬體的煉虛魔修,渾身血氣化甲,力可撼山。" },
   { id: "wuxinbagua", name: "無心霸虎", element: "土", hp: 55000, atk: 3200, exp: 14000, stones: [2500, 5000], drops: [{ id: "fenghuolin", chance: 0.4 }, { id: "huangjitiansui", chance: 0.15 }], desc: "大晉北荒的太古凶虎,雙目無神,只知殺戮。" },
   { id: "youmingfan", name: "幽冥梵僧", element: "金", hp: 68000, atk: 3600, exp: 20000, stones: [3400, 6800], drops: [{ id: "mojing", chance: 0.5 }, { id: "dahuandan", chance: 0.4 }], desc: "墮入魔道的佛宗高僧,誦動地獄梵音,攝人心魂。" },
   // ── 靈界(合體/大乘級) ──
-  { id: "zhenlingwei", name: "真靈衛", element: "金", hp: 240000, atk: 11000, exp: 64000, stones: [3000, 6000], drops: [{ id: "longjinggu", chance: 0.4 }, { id: "m_zhenlong", chance: 0.02 }, { id: "m_canghai_niliu", chance: 0.02 }], desc: "靈界天淵城的傀儡戰衛,真靈血脈驅動。" },
+  { id: "zhenlingwei", name: "真靈衛", element: "金", hp: 240000, atk: 11000, exp: 64000, stones: [3000, 6000], drops: [{ id: "longjinggu", chance: 0.4 }, { id: "m_zhenlong", chance: 0.02 }, { id: "m_canghai_niliu", chance: 0.02 }, { id: "zhenlingsha", chance: 0.12 }], desc: "靈界天淵城的傀儡戰衛,真靈血脈驅動。" },
   { id: "gulong", name: "上古真龍殘魂", element: "木", hp: 400000, atk: 16000, exp: 150000, stones: [6000, 12000], drops: [{ id: "longjinggu", chance: 0.8 },{id:"nimetanti",chance:0.02}, { id: "pojiedan", chance: 0.25 }, { id: "yanshouguo", chance: 0.1 }, { id: "m_houtu_fengtian", chance: 0.02 }], desc: "隕落真龍不滅的殘魂,一聲龍吟,萬里雲海翻覆。" },
   { id: "tianjie", name: "天劫雷靈", element: "金", hp: 850000, atk: 34000, exp: 490000, stones: [12000, 24000], drops: [{ id: "pojiedan", chance: 0.5 }, { id: "panlongtao", chance: 0.12 }, { id: "m_tianjie_shafa", chance: 0.02 }], desc: "天劫之中孕生的雷之精靈——渡過它,便是飛昇之門。" },
   { id: "hunyuanshou", name: "混元凶獸", element: "土", hp: 320000, atk: 13000, exp: 100000, stones: [4500, 9000], drops: [{ id: "longjinggu", chance: 0.5 }, { id: "huangjitiansui", chance: 0.2 }, { id: "m_shanhe_zhenhun", chance: 0.02 }], desc: "靈界洪荒殘留的混元巨獸,一步一頓,山河震顫。" },
@@ -63,19 +63,19 @@ export const MONSTERS: Monster[] = [
   { id: "lord_lingjie", name: "太古龍祖", element: "木", isLord: true, hp: 2400000, atk: 130000, exp: 900000, stones: [600000, 1200000], drops: [{ id: "longjinggu", chance: 0.4 },{id:"nimetanti",chance:0.3},{id:"huangjitiansui",chance:0.3}, { id: "zenglingzhu", chance: 0.6 }, { id: "panlongtao", chance: 0.12 }, { id: "pojiedan", chance: 0.9 }, { id: "fu_xuanyin", chance: 0.3 }, { id: "blueprint_xuanyin", chance: 0.3 }, { id: "zhenxiandan", chance: 0.15 }], desc: "靈界所有真龍血脈的源頭,一聲龍吟,天淵城萬里雲海盡數翻覆。" },
 
   // ── 北寒仙域(真仙專屬,掉落先天仙器,予以仙靈力;靈石掉落已於 1.6 版兩度調整,現為原區間 ×3) ──
-  { id: "bh_hanjiao", name: "玄冰仙蛟", element: "水", hp: 200000, atk: 12000, exp: 0, stones: [6000000, 9000000], drops: [{ id: "xiantian_zhong", chance: 0.006 }], desc: "北寒仙域萬載寒潭孕育的仙蛟,通體晶瑩如玉,一息成冰,已臻仙獸之列。" },
+  { id: "bh_hanjiao", name: "玄冰仙蛟", element: "水", hp: 200000, atk: 12000, exp: 0, stones: [6000000, 9000000], drops: [{ id: "xiantian_zhong", chance: 0.006 }, { id: "xuanbingjing", chance: 0.1 }], desc: "北寒仙域萬載寒潭孕育的仙蛟,通體晶瑩如玉,一息成冰,已臻仙獸之列。" },
   { id: "bh_binghun", name: "萬載冰魂", element: "水", hp: 300000, atk: 16000, exp: 0, stones: [7500000, 10800000], drops: [{ id: "xiantian_zhong", chance: 0.006 }], desc: "玄冰深處凝聚萬載的寒魂,所觸之物盡成永凍,連仙靈力也能封凍。" },
-  { id: "bh_hanpeng", name: "極寒天鵬", element: "金", hp: 400000, atk: 20000, exp: 0, stones: [9600000, 13800000], drops: [{ id: "xiantian_zhong", chance: 0.006 }, { id: "xiantian_qi", chance: 0.03 }], desc: "展翅蔽日的仙界鵬鳥,雙翼捲動九天寒風,一擊便是萬里冰封。" },
+  { id: "bh_hanpeng", name: "極寒天鵬", element: "金", hp: 400000, atk: 20000, exp: 0, stones: [9600000, 13800000], drops: [{ id: "xiantian_zhong", chance: 0.006 }, { id: "xiantian_qi", chance: 0.03 }, { id: "xuanbingjing", chance: 0.1 }], desc: "展翅蔽日的仙界鵬鳥,雙翼捲動九天寒風,一擊便是萬里冰封。" },
   { id: "bh_xuanwu", name: "北冥玄武", element: "土", hp: 500000, atk: 22000, exp: 0, stones: [12600000, 17400000], drops: [{ id: "xiantian_zhong", chance: 0.007 }, { id: "xiantian_qi", chance: 0.03 }], desc: "背負仙山的太古玄武,龜甲堅逾仙器,鎮壓北寒一方水土。" },
   { id: "bh_hanlong", name: "寒霜仙龍", element: "金", hp: 650000, atk: 26000, exp: 0, stones: [16200000, 21000000], drops: [{ id: "xiantian_qi", chance: 0.004 },{id:"nimetanti",chance:0.06}, { id: "xiantian_zhong", chance: 0.01 }], desc: "通體覆霜的仙龍,龍息所至冰封千里,乃北寒仙尊麾下的守域仙獸。" },
   // 地域王(北寒仙尊)靈石掉落與其餘六位地域王一併於下方按原始基準 ×15,再套用本次 ×3
   { id: "lord_beihan", name: "北寒仙尊", element: "水", isLord: true, hp: 1500000, atk: 35000, exp: 0, stones: [900000, 1800000], drops: [{ id: "tianxiandan", chance: 0.8 },{ id: "zengyuandan", chance: 0.01 }, { id: "xiantian_qi", chance: 0.5 }, { id: "xiantian_zhong", chance: 0.5 }, { id: "m_beiming", chance: 0.2 }], desc: "北寒仙域的無上主宰,一身仙靈力深不見底,傳說祂曾是與天同壽的古仙。天仙丹唯祂身隕方出,更有機緣傳下無上仙法。" },
 
   // ── 金源仙域(雲遊探索秘境解鎖,強度為北寒 50 倍,五重仙關) ──
-  { id: "jy_taiyimang", name: "滄瓓金蟒", element: "金", hp: 20000000, atk: 600000, exp: 0, stones: [2400000, 4800000], drops: [{ id: "tianxiandan", chance: 0.2 }, { id: "xiantian_qi", chance: 0.05 }, { id: "xiantian_zaohuadan", chance: 0.006 }, { id: "blueprint_jishen", chance: 0.04 }, { id: "xingpan_jin", chance: 0.08 }], desc: "金源仙域第一重仙關的守關凶獸,通體金鱗,吞吐太乙金光。" },
-  { id: "jy_huntianyuan", name: "混天靈猿", element: "土", hp: 35000000, atk: 900000, exp: 0, stones: [3300000, 6600000], drops: [{ id: "tianxiandan", chance: 0.2 }, { id: "jy_hunyuan", chance: 0.03 }, { id: "xiantian_zaohuadan", chance: 0.006 }, { id: "blueprint_hunyuanjia", chance: 0.04 }, { id: "xingpan_mu", chance: 0.08 }], desc: "第二重仙關的洪荒靈猿,雙臂撼動仙山,一吼震碎虛空。" },
-  { id: "jy_bahuang", name: "八荒火麒麟", element: "火", hp: 42000000, atk: 1300000, exp: 0, stones: [4500000, 9000000], drops: [{ id: "tianxiandan", chance: 0.22 }, { id: "jy_taiyi", chance: 0.02 }, { id: "xiantian_zaohuadan", chance: 0.006 }, { id: "blueprint_hudao", chance: 0.04 }, { id: "xingpan_huo", chance: 0.08 }], desc: "第三重仙關的火之瑞獸,八荒業火加身,焚盡一切仙靈。" },
-  { id: "jy_wujizhu", name: "無極金蛛", element: "金", hp: 72000000, atk: 1900000, exp: 0, stones: [6600000, 13200000], drops: [{ id: "tianxiandan", chance: 0.24 }, { id: "blueprint_taixu", chance: 0.15 }, { id: "xiantian_zaohuadan", chance: 0.006 }, { id: "xingpan_shui", chance: 0.08 }], desc: "第四重仙關的太古金蛛,無極金絲織天羅,仙人亦難掙脫。" },
+  { id: "jy_taiyimang", name: "滄瓓金蟒", element: "金", hp: 20000000, atk: 600000, exp: 0, stones: [2400000, 4800000], drops: [{ id: "tianxiandan", chance: 0.2 }, { id: "xiantian_qi", chance: 0.05 }, { id: "xiantian_zaohuadan", chance: 0.006 }, { id: "blueprint_jishen", chance: 0.04 }, { id: "blueprint_xisui", chance: 0.04 }, { id: "xingpan_jin", chance: 0.08 }], desc: "金源仙域第一重仙關的守關凶獸,通體金鱗,吞吐太乙金光。" },
+  { id: "jy_huntianyuan", name: "混天靈猿", element: "土", hp: 35000000, atk: 900000, exp: 0, stones: [3300000, 6600000], drops: [{ id: "tianxiandan", chance: 0.2 }, { id: "jy_hunyuan", chance: 0.03 }, { id: "xiantian_zaohuadan", chance: 0.006 }, { id: "blueprint_hunyuanjia", chance: 0.04 }, { id: "blueprint_ningxian", chance: 0.04 }, { id: "xingpan_mu", chance: 0.08 }], desc: "第二重仙關的洪荒靈猿,雙臂撼動仙山,一吼震碎虛空。" },
+  { id: "jy_bahuang", name: "八荒火麒麟", element: "火", hp: 42000000, atk: 1300000, exp: 0, stones: [4500000, 9000000], drops: [{ id: "tianxiandan", chance: 0.22 }, { id: "jy_taiyi", chance: 0.02 }, { id: "xiantian_zaohuadan", chance: 0.006 }, { id: "blueprint_hudao", chance: 0.04 }, { id: "xingpan_huo", chance: 0.08 }, { id: "jinyuan_suipian", chance: 0.1 }], desc: "第三重仙關的火之瑞獸,八荒業火加身,焚盡一切仙靈。" },
+  { id: "jy_wujizhu", name: "無極金蛛", element: "金", hp: 72000000, atk: 1900000, exp: 0, stones: [6600000, 13200000], drops: [{ id: "tianxiandan", chance: 0.24 }, { id: "blueprint_taixu", chance: 0.15 }, { id: "xiantian_zaohuadan", chance: 0.006 }, { id: "xingpan_shui", chance: 0.08 }, { id: "jinyuan_suipian", chance: 0.1 }], desc: "第四重仙關的太古金蛛,無極金絲織天羅,仙人亦難掙脫。" },
   // 第五重仙關:金源仙帝身側的兩名護法仙使,實力較仙帝稍弱,守關時與仙帝一同鎮守
   { id: "jy_suijin", name: "金源仙使 - 歲金", element: "金", hp: 55000000, atk: 1500000, exp: 0, stones: [6000000, 11400000], drops: [{ id: "tianxiandan", chance: 0.2 }, { id: "xiantian_qi", chance: 0.08 }, { id: "xiantian_zaohuadan", chance: 0.006 }, { id: "blueprint_zhuxian", chance: 0.05 }, { id: "xingpan_tu", chance: 0.08 }], desc: "第五重仙關的護法仙使,執掌歲月金流,金光流轉間可鎮壓一方時序。" },
   { id: "jy_ruijin", name: "金源仙使 - 銳金", element: "金", hp: 62000000, atk: 1700000, exp: 0, stones: [7200000, 12600000], drops: [{ id: "tianxiandan", chance: 0.2 }, { id: "xiantian_qi", chance: 0.08 }, { id: "xiantian_zaohuadan", chance: 0.006 }, { id: "blueprint_zaohuajian", chance: 0.05 }], desc: "第五重仙關的護法仙使,鋒銳金氣凝形為刃,一擊可裂山斷嶽。" },
@@ -89,7 +89,7 @@ export const MONSTERS: Monster[] = [
 
   // ── 蠻荒異界(集滿五色異星盤解鎖):攻擊不烈,生命堅韌無匹(金源仙域平均生命力 15 倍) ──
   // 天狐領地
-  { id: "chiwei_huyao", name: "赤尾狐妖", element: "火", hp: 650000000, atk: 1000000, exp: 0, stones: [8000000, 15000000], drops: [{ id: "tianxiandan", chance: 0.15 }, { id: "xiantian_qi", chance: 0.08 }, { id: "poshou_jinhow", chance: 0.05 }, { id: "xuantian_canpian", chance: 0.05 }], desc: "天狐領地的尋常妖狐,赤尾生焰,身法飄忽卻不擅強攻。" },
+  { id: "chiwei_huyao", name: "赤尾狐妖", element: "火", hp: 650000000, atk: 1000000, exp: 0, stones: [8000000, 15000000], drops: [{ id: "tianxiandan", chance: 0.15 }, { id: "xiantian_qi", chance: 0.08 }, { id: "poshou_jinhow", chance: 0.05 }, { id: "xuantian_canpian", chance: 0.05 }, { id: "manhuang_yungu", chance: 0.08 }], desc: "天狐領地的尋常妖狐,赤尾生焰,身法飄忽卻不擅強攻。" },
   { id: "baimei_huxian", name: "白眉狐仙", element: "火", hp: 600000000, atk: 950000, exp: 0, stones: [7500000, 14000000], drops: [{ id: "tianxiandan", chance: 0.15 }, { id: "xiantian_qi", chance: 0.08 }, { id: "poshou_jinhow", chance: 0.05 }, { id: "xuantian_canpian", chance: 0.05 }], desc: "天狐領地的修行狐仙,眉生白毫,性狡而不善近戰。" },
   { id: "jiuwei_huxiu", name: "九尾靈狐", element: "木", hp: 700000000, atk: 1050000, exp: 0, stones: [8500000, 16000000], drops: [{ id: "tianxiandan", chance: 0.15 }, { id: "xiantian_qi", chance: 0.08 }, { id: "poshou_jinhow", chance: 0.05 }, { id: "xuantian_canpian", chance: 0.05 }], desc: "天狐領地修為較深的狐修,九尾初現,靈氣渾厚。" },
   // 真龍領地
@@ -120,7 +120,7 @@ export const LOCATIONS: Location[] = [
     id: "caiyaoshan", name: "彩霞山", region: "tiannan", reqStage: 1,
     desc: "黃楓谷外圍靈山,雲霞繚繞,是低階弟子採藥練手之地。",
     monsters: ["shulang", "qinglang", "cuiyunyan"],
-    materials: ["tiekuang"], herbs: ["huanglongcao", "zijinhua"],
+    materials: ["tiekuang", "qingyunshi"], herbs: ["huanglongcao", "zijinhua"],
     manualChance: 0.02, manuals: ["m_hanbing"],
   },
   {
@@ -156,7 +156,7 @@ export const LOCATIONS: Location[] = [
     id: "xuesehe", name: "血色河谷", region: "jindi", reqStage: 3,
     desc: "赤紅河水奔流的裂谷,血蛟出沒,河底沉著歷代闖禁者的儲物袋。",
     monsters: ["xuejiao", "shengui", "xuewuzhu"],
-    materials: ["jiaolin", "yinsha"], herbs: ["qiannianlingru", "tianlingguo"],
+    materials: ["jiaolin", "yinsha", "xueyu"], herbs: ["qiannianlingru", "tianlingguo"],
     manualChance: 0.06, manuals: ["m_qingzhufeng", "m_xuantian"],
   },
   {
@@ -171,7 +171,7 @@ export const LOCATIONS: Location[] = [
     id: "waihaidao", name: "外海群島", region: "luanxinghai", reqStage: 4,
     desc: "亂星海外圍的萬千小島,海獸橫行,島上靈藥無人採擷。",
     monsters: ["haimujing", "xingchenguai", "canghaijiao"],
-    materials: ["xuantiehan", "xingchengang"], herbs: ["ziyuanhua", "qiannianlingru"],
+    materials: ["xuantiehan", "xingchengang", "haixinzhu"], herbs: ["ziyuanhua", "qiannianlingru"],
     manualChance: 0.05, manuals: ["m_aohan", "m_dageng"],
   },
   {
@@ -186,7 +186,7 @@ export const LOCATIONS: Location[] = [
     id: "moyuan", name: "魔淵", region: "dajin", reqStage: 5,
     desc: "大晉北疆的無底深淵,魔氣沖天,魔化修士在淵口徘徊。",
     monsters: ["mohua", "tianlanyao", "moxuejun", "wuxinbagua"],
-    materials: ["mojing", "fenghuolin"], herbs: ["longlinguo", "ziyuanhua"],
+    materials: ["mojing", "fenghuolin", "moyanjing"], herbs: ["longlinguo", "ziyuanhua"],
     manualChance: 0.06, manuals: ["m_yuanci", "m_sanyan"],
   },
   {
@@ -201,7 +201,7 @@ export const LOCATIONS: Location[] = [
     id: "tianyuancheng", name: "天淵城外圍", region: "lingjie", reqStage: 7,
     desc: "靈界人族第一雄城之外的莽荒,真靈衛日夜巡弋。",
     monsters: ["zhenlingwei", "gulong", "hunyuanshou", "jiutianfeng"],
-    materials: ["longjinggu", "xingchengang"], herbs: ["huangjitiansui", "longlinguo"],
+    materials: ["longjinggu", "xingchengang", "zhenlingsha"], herbs: ["huangjitiansui", "longlinguo"],
     manualChance: 0.06, manuals: ["m_zhenlong"],
   },
   {
@@ -316,4 +316,16 @@ export const RECIPES: Recipe[] = [
   { id: "r_jinyuan_hujing", result: "jinyuan_hujing", name: "金源護道鏡", stones: 300000000, desc: "金源靈砂磨製的護道寶鏡,可映萬法、避凶趨吉。", dropOnly: true, reqStage: 10, materials: [{ id: "jinyuan_lingsha", n: 4 }, { id: "mojing", n: 3 }] },
   { id: "r_zhuxian_fu", result: "zhuxian_fu", name: "誅仙滅魂符", stones: 250000000, desc: "太乙精金為引凝成的殺伐仙符,一符出手,誅仙滅魂。", dropOnly: true, reqStage: 10, materials: [{ id: "taiyi_jingjin", n: 3 }, { id: "huangjitiansui", n: 1 }] },
   { id: "r_zaohua_jian", result: "zaohua_jian", name: "造化戮仙劍", stones: 350000000, desc: "金源靈砂與太乙精金合煉的造化之劍,劍出無雙。", dropOnly: true, reqStage: 10, materials: [{ id: "taiyi_jingjin", n: 3 }, { id: "jinyuan_lingsha", n: 3 }, { id: "longjinggu", n: 2 }] },
+  // 煉丹配方(1.23 版新增,煉器堂併入「煉器＆煉丹」):以靈材 + 靈石 + 壽元煉成丹藥,各境界皆有
+  { id: "r_huanglongdan", result: "huanglongdan", name: "黃龍丹", stones: 20, desc: "黃龍草晒乾研磨,加水靈石慢火煉成的補氣丹藥。", lifeCost: 2, materials: [{ id: "huanglongcao", n: 3 }] },
+  { id: "r_liaoshangdan", result: "liaoshangdan", name: "療傷丹", stones: 40, desc: "血靈芝搗碎入爐,外敷內服皆可癒合傷勢。", lifeCost: 5, materials: [{ id: "xuelingzhi", n: 2 }] },
+  { id: "r_huiyuandan", result: "huiyuandan", name: "回元丹", stones: 80, desc: "紫金花萃取靈氣凝丹,回復法力之用。", lifeCost: 10, materials: [{ id: "zijinhua", n: 3 }] },
+  { id: "r_zhujidan", result: "zhujidan", name: "築基丹", stones: 300, desc: "朱果佐以天靈果溫養,大增築基修士修為。", lifeCost: 20, materials: [{ id: "zhuguo", n: 2 }, { id: "tianlingguo", n: 1 }] },
+  { id: "r_ningyingdan", result: "ningyingdan", name: "凝嬰丹", stones: 1200, desc: "千年靈乳凝煉,助結丹修士凝結元嬰。", lifeCost: 40, materials: [{ id: "qiannianlingru", n: 2 }] },
+  { id: "r_dahuandan", result: "dahuandan", name: "大還丹", stones: 5000, desc: "紫猿花與龍鱗果合煉,起死回生之效。", lifeCost: 80, materials: [{ id: "ziyuanhua", n: 2 }, { id: "longlinguo", n: 1 }] },
+  { id: "r_jiuqulingshen", result: "jiuqulingshen", name: "九曲靈參丹", stones: 40000, desc: "皇極天髓溫養九曲靈參,法力如潮湧回。", lifeCost: 160, materials: [{ id: "huangjitiansui", n: 2 }] },
+  { id: "r_pojiedan", result: "pojiedan", name: "破界丹", stones: 90000, desc: "龍鱗果與皇極天髓為引,衝擊大乘瓶頸的無上靈丹。", lifeCost: 320, materials: [{ id: "longlinguo", n: 3 }, { id: "huangjitiansui", n: 1 }] },
+  // 真仙專屬煉丹(圖譜解鎖,需金源仙域怪物掉落對應圖譜)
+  { id: "r_xisuidan", result: "xisuidan", name: "洗髓丹", stones: 400000000, desc: "太乙精金與金源靈砂共煉的洗髓至藥,修為大補。", dropOnly: true, reqStage: 10, materials: [{ id: "taiyi_jingjin", n: 4 }, { id: "jinyuan_lingsha", n: 4 }] },
+  { id: "r_ningxiandan", result: "ningxiandan", name: "凝仙丹", stones: 450000000, desc: "金源靈砂反覆淬煉凝成的仙丹,小補仙靈力。", dropOnly: true, reqStage: 10, materials: [{ id: "jinyuan_lingsha", n: 5 }, { id: "taiyi_jingjin", n: 3 }] },
 ];

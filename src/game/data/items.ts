@@ -21,6 +21,16 @@ export const ITEMS: ItemDef[] = [
   { id: "xuantian_canpian", name: "玄天殘片", kind: "material", desc: "蠻荒異界怪物體內殘留的太古仙器碎片,玄光流轉,乃煉化玄天仙器的必備材料。", price: 15000 },
   { id: "poshou_jinhow", name: "破曉精華", kind: "material", desc: "創世之初，天地誕生時第一滴精華。", price: 533000 },
 
+  // ── 各區域特產材料(1.23 版新增,每區一種,獵殺妖獸或採集靈材皆有機會取得) ──
+  { id: "qingyunshi", name: "青雲石", kind: "material", desc: "天南越國隨處可見的青色雲紋石,靈氣稀薄卻取用便利。", element: "木", price: 5 },
+  { id: "xueyu", name: "血玉", kind: "material", desc: "血色禁地土壤中凝結的赤玉,隱有血煞之氣。", price: 90 },
+  { id: "haixinzhu", name: "海心珠", kind: "material", desc: "亂星海深處蚌類孕育的奇珠,珠心映海,靈氣內斂。", element: "水", price: 50 },
+  { id: "moyanjing", name: "魔炎晶", kind: "material", desc: "大晉魔修淬煉魔火時遺落的晶粒,魔焰不熄。", element: "火", price: 90 },
+  { id: "zhenlingsha", name: "真靈砂", kind: "material", desc: "靈界特有的砂礫,真靈氣息滲入其中,飛昇前修士煉器多倚重此物。", price: 100 },
+  { id: "xuanbingjing", name: "玄冰晶", kind: "material", desc: "北寒仙域萬載玄冰凝聚而成的晶石,寒氣直透仙軀。", element: "水", price: 600 },
+  { id: "jinyuan_suipian", name: "金源碎晶", kind: "material", desc: "金源仙關崩落的碎晶,金光內蘊,較靈砂略遜一籌卻更易採得。", element: "金", price: 700 },
+  { id: "manhuang_yungu", name: "蠻荒隕骨", kind: "material", desc: "蠻荒異界怪物體內殘留的隕骨,堅逾玄鐵,乃太乙境爐火的珍稀輔料。", price: 950 },
+
   // ── 仙草 ──
   { id: "huanglongcao", name: "黃龍草", kind: "herb", desc: "常見靈草,煉製黃龍丹主藥。", price: 6, exp: 8 },
   { id: "zhuguo", name: "朱果", kind: "herb", desc: "百年一熟的靈果,服之可增修為。", price: 13, exp: 26 },
@@ -62,6 +72,10 @@ export const ITEMS: ItemDef[] = [
   { id: "dahuandan", name: "大還丹", kind: "pill", desc: "起死回生的靈丹,重傷垂死亦可救回。", price: 5000, heal: 99999 },
   { id: "jiuqulingshen", name: "九曲靈參丹", kind: "pill", desc: "九曲靈參煉製,法力如潮湧回。", price: 3000, mp: 99999 },
   { id: "pojiedan", name: "破界丹", kind: "pill", desc: "衝擊大乘瓶頸的無上靈丹,以皇極天髓為引。", price: 4100, exp: 26000 },
+
+  // ── 真仙專屬丹藥(煉丹堂,需圖譜解鎖) ──
+  { id: "xisuidan", name: "洗髓丹", kind: "pill", desc: "洗髓伐骨的真仙至藥,修為大補,唯真仙以上煉丹堂可煉,需圖譜方解配方。", price: 0, exp: 8000000, reqStage: 10 },
+  { id: "ningxiandan", name: "凝仙丹", kind: "special", desc: "凝練仙靈力的真仙至藥,小補仙靈力,唯真仙以上煉丹堂可煉,需圖譜方解配方。", price: 0, xianli: 1, reqStage: 10 },
 
   // ── 仙法秘笈 ──
   { id: "m_qingzhufeng", name: "《青竹風雲劍訣》殘卷", kind: "manual", desc: "研讀後可習得青竹風雲劍訣。", price: 800, teaches: "qingzhufeng" },
@@ -150,6 +164,8 @@ export const ITEMS: ItemDef[] = [
   { id: "blueprint_hudao", name: "《金源護道鏡》煉器圖譜", kind: "recipe", desc: "記載金源護道鏡的煉製之法,參詳後可自行煉製。", price: 0, unlocksRecipe: "r_jinyuan_hujing", dropOnly: true },
   { id: "blueprint_zhuxian", name: "《誅仙滅魂符》煉器圖譜", kind: "recipe", desc: "記載誅仙滅魂符的煉製之法,參詳後可自行煉製。", price: 0, unlocksRecipe: "r_zhuxian_fu", dropOnly: true },
   { id: "blueprint_zaohuajian", name: "《造化戮仙劍》煉器圖譜", kind: "recipe", desc: "記載造化戮仙劍的煉製之法,參詳後可自行煉製。", price: 0, unlocksRecipe: "r_zaohua_jian", dropOnly: true },
+  { id: "blueprint_xisui", name: "《洗髓丹》煉丹圖譜", kind: "recipe", desc: "記載洗髓丹的煉製之法,參詳後可自行煉丹。", price: 0, unlocksRecipe: "r_xisuidan", dropOnly: true },
+  { id: "blueprint_ningxian", name: "《凝仙丹》煉丹圖譜", kind: "recipe", desc: "記載凝仙丹的煉製之法,參詳後可自行煉丹。", price: 0, unlocksRecipe: "r_ningxiandan", dropOnly: true },
 
   // ── 命器(舊·天命符 / 地運符,已停止由妖獸掉落,僅為相容既有存檔保留定義,不會再有新玩家取得) ──
   { id: "tianmingfu", name: "天命符", kind: "mingqi", desc: "命格之力凝成的符籙,大晉噬天鬼帝身死方遺,窺得一線天機——不論何種境界,突破成功率 +5%。", price: 0, dropOnly: true, breakBonus: 0.05 },

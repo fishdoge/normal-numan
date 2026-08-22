@@ -1547,19 +1547,42 @@ function applyActionInner(
           return { save: s };
         }
       }
+      // 煉丹配方額外消耗壽元;壽元耗盡即道隕(與打坐/調息一致的處理方式)
+      const lifeCost = rec.lifeCost ?? 0;
+      const cap = maxLifeOf(s);
+      if (lifeCost > 0 && s.age + lifeCost >= cap) {
+        for (const m of rec.materials) take(s, m.id, m.n);
+        s.stones -= rec.stones;
+        s.age = cap;
+        s.dead = true;
+        s.combat = null;
+        log(
+          s,
+          `煉丹爐火正盛,你卻覺一縷精魂隨爐煙散去——壽元已盡。`,
+          `享年 ${cap} 年,道隕於【${realm.name}】。`,
+        );
+        return { save: s };
+      }
       for (const m of rec.materials) take(s, m.id, m.n);
       s.stones -= rec.stones;
       s.energy -= energyCost;
-      // 煉器屬性浮動 ±30%:每次出爐品質隨機,攻/防/速皆等比例縮放
-      const quality = rand(70, 130);
-      const rolledId = `${rec.result}@${quality}`;
+      if (lifeCost > 0) {
+        s.age += lifeCost;
+        s.day = s.age;
+      }
+      const result = itemById(rec.result);
+      // 丹藥/仙物類產出效果不隨品質浮動(exp/heal/mp 等非 atkBonus/defBonus/speedBonus,浮動無意義),
+      // 直接原樣給予;裝備類維持既有的 ±30% 屬性浮動機制。
+      const isPillLike = result.kind === "pill" || result.kind === "special";
+      const rolledId = isPillLike ? rec.result : `${rec.result}@${rand(70, 130)}`;
       give(s, rolledId);
       const rolled = itemById(rolledId);
-      log(s, `爐火純青,三日三夜——你成功煉製出【${rolled.name}】!`);
+      const lifeNote = lifeCost > 0 ? `(耗壽元 ${lifeCost} 年)` : "";
+      log(s, `爐火純青,三日三夜——你成功煉製出【${rolled.name}】!${lifeNote}`);
       return {
         save: s,
         loot: {
-          title: "煉 器 大 成",
+          title: isPillLike ? "煉 丹 大 成" : "煉 器 大 成",
           success: true,
           lines: [`【${rolled.name}】出爐!`, rolled.desc],
         },

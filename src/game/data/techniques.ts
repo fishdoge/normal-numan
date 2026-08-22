@@ -160,7 +160,7 @@ export const TECHNIQUES: Technique[] = [
   {
     id: "yuanci",
     name: "元磁神光",
-    element: "土",
+    element: "無",
     desc: "元磁之力化作五色神光,鎮壓萬法飛遁。",
     mpCost: 700,
     power: 11,
@@ -296,7 +296,7 @@ export const TECHNIQUES: Technique[] = [
   {
     id: "hunyuan_yiqi",
     name: "混元一氣仙訣",
-    element: "土",
+    element: "無",
     desc: "開天闢地的混元至法,一氣化三清,鎮壓諸天萬法。真仙需苦修數十萬載方能大成。",
     mpCost: 80000,
     power: 90,
@@ -316,7 +316,7 @@ export const TECHNIQUES: Technique[] = [
   {
     id: "zhutian_shenlei",
     name: "誅天神雷金仙法",
-    element: "金",
+    element: "無",
     desc: "唯金仙可修的誅天神雷,一雷落下,億萬里化為焦土,乃仙庭鎮壓叛仙的無上殺伐仙法。",
     mpCost: 300000,
     power: 260,
@@ -326,7 +326,7 @@ export const TECHNIQUES: Technique[] = [
   {
     id: "taiyi_hunyuan_lu",
     name: "北冥六真天地訣",
-    element: "金",
+    element: "無",
     desc: "唯太乙境可修的至高仙法,葫蘆吞吐天地,一訣出,萬法歸元。太乙殿突破當下的饋贈。",
     mpCost: 400000,
     power: 300,

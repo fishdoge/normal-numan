@@ -1,10 +1,13 @@
 // 凡人修仙傳 · 核心型別
 
-export type Element = "金" | "木" | "水" | "火" | "土";
+// 「無」屬性:少數仙法(如元磁神光)本身無五行歸屬,不參與五行相剋,亦不計入 ELEMENTS(該陣列供
+// 異星盤集滿/蠻荒異界解鎖等明確以五行為基準的邏輯使用,見 ELEMENTS_WITH_NONE 供仙法分類 UI 專用)。
+export type Element = "金" | "木" | "水" | "火" | "土" | "無";
 export const ELEMENTS: Element[] = ["金", "木", "水", "火", "土"];
+export const ELEMENTS_WITH_NONE: Element[] = [...ELEMENTS, "無"];
 
-// 五行相剋:金克木 木克土 土克水 水克火 火克金
-export const COUNTERS: Record<Element, Element> = {
+// 五行相剋:金克木 木克土 土克水 水克火 火克金;「無」不參與相剋,故用 Partial(查無對應即視為無剋制加成)
+export const COUNTERS: Partial<Record<Element, Element>> = {
   金: "木",
   木: "土",
   土: "水",
@@ -18,6 +21,7 @@ export const ELEMENT_COLOR: Record<Element, string> = {
   水: "text-water",
   火: "text-fire",
   土: "text-earth",
+  無: "text-faded",
 };
 
 // 仙靈力顯示色(真仙專屬,紫色)

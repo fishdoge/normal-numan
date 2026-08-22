@@ -8,7 +8,8 @@ import { MONSTERS } from "@/game/data/world";
 import { MISSIONS } from "@/game/data/missions";
 import { itemById } from "@/game/data/items";
 import { sectTierOf, SECT_TIER_REQ_LABEL, DWELLING_MAX_LEVEL } from "@/game/data/sectTiers";
-import { ELEMENT_COLOR } from "@/game/types";
+import { ITEM_SECTIONS } from "@/game/data/itemSections";
+import { ELEMENT_COLOR, isXianItem, XIAN_ITEM_COLOR } from "@/game/types";
 import { useT } from "@/i18n/useT";
 import { itemDisplayName } from "@/i18n/itemText";
 import { monsterDisplayName } from "@/i18n/monsterText";
@@ -584,12 +585,20 @@ export default function SectPage() {
                   className="bg-smoke border border-faded/30 rounded-sm px-2 py-1.5 text-sm text-parchment"
                 >
                   <option value="">{t("selectItemPlaceholder")}</option>
-                  {myInventoryItems.map(([id, n]) => {
-                    const it = itemById(id);
+                  {ITEM_SECTIONS.map(([key, kinds]) => {
+                    const group = myInventoryItems.filter(([id]) => kinds.includes(itemById(id).kind));
+                    if (!group.length) return null;
                     return (
-                      <option key={id} value={id}>
-                        {it ? itemDisplayName(it, lang) : id} × {n}
-                      </option>
+                      <optgroup key={key} label={t(key)}>
+                        {group.map(([id, n]) => {
+                          const it = itemById(id);
+                          return (
+                            <option key={id} value={id}>
+                              {it ? itemDisplayName(it, lang) : id} × {n}
+                            </option>
+                          );
+                        })}
+                      </optgroup>
                     );
                   })}
                 </select>
@@ -612,30 +621,43 @@ export default function SectPage() {
               {Object.entries(items).filter(([, n]) => n > 0).length === 0 ? (
                 <p className="text-sm text-faded">{t("warehouseEmpty")}</p>
               ) : (
-                <div className="space-y-1.5">
-                  {Object.entries(items)
-                    .filter(([, n]) => n > 0)
-                    .map(([id, n]) => {
-                      const it = itemById(id);
-                      return (
-                      <div
-                        key={id}
-                        className="flex items-center justify-between border border-faded/20 rounded-sm p-2"
-                      >
-                        <span>
-                          {it ? itemDisplayName(it, lang) : id}
-                          <span className="chip ml-2 text-faded/80 border-faded/30">× {n}</span>
-                        </span>
-                        <button
-                          className="chip hover:text-gold py-1.5 px-2.5"
-                          disabled={busy}
-                          onClick={() => post({ action: "withdrawItem", itemId: id, qty: 1 })}
-                        >
-                          {t("btnWithdrawOne")}
-                        </button>
+                <div className="space-y-2">
+                  {ITEM_SECTIONS.map(([key, kinds]) => {
+                    const group = Object.entries(items).filter(
+                      ([id, n]) => n > 0 && kinds.includes(itemById(id).kind),
+                    );
+                    if (!group.length) return null;
+                    return (
+                      <div key={key}>
+                        <div className="divider">{t(key)}</div>
+                        <div className="space-y-1.5">
+                          {group.map(([id, n]) => {
+                            const it = itemById(id);
+                            return (
+                              <div
+                                key={id}
+                                className="flex items-center justify-between border border-faded/20 rounded-sm p-2"
+                              >
+                                <span>
+                                  <span className={it && isXianItem(it) ? XIAN_ITEM_COLOR : ""}>
+                                    {it ? itemDisplayName(it, lang) : id}
+                                  </span>
+                                  <span className="chip ml-2 text-faded/80 border-faded/30">× {n}</span>
+                                </span>
+                                <button
+                                  className="chip hover:text-gold py-1.5 px-2.5"
+                                  disabled={busy}
+                                  onClick={() => post({ action: "withdrawItem", itemId: id, qty: 1 })}
+                                >
+                                  {t("btnWithdrawOne")}
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
-                      );
-                    })}
+                    );
+                  })}
                 </div>
               )}
             </div>

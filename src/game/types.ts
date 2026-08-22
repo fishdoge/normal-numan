@@ -23,6 +23,11 @@ export const ELEMENT_COLOR: Record<Element, string> = {
 // 仙靈力顯示色(真仙專屬,紫色)
 export const XIANLI_COLOR = "text-fuchsia-400";
 
+// 真仙品級道具標色:達真仙(stage 10)以上境界需求的一般道具,不分坊市/掉落/交易行/混沌萬靈榜等顯示情境,
+// 一律以紫色標註名稱以資醒目。玄天仙器(見 isXuantianArtifact)另有專屬的流動漸層特效,優先於此。
+export const isXianItem = (item: Pick<ItemDef, "reqStage">) => (item.reqStage ?? 0) >= 10;
+export const XIAN_ITEM_COLOR = "text-fuchsia-400";
+
 // 傷害顯示:每一億(1e8)點傷害計為一點「仙法傷害」
 export function formatDamage(n: number): string {
   if (n >= 1e8) {

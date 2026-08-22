@@ -229,3 +229,13 @@ export function itemById(id: string): ItemDef {
     speedBonus: scale(base.speedBonus),
   };
 }
+
+// 依「顯示名稱」反查道具(用於 engine.ts 動態組出的敘事文字,如「你煉製出【青索劍(+13%)】!」)。
+// 先試完全比對,再嘗試剝掉煉器品質浮動附註的「(+13%)」尾綴後比對——找不到就回傳 undefined。
+export function itemDefByDisplayName(name: string): ItemDef | undefined {
+  const exact = ITEMS.find((i) => i.name === name);
+  if (exact) return exact;
+  const stripped = name.replace(/\([+-]?\d+%\)$/, "");
+  if (stripped === name) return undefined;
+  return ITEMS.find((i) => i.name === stripped);
+}

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useGame } from "@/game/store";
 import { useT } from "@/i18n/useT";
+import { renderLootLine } from "./ColoredText";
 
 interface ChatMessage {
   id: number;
@@ -117,7 +118,7 @@ export default function LogChatPanel() {
           {log.map((l, i) => (
             <p key={i} className="animate-floatUp">
               <span className="text-faded/50 font-mono text-xs mr-1">▸</span>
-              {l}
+              {renderLootLine(l)}
             </p>
           ))}
         </div>

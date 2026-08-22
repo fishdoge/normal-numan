@@ -14,6 +14,7 @@ import { REALMS } from "@/game/data/realms";
 import { CHANGELOG } from "@/game/data/changelog";
 import { REVIVAL_PRICE_USD } from "@/game/data/blackMarket";
 import { currentEraYears, eraLabelText } from "@/game/data/eraTime";
+import { renderLootLine } from "./ColoredText";
 import { useT } from "@/i18n/useT";
 import { realmDisplayName } from "@/i18n/realmText";
 import AuthGate from "./AuthGate";
@@ -201,7 +202,7 @@ function ResultModal({ modal, onClose }: { modal: Modal; onClose: () => void }) 
         </h2>
         <div className="space-y-2 text-cream leading-relaxed mb-6 text-left px-2">
           {modal.lines.map((l, i) => (
-            <p key={i}>{l}</p>
+            <p key={i}>{renderLootLine(l)}</p>
           ))}
         </div>
         <button className="btn px-8 mb-2" onClick={onClose}>

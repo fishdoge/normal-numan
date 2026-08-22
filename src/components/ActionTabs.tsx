@@ -17,7 +17,9 @@ import { REALMS } from "@/game/data/realms";
 import { SECTS } from "@/game/data/sects";
 import { techById } from "@/game/data/techniques";
 import { BLACK_MARKET_CATALOG } from "@/game/data/blackMarket";
-import { ELEMENT_COLOR, ItemKind, formatStones } from "@/game/types";
+import { ITEM_SECTIONS } from "@/game/data/itemSections";
+import { ELEMENT_COLOR, ItemKind, ItemDef, formatStones, isXianItem, XIAN_ITEM_COLOR } from "@/game/types";
+import Tooltip from "./Tooltip";
 import { useT } from "@/i18n/useT";
 import type { DictKey } from "@/i18n/dict";
 import { itemDisplayName, itemDisplayDesc } from "@/i18n/itemText";
@@ -28,6 +30,10 @@ import { realmDisplayName } from "@/i18n/realmText";
 import { sectDisplayName } from "@/i18n/sectText";
 import { kindLabel, elementLabel } from "@/i18n/labelText";
 import StoneAmount from "./StoneAmount";
+
+// 道具名稱標色:玄天仙器維持原本的流動漸層特效(優先),其餘達真仙品級需求的道具一律標紫,兩者皆非則不特別上色
+const itemNameColor = (item: Pick<ItemDef, "reqStage">, xuantian: boolean) =>
+  xuantian ? "text-xuantian" : isXianItem(item) ? XIAN_ITEM_COLOR : "";
 
 export default function ActionTabs() {
   // 分頁狀態提到 store,讓道籍面板的「宗門」按鈕也能切換過來
@@ -202,16 +208,8 @@ function ExploreTab() {
   );
 }
 
-// 分類鍵改用語言無關的 DictKey 當識別碼(而非中文標題本身),避免篩選狀態隨語言切換而失效
-const BAG_SECTIONS: [DictKey, ItemKind[]][] = [
-  ["bagSecMaterial", ["material"]],
-  ["bagSecHerbPill", ["herb", "pill"]],
-  ["bagSecGear", ["artifact", "robe", "treasure", "amulet", "talisman"]],
-  ["bagSecPet", ["pet"]],
-  ["bagSecMing", ["mingqi"]],
-  ["bagSecManual", ["manual", "recipe"]],
-  ["bagSecSpecial", ["special"]],
-];
+// 儲物袋分類(全站共用,見 src/game/data/itemSections.ts):坊市/黑市/交易行/混沌萬靈榜/宗門倉庫皆採同一份分類
+const BAG_SECTIONS = ITEM_SECTIONS;
 
 const EQUIPPABLE: ItemKind[] = [
   "artifact",
@@ -251,9 +249,10 @@ function BagTab() {
         key={id}
         className={`flex items-center justify-between border rounded-sm p-2.5 ${xuantian ? "border-fuchsia-400/50" : "border-faded/20"}`}
       >
+        <Tooltip block content={itemDisplayDesc(item, lang)}>
         <div className="min-w-0">
           <span className="font-bold">
-            <span className={xuantian ? "text-xuantian" : ""}>{itemDisplayName(item, lang)}</span>{" "}
+            <span className={itemNameColor(item, xuantian)}>{itemDisplayName(item, lang)}</span>{" "}
             <span className="text-faded font-normal">×{n}</span>
             <span className="chip ml-2 text-faded/80 border-faded/30">{kindLabel(item.kind, lang)}</span>
             {item.element && (
@@ -269,6 +268,7 @@ function BagTab() {
           </span>
           <p className="text-xs text-faded truncate">{itemDisplayDesc(item, lang)}</p>
         </div>
+        </Tooltip>
         <div className="flex gap-1.5 shrink-0 ml-3">
           {(item.kind === "pill" || item.kind === "herb") && (
             <button className="btn" disabled={busy} onClick={() => act("useItem", { itemId: id })}>
@@ -653,9 +653,12 @@ function BlackMarketSection() {
             key={itemId}
             className="flex items-center justify-between border border-fuchsia-400/30 bg-fuchsia-400/5 rounded-sm p-2.5"
           >
+            <Tooltip block content={itemDisplayDesc(item, lang)}>
             <div className="min-w-0">
               <span className="font-bold">
-                {itemDisplayName(item, lang)}
+                <span className={itemNameColor(item, isXuantianArtifact(itemId))}>
+                  {itemDisplayName(item, lang)}
+                </span>
                 <span className="chip ml-2 text-faded/80 border-faded/30">
                   {kindLabel(item.kind, lang)}
                 </span>
@@ -667,6 +670,7 @@ function BlackMarketSection() {
               </span>
               <p className="text-xs text-faded truncate">{itemDisplayDesc(item, lang)}</p>
             </div>
+            </Tooltip>
             <button
               className="btn shrink-0 ml-3 border-fuchsia-400/60 text-fuchsia-300 hover:bg-fuchsia-400/15"
               disabled={buyingId === itemId}
@@ -732,34 +736,47 @@ function MarketTab() {
             </span>
           </p>
 
-          {wares.map((item) => (
-            <div
-              key={item.id}
-              className="flex items-center justify-between border border-faded/20 rounded-sm p-2.5"
-            >
-              <div className="min-w-0">
-                <span className="font-bold">
-                  {itemDisplayName(item, lang)}
-                  <span className="chip ml-2 text-faded/80 border-faded/30">
-                    {kindLabel(item.kind, lang)}
-                  </span>
-                  {item.element && (
-                    <span className={`chip ml-2 ${ELEMENT_COLOR[item.element]}`}>
-                      {elementLabel(item.element, lang)}
-                    </span>
-                  )}
-                </span>
-                <p className="text-xs text-faded truncate">{itemDisplayDesc(item, lang)}</p>
+          {ITEM_SECTIONS.map(([key, kinds]) => {
+            const group = wares.filter((i) => kinds.includes(i.kind));
+            if (!group.length) return null;
+            return (
+              <div key={key}>
+                <div className="divider">{t(key)}</div>
+                <div className="space-y-2">
+                  {group.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between border border-faded/20 rounded-sm p-2.5"
+                    >
+                      <Tooltip block content={itemDisplayDesc(item, lang)}>
+                      <div className="min-w-0">
+                        <span className="font-bold">
+                          {itemDisplayName(item, lang)}
+                          <span className="chip ml-2 text-faded/80 border-faded/30">
+                            {kindLabel(item.kind, lang)}
+                          </span>
+                          {item.element && (
+                            <span className={`chip ml-2 ${ELEMENT_COLOR[item.element]}`}>
+                              {elementLabel(item.element, lang)}
+                            </span>
+                          )}
+                        </span>
+                        <p className="text-xs text-faded truncate">{itemDisplayDesc(item, lang)}</p>
+                      </div>
+                      </Tooltip>
+                      <button
+                        className="btn shrink-0 ml-3"
+                        disabled={busy || s.stones < item.price}
+                        onClick={() => act("buy", { itemId: item.id })}
+                      >
+                        {formatStones(item.price)}
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <button
-                className="btn shrink-0 ml-3"
-                disabled={busy || s.stones < item.price}
-                onClick={() => act("buy", { itemId: item.id })}
-              >
-                {formatStones(item.price)}
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -911,11 +928,19 @@ function TradeTab() {
             className="bg-smoke border border-faded/30 rounded-sm px-2 py-1.5 text-sm text-parchment"
           >
             <option value="">{t("selectItemPlaceholder")}</option>
-            {myItems.map(([id, n]) => (
-              <option key={id} value={id}>
-                {itemDisplayName(itemById(id), lang)} ×{n}
-              </option>
-            ))}
+            {ITEM_SECTIONS.map(([key, kinds]) => {
+              const group = myItems.filter(([id]) => kinds.includes(itemById(id).kind));
+              if (!group.length) return null;
+              return (
+                <optgroup key={key} label={t(key)}>
+                  {group.map(([id, n]) => (
+                    <option key={id} value={id}>
+                      {itemDisplayName(itemById(id), lang)} ×{n}
+                    </option>
+                  ))}
+                </optgroup>
+              );
+            })}
           </select>
           <label className="text-xs text-faded">
             {t("tradeQty")}
@@ -957,9 +982,10 @@ function TradeTab() {
             key={l.id}
             className={`flex items-center justify-between border rounded-sm p-2.5 ${xuantian ? "border-fuchsia-400/50" : "border-faded/20"}`}
           >
+            <Tooltip block content={itemDisplayDesc(item, lang)}>
             <div className="min-w-0">
               <span className="font-bold">
-                <span className={xuantian ? "text-xuantian" : ""}>{itemDisplayName(item, lang)}</span>{" "}
+                <span className={itemNameColor(item, xuantian)}>{itemDisplayName(item, lang)}</span>{" "}
                 <span className="text-faded font-normal">×{l.qty}</span>
                 {mine && <span className="chip ml-2 text-gold border-gold/50">{t("myListingTag")}</span>}
               </span>
@@ -970,6 +996,7 @@ function TradeTab() {
                 <span className="text-gold">{formatStones(l.qty * l.price)}</span>
               </p>
             </div>
+            </Tooltip>
             <div className="shrink-0 ml-3">
               {mine ? (
                 <button className="btn btn-danger" disabled={busy} onClick={() => cancel(l)}>
@@ -1141,7 +1168,7 @@ function WanlingTab() {
                     className={`border rounded-sm p-2.5 ${xuantian ? "border-fuchsia-400/40" : "border-faded/20"}`}
                   >
                     <span className="font-bold">
-                      <span className={xuantian ? "text-xuantian" : ""}>{itemDisplayName(item, lang)}</span>
+                      <span className={itemNameColor(item, xuantian)}>{itemDisplayName(item, lang)}</span>
                       <span className="chip ml-2 text-faded/80 border-faded/30">
                         {kindLabel(item.kind, lang)}
                       </span>

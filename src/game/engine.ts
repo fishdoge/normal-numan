@@ -7,6 +7,7 @@ import { itemById, ITEMS, XUANTIAN_ARTIFACT_IDS } from "./data/items";
 import { LOCATIONS, MONSTERS, RECIPES, REGIONS } from "./data/world";
 import { MISSIONS } from "./data/missions";
 import { dwellingLevelOf } from "./data/sectTiers";
+import { currentEraYears } from "./data/eraTime";
 
 export interface CombatState {
   monsterId: string;
@@ -68,6 +69,7 @@ export interface SaveData {
   dwellingSlot: number | null; // 目前停泊的宗門仙境位置(slot_idx),未停泊為 null
   energy: number; // 精力,每 5 分鐘真實時間回復 1 點,行動皆需消耗
   energyPotionStacks: number; // 倍力丹已疊加次數(0~5),每疊永久 +10% 精力上限
+  bornEra: number; // 這一世修仙之旅開始時的恆紀年(總年數),newSave() 當下的 currentEraYears()
 }
 
 export interface Modal {
@@ -289,6 +291,7 @@ export function newSave(name: string, sectId: string): SaveData {
     dwellingSlot: null,
     energy: 0,
     energyPotionStacks: 0,
+    bornEra: currentEraYears(),
   };
   const { hpMax, mpMax } = statsOf(s);
   s.hp = hpMax;
@@ -677,6 +680,8 @@ function applyActionInner(
   // 精力系統:舊存檔沒有這兩個欄位,補滿精力、疊加次數歸零
   if (typeof s.energyPotionStacks !== "number") s.energyPotionStacks = 0;
   if (typeof s.energy !== "number") s.energy = energyMaxOf(s);
+  // 恆紀年:舊存檔沒有創建當下的紀年快照,以「現在」回填(僅為顯示用,不影響任何遊戲數值)
+  if (typeof s.bornEra !== "number") s.bornEra = currentEraYears();
 
   if (s.dead && type !== "reset") return { save: s, error: "你已道隕,唯有轉世重修。" };
 

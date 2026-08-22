@@ -13,6 +13,7 @@ import { REALMS } from "@/game/data/realms";
 import { SECTS } from "@/game/data/sects";
 import { MONSTERS } from "@/game/data/world";
 import { itemById, isXuantianArtifact } from "@/game/data/items";
+import { currentEraYears, eraLabelText } from "@/game/data/eraTime";
 import { techById } from "@/game/data/techniques";
 import { ELEMENT_COLOR, ELEMENTS, XIANLI_COLOR, EQUIP_SLOTS } from "@/game/types";
 import { useT } from "@/i18n/useT";
@@ -243,7 +244,10 @@ export function StatusPanel() {
           {sect ? sectDisplayName(sect, lang) : t("statLoose")}
         </span>
       </div>
-      <p className={`mb-3 ${isXian ? "text-fuchsia-300 font-bold" : "text-gold"}`}>{realmDisplayName(realm, lang)}</p>
+      <p className={`mb-1 ${isXian ? "text-fuchsia-300 font-bold" : "text-gold"}`}>{realmDisplayName(realm, lang)}</p>
+      <p className="mb-3 text-[11px] font-mono text-faded/80">
+        {t("bornEraLine").replace("{era}", eraLabelText(s.bornEra ?? currentEraYears()))}
+      </p>
 
       <div className="space-y-2 text-sm">
         <div>

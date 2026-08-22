@@ -13,6 +13,7 @@ import {
 import { REALMS } from "@/game/data/realms";
 import { CHANGELOG } from "@/game/data/changelog";
 import { REVIVAL_PRICE_USD } from "@/game/data/blackMarket";
+import { currentEraYears, eraLabelText } from "@/game/data/eraTime";
 import { useT } from "@/i18n/useT";
 import { realmDisplayName } from "@/i18n/realmText";
 import AuthGate from "./AuthGate";
@@ -377,6 +378,9 @@ export default function Game() {
           </h1>
           <p className="font-mono text-[10px] tracking-[0.4em] text-faded">
             {isXian ? t("appSubtitleAscended") : t("appSubtitle")}
+          </p>
+          <p className="font-mono text-[10px] tracking-[0.2em] text-gold/70 mt-0.5">
+            {t("worldEraNow").replace("{era}", eraLabelText(currentEraYears()))}
           </p>
         </div>
         <div className="flex flex-wrap gap-4 items-baseline">

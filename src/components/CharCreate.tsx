@@ -9,6 +9,7 @@ import { sectDisplayName, sectDisplayDesc } from "@/i18n/sectText";
 import { techDisplayName } from "@/i18n/techText";
 import { elementLabel } from "@/i18n/labelText";
 import { useT } from "@/i18n/useT";
+import { currentEraYears, eraLabelText } from "@/game/data/eraTime";
 
 interface SectSummary {
   id: string;
@@ -58,6 +59,9 @@ export default function CharCreate({ name }: { name?: string }) {
           {t("charTagline")}
           <br />
           {t("charTagline2")}
+        </p>
+        <p className="mt-3 font-mono text-xs tracking-[0.2em] text-gold/70">
+          {t("worldEraNow").replace("{era}", eraLabelText(currentEraYears()))}
         </p>
       </header>
 

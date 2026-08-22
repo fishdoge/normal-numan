@@ -15,7 +15,7 @@ import { MONSTERS } from "@/game/data/world";
 import { itemById, isXuantianArtifact } from "@/game/data/items";
 import { currentEraYears, eraLabelText } from "@/game/data/eraTime";
 import { techById } from "@/game/data/techniques";
-import { ELEMENT_COLOR, ELEMENTS, XIANLI_COLOR, EQUIP_SLOTS } from "@/game/types";
+import { ELEMENT_COLOR, ELEMENTS, XIANLI_COLOR, EQUIP_SLOTS, nameColorOf } from "@/game/types";
 import { useT } from "@/i18n/useT";
 import { itemDisplayName } from "@/i18n/itemText";
 import { monsterDisplayName, monsterDisplayDesc } from "@/i18n/monsterText";
@@ -235,11 +235,7 @@ export function StatusPanel() {
     <div className="panel deco-frame">
       <p className="panel-title">{t("statusTitle")}</p>
       <div className="flex items-baseline justify-between mb-1 gap-2">
-        <span
-          className={`text-xl font-bold ${isXian ? "text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 via-amber-200 to-fuchsia-300" : ""}`}
-        >
-          {s.name}
-        </span>
+        <span className={`text-xl font-bold ${nameColorOf(realm.stage)}`}>{s.name}</span>
         <span className="text-xs text-fuchsia-300/90 truncate">
           {sect ? sectDisplayName(sect, lang) : t("statLoose")}
         </span>

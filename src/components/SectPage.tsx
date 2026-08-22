@@ -9,7 +9,7 @@ import { MISSIONS } from "@/game/data/missions";
 import { itemById } from "@/game/data/items";
 import { sectTierOf, SECT_TIER_REQ_LABEL, DWELLING_MAX_LEVEL } from "@/game/data/sectTiers";
 import { ITEM_SECTIONS } from "@/game/data/itemSections";
-import { ELEMENT_COLOR, isXianItem, XIAN_ITEM_COLOR } from "@/game/types";
+import { ELEMENT_COLOR, isXianItem, XIAN_ITEM_COLOR, nameColorOf } from "@/game/types";
 import { useT } from "@/i18n/useT";
 import { itemDisplayName } from "@/i18n/itemText";
 import { monsterDisplayName } from "@/i18n/monsterText";
@@ -548,7 +548,6 @@ export default function SectPage() {
             )}
             {members.map((m, i) => {
               const me = m.name === s.name;
-              const isXian = REALMS[m.realm_idx]?.stage >= 10;
               return (
                 <div
                   key={m.name + i}
@@ -557,7 +556,9 @@ export default function SectPage() {
                   }`}
                 >
                   <div className="min-w-0">
-                    <span className={`font-bold ${isXian ? "text-fuchsia-300" : ""}`}>{m.name}</span>
+                    <span className={`font-bold ${nameColorOf(REALMS[m.realm_idx]?.stage ?? 1)}`}>
+                      {m.name}
+                    </span>
                     {me && <span className="chip ml-2 text-gold border-gold/50">{t("youTag2")}</span>}
                     {m.dead && (
                       <span className="chip ml-2 text-vermillion border-vermillion/50">{t("deadTag")}</span>
@@ -699,7 +700,7 @@ export default function SectPage() {
                       )}
                       {os.members.map((m, i) => (
                         <div key={m.name + i} className="flex items-center justify-between text-sm">
-                          <span>{m.name}</span>
+                          <span className={nameColorOf(REALMS[m.realm_idx]?.stage ?? 1)}>{m.name}</span>
                           <span className="text-faded text-sm">{realmDisplayName(REALMS[m.realm_idx], lang)}</span>
                         </div>
                       ))}

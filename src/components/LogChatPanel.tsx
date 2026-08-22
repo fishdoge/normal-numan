@@ -4,12 +4,15 @@ import { useEffect, useRef, useState } from "react";
 import { useGame } from "@/game/store";
 import { useT } from "@/i18n/useT";
 import { renderLootLine } from "./ColoredText";
+import { REALMS } from "@/game/data/realms";
+import { nameColorOf } from "@/game/types";
 
 interface ChatMessage {
   id: number;
   name: string;
   message: string;
   created_at: string;
+  realm_idx: number;
 }
 
 const fmtTime = (iso: string) => {
@@ -131,7 +134,9 @@ export default function LogChatPanel() {
             {messages.map((m) => (
               <p key={m.id}>
                 <span className="text-faded/50 font-mono text-xs mr-1">{fmtTime(m.created_at)}</span>
-                <span className={`font-bold mr-1 ${m.name === myName ? "text-gold" : "text-fuchsia-300"}`}>
+                <span
+                  className={`font-bold mr-1 ${m.name === myName ? "text-gold" : nameColorOf(REALMS[m.realm_idx]?.stage ?? 1)}`}
+                >
                   {m.name}:
                 </span>
                 <span className="text-cream/90 break-words">{m.message}</span>

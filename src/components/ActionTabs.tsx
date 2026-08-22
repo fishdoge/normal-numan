@@ -18,7 +18,15 @@ import { SECTS } from "@/game/data/sects";
 import { techById } from "@/game/data/techniques";
 import { BLACK_MARKET_CATALOG } from "@/game/data/blackMarket";
 import { ITEM_SECTIONS } from "@/game/data/itemSections";
-import { ELEMENT_COLOR, ItemKind, ItemDef, formatStones, isXianItem, XIAN_ITEM_COLOR } from "@/game/types";
+import {
+  ELEMENT_COLOR,
+  ItemKind,
+  ItemDef,
+  formatStones,
+  isXianItem,
+  XIAN_ITEM_COLOR,
+  nameColorOf,
+} from "@/game/types";
 import Tooltip from "./Tooltip";
 import { useT } from "@/i18n/useT";
 import type { DictKey } from "@/i18n/dict";
@@ -1243,9 +1251,7 @@ function PlayerDetailCard({ profile, onClose }: { profile: PlayerProfile; onClos
       className={`border rounded-sm p-4 mb-3 ${isXian ? "border-fuchsia-400/60 bg-fuchsia-400/5" : "border-gold/50 bg-gold/5"}`}
     >
       <div className="flex items-baseline justify-between mb-2">
-        <span
-          className={`text-lg font-bold ${isXian ? "text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 via-amber-200 to-fuchsia-300" : "text-gold"}`}
-        >
+        <span className={`text-lg font-bold ${nameColorOf(REALMS[profile.realmIdx]?.stage ?? 1)}`}>
           {profile.name}
           {profile.dead && (
             <span className="chip ml-2 text-vermillion border-vermillion/50">{t("deadTag")}</span>
@@ -1481,7 +1487,9 @@ function RankTab() {
                 {i + 1}
               </span>
               <div className="min-w-0">
-                <span className={`font-bold ${me ? topColor : ""}`}>{p.name}</span>
+                <span className={`font-bold ${nameColorOf(REALMS[p.realm_idx]?.stage ?? 1)}`}>
+                  {p.name}
+                </span>
                 {me && <span className={`text-xs ${topColor}/70 ml-2`}>{t("youTag")}</span>}
                 {p.dead && (
                   <span className="chip ml-2 text-vermillion border-vermillion/50">{t("deadTag")}</span>

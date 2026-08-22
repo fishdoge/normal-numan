@@ -28,6 +28,19 @@ export const XIANLI_COLOR = "text-fuchsia-400";
 export const isXianItem = (item: Pick<ItemDef, "reqStage">) => (item.reqStage ?? 0) >= 10;
 export const XIAN_ITEM_COLOR = "text-fuchsia-400";
 
+// 玩家道號依境界配色:化神以下(stage < 5)綠、化神~渡劫(5~9)藍、真仙以上(≥10)維持既有的流動金紫漸層。
+// 不分道籍面板/排行榜/同門名錄/對話集等顯示情境,一律套用同一份規則。
+export const NAME_COLOR_BELOW_HUASHEN = "text-jade";
+export const NAME_COLOR_HUASHEN_TO_DUJIE = "text-azure";
+export const NAME_COLOR_XIAN_GRADIENT =
+  "text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 via-amber-200 to-fuchsia-300";
+export const nameColorOf = (stage: number): string =>
+  stage >= 10
+    ? NAME_COLOR_XIAN_GRADIENT
+    : stage >= 5
+      ? NAME_COLOR_HUASHEN_TO_DUJIE
+      : NAME_COLOR_BELOW_HUASHEN;
+
 // 傷害顯示:每一億(1e8)點傷害計為一點「仙法傷害」
 export function formatDamage(n: number): string {
   if (n >= 1e8) {

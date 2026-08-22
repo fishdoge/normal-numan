@@ -92,6 +92,15 @@ export function ensureSchema() {
         created_at TIMESTAMPTZ DEFAULT now(),
         updated_at TIMESTAMPTZ DEFAULT now()
       )`;
+      // 天算術(雲遊四海機緣觸發的黑市限定購買):token = Polar checkout session id,狀態機同上,
+      // 唯一差異是發放的道具由伺服器在 webhook 收到付款成功時隨機抽出(見 engine.ts 的 rollOracleItem)
+      await sql`CREATE TABLE IF NOT EXISTS oracle_requests (
+        token TEXT PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_at TIMESTAMPTZ DEFAULT now(),
+        updated_at TIMESTAMPTZ DEFAULT now()
+      )`;
     })();
   }
   return ready;

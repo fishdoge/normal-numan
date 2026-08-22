@@ -591,6 +591,9 @@ function CraftTab() {
 
 // 黑市:消耗型命器(地命符/天運符/天極符)+ 玄命果,皆以 USD 透過 Polar 購買,買到即直接加入儲物袋
 function BlackMarketSection() {
+  const s = useGame((x) => x.save)!;
+  const act = useGame((x) => x.act);
+  const busy = useGame((x) => x.busy);
   const setSave = useGame((x) => x.setSave);
   const setPurchaseResult = useGame((x) => x.setPurchaseResult);
   const lang = useGame((x) => x.language);
@@ -598,10 +601,59 @@ function BlackMarketSection() {
   const [buyingId, setBuyingId] = useState<string | null>(null);
   const [err, setErr] = useState("");
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [oracleBuying, setOracleBuying] = useState(false);
+  const oraclePollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => () => {
-    if (pollRef.current) clearInterval(pollRef.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+      if (oraclePollRef.current) clearInterval(oraclePollRef.current);
+    },
+    [],
+  );
+
+  const buyOracle = async () => {
+    setErr("");
+    try {
+      const res = await fetch("/api/oracle", { method: "POST" });
+      const j = await res.json();
+      if (!res.ok) {
+        setErr(j.error ?? t("buyFailGeneric"));
+        return;
+      }
+      window.open(j.url, "_blank", "noopener");
+      setOracleBuying(true);
+      oraclePollRef.current = setInterval(async () => {
+        try {
+          const r = await (await fetch(`/api/oracle?token=${j.token}`)).json();
+          if (r.status === "done") {
+            if (oraclePollRef.current) clearInterval(oraclePollRef.current);
+            const saveRes = await (await fetch("/api/save")).json();
+            if (saveRes.save) setSave(saveRes.save);
+            setOracleBuying(false);
+            setPurchaseResult({
+              success: true,
+              title: t("purchaseSuccessTitle"),
+              lines: [t("oracleDelivered")],
+            });
+          } else if (r.status === "failed") {
+            if (oraclePollRef.current) clearInterval(oraclePollRef.current);
+            setErr(t("purchaseFailErr"));
+            setOracleBuying(false);
+            setPurchaseResult({
+              success: false,
+              title: t("purchaseFailTitle"),
+              lines: [t("purchaseFailLine")],
+            });
+          }
+        } catch {
+          /* 靜默重試 */
+        }
+      }, 3000);
+    } catch {
+      setErr(t("netErr"));
+    }
+  };
 
   const buy = async (itemId: string) => {
     setErr("");
@@ -653,6 +705,28 @@ function BlackMarketSection() {
   return (
     <div className="space-y-2">
       <p className="text-xs text-faded">{t("blackMarketNote")}</p>
+      {s.oracleOffered && (
+        <div className="border border-amber-300/50 bg-amber-300/5 rounded-sm p-2.5">
+          <span className="font-bold text-amber-300">{t("oracleTitle")}</span>
+          <p className="text-xs text-faded mt-1">{t("oracleDesc")}</p>
+          <div className="mt-2 flex gap-2">
+            <button
+              className="btn shrink-0 border-amber-300/60 text-amber-300 hover:bg-amber-300/15"
+              disabled={oracleBuying}
+              onClick={buyOracle}
+            >
+              {oracleBuying ? t("payingBtn") : t("oracleBuyBtn")}
+            </button>
+            <button
+              className="btn shrink-0"
+              disabled={busy || oracleBuying}
+              onClick={() => act("dismissOracle")}
+            >
+              {t("oracleDismissBtn")}
+            </button>
+          </div>
+        </div>
+      )}
       {BLACK_MARKET_CATALOG.map(({ itemId, priceUsd }) => {
         const item = itemById(itemId);
         if (!item) return null;

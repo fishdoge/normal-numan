@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateEvent, WebhookVerificationError } from "@polar-sh/sdk/webhooks";
 import { sql, ensureSchema } from "@/lib/db";
-import { reviveSave, give, SaveData } from "@/game/engine";
+import { reviveSave, give, rollOracleItem, SaveData } from "@/game/engine";
 
 export const runtime = "nodejs";
 
-// POST:Polar 付款結果回呼——向仙班祈禱(付費復活)與黑市購買(消耗型命器/玄命果)共用同一個端點,
-// 唯一權威觸發點,一律以此為準,絕不信任前端自報「已付款」。
+// POST:Polar 付款結果回呼——向仙班祈禱(付費復活)、黑市購買(消耗型命器/玄命果/倍力丹)、
+// 天算術(雲遊四海機緣)共用同一個端點,唯一權威觸發點,一律以此為準,絕不信任前端自報「已付款」。
 // 請至 Polar 後台 Settings > Webhooks 新增此網址,訂閱 order.paid 事件,並把顯示出來的
 // Webhook Secret 填入環境變數 POLAR_WEBHOOK_SECRET。Polar 對送達失敗的請求會自動重送,
 // 故整段邏輯務必冪等(見下方以 *_requests.status 欄位做的原子搶佔)。
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
   }
 
   // 原子搶佔本次請求(冪等關鍵:webhook 可能重送,僅第一次成功搶到 pending 狀態的呼叫會真正執行)。
-  // 兩張表共用 Polar 產生的全域唯一 checkout id 當 token,先試復活、找不到再試黑市購買。
+  // 三張表共用 Polar 產生的全域唯一 checkout id 當 token,依序嘗試復活 → 黑市購買 → 天算術。
   const revivalClaim = await sql`
     UPDATE revival_requests SET status = 'processing', updated_at = now()
     WHERE token = ${token} AND status = 'pending'
@@ -63,6 +63,14 @@ export async function POST(req: NextRequest) {
   if (purchaseClaim.length) {
     const row = purchaseClaim[0] as { user_id: number; item_id: string };
     return await handlePurchase(token, row.user_id, row.item_id);
+  }
+
+  const oracleClaim = await sql`
+    UPDATE oracle_requests SET status = 'processing', updated_at = now()
+    WHERE token = ${token} AND status = 'pending'
+    RETURNING user_id`;
+  if (oracleClaim.length) {
+    return await handleOracle(token, (oracleClaim[0] as { user_id: number }).user_id);
   }
 
   return NextResponse.json({ ok: true, skipped: "already processed or unknown token" });
@@ -106,4 +114,22 @@ async function handlePurchase(token: string, userId: number, itemId: string) {
   await sql`UPDATE item_purchase_requests SET status = 'done', updated_at = now() WHERE token = ${token}`;
 
   return NextResponse.json({ ok: true, granted: itemId });
+}
+
+async function handleOracle(token: string, userId: number) {
+  const saveRows = await sql`SELECT data FROM saves WHERE user_id = ${userId}`;
+  const save = (saveRows[0] as { data: SaveData } | undefined)?.data;
+  if (!save) {
+    await sql`UPDATE oracle_requests SET status = 'failed', updated_at = now() WHERE token = ${token}`;
+    return NextResponse.json({ ok: true, note: "no save to grant item to; needs manual follow-up" });
+  }
+
+  // 隨機抽出的道具在付款成功「當下」才決定,不可能被前端預先得知或操弄
+  const rolledId = rollOracleItem();
+  give(save, rolledId, 1);
+  save.oracleOffered = false;
+  await sql`UPDATE saves SET data = ${JSON.stringify(save)}::jsonb, updated_at = now() WHERE user_id = ${userId}`;
+  await sql`UPDATE oracle_requests SET status = 'done', updated_at = now() WHERE token = ${token}`;
+
+  return NextResponse.json({ ok: true, granted: rolledId });
 }

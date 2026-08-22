@@ -70,6 +70,7 @@ export interface SaveData {
   energy: number; // 精力,每 5 分鐘真實時間回復 1 點,行動皆需消耗
   energyPotionStacks: number; // 倍力丹已疊加次數(0~5),每疊永久 +10% 精力上限
   bornEra: number; // 這一世修仙之旅開始時的恆紀年(總年數),newSave() 當下的 currentEraYears()
+  oracleOffered: boolean; // 雲遊四海機緣觸發的「天算術」黑市機會是否待處理(購買或婉拒前持續為 true)
 }
 
 export interface Modal {
@@ -292,6 +293,7 @@ export function newSave(name: string, sectId: string): SaveData {
     energy: 0,
     energyPotionStacks: 0,
     bornEra: currentEraYears(),
+    oracleOffered: false,
   };
   const { hpMax, mpMax } = statsOf(s);
   s.hp = hpMax;
@@ -405,6 +407,40 @@ export function reviveSave(s: SaveData): void {
     s,
     "六道輪迴盤光華大盛,輪迴道祖以【輪迴天生術】自死劫中將你的道基重新接引回來——你死而復生!",
   );
+}
+
+// 天算術(黑市限定):付款後隨機賜下一件真仙等級道具,福禍難料——權重手動配置,權重越高越常見(越「弱」),
+// 越低越稀有(越「強」),不採價格反推(許多真仙級道具本就 price:0,無法反映實際強弱)。
+const ORACLE_POOL: { id: string; weight: number }[] = [
+  { id: "tianxiandan", weight: 20 }, // 仙靈力 +1
+  { id: "xiantian_zhong", weight: 16 }, // 仙靈力 +2
+  { id: "fu_taixu", weight: 14 }, // 太虛混元符
+  { id: "jinyuan_hujing", weight: 12 }, // 金源護道鏡
+  { id: "zhuxian_fu", weight: 12 }, // 誅仙滅魂符
+  { id: "jinyuan_ji", weight: 10 }, // 金源戮神戟
+  { id: "jy_taiyi", weight: 10 }, // 太乙金光劍
+  { id: "jy_hunyuan", weight: 10 }, // 混元仙袍
+  { id: "taixu_hunyuanjia", weight: 10 }, // 太虛混元甲
+  { id: "zaohua_jian", weight: 8 }, // 造化戮仙劍
+  { id: "xiantian_qi", weight: 8 }, // 仙靈力 +3
+  { id: "pet_tianhu", weight: 6 }, // 九尾天狐(真仙級靈寵)
+  { id: "thantian_lu", weight: 4 }, // 仙靈力 +15
+  { id: "pet_hundun", weight: 3 }, // 混沌幼獸(金仙級靈寵)
+  { id: "xuantian_zhanling_jian", weight: 2 }, // 玄天仙器(唯太乙境可用,屬性極強)
+  { id: "xuantian_hulu", weight: 2 },
+  { id: "potian_chui", weight: 2 },
+  { id: "tianhu_huaxie_ren", weight: 2 },
+  { id: "xuantian_zhanmo_jian", weight: 2 },
+  { id: "huantian_jing", weight: 2 },
+];
+export function rollOracleItem(): string {
+  const total = ORACLE_POOL.reduce((a, e) => a + e.weight, 0);
+  let roll = Math.random() * total;
+  for (const e of ORACLE_POOL) {
+    roll -= e.weight;
+    if (roll <= 0) return e.id;
+  }
+  return ORACLE_POOL[0].id;
 }
 
 // 回傳戰敗彈窗(defeat 有值時代表這回合被打到氣血歸零,呼叫端應以此彈窗取代靜默記錄)
@@ -682,6 +718,7 @@ function applyActionInner(
   if (typeof s.energy !== "number") s.energy = energyMaxOf(s);
   // 恆紀年:舊存檔沒有創建當下的紀年快照,以「現在」回填(僅為顯示用,不影響任何遊戲數值)
   if (typeof s.bornEra !== "number") s.bornEra = currentEraYears();
+  if (typeof s.oracleOffered !== "boolean") s.oracleOffered = false;
 
   if (s.dead && type !== "reset") return { save: s, error: "你已道隕,唯有轉世重修。" };
 
@@ -797,6 +834,14 @@ function applyActionInner(
       s.age += WANDER_LIFE;
       s.day = s.age;
       s.energy -= energyCost;
+      // 天算術機緣(黑市限定,獨立於下方本次雲遊收穫判定之外,不互斥):偶爾激發一次購買機會
+      if (!s.oracleOffered && Math.random() < 0.05) {
+        s.oracleOffered = true;
+        log(
+          s,
+          "雲遊途中,忽遇一位鶴髮老者攔路,低語道:「貧道夜觀天象,算出你有一線生機——50 美利堅靈石,信則有,不信則無。」言罷飄然遠去,只留下黑市中一縷若有似無的天機。",
+        );
+      }
       const roll = Math.random();
       // 4% 遭遇金仙境超級大 BOSS
       if (roll < 0.04) {
@@ -1577,6 +1622,14 @@ function applyActionInner(
       }
       if (!equipToSlot(s, item)) return { save: s, error: "此物無法裝備" };
       log(s, `你將【${item.name}】${slotVerb(item.kind)}。`);
+      return { save: s };
+    }
+
+    case "dismissOracle": {
+      // 婉拒天算術機緣(不涉及金流),清除待處理旗標,鶴髮老者不再等候
+      if (!s.oracleOffered) return { save: s };
+      s.oracleOffered = false;
+      log(s, "你婉拒了老者的天算之言,轉身繼續趕路——機緣自來,不強求。");
       return { save: s };
     }
 

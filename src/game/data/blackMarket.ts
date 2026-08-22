@@ -14,4 +14,5 @@ export const BLACK_MARKET_CATALOG: BlackMarketEntry[] = [
   { itemId: "tianyunfu", priceUsd: 10 },
   { itemId: "tianjifu", priceUsd: 20 },
   { itemId: "panlongtaoshu", priceUsd: 30 },
+  { itemId: "beilidan", priceUsd: 10 },
 ];

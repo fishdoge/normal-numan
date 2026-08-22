@@ -66,6 +66,8 @@ export interface SaveData {
   log: string[];
   combat: CombatState | null;
   dwellingSlot: number | null; // 目前停泊的宗門仙境位置(slot_idx),未停泊為 null
+  energy: number; // 精力,每 5 分鐘真實時間回復 1 點,行動皆需消耗
+  energyPotionStacks: number; // 倍力丹已疊加次數(0~5),每疊永久 +10% 精力上限
 }
 
 export interface Modal {
@@ -104,6 +106,34 @@ export const XIANLI_MULT = 0.2;
 
 export const maxLifeOf = (s: Pick<SaveData, "realmIdx" | "lifeBonus">) =>
   REALMS[s.realmIdx].lifespan + s.lifeBonus;
+
+// 精力上限:隨大境界緩慢遞增(非氣血/法力那種指數翻倍),煉氣期 100、每個大境界 +15;
+// 倍力丹每疊(最多 5 疊)永久 +10% 上限。
+const ENERGY_BASE = 100;
+const ENERGY_PER_STAGE = 15;
+export const energyMaxOf = (s: Pick<SaveData, "realmIdx" | "energyPotionStacks">) => {
+  const base = ENERGY_BASE + ENERGY_PER_STAGE * (REALMS[s.realmIdx].stage - 1);
+  return Math.floor(base * (1 + 0.1 * (s.energyPotionStacks ?? 0)));
+};
+
+// 各項行動消耗的精力(戰鬥中每回合的攻擊/施法/遁走不額外收費,已含在啟動獵殺的那次消耗裡)
+export const ENERGY_COST: Record<string, number> = {
+  cultivate: 5,
+  rest: 5,
+  wander: 15,
+  gather: 8,
+  hunt: 10,
+  breakthrough: 20,
+  craft: 10,
+  craftXuantian: 10,
+};
+export const MAX_ENERGY_POTION_STACKS = 5;
+
+// 精力回復:每 5 分鐘真實時間 1 點,由 /api/action、/api/save 依 last_energy_at 差距換算成點數呼叫。
+export function applyEnergyRegen(s: SaveData, points: number) {
+  if (points <= 0) return;
+  s.energy = Math.min(energyMaxOf(s), (s.energy ?? 0) + points);
+}
 
 export function statsOf(s: SaveData) {
   const realm = REALMS[s.realmIdx];
@@ -257,10 +287,13 @@ export function newSave(name: string, sectId: string): SaveData {
     log: [],
     combat: null,
     dwellingSlot: null,
+    energy: 0,
+    energyPotionStacks: 0,
   };
   const { hpMax, mpMax } = statsOf(s);
   s.hp = hpMax;
   s.mp = mpMax;
+  s.energy = energyMaxOf(s);
   log(
     s,
     `${s.name} 拜入 ${sect.name},自此踏上修仙之路。`,
@@ -641,8 +674,17 @@ function applyActionInner(
   if (typeof s.manhuangUnlocked !== "boolean") s.manhuangUnlocked = false;
   if (typeof s.futuFloor !== "number") s.futuFloor = 0;
   if (s.dwellingSlot === undefined) s.dwellingSlot = null;
+  // 精力系統:舊存檔沒有這兩個欄位,補滿精力、疊加次數歸零
+  if (typeof s.energyPotionStacks !== "number") s.energyPotionStacks = 0;
+  if (typeof s.energy !== "number") s.energy = energyMaxOf(s);
 
   if (s.dead && type !== "reset") return { save: s, error: "你已道隕,唯有轉世重修。" };
+
+  // 精力不足時,消耗精力的行動一律無法發起(不足以嘗試就不算數,不扣任何資源)
+  const energyCost = ENERGY_COST[type];
+  if (energyCost != null && (s.energy ?? 0) < energyCost) {
+    return { save: s, error: `精力不足(需 ${energyCost},現有 ${Math.floor(s.energy ?? 0)}),稍待回復或服用倍力丹。` };
+  }
 
   // 停泊宗門仙境靜心潛修時,無法分心他顧——採集/獵殺/雲遊/打坐/調息/突破一律不可行
   if (
@@ -660,6 +702,7 @@ function applyActionInner(
   switch (type) {
     case "cultivate": {
       if (s.combat) return { save: s, error: "激戰之中,無法打坐。" };
+      s.energy -= energyCost;
       const { realm, sect, mpMax } = statsOf(s);
       const cost = cultCostOf(s);
       const cap = maxLifeOf(s);
@@ -710,6 +753,7 @@ function applyActionInner(
         log(s, "你氣血充盈,無需調息。");
         return { save: s };
       }
+      s.energy -= energyCost;
       // 調息消耗壽元:為打坐修煉的 2 倍
       const restCost = cultCostOf(s) * 2;
       const cap = maxLifeOf(s);
@@ -747,6 +791,7 @@ function applyActionInner(
       s.stones -= WANDER_STONES;
       s.age += WANDER_LIFE;
       s.day = s.age;
+      s.energy -= energyCost;
       const roll = Math.random();
       // 4% 遭遇金仙境超級大 BOSS
       if (roll < 0.04) {
@@ -849,6 +894,7 @@ function applyActionInner(
         return { save: s };
       }
       if (needsZhenxian) take(s, "zhenxiandan");
+      s.energy -= energyCost;
       const chance = breakChanceOf(s);
       // 消耗型命器:機率已計入本次 chance,只要確實擲骰嘗試,無論成敗都會化為飛灰
       if (s.equippedMing) {
@@ -925,6 +971,7 @@ function applyActionInner(
         log(s, `${loc.name} 兇險異常,以你現在的境界踏入必死無疑。`);
         return { save: s };
       }
+      s.energy -= energyCost;
       if (Math.random() < 0.35 && loc.monsters.length) {
         const mid = loc.monsters[rand(0, loc.monsters.length - 1)];
         const mon = monsterById(mid);
@@ -967,6 +1014,7 @@ function applyActionInner(
         log(s, `${loc.name} 兇險異常,以你現在的境界踏入必死無疑。`);
         return { save: s };
       }
+      s.energy -= energyCost;
       // 機率遭遇地域王(妖獸領主);秘境專屬地域王(如蠻荒異界四領地)優先於區域統一地域王
       const region = REGIONS.find((r) => r.id === loc.region);
       const lordId = loc.lordId ?? region?.lordId;
@@ -1313,6 +1361,22 @@ function applyActionInner(
         };
       }
 
+      // 倍力丹(黑市限定):立即回滿精力,並疊加永久 +10% 精力上限(帳號最多疊 5 顆)
+      if (item.kind === "special" && itemId === "beilidan") {
+        if (s.energyPotionStacks >= MAX_ENERGY_POTION_STACKS) {
+          log(s, "你體內經脈已被倍力丹之效撐至極限,再服無益——【倍力丹】暫且收好。");
+          return { save: s };
+        }
+        take(s, itemId);
+        s.energyPotionStacks += 1;
+        s.energy = energyMaxOf(s);
+        log(
+          s,
+          `你服下【倍力丹】,精力充盈、經脈為之一闊——精力上限永久 +10%(現已疊加 ${s.energyPotionStacks}/${MAX_ENERGY_POTION_STACKS} 顆),精力全滿!`,
+        );
+        return { save: s };
+      }
+
       // 真仙之物:凝練仙靈力(需已飛昇)
       if (item.kind === "special" && item.xianli) {
         if (REALMS[s.realmIdx].stage < 10) {
@@ -1435,6 +1499,7 @@ function applyActionInner(
       }
       for (const m of rec.materials) take(s, m.id, m.n);
       s.stones -= rec.stones;
+      s.energy -= energyCost;
       // 煉器屬性浮動 ±30%:每次出爐品質隨機,攻/防/速皆等比例縮放
       const quality = rand(70, 130);
       const rolledId = `${rec.result}@${quality}`;
@@ -1480,6 +1545,7 @@ function applyActionInner(
       take(s, "xuantian_canpian", FRAGMENT_COST);
       take(s, "poshou_jinhow", FRAGMENT_COST2);
       take(s, haveSoul);
+      s.energy -= energyCost;
       const pool = Array.from(XUANTIAN_ARTIFACT_IDS);
       const picked = pool[rand(0, pool.length - 1)];
       const quality = rand(100, 300); // 玄天仙器屬性浮動 100%~300%

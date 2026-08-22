@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { sql, userFromToken, ensureSchema } from "@/lib/db";
 import { itemById } from "@/game/data/items";
 import { polar, blackMarketItemOf } from "@/lib/payments";
+import { MAX_ENERGY_POTION_STACKS, SaveData } from "@/game/engine";
 
 export const runtime = "nodejs";
 
@@ -15,6 +16,18 @@ export async function POST(req: NextRequest) {
   const itemId = String((await req.json())?.itemId ?? "");
   const bm = blackMarketItemOf(itemId);
   if (!bm) return NextResponse.json({ error: "無此黑市商品" }, { status: 400 });
+
+  // 倍力丹疊加已達上限時直接拒絕這筆付款請求,避免玩家真的花錢卻拿到用不了的道具
+  if (itemId === "beilidan") {
+    const saveRows = await sql`SELECT data FROM saves WHERE user_id = ${user.id}`;
+    const save = (saveRows[0] as { data: SaveData } | undefined)?.data;
+    if ((save?.energyPotionStacks ?? 0) >= MAX_ENERGY_POTION_STACKS) {
+      return NextResponse.json(
+        { error: `倍力丹已疊加至上限(${MAX_ENERGY_POTION_STACKS} 顆),無需再購買。` },
+        { status: 400 },
+      );
+    }
+  }
 
   let checkout;
   try {

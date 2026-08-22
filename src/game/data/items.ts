@@ -50,6 +50,9 @@ export const ITEMS: ItemDef[] = [
   { id: "thantian_lu", name: "參天造化露", kind: "special", desc: "掌天瓶凝聚之露水，具有法則具象化的力量，煉化後可以獲得十五點先靈力。", price: 0, xianli: 15 },
   { id: "jinhundan", name: "金魂丹", kind: "special", desc: "太上金仙隕落後凝成的金色魂丹,唯真仙可服。服之魂魄蛻變,可自真仙突破至金仙之境!", price: 0 },
 
+  // ── 黑市限定(美利堅靈石購入,不可煉製/坊市不售) ──
+  { id: "beilidan", name: "倍力丹", kind: "special", desc: "西域秘法煉成的奇丹,服下立即精力全滿,並使精力上限永久 +10%(帳號最多疊加 5 顆效果)。", price: 0 },
+
   // ── 丹藥 ──
   { id: "huanglongdan", name: "黃龍丹", kind: "pill", desc: "煉氣期修士常用補氣丹藥,增長修為。", price: 30, exp: 40 },
   { id: "huiyuandan", name: "回元丹", kind: "pill", desc: "迅速回復法力的丹藥。", price: 9, mp: 50 },

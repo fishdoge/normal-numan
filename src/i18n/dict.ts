@@ -38,6 +38,7 @@ export const DICT = {
 
     statHp: "氣血",
     statMp: "法力",
+    statEnergy: "精力",
     statExp: "修為",
     statLife: "壽元",
     statDay: "修行",
@@ -301,6 +302,8 @@ export const DICT = {
     breakNeedZhenxian: "渡劫飛昇需先集得【真仙丹】(唯太古龍祖掉落)",
     breakChancePct: "成功率 {n}%",
     lifeCostSuffix: "年壽元",
+    energyCostSuffix: "精力",
+    energyInsufficientTip: "精力不足",
     wanderTooltip: "消耗 5000 年壽元 + 100 極品靈石。約 5% 觸發探索秘境(紫色機緣),約 2.5% 直接得天仙丹,30% 得永久屬性,3% 遇金仙大 BOSS,餘則一無所獲。",
     cultivationSummaryLine: "修為 {exp}/{need} · 突破成功率 {chance}% · 失敗修為歸零、折損最大壽元 15%",
     zhenxianNote: "渡劫飛昇需集得【真仙丹】——唯靈界地域王「太古龍祖」掉落,無論突破成敗皆會耗盡藥力。",
@@ -414,6 +417,7 @@ export const DICT = {
 
     statHp: "HP",
     statMp: "MP",
+    statEnergy: "Energy",
     statExp: "Exp",
     statLife: "Lifespan",
     statDay: "Age",
@@ -677,6 +681,8 @@ export const DICT = {
     breakNeedZhenxian: "Ascending through the Tribulation first requires a True Immortal Pill (dropped only by the Primordial Dragon Ancestor)",
     breakChancePct: "Success rate {n}%",
     lifeCostSuffix: "yr lifespan",
+    energyCostSuffix: "energy",
+    energyInsufficientTip: "Not enough energy",
     wanderTooltip: "Costs 5000 years of lifespan + 100 top-grade spirit stones. ~5% chance to trigger a hidden-realm encounter, ~2.5% to gain a Celestial Immortal Pill directly, 30% to gain permanent stats, 3% to meet the Golden Immortal super-boss, otherwise nothing.",
     cultivationSummaryLine: "Exp {exp}/{need} · Breakthrough success {chance}% · Failure zeroes exp and costs 15% of max lifespan",
     zhenxianNote: "Ascending through the Tribulation requires a True Immortal Pill — dropped only by the Spirit Realm's regional lord \"Primordial Dragon Ancestor\"; its power is consumed whether the attempt succeeds or fails.",

@@ -17,6 +17,9 @@ import {
   breakChanceOf,
   SECT_STAGE_BONUS,
   sectDamageMultOfStages,
+  energyMaxOf,
+  ENERGY_COST,
+  MAX_ENERGY_POTION_STACKS,
 } from "./engine";
 
 export type { SaveData, Modal };
@@ -32,6 +35,9 @@ export {
   breakChanceOf,
   SECT_STAGE_BONUS,
   sectDamageMultOfStages,
+  energyMaxOf,
+  ENERGY_COST,
+  MAX_ENERGY_POTION_STACKS,
 };
 
 // 行動頁籤(ActionTabs)目前分頁,提到 store 讓其他面板(如道籍)也能切換頁籤

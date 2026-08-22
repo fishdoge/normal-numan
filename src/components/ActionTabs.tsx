@@ -8,6 +8,7 @@ import {
   techLevelOf,
   techPowerMult,
   MAX_TECH_LEVEL,
+  ENERGY_COST,
   Tab,
 } from "@/game/store";
 import { LOCATIONS, MONSTERS, RECIPES, REGIONS } from "@/game/data/world";
@@ -86,6 +87,9 @@ function ExploreTab() {
   const [regionId, setRegionId] = useState("tiannan");
   const region = REGIONS.find((r) => r.id === regionId)!;
   const locs = LOCATIONS.filter((l) => l.region === regionId);
+  const energy = s.energy ?? 0;
+  const energyLackGather = energy < ENERGY_COST.gather;
+  const energyLackHunt = energy < ENERGY_COST.hunt;
 
   return (
     <div className="space-y-3">
@@ -158,19 +162,37 @@ function ExploreTab() {
             <div className="mt-2 flex gap-2">
               <button
                 className="btn"
-                disabled={locked || inCombat || busy || inDwelling}
+                disabled={locked || inCombat || busy || inDwelling || energyLackGather}
                 onClick={() => act("gather", { locationId: loc.id })}
-                title={inDwelling ? t("inDwellingTip") : undefined}
+                title={
+                  inDwelling
+                    ? t("inDwellingTip")
+                    : energyLackGather
+                      ? `${t("energyInsufficientTip")} (${ENERGY_COST.gather})`
+                      : undefined
+                }
               >
-                {t("btnGather")}
+                {t("btnGather")}{" "}
+                <span className="font-mono text-xs">
+                  -{ENERGY_COST.gather} {t("energyCostSuffix")}
+                </span>
               </button>
               <button
                 className="btn btn-danger"
-                disabled={locked || inCombat || busy || inDwelling}
+                disabled={locked || inCombat || busy || inDwelling || energyLackHunt}
                 onClick={() => act("hunt", { locationId: loc.id })}
-                title={inDwelling ? t("inDwellingTip") : undefined}
+                title={
+                  inDwelling
+                    ? t("inDwellingTip")
+                    : energyLackHunt
+                      ? `${t("energyInsufficientTip")} (${ENERGY_COST.hunt})`
+                      : undefined
+                }
               >
-                {t("btnHunt")}
+                {t("btnHunt")}{" "}
+                <span className="font-mono text-xs">
+                  -{ENERGY_COST.hunt} {t("energyCostSuffix")}
+                </span>
               </button>
             </div>
           </div>
@@ -455,6 +477,9 @@ function CraftTab() {
   const soulCount = SOUL_IDS.reduce((a, id) => a + (s.inventory[id] ?? 0), 0);
   const fragmentCount = s.inventory["xuantian_canpian"] ?? 0;
   const fragmentMintCount = s.inventory["poshou_jinhow"] ?? 0;
+  const energy = s.energy ?? 0;
+  const energyLackCraft = energy < ENERGY_COST.craft;
+  const energyLackXuantian = energy < ENERGY_COST.craftXuantian;
 
   return (
     <div className="space-y-2">
@@ -470,10 +495,14 @@ function CraftTab() {
           </p>
           <button
             className="btn mt-2 border-fuchsia-400/60 text-fuchsia-300 hover:bg-fuchsia-400/15"
-            disabled={busy || fragmentCount < 10 || soulCount < 1}
+            disabled={busy || fragmentCount < 10 || soulCount < 1 || energyLackXuantian}
+            title={energyLackXuantian ? `${t("energyInsufficientTip")} (${ENERGY_COST.craftXuantian})` : undefined}
             onClick={() => act("craftXuantian")}
           >
-            {t("xuantianCraftBtn")}
+            {t("xuantianCraftBtn")}{" "}
+            <span className="font-mono text-xs">
+              -{ENERGY_COST.craftXuantian} {t("energyCostSuffix")}
+            </span>
           </button>
         </div>
       )}
@@ -528,13 +557,22 @@ function CraftTab() {
             </p>
             <button
               className="btn mt-2"
-              disabled={busy || !canStones || !canMats || locked || stageLocked}
+              disabled={busy || !canStones || !canMats || locked || stageLocked || energyLackCraft}
               title={
-                locked ? t("blueprintLocked") : stageLocked ? t("exploreStageLocked").replace("{n}", String(rec.reqStage)) : ""
+                locked
+                  ? t("blueprintLocked")
+                  : stageLocked
+                    ? t("exploreStageLocked").replace("{n}", String(rec.reqStage))
+                    : energyLackCraft
+                      ? `${t("energyInsufficientTip")} (${ENERGY_COST.craft})`
+                      : ""
               }
               onClick={() => act("craft", { recipeId: rec.id })}
             >
-              {locked ? t("craftBtnLocked") : stageLocked ? t("stageInsufficient") : t("craftBtn")}
+              {locked ? t("craftBtnLocked") : stageLocked ? t("stageInsufficient") : t("craftBtn")}{" "}
+              <span className="font-mono text-xs">
+                -{ENERGY_COST.craft} {t("energyCostSuffix")}
+              </span>
             </button>
           </div>
         );

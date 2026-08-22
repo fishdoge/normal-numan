@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useCallback, useState } from "react";
-import { useGame, statsOf, maxLifeOf, XIANLI_MULT, sectDamageMultOfStages } from "@/game/store";
+import {
+  useGame,
+  statsOf,
+  maxLifeOf,
+  energyMaxOf,
+  XIANLI_MULT,
+  sectDamageMultOfStages,
+} from "@/game/store";
 import { REALMS } from "@/game/data/realms";
 import { SECTS } from "@/game/data/sects";
 import { MONSTERS } from "@/game/data/world";
@@ -256,6 +263,15 @@ export function StatusPanel() {
             </span>
           </div>
           <Bar v={s.mp} max={mpMax} cls="bg-azure" />
+        </div>
+        <div>
+          <div className="flex justify-between text-xs text-faded mb-0.5">
+            <span>{t("statEnergy")}</span>
+            <span>
+              {Math.floor(s.energy ?? 0)}/{energyMaxOf(s)}
+            </span>
+          </div>
+          <Bar v={s.energy ?? 0} max={energyMaxOf(s)} cls="bg-gold" />
         </div>
         <div>
           <div className="flex justify-between text-xs text-faded mb-0.5">

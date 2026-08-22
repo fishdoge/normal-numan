@@ -29,6 +29,8 @@ export function ensureSchema() {
       await sql`ALTER TABLE saves ADD COLUMN IF NOT EXISTS pending_stones BIGINT NOT NULL DEFAULT 0`;
       // 宗門仙境(1.9 版):停泊中的位置自何時起算修為累積,由 /api/action 每次請求依現在時間結算
       await sql`ALTER TABLE saves ADD COLUMN IF NOT EXISTS dwelling_since TIMESTAMPTZ`;
+      // 精力系統:每 5 分鐘真實時間回復 1 點,算法同 last_life_at(只推進已消耗的整數份,餘數留到下次結算)
+      await sql`ALTER TABLE saves ADD COLUMN IF NOT EXISTS last_energy_at TIMESTAMPTZ DEFAULT now()`;
       await sql`CREATE TABLE IF NOT EXISTS listings (
         id SERIAL PRIMARY KEY,
         seller_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,

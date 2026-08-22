@@ -1,7 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useGame, statsOf, maxLifeOf, cultCostOf, breakChanceOf, Modal } from "@/game/store";
+import {
+  useGame,
+  statsOf,
+  maxLifeOf,
+  cultCostOf,
+  breakChanceOf,
+  ENERGY_COST,
+  Modal,
+} from "@/game/store";
 import { REALMS } from "@/game/data/realms";
 import { CHANGELOG } from "@/game/data/changelog";
 import { REVIVAL_PRICE_USD } from "@/game/data/blackMarket";
@@ -219,45 +227,58 @@ function CultivationBar() {
   const canBreak = expReady && (!needsZhenxian || hasZhenxian);
   const cost = cultCostOf(s);
   const chance = breakChanceOf(s);
+  const energy = s.energy ?? 0;
+  const energyTip = (need: number) =>
+    energy < need ? `${t("energyInsufficientTip")} (${need})` : undefined;
   const breakTitle = !expReady
     ? t("breakNeedExp").replace("{n}", String(expNeed))
     : needsZhenxian && !hasZhenxian
       ? t("breakNeedZhenxian")
-      : t("breakChancePct").replace("{n}", String(Math.round(chance * 100)));
+      : energy < ENERGY_COST.breakthrough
+        ? energyTip(ENERGY_COST.breakthrough)
+        : t("breakChancePct").replace("{n}", String(Math.round(chance * 100)));
   return (
     <div className={`panel deco-frame ${canBreak ? "border-gold/70" : ""}`}>
       <div className="flex flex-wrap items-center gap-3">
         <p className="panel-title mb-0 mr-2">{t("cultivateTitle")}</p>
         <button
           className="btn text-base px-5 py-2"
-          disabled={busy || inCombat || inDwelling}
+          disabled={busy || inCombat || inDwelling || energy < ENERGY_COST.cultivate}
           onClick={() => act("cultivate")}
-          title={inDwelling ? t("inDwellingTip") : undefined}
+          title={inDwelling ? t("inDwellingTip") : energyTip(ENERGY_COST.cultivate)}
         >
           {t("btnCultivate")}{" "}
           <span className="ml-1 font-mono text-xs">
-            -{cost} {t("lifeCostSuffix")}
+            -{cost} {t("lifeCostSuffix")} · -{ENERGY_COST.cultivate} {t("energyCostSuffix")}
           </span>
         </button>
         <button
           className="btn text-base px-5 py-2"
-          disabled={busy || inCombat || inDwelling || s.hp >= hpMax}
+          disabled={busy || inCombat || inDwelling || s.hp >= hpMax || energy < ENERGY_COST.rest}
           onClick={() => act("rest")}
-          title={inDwelling ? t("inDwellingTip") : undefined}
+          title={inDwelling ? t("inDwellingTip") : energyTip(ENERGY_COST.rest)}
         >
-          {t("btnRest")}
+          {t("btnRest")}{" "}
+          <span className="ml-1 font-mono text-xs">
+            -{ENERGY_COST.rest} {t("energyCostSuffix")}
+          </span>
         </button>
         <button
           className="btn text-base px-5 py-2 border-fuchsia-400/50 text-fuchsia-300 hover:bg-fuchsia-400/15 hover:border-fuchsia-400"
-          disabled={busy || inCombat || inDwelling || s.stones < 100000000}
+          disabled={
+            busy || inCombat || inDwelling || s.stones < 100000000 || energy < ENERGY_COST.wander
+          }
           onClick={() => act("wander")}
-          title={inDwelling ? t("inDwellingTip") : t("wanderTooltip")}
+          title={inDwelling ? t("inDwellingTip") : (energyTip(ENERGY_COST.wander) ?? t("wanderTooltip"))}
         >
-          {t("btnWander")}
+          {t("btnWander")}{" "}
+          <span className="ml-1 font-mono text-xs">
+            -{ENERGY_COST.wander} {t("energyCostSuffix")}
+          </span>
         </button>
         <button
           className={`btn text-base px-5 py-2 ${canBreak && !inDwelling ? "border-gold text-gold animate-pulse" : ""}`}
-          disabled={busy || inCombat || inDwelling || !canBreak}
+          disabled={busy || inCombat || inDwelling || !canBreak || energy < ENERGY_COST.breakthrough}
           onClick={() => act("breakthrough")}
           title={inDwelling ? t("inDwellingTip") : breakTitle}
         >

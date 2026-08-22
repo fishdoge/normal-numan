@@ -4,6 +4,7 @@ import {
   applyAction,
   applyRealTimeAging,
   applyDwellingExp,
+  applyEnergyRegen,
   newSave,
   sectDamageMultOfStages,
   SaveData,
@@ -73,10 +74,15 @@ export async function POST(req: NextRequest) {
   }
 
   const rows =
-    await sql`SELECT data, last_life_at, dwelling_since FROM saves WHERE user_id = ${user.id}`;
+    await sql`SELECT data, last_life_at, last_energy_at, dwelling_since FROM saves WHERE user_id = ${user.id}`;
   if (!rows.length) return NextResponse.json({ error: "尚未開始遊戲" }, { status: 400 });
 
-  const row = rows[0] as { data: SaveData; last_life_at: string; dwelling_since: string | null };
+  const row = rows[0] as {
+    data: SaveData;
+    last_life_at: string;
+    last_energy_at: string;
+    dwelling_since: string | null;
+  };
   const save = row.data;
 
   // 全伺服器統一時間戳:每 1 小時真實時間 = 1 年壽元,與行動本身的耗壽元並存
@@ -85,6 +91,15 @@ export async function POST(req: NextRequest) {
     Math.floor((Date.now() - new Date(row.last_life_at).getTime()) / 3600000),
   );
   if (hours > 0) applyRealTimeAging(save, hours);
+
+  // 精力回復:每 5 分鐘真實時間 1 點,只推進「已兌現成點數」的整數分鐘,餘數留到下次結算
+  const energyMinutesTotal = Math.max(
+    0,
+    Math.floor((Date.now() - new Date(row.last_energy_at).getTime()) / 60000),
+  );
+  const energyPoints = Math.floor(energyMinutesTotal / 5);
+  const energyMinutesConsumed = energyPoints * 5;
+  if (energyPoints > 0) applyEnergyRegen(save, energyPoints);
 
   // 宗門仙境:停泊中的位置每小時真實時間緩慢增長修為
   let dwellingHours = 0;
@@ -112,6 +127,7 @@ export async function POST(req: NextRequest) {
   await sql`
     UPDATE saves SET data = ${JSON.stringify(result.save)}::jsonb, updated_at = now(),
       last_life_at = last_life_at + make_interval(hours => ${hours}),
+      last_energy_at = last_energy_at + make_interval(mins => ${energyMinutesConsumed}),
       dwelling_since = CASE WHEN dwelling_since IS NOT NULL
         THEN dwelling_since + make_interval(hours => ${dwellingHours}) ELSE dwelling_since END
     WHERE user_id = ${user.id}`;

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql, userFromToken } from "@/lib/db";
-import { applyRealTimeAging, SaveData } from "@/game/engine";
+import { applyRealTimeAging, applyEnergyRegen, SaveData } from "@/game/engine";
 
 export const runtime = "nodejs";
 
@@ -22,10 +22,11 @@ export async function GET(req: NextRequest) {
   const userRows = await sql`SELECT revival_used FROM users WHERE id = ${user.id}`;
   const revivalUsed = !!(userRows[0] as { revival_used: boolean } | undefined)?.revival_used;
 
-  const rows = await sql`SELECT data, last_life_at FROM saves WHERE user_id = ${user.id}`;
+  const rows =
+    await sql`SELECT data, last_life_at, last_energy_at FROM saves WHERE user_id = ${user.id}`;
   if (!rows.length) return NextResponse.json({ ok: true, save: null, name: user.name, revivalUsed });
 
-  const row = rows[0] as { data: SaveData; last_life_at: string };
+  const row = rows[0] as { data: SaveData; last_life_at: string; last_energy_at: string };
   const hours = Math.max(
     0,
     Math.floor((Date.now() - new Date(row.last_life_at).getTime()) / 3600000),
@@ -33,12 +34,22 @@ export async function GET(req: NextRequest) {
   let ageGained = 0;
   const save = row.data;
 
-  if (hours > 0 && save && !save.dead) {
+  // 精力回復:每 5 分鐘真實時間 1 點,離線期間也照算,只推進已兌現的整數分鐘
+  const energyMinutesTotal = Math.max(
+    0,
+    Math.floor((Date.now() - new Date(row.last_energy_at).getTime()) / 60000),
+  );
+  const energyPoints = Math.floor(energyMinutesTotal / 5);
+  const energyMinutesConsumed = energyPoints * 5;
+  if (energyPoints > 0 && save) applyEnergyRegen(save, energyPoints);
+
+  if ((hours > 0 || energyPoints > 0) && save && !save.dead) {
     ageGained = hours;
-    applyRealTimeAging(save, hours);
+    if (hours > 0) applyRealTimeAging(save, hours);
     await sql`
       UPDATE saves SET data = ${JSON.stringify(save)}::jsonb,
-        last_life_at = last_life_at + make_interval(hours => ${hours})
+        last_life_at = last_life_at + make_interval(hours => ${hours}),
+        last_energy_at = last_energy_at + make_interval(mins => ${energyMinutesConsumed})
       WHERE user_id = ${user.id}`;
   }
 

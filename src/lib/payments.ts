@@ -23,6 +23,7 @@ const BLACK_MARKET_PRODUCT_IDS: Record<string, string> = {
   tianyunfu: "8bcff9de-e98b-4747-9635-6c8c8d165222",
   tianjifu: "7a7d3b6c-7e09-4945-a7f2-42183261d0e4",
   panlongtaoshu: "42e7f9ee-4b05-4521-9453-e3ed9c50d829",
+  beilidan: "97f08151-e977-43cb-9ae1-9c0f23fe94bc",
 };
 
 export const BLACK_MARKET_ITEMS: BlackMarketItem[] = BLACK_MARKET_CATALOG.map((e) => ({

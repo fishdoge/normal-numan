@@ -61,12 +61,12 @@ export default function ActionTabs() {
   ];
   return (
     <div className="panel">
-      <div className="flex flex-wrap gap-1 mb-4 border-b border-faded/20 pb-2">
+      <div className="flex gap-1 mb-4 border-b border-faded/20 pb-2 overflow-x-auto whitespace-nowrap">
         {tabs.map(([t, label]) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-3 py-1 text-sm rounded-sm transition-colors ${
+            className={`shrink-0 px-3 py-1 text-sm rounded-sm transition-colors ${
               tab === t
                 ? "bg-gold/15 text-gold border border-gold/40"
                 : "text-faded hover:text-cream"

@@ -3,10 +3,11 @@ import { sql, ensureSchema } from "@/lib/db";
 
 export const runtime = "nodejs";
 
-// 排行榜(整合為三榜):
+// 排行榜(整合為四榜):
 //   ?type=exp   —— 修為榜:按修為(exp)高低
 //   ?type=xiu   —— 修仙榜:按境界(realmIdx)→ 仙靈力 → 修為(綜合修仙成就)
 //   ?type=futu  —— 浮屠塔榜:按浮屠塔通關層數(futuFloor)
+//   ?type=kill  —— 獵殺榜:按累計妖獸擊殺總數(kills 物件所有值加總)
 //   ?player=名  —— 查詢單一玩家公開資訊
 export async function GET(req: NextRequest) {
   await ensureSchema();
@@ -65,6 +66,22 @@ export async function GET(req: NextRequest) {
       WHERE COALESCE((s.data->>'started')::boolean, false) = true
         AND COALESCE((s.data->>'futuFloor')::int, 0) > 0
       ORDER BY futu_floor DESC
+      LIMIT 100`;
+    return NextResponse.json({ ok: true, players: rows });
+  }
+
+  if (type === "kill") {
+    // JSONB 的 kills 物件(monsterId → 擊殺數)無法直接 SUM,需靠 jsonb_each_text 展開後加總
+    const rows = await sql`
+      SELECT u.name,
+        COALESCE((s.data->>'realmIdx')::int, 0) AS realm_idx,
+        COALESCE((s.data->>'dead')::boolean, false) AS dead,
+        COALESCE((
+          SELECT SUM(value::bigint) FROM jsonb_each_text(s.data->'kills')
+        ), 0) AS total_kills
+      FROM saves s JOIN users u ON u.id = s.user_id
+      WHERE COALESCE((s.data->>'started')::boolean, false) = true
+      ORDER BY total_kills DESC
       LIMIT 100`;
     return NextResponse.json({ ok: true, players: rows });
   }

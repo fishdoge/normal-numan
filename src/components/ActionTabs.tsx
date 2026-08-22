@@ -1210,6 +1210,7 @@ interface RankPlayer {
   exp: number;
   xianli: number;
   futu_floor: number;
+  total_kills?: number;
   dead: boolean;
 }
 
@@ -1345,7 +1346,42 @@ function usePlayerLookup() {
   return { profile, setProfile, err, lookup };
 }
 
-type Board = "xiu" | "exp" | "futu";
+type Board = "xiu" | "exp" | "futu" | "kill";
+
+// 各榜單主題色的完整 class 組合(全部寫死字面值,避免動態組字串被 Tailwind JIT 掃描漏收):
+// 修仙榜/修為榜沿用金色,浮屠塔榜維持琥珀色,獵殺榜新增沿用綠色(jade)。
+interface BoardStyle {
+  tabActive: string; // 分頁按鈕選中時
+  text: string; // 純文字色(如「我的排名」數字)
+  rowActive: string; // 排行列為本人時的框線/底色
+  youTag: string; // 「你」標籤文字色(半透明)
+}
+const BOARD_STYLES: Record<Board, BoardStyle> = {
+  xiu: {
+    tabActive: "border-gold bg-gold/15 text-gold",
+    text: "text-gold",
+    rowActive: "border-gold/60 bg-gold/10",
+    youTag: "text-gold/70",
+  },
+  exp: {
+    tabActive: "border-gold bg-gold/15 text-gold",
+    text: "text-gold",
+    rowActive: "border-gold/60 bg-gold/10",
+    youTag: "text-gold/70",
+  },
+  futu: {
+    tabActive: "border-amber-300 bg-amber-300/15 text-amber-300",
+    text: "text-amber-300",
+    rowActive: "border-amber-300/60 bg-amber-300/10",
+    youTag: "text-amber-300/70",
+  },
+  kill: {
+    tabActive: "border-jade bg-jade/15 text-jade",
+    text: "text-jade",
+    rowActive: "border-jade/60 bg-jade/10",
+    youTag: "text-jade/70",
+  },
+};
 
 function RankTab() {
   const s = useGame((x) => x.save)!;
@@ -1361,8 +1397,10 @@ function RankTab() {
     ["xiu", t("boardXiu"), t("boardXiuDesc")],
     ["exp", t("boardExp"), t("boardExpDesc")],
     ["futu", t("boardFutu"), t("boardFutuDesc")],
+    ["kill", t("boardKill"), t("boardKillDesc")],
   ];
   const boardMeta = boards.find((b) => b[0] === board)!;
+  const style = BOARD_STYLES[board];
 
   const refresh = async (b: Board = board) => {
     setLoading(true);
@@ -1380,10 +1418,15 @@ function RankTab() {
   }, [board]);
 
   const myRank = players.findIndex((p) => p.name === s.name) + 1;
-  const isFutuBoard = board === "futu";
 
   // 各榜右側顯示的主數值
   const rightValue = (p: RankPlayer) => {
+    if (board === "kill")
+      return (
+        <span className="text-jade font-bold">
+          {t("killCountValue").replace("{n}", String(p.total_kills ?? 0))}
+        </span>
+      );
     if (board === "futu")
       return (
         <span className="text-amber-300 font-bold">
@@ -1410,22 +1453,16 @@ function RankTab() {
     );
   };
 
-  const accent = isFutuBoard ? "amber-300" : "gold";
-
   return (
     <div className="space-y-2">
-      {/* 三榜切換 */}
-      <div className="flex gap-1.5">
+      {/* 四榜切換 */}
+      <div className="flex gap-1.5 flex-wrap">
         {boards.map(([b, label]) => (
           <button
             key={b}
             onClick={() => setBoard(b)}
             className={`px-3 py-1 text-sm rounded-sm border transition-colors ${
-              board === b
-                ? b === "futu"
-                  ? "border-amber-300 bg-amber-300/15 text-amber-300"
-                  : "border-gold bg-gold/15 text-gold"
-                : "border-faded/30 text-faded hover:text-cream"
+              board === b ? BOARD_STYLES[b].tabActive : "border-faded/30 text-faded hover:text-cream"
             }`}
           >
             {label}
@@ -1437,7 +1474,7 @@ function RankTab() {
         {myRank > 0 && (
           <>
             {t("yourRankLine")}
-            <span className={`text-${accent}`}> {myRank} </span>
+            <span className={style.text}> {myRank} </span>
             {t("yourRankSuffix")}
           </>
         )}
@@ -1462,27 +1499,22 @@ function RankTab() {
       {loading && <p className="text-sm text-faded">{t("boardUpdating")}</p>}
       {!loading && players.length === 0 && (
         <p className="text-sm text-faded">
-          {isFutuBoard ? t("futuBoardEmpty") : t("boardEmpty")}
+          {board === "futu" ? t("futuBoardEmpty") : board === "kill" ? t("killBoardEmpty") : t("boardEmpty")}
         </p>
       )}
       {players.map((p, i) => {
         const me = p.name === s.name;
-        const topColor = isFutuBoard ? "text-amber-300" : "text-gold";
         return (
           <button
             key={p.name + i}
             onClick={() => lookup(p.name)}
             className={`w-full text-left flex items-center justify-between border rounded-sm p-2.5 transition-colors hover:border-gold/60 ${
-              me
-                ? isFutuBoard
-                  ? "border-amber-300/60 bg-amber-300/10"
-                  : "border-gold/60 bg-gold/10"
-                : "border-faded/20"
+              me ? style.rowActive : "border-faded/20"
             }`}
           >
             <div className="flex items-baseline gap-3 min-w-0">
               <span
-                className={`font-mono text-sm w-6 text-right shrink-0 ${i < 3 ? topColor : "text-faded"}`}
+                className={`font-mono text-sm w-6 text-right shrink-0 ${i < 3 ? style.text : "text-faded"}`}
               >
                 {i + 1}
               </span>
@@ -1490,7 +1522,7 @@ function RankTab() {
                 <span className={`font-bold ${nameColorOf(REALMS[p.realm_idx]?.stage ?? 1)}`}>
                   {p.name}
                 </span>
-                {me && <span className={`text-xs ${topColor}/70 ml-2`}>{t("youTag")}</span>}
+                {me && <span className={`text-xs ${style.youTag} ml-2`}>{t("youTag")}</span>}
                 {p.dead && (
                   <span className="chip ml-2 text-vermillion border-vermillion/50">{t("deadTag")}</span>
                 )}
@@ -1500,6 +1532,34 @@ function RankTab() {
           </button>
         );
       })}
+      {board === "kill" && (
+        <details className="border border-faded/20 rounded-sm p-2.5">
+          <summary className="cursor-pointer text-sm text-jade select-none">
+            {t("monsterDropListTitle")}
+          </summary>
+          <p className="text-xs text-faded mt-2 mb-2">{t("monsterDropListNote")}</p>
+          <div className="space-y-1.5 max-h-96 overflow-y-auto pr-1">
+            {MONSTERS.map((mon) => (
+              <div key={mon.id} className="text-xs border-t border-faded/10 pt-1.5 first:border-t-0 first:pt-0">
+                <span className="font-bold">{monsterDisplayName(mon, lang)}</span>
+                <span className="text-faded ml-2">
+                  {mon.drops.length === 0
+                    ? t("monsterDropNone")
+                    : mon.drops.map((d, i) => {
+                        const item = itemById(d.id);
+                        return (
+                          <span key={d.id} className={itemNameColor(item, isXuantianArtifact(d.id))}>
+                            {itemDisplayName(item, lang)}
+                            {i < mon.drops.length - 1 ? "、" : ""}
+                          </span>
+                        );
+                      })}
+                </span>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
     </div>
   );
 }

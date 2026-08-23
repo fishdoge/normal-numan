@@ -516,6 +516,97 @@ function CraftTab() {
   const energy = s.energy ?? 0;
   const energyLackCraft = energy < ENERGY_COST.craft;
   const energyLackXuantian = energy < ENERGY_COST.craftXuantian;
+  const [filter, setFilter] = useState<DictKey | "filterAll">("filterAll");
+  const availableSections = ITEM_SECTIONS.filter(([, kinds]) =>
+    RECIPES.some((rec) => kinds.includes(itemById(rec.result).kind)),
+  );
+  const sectionsToShow =
+    filter === "filterAll" ? availableSections : availableSections.filter(([key]) => key === filter);
+
+  const recipeRow = (rec: (typeof RECIPES)[number]) => {
+    const result = itemById(rec.result);
+    const locked = rec.dropOnly && !s.unlockedRecipes.includes(rec.id);
+    const stageLocked = (rec.reqStage ?? 1) > realm.stage;
+    const canStones = s.stones >= rec.stones;
+    const canMats = rec.materials.every((m) => (s.inventory[m.id] ?? 0) >= m.n);
+    return (
+      <div
+        key={rec.id}
+        className={`border rounded-sm p-3 ${rec.dropOnly ? "border-azure/50 bg-azure/5" : "border-faded/20"} ${locked || stageLocked ? "opacity-55" : ""}`}
+      >
+        <div className="flex items-baseline justify-between">
+          <span className="font-bold">
+            {itemDisplayName(result, lang)}
+            <span className="chip ml-2 text-faded/80 border-faded/30">
+              {kindLabel(result.kind, lang)}
+            </span>
+            {result.element && (
+              <span className={`chip ml-2 ${ELEMENT_COLOR[result.element]}`}>
+                {elementLabel(result.element, lang)}
+              </span>
+            )}
+            {rec.dropOnly && (
+              <span className="chip ml-2 text-azure border-azure/60">{t("blueprintTag")}</span>
+            )}
+          </span>
+          <span className="shrink-0 flex items-center gap-2">
+            {rec.lifeCost ? (
+              <span className="text-xs font-mono text-faded">
+                -{rec.lifeCost} {t("lifeCostSuffix")}
+              </span>
+            ) : null}
+            <span className={`text-xs font-mono ${canStones ? "text-gold" : "text-vermillion"}`}>
+              {formatStones(rec.stones)}
+            </span>
+          </span>
+        </div>
+        <p className="text-xs text-faded mt-1">{recipeDisplayDesc(rec, lang)}</p>
+        <p className="text-xs mt-1.5">
+          {rec.materials.map((m) => {
+            const have = s.inventory[m.id] ?? 0;
+            return (
+              <span key={m.id} className={`mr-3 ${have >= m.n ? "text-jade" : "text-vermillion"}`}>
+                {itemDisplayName(itemById(m.id), lang)} {have}/{m.n}
+              </span>
+            );
+          })}
+          <span className="text-faded">
+            →{" "}
+            {result.atkBonus ? (lang === "en" ? `ATK+${result.atkBonus} ` : `攻+${result.atkBonus} `) : ""}
+            {result.defBonus ? (lang === "en" ? `DEF+${result.defBonus} ` : `防+${result.defBonus} `) : ""}
+            {result.speedBonus ? (lang === "en" ? `SPD+${result.speedBonus}` : `速+${result.speedBonus}`) : ""}
+            {result.heal ? (lang === "en" ? `HP+${result.heal} ` : `氣血+${result.heal} `) : ""}
+            {result.mp ? (lang === "en" ? `MP+${result.mp} ` : `法力+${result.mp} `) : ""}
+            {result.energy ? (lang === "en" ? `Energy+${result.energy} ` : `精力+${result.energy} `) : ""}
+            {result.exp ? (lang === "en" ? `Exp+${result.exp} ` : `修為+${result.exp} `) : ""}
+            {result.life ? (lang === "en" ? `Lifespan+${result.life} ` : `壽元上限+${result.life} `) : ""}
+            {result.lifePct
+              ? lang === "en"
+                ? `Lifespan+${Math.round(result.lifePct * 100)}% `
+                : `壽元上限+${Math.round(result.lifePct * 100)}% `
+              : ""}
+            {result.xianli ? (lang === "en" ? `Immortal Qi+${result.xianli}` : `仙靈力+${result.xianli}`) : ""}
+          </span>
+        </p>
+        <button
+          className="btn mt-2"
+          disabled={busy || !canStones || !canMats || locked || stageLocked || energyLackCraft}
+          title={
+            locked
+              ? t("blueprintLocked")
+              : stageLocked
+                ? t("exploreStageLocked").replace("{n}", String(rec.reqStage))
+                : energyLackCraft
+                  ? `${t("energyInsufficientTip")} (${ENERGY_COST.craft})`
+                  : `-${ENERGY_COST.craft} ${t("energyCostSuffix")}`
+          }
+          onClick={() => act("craft", { recipeId: rec.id })}
+        >
+          {locked ? t("craftBtnLocked") : stageLocked ? t("stageInsufficient") : t("craftBtn")}
+        </button>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-2">
@@ -543,90 +634,38 @@ function CraftTab() {
           </button>
         </div>
       )}
-      {RECIPES.map((rec) => {
-        const result = itemById(rec.result);
-        const locked = rec.dropOnly && !s.unlockedRecipes.includes(rec.id);
-        const stageLocked = (rec.reqStage ?? 1) > realm.stage;
-        const canStones = s.stones >= rec.stones;
-        const canMats = rec.materials.every((m) => (s.inventory[m.id] ?? 0) >= m.n);
-        return (
-          <div
-            key={rec.id}
-            className={`border rounded-sm p-3 ${rec.dropOnly ? "border-azure/50 bg-azure/5" : "border-faded/20"} ${locked || stageLocked ? "opacity-55" : ""}`}
+      <div className="flex flex-wrap gap-1.5 pb-1">
+        <button
+          onClick={() => setFilter("filterAll")}
+          className={`px-2.5 py-1 text-xs rounded-sm border transition-colors ${
+            filter === "filterAll"
+              ? "border-gold bg-gold/15 text-gold"
+              : "border-faded/30 text-faded hover:text-cream"
+          }`}
+        >
+          {t("filterAll")}
+        </button>
+        {availableSections.map(([key]) => (
+          <button
+            key={key}
+            onClick={() => setFilter(key)}
+            className={`px-2.5 py-1 text-xs rounded-sm border transition-colors ${
+              filter === key
+                ? "border-gold bg-gold/15 text-gold"
+                : "border-faded/30 text-faded hover:text-cream"
+            }`}
           >
-            <div className="flex items-baseline justify-between">
-              <span className="font-bold">
-                {itemDisplayName(result, lang)}
-                <span className="chip ml-2 text-faded/80 border-faded/30">
-                  {kindLabel(result.kind, lang)}
-                </span>
-                {result.element && (
-                  <span className={`chip ml-2 ${ELEMENT_COLOR[result.element]}`}>
-                    {elementLabel(result.element, lang)}
-                  </span>
-                )}
-                {rec.dropOnly && (
-                  <span className="chip ml-2 text-azure border-azure/60">{t("blueprintTag")}</span>
-                )}
-              </span>
-              <span className="shrink-0 flex items-center gap-2">
-                {rec.lifeCost ? (
-                  <span className="text-xs font-mono text-faded">
-                    -{rec.lifeCost} {t("lifeCostSuffix")}
-                  </span>
-                ) : null}
-                <span className={`text-xs font-mono ${canStones ? "text-gold" : "text-vermillion"}`}>
-                  {formatStones(rec.stones)}
-                </span>
-              </span>
-            </div>
-            <p className="text-xs text-faded mt-1">{recipeDisplayDesc(rec, lang)}</p>
-            <p className="text-xs mt-1.5">
-              {rec.materials.map((m) => {
-                const have = s.inventory[m.id] ?? 0;
-                return (
-                  <span
-                    key={m.id}
-                    className={`mr-3 ${have >= m.n ? "text-jade" : "text-vermillion"}`}
-                  >
-                    {itemDisplayName(itemById(m.id), lang)} {have}/{m.n}
-                  </span>
-                );
-              })}
-              <span className="text-faded">
-                →{" "}
-                {result.atkBonus ? (lang === "en" ? `ATK+${result.atkBonus} ` : `攻+${result.atkBonus} `) : ""}
-                {result.defBonus ? (lang === "en" ? `DEF+${result.defBonus} ` : `防+${result.defBonus} `) : ""}
-                {result.speedBonus ? (lang === "en" ? `SPD+${result.speedBonus}` : `速+${result.speedBonus}`) : ""}
-                {result.heal ? (lang === "en" ? `HP+${result.heal} ` : `氣血+${result.heal} `) : ""}
-                {result.mp ? (lang === "en" ? `MP+${result.mp} ` : `法力+${result.mp} `) : ""}
-                {result.energy ? (lang === "en" ? `Energy+${result.energy} ` : `精力+${result.energy} `) : ""}
-                {result.exp ? (lang === "en" ? `Exp+${result.exp} ` : `修為+${result.exp} `) : ""}
-                {result.life ? (lang === "en" ? `Lifespan+${result.life} ` : `壽元上限+${result.life} `) : ""}
-                {result.lifePct
-                  ? lang === "en"
-                    ? `Lifespan+${Math.round(result.lifePct * 100)}% `
-                    : `壽元上限+${Math.round(result.lifePct * 100)}% `
-                  : ""}
-                {result.xianli ? (lang === "en" ? `Immortal Qi+${result.xianli}` : `仙靈力+${result.xianli}`) : ""}
-              </span>
-            </p>
-            <button
-              className="btn mt-2"
-              disabled={busy || !canStones || !canMats || locked || stageLocked || energyLackCraft}
-              title={
-                locked
-                  ? t("blueprintLocked")
-                  : stageLocked
-                    ? t("exploreStageLocked").replace("{n}", String(rec.reqStage))
-                    : energyLackCraft
-                      ? `${t("energyInsufficientTip")} (${ENERGY_COST.craft})`
-                      : `-${ENERGY_COST.craft} ${t("energyCostSuffix")}`
-              }
-              onClick={() => act("craft", { recipeId: rec.id })}
-            >
-              {locked ? t("craftBtnLocked") : stageLocked ? t("stageInsufficient") : t("craftBtn")}
-            </button>
+            {t(key).replace(/\s/g, "")}
+          </button>
+        ))}
+      </div>
+      {sectionsToShow.map(([key, kinds]) => {
+        const group = RECIPES.filter((rec) => kinds.includes(itemById(rec.result).kind));
+        if (!group.length) return null;
+        return (
+          <div key={key}>
+            <div className="divider">{t(key)}</div>
+            <div className="space-y-2">{group.map(recipeRow)}</div>
           </div>
         );
       })}
@@ -1147,6 +1186,7 @@ function DexTab() {
   const t = useT();
   const normals = MONSTERS.filter((m) => !m.isLord);
   const lords = MONSTERS.filter((m) => m.isLord);
+  const [view, setView] = useState<"normal" | "lord">("normal");
 
   const monsterRow = (mon: (typeof MONSTERS)[number]) => {
     const seen = s.seen.includes(mon.id);
@@ -1197,15 +1237,39 @@ function DexTab() {
           .replace("{seen}", String(s.seen.length))
           .replace("{total}", String(MONSTERS.length))}
       </p>
-      <div className="divider">{t("dexMonsterDivider")}</div>
-      {normals.map(monsterRow)}
-      <div className="divider text-fuchsia-400/70">{t("dexLordDivider")}</div>
-      <p className="text-xs text-faded">
-        {t("dexLordNote")
-          .replace("{seen}", String(s.lordsSeen?.length ?? 0))
-          .replace("{total}", String(lords.length))}
-      </p>
-      {lords.map(monsterRow)}
+      <div className="flex flex-wrap gap-1.5 pb-1">
+        <button
+          onClick={() => setView("normal")}
+          className={`px-2.5 py-1 text-xs rounded-sm border transition-colors ${
+            view === "normal"
+              ? "border-gold bg-gold/15 text-gold"
+              : "border-faded/30 text-faded hover:text-cream"
+          }`}
+        >
+          {t("dexMonsterDivider").replace(/\s/g, "")}
+        </button>
+        <button
+          onClick={() => setView("lord")}
+          className={`px-2.5 py-1 text-xs rounded-sm border transition-colors ${
+            view === "lord"
+              ? "border-fuchsia-400 bg-fuchsia-400/15 text-fuchsia-300"
+              : "border-faded/30 text-faded hover:text-cream"
+          }`}
+        >
+          {t("dexLordDivider").replace(/\s/g, "")}
+        </button>
+      </div>
+      {view === "normal" && normals.map(monsterRow)}
+      {view === "lord" && (
+        <>
+          <p className="text-xs text-faded">
+            {t("dexLordNote")
+              .replace("{seen}", String(s.lordsSeen?.length ?? 0))
+              .replace("{total}", String(lords.length))}
+          </p>
+          {lords.map(monsterRow)}
+        </>
+      )}
     </div>
   );
 }

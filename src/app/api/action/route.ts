@@ -93,12 +93,14 @@ export async function POST(req: NextRequest) {
   if (hours > 0) applyRealTimeAging(save, hours);
 
   // 精力回復:每 5 分鐘真實時間 1 點,只推進「已兌現成點數」的整數分鐘,餘數留到下次結算
+  // 停泊宗門仙境閉關潛修時,精力回復速度加倍(每 5 分鐘 2 點)
   const energyMinutesTotal = Math.max(
     0,
     Math.floor((Date.now() - new Date(row.last_energy_at).getTime()) / 60000),
   );
-  const energyPoints = Math.floor(energyMinutesTotal / 5);
-  const energyMinutesConsumed = energyPoints * 5;
+  const energyTicks = Math.floor(energyMinutesTotal / 5);
+  const energyPoints = energyTicks * (save.dwellingSlot != null ? 2 : 1);
+  const energyMinutesConsumed = energyTicks * 5;
   if (energyPoints > 0) applyEnergyRegen(save, energyPoints);
 
   // 宗門仙境:停泊中的位置每小時真實時間緩慢增長修為

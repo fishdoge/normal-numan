@@ -35,12 +35,14 @@ export async function GET(req: NextRequest) {
   const save = row.data;
 
   // 精力回復:每 5 分鐘真實時間 1 點,離線期間也照算,只推進已兌現的整數分鐘
+  // 停泊宗門仙境閉關潛修時,精力回復速度加倍(每 5 分鐘 2 點)
   const energyMinutesTotal = Math.max(
     0,
     Math.floor((Date.now() - new Date(row.last_energy_at).getTime()) / 60000),
   );
-  const energyPoints = Math.floor(energyMinutesTotal / 5);
-  const energyMinutesConsumed = energyPoints * 5;
+  const energyTicks = Math.floor(energyMinutesTotal / 5);
+  const energyPoints = energyTicks * (save?.dwellingSlot != null ? 2 : 1);
+  const energyMinutesConsumed = energyTicks * 5;
   if (energyPoints > 0 && save) applyEnergyRegen(save, energyPoints);
 
   if ((hours > 0 || energyPoints > 0) && save && !save.dead) {

@@ -17,7 +17,8 @@ import { currentEraYears, eraLabelText } from "@/game/data/eraTime";
 import { techById } from "@/game/data/techniques";
 import { ELEMENT_COLOR, ELEMENTS, XIANLI_COLOR, EQUIP_SLOTS, nameColorOf } from "@/game/types";
 import { useT } from "@/i18n/useT";
-import { itemDisplayName } from "@/i18n/itemText";
+import { itemDisplayName, itemDisplayDesc, itemStatLine } from "@/i18n/itemText";
+import Tooltip from "./Tooltip";
 import { monsterDisplayName, monsterDisplayDesc } from "@/i18n/monsterText";
 import { techDisplayName, techDisplayDesc } from "@/i18n/techText";
 import { realmDisplayName } from "@/i18n/realmText";
@@ -368,14 +369,23 @@ export function StatusPanel() {
           const id = equipMap[slot];
           const it = id ? itemById(id) : null;
           const xuantian = id ? isXuantianArtifact(id) : false;
+          const valueCls = `text-right ${xuantian ? "text-xuantian" : it ? (slot === "pet" ? "text-fuchsia-300" : "text-cream") : "text-faded/50"}`;
           return (
             <div key={slot} className="contents">
               <span className="text-faded">{equipSlotLabel(slot, label, lang)}</span>
-              <span
-                className={`text-right ${xuantian ? "text-xuantian" : it ? (slot === "pet" ? "text-fuchsia-300" : "text-cream") : "text-faded/50"}`}
-              >
-                {it ? itemDisplayName(it, lang) : "—"}
-              </span>
+              {it ? (
+                <span className="text-right">
+                  <Tooltip
+                    content={[itemStatLine(it, t), itemDisplayDesc(it, lang)].filter(Boolean).join(" · ")}
+                  >
+                    <span className={`${xuantian ? "text-xuantian" : slot === "pet" ? "text-fuchsia-300" : "text-cream"} cursor-help underline decoration-dotted decoration-faded/40 underline-offset-2`}>
+                      {itemDisplayName(it, lang)}
+                    </span>
+                  </Tooltip>
+                </span>
+              ) : (
+                <span className={valueCls}>—</span>
+              )}
             </div>
           );
         })}

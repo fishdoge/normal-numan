@@ -1,6 +1,7 @@
 // 物品英文翻譯對照表(1.21 版新增)——僅收錄英文,中文以 items.ts 本身為準。
 // 依「基底 id」查詢(品質浮動道具的 "id@113" 會先拆除 @ 後綴)。
-import { Language } from "./dict";
+import { Language, DictKey } from "./dict";
+import { ItemDef, formatStones } from "@/game/types";
 
 export const ITEM_TEXT_EN: Record<string, { name: string; desc: string }> = {
   // ── 材料 ──
@@ -212,4 +213,24 @@ export function itemDisplayDesc(item: { id: string; desc: string }, lang: Langua
   if (lang !== "en") return item.desc;
   const { baseId } = splitQualityId(item.id);
   return ITEM_TEXT_EN[baseId]?.desc ?? item.desc;
+}
+
+// 物品數值一覽(售價/效果/裝備加成),供混沌萬靈榜與裝備欄提示框共用同一份文字
+export function itemStatLine(item: ItemDef, t: (k: DictKey) => string): string {
+  const parts: string[] = [];
+  if (item.price) parts.push(t("statLinePrice").replace("{n}", formatStones(item.price)));
+  if (item.heal) parts.push(t("statLineHeal").replace("{n}", String(item.heal)));
+  if (item.mp) parts.push(t("statLineMp").replace("{n}", String(item.mp)));
+  if (item.exp) parts.push(t("statLineExp").replace("{n}", String(item.exp)));
+  if (item.life) parts.push(t("statLineLife").replace("{n}", String(item.life)));
+  if (item.lifePct) parts.push(t("statLineLifePct").replace("{n}", String(Math.round(item.lifePct * 100))));
+  if (item.xianli) parts.push(t("statLineXianli").replace("{n}", String(item.xianli)));
+  if (item.atkBonus) parts.push(t("statLineAtk").replace("{n}", String(item.atkBonus)));
+  if (item.defBonus) parts.push(t("statLineDef").replace("{n}", String(item.defBonus)));
+  if (item.speedBonus) parts.push(t("statLineSpeed").replace("{n}", String(item.speedBonus)));
+  if (item.stoneMult) parts.push(t("statLineStoneMult").replace("{n}", String(item.stoneMult)));
+  if (item.breakBonus) parts.push(t("statLineBreakBonus").replace("{n}", String(Math.round(item.breakBonus * 100))));
+  if (item.reqStage) parts.push(t("statLineReqStage").replace("{n}", String(item.reqStage)));
+  if (item.dropOnly) parts.push(t("statLineDropOnly"));
+  return parts.join(" · ");
 }

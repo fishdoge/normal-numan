@@ -27,10 +27,9 @@ import {
   XIAN_ITEM_COLOR,
   nameColorOf,
 } from "@/game/types";
-import Tooltip from "./Tooltip";
 import { useT } from "@/i18n/useT";
 import type { DictKey } from "@/i18n/dict";
-import { itemDisplayName, itemDisplayDesc } from "@/i18n/itemText";
+import { itemDisplayName, itemDisplayDesc, itemStatLine } from "@/i18n/itemText";
 import { monsterDisplayName, monsterDisplayDesc } from "@/i18n/monsterText";
 import { techDisplayName, techDisplayDesc } from "@/i18n/techText";
 import { regionDisplayName, regionDisplayDesc, locationDisplayName, locationDisplayDesc, recipeDisplayDesc } from "@/i18n/worldText";
@@ -61,15 +60,16 @@ export default function ActionTabs() {
   ];
   return (
     <div className="panel">
-      <div className="flex gap-1 mb-4 border-b border-faded/20 pb-2 overflow-x-auto whitespace-nowrap">
+      {/* 按鈕依文字自然寬度換行(非橫向捲動),寬度足夠時排成兩排 */}
+      <div className="flex flex-wrap gap-1.5 mb-4 border-b border-faded/20 pb-2">
         {tabs.map(([t, label]) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`shrink-0 px-3 py-1 text-sm rounded-sm transition-colors ${
+            className={`px-2.5 py-1 text-sm rounded-sm transition-colors ${
               tab === t
                 ? "bg-gold/15 text-gold border border-gold/40"
-                : "text-faded hover:text-cream"
+                : "text-faded hover:text-cream border border-transparent"
             }`}
           >
             {label}
@@ -183,13 +183,10 @@ function ExploreTab() {
                     ? t("inDwellingTip")
                     : energyLackGather
                       ? `${t("energyInsufficientTip")} (${ENERGY_COST.gather})`
-                      : undefined
+                      : `-${ENERGY_COST.gather} ${t("energyCostSuffix")}`
                 }
               >
-                {t("btnGather")}{" "}
-                <span className="font-mono text-xs">
-                  -{ENERGY_COST.gather} {t("energyCostSuffix")}
-                </span>
+                {t("btnGather")}
               </button>
               <button
                 className="btn btn-danger"
@@ -200,13 +197,10 @@ function ExploreTab() {
                     ? t("inDwellingTip")
                     : energyLackHunt
                       ? `${t("energyInsufficientTip")} (${ENERGY_COST.hunt})`
-                      : undefined
+                      : `-${ENERGY_COST.hunt} ${t("energyCostSuffix")}`
                 }
               >
-                {t("btnHunt")}{" "}
-                <span className="font-mono text-xs">
-                  -{ENERGY_COST.hunt} {t("energyCostSuffix")}
-                </span>
+                {t("btnHunt")}
               </button>
             </div>
           </div>
@@ -257,7 +251,6 @@ function BagTab() {
         key={id}
         className={`flex items-center justify-between border rounded-sm p-2.5 ${xuantian ? "border-fuchsia-400/50" : "border-faded/20"}`}
       >
-        <Tooltip block content={itemDisplayDesc(item, lang)}>
         <div className="min-w-0">
           <span className="font-bold">
             <span className={itemNameColor(item, xuantian)}>{itemDisplayName(item, lang)}</span>{" "}
@@ -274,9 +267,8 @@ function BagTab() {
               </span>
             )}
           </span>
-          <p className="text-xs text-faded truncate">{itemDisplayDesc(item, lang)}</p>
+          <p className="text-xs text-faded">{itemDisplayDesc(item, lang)}</p>
         </div>
-        </Tooltip>
         <div className="flex gap-1.5 shrink-0 ml-3">
           {(item.kind === "pill" || item.kind === "herb") && (
             <button className="btn" disabled={busy} onClick={() => act("useItem", { itemId: id })}>
@@ -753,7 +745,6 @@ function BlackMarketSection() {
             key={itemId}
             className="flex items-center justify-between border border-fuchsia-400/30 bg-fuchsia-400/5 rounded-sm p-2.5"
           >
-            <Tooltip block content={itemDisplayDesc(item, lang)}>
             <div className="min-w-0">
               <span className="font-bold">
                 <span className={itemNameColor(item, isXuantianArtifact(itemId))}>
@@ -768,9 +759,8 @@ function BlackMarketSection() {
                   </span>
                 )}
               </span>
-              <p className="text-xs text-faded truncate">{itemDisplayDesc(item, lang)}</p>
+              <p className="text-xs text-faded">{itemDisplayDesc(item, lang)}</p>
             </div>
-            </Tooltip>
             <button
               className="btn shrink-0 ml-3 border-fuchsia-400/60 text-fuchsia-300 hover:bg-fuchsia-400/15"
               disabled={buyingId === itemId}
@@ -848,7 +838,6 @@ function MarketTab() {
                       key={item.id}
                       className="flex items-center justify-between border border-faded/20 rounded-sm p-2.5"
                     >
-                      <Tooltip block content={itemDisplayDesc(item, lang)}>
                       <div className="min-w-0">
                         <span className="font-bold">
                           {itemDisplayName(item, lang)}
@@ -861,9 +850,8 @@ function MarketTab() {
                             </span>
                           )}
                         </span>
-                        <p className="text-xs text-faded truncate">{itemDisplayDesc(item, lang)}</p>
+                        <p className="text-xs text-faded">{itemDisplayDesc(item, lang)}</p>
                       </div>
-                      </Tooltip>
                       <button
                         className="btn shrink-0 ml-3"
                         disabled={busy || s.stones < item.price}
@@ -1082,7 +1070,6 @@ function TradeTab() {
             key={l.id}
             className={`flex items-center justify-between border rounded-sm p-2.5 ${xuantian ? "border-fuchsia-400/50" : "border-faded/20"}`}
           >
-            <Tooltip block content={itemDisplayDesc(item, lang)}>
             <div className="min-w-0">
               <span className="font-bold">
                 <span className={itemNameColor(item, xuantian)}>{itemDisplayName(item, lang)}</span>{" "}
@@ -1095,8 +1082,8 @@ function TradeTab() {
                   .replace("{price}", formatStones(l.price))}{" "}
                 <span className="text-gold">{formatStones(l.qty * l.price)}</span>
               </p>
+              <p className="text-xs text-faded/70 mt-0.5">{itemDisplayDesc(item, lang)}</p>
             </div>
-            </Tooltip>
             <div className="shrink-0 ml-3">
               {mine ? (
                 <button className="btn btn-danger" disabled={busy} onClick={() => cancel(l)}>
@@ -1189,25 +1176,6 @@ function DexTab() {
 }
 
 // 混沌萬靈榜:全物品一覽,唯真仙以上境界(stage >= 10)可查閱
-function itemStatLine(item: (typeof ITEMS)[number], t: (k: DictKey) => string): string {
-  const parts: string[] = [];
-  if (item.price) parts.push(t("statLinePrice").replace("{n}", formatStones(item.price)));
-  if (item.heal) parts.push(t("statLineHeal").replace("{n}", String(item.heal)));
-  if (item.mp) parts.push(t("statLineMp").replace("{n}", String(item.mp)));
-  if (item.exp) parts.push(t("statLineExp").replace("{n}", String(item.exp)));
-  if (item.life) parts.push(t("statLineLife").replace("{n}", String(item.life)));
-  if (item.lifePct) parts.push(t("statLineLifePct").replace("{n}", String(Math.round(item.lifePct * 100))));
-  if (item.xianli) parts.push(t("statLineXianli").replace("{n}", String(item.xianli)));
-  if (item.atkBonus) parts.push(t("statLineAtk").replace("{n}", String(item.atkBonus)));
-  if (item.defBonus) parts.push(t("statLineDef").replace("{n}", String(item.defBonus)));
-  if (item.speedBonus) parts.push(t("statLineSpeed").replace("{n}", String(item.speedBonus)));
-  if (item.stoneMult) parts.push(t("statLineStoneMult").replace("{n}", String(item.stoneMult)));
-  if (item.breakBonus) parts.push(t("statLineBreakBonus").replace("{n}", String(Math.round(item.breakBonus * 100))));
-  if (item.reqStage) parts.push(t("statLineReqStage").replace("{n}", String(item.reqStage)));
-  if (item.dropOnly) parts.push(t("statLineDropOnly"));
-  return parts.join(" · ");
-}
-
 function WanlingTab() {
   const s = useGame((x) => x.save)!;
   const lang = useGame((x) => x.language);

@@ -350,15 +350,6 @@ export default function SectPage() {
         {!loading && view === "dwelling" && (
           <div className="space-y-2">
             <p className="text-sm text-faded">{t("dwellingIntro").replace("{n}", String(dwellingSlots))}</p>
-            {myDwellingSlot != null && (
-              <button
-                className="btn btn-danger"
-                disabled={busy}
-                onClick={() => post({ action: "leaveDwelling" })}
-              >
-                {t("btnLeaveDwelling").replace("{n}", String(myDwellingSlot + 1))}
-              </button>
-            )}
             <div className="grid gap-2 sm:grid-cols-2">
               {dwellings.map((d) => {
                 const mine = myDwellingSlot === d.slotIdx;
@@ -384,6 +375,7 @@ export default function SectPage() {
                     <p className="text-sm text-faded mt-1">
                       {occupied ? t("dwellingOccupied").replace("{name}", d.occupantName!) : t("dwellingVacant")}
                     </p>
+                    {/* 進駐/離開:僅與「我自己是否停泊於這個位置」有關 */}
                     <div className="mt-2 flex flex-wrap gap-2">
                       {!occupied && myDwellingSlot == null && (
                         <button
@@ -394,9 +386,22 @@ export default function SectPage() {
                           {t("btnDwellHere")}
                         </button>
                       )}
-                      {d.nextLevel && (
+                      {mine && (
                         <button
-                          className="chip hover:text-gold py-1.5 px-2.5"
+                          className="chip hover:text-vermillion border-vermillion/40 text-vermillion py-1.5 px-2.5"
+                          disabled={busy}
+                          onClick={() => post({ action: "leaveDwelling" })}
+                        >
+                          {t("btnLeaveDwelling").replace("{n}", String(d.slotIdx + 1))}
+                        </button>
+                      )}
+                    </div>
+                    {/* 升級:與是否停泊無關,任何同門皆可出資,故獨立一區並清楚註明,避免看起來像是「進駐者」專屬操作 */}
+                    {d.nextLevel ? (
+                      <div className="mt-2 pt-2 border-t border-faded/15 flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-xs text-faded/80">{t("dwellingUpgradeFundNote")}</span>
+                        <button
+                          className="chip hover:text-azure border-azure/40 text-azure py-1.5 px-2.5"
                           disabled={busy}
                           onClick={() => post({ action: "upgradeDwelling", slotIdx: d.slotIdx })}
                           title={d.nextLevel.materials
@@ -410,13 +415,12 @@ export default function SectPage() {
                             .replace("{lv}", String(d.nextLevel.level))
                             .replace("{exp}", String(d.nextLevel.expPerHour))}
                         </button>
-                      )}
-                      {!d.nextLevel && (
-                        <span className="text-sm text-faded">
-                          {t("dwellingMaxed").replace("{n}", String(DWELLING_MAX_LEVEL))}
-                        </span>
-                      )}
-                    </div>
+                      </div>
+                    ) : (
+                      <p className="mt-2 pt-2 border-t border-faded/15 text-sm text-faded">
+                        {t("dwellingMaxed").replace("{n}", String(DWELLING_MAX_LEVEL))}
+                      </p>
+                    )}
                   </div>
                 );
               })}

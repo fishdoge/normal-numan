@@ -10,6 +10,7 @@ import {
   ENERGY_COST,
   Modal,
 } from "@/game/store";
+import { formatStones } from "@/game/types";
 import { REALMS } from "@/game/data/realms";
 import { CHANGELOG } from "@/game/data/changelog";
 import { REVIVAL_PRICE_USD } from "@/game/data/blackMarket";
@@ -241,55 +242,65 @@ function CultivationBar() {
         : t("breakChancePct").replace("{n}", String(Math.round(chance * 100)));
   return (
     <div className={`panel deco-frame ${canBreak ? "border-gold/70" : ""}`}>
-      <div className="flex flex-wrap items-center gap-3">
-        <p className="panel-title mb-0 mr-2">{t("cultivateTitle")}</p>
-        <button
-          className="btn text-base px-5 py-2"
-          disabled={busy || inCombat || inDwelling || energy < ENERGY_COST.cultivate}
-          onClick={() => act("cultivate")}
-          title={
-            inDwelling
-              ? t("inDwellingTip")
-              : (energyTip(ENERGY_COST.cultivate) ?? `-${ENERGY_COST.cultivate} ${t("energyCostSuffix")}`)
-          }
-        >
-          {t("btnCultivate")}{" "}
-          <span className="ml-1 font-mono text-xs">
-            -{cost} {t("lifeCostSuffix")}
+      <div className="flex flex-wrap items-start gap-3">
+        <p className="panel-title mb-0 mr-2 self-center">{t("cultivateTitle")}</p>
+        <div className="flex flex-col items-start gap-1">
+          <button
+            className="btn text-base px-5 py-2"
+            disabled={busy || inCombat || inDwelling || energy < ENERGY_COST.cultivate}
+            onClick={() => act("cultivate")}
+            title={inDwelling ? t("inDwellingTip") : energyTip(ENERGY_COST.cultivate)}
+          >
+            {t("btnCultivate")}
+          </button>
+          <span className="text-xs text-faded font-mono">
+            -{cost} {t("lifeCostSuffix")} · -{ENERGY_COST.cultivate} {t("energyCostSuffix")}
           </span>
-        </button>
-        <button
-          className="btn text-base px-5 py-2"
-          disabled={busy || inCombat || inDwelling || s.hp >= hpMax || energy < ENERGY_COST.rest}
-          onClick={() => act("rest")}
-          title={
-            inDwelling
-              ? t("inDwellingTip")
-              : (energyTip(ENERGY_COST.rest) ?? `-${ENERGY_COST.rest} ${t("energyCostSuffix")}`)
-          }
-        >
-          {t("btnRest")}
-        </button>
-        <button
-          className="btn text-base px-5 py-2 border-fuchsia-400/50 text-fuchsia-300 hover:bg-fuchsia-400/15 hover:border-fuchsia-400"
-          disabled={
-            busy || inCombat || inDwelling || s.stones < 100000000 || energy < ENERGY_COST.wander
-          }
-          onClick={() => act("wander")}
-          title={inDwelling ? t("inDwellingTip") : (energyTip(ENERGY_COST.wander) ?? t("wanderTooltip"))}
-        >
-          {t("btnWander")}
-        </button>
-        <button
-          className={`btn text-base px-5 py-2 ${canBreak && !inDwelling ? "border-gold text-gold animate-pulse" : ""}`}
-          disabled={busy || inCombat || inDwelling || !canBreak || energy < ENERGY_COST.breakthrough}
-          onClick={() => act("breakthrough")}
-          title={inDwelling ? t("inDwellingTip") : breakTitle}
-        >
-          {t("btnBreakthrough")}
-          {canBreak && !inDwelling ? ` (${Math.round(chance * 100)}%)` : ""}
-        </button>
-        <span className="text-xs text-faded ml-auto font-mono">
+        </div>
+        <div className="flex flex-col items-start gap-1">
+          <button
+            className="btn text-base px-5 py-2"
+            disabled={busy || inCombat || inDwelling || s.hp >= hpMax || energy < ENERGY_COST.rest}
+            onClick={() => act("rest")}
+            title={inDwelling ? t("inDwellingTip") : energyTip(ENERGY_COST.rest)}
+          >
+            {t("btnRest")}
+          </button>
+          <span className="text-xs text-faded font-mono">
+            -{cost * 2} {t("lifeCostSuffix")} · -{ENERGY_COST.rest} {t("energyCostSuffix")}
+          </span>
+        </div>
+        <div className="flex flex-col items-start gap-1">
+          <button
+            className="btn text-base px-5 py-2 border-fuchsia-400/50 text-fuchsia-300 hover:bg-fuchsia-400/15 hover:border-fuchsia-400"
+            disabled={
+              busy || inCombat || inDwelling || s.stones < 100000000 || energy < ENERGY_COST.wander
+            }
+            onClick={() => act("wander")}
+            title={inDwelling ? t("inDwellingTip") : (energyTip(ENERGY_COST.wander) ?? t("wanderTooltip"))}
+          >
+            {t("btnWander")}
+          </button>
+          <span className="text-xs text-faded font-mono">
+            -5000 {t("lifeCostSuffix")} · {formatStones(100000000)} · -{ENERGY_COST.wander}{" "}
+            {t("energyCostSuffix")}
+          </span>
+        </div>
+        <div className="flex flex-col items-start gap-1">
+          <button
+            className={`btn text-base px-5 py-2 ${canBreak && !inDwelling ? "border-gold text-gold animate-pulse" : ""}`}
+            disabled={busy || inCombat || inDwelling || !canBreak || energy < ENERGY_COST.breakthrough}
+            onClick={() => act("breakthrough")}
+            title={inDwelling ? t("inDwellingTip") : breakTitle}
+          >
+            {t("btnBreakthrough")}
+            {canBreak && !inDwelling ? ` (${Math.round(chance * 100)}%)` : ""}
+          </button>
+          <span className="text-xs text-faded font-mono">
+            -{ENERGY_COST.breakthrough} {t("energyCostSuffix")}
+          </span>
+        </div>
+        <span className="text-xs text-faded ml-auto font-mono self-center">
           {t("cultivationSummaryLine")
             .replace("{exp}", String(s.exp))
             .replace("{need}", String(expNeed))

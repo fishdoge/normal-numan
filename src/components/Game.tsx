@@ -242,37 +242,37 @@ function CultivationBar() {
         : t("breakChancePct").replace("{n}", String(Math.round(chance * 100)));
   return (
     <div className={`panel deco-frame ${canBreak ? "border-gold/70" : ""}`}>
-      <div className="flex flex-wrap items-start gap-3">
-        <p className="panel-title mb-0 mr-2 self-center">{t("cultivateTitle")}</p>
-        <div className="flex flex-col items-start gap-1">
+      <p className="panel-title mb-2">{t("cultivateTitle")}</p>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-faded/15 border border-faded/20 rounded-sm overflow-hidden">
+        <div className="bg-coal/90 p-3 flex flex-col items-center gap-1.5 text-center">
           <button
-            className="btn text-base px-5 py-2"
+            className="btn text-base w-full"
             disabled={busy || inCombat || inDwelling || energy < ENERGY_COST.cultivate}
             onClick={() => act("cultivate")}
             title={inDwelling ? t("inDwellingTip") : energyTip(ENERGY_COST.cultivate)}
           >
             {t("btnCultivate")}
           </button>
-          <span className="text-xs text-faded font-mono">
+          <span className="text-xs text-faded font-mono leading-snug">
             -{cost} {t("lifeCostSuffix")} · -{ENERGY_COST.cultivate} {t("energyCostSuffix")}
           </span>
         </div>
-        <div className="flex flex-col items-start gap-1">
+        <div className="bg-coal/90 p-3 flex flex-col items-center gap-1.5 text-center">
           <button
-            className="btn text-base px-5 py-2"
+            className="btn text-base w-full"
             disabled={busy || inCombat || inDwelling || s.hp >= hpMax || energy < ENERGY_COST.rest}
             onClick={() => act("rest")}
             title={inDwelling ? t("inDwellingTip") : energyTip(ENERGY_COST.rest)}
           >
             {t("btnRest")}
           </button>
-          <span className="text-xs text-faded font-mono">
+          <span className="text-xs text-faded font-mono leading-snug">
             -{cost * 2} {t("lifeCostSuffix")} · -{ENERGY_COST.rest} {t("energyCostSuffix")}
           </span>
         </div>
-        <div className="flex flex-col items-start gap-1">
+        <div className="bg-coal/90 p-3 flex flex-col items-center gap-1.5 text-center">
           <button
-            className="btn text-base px-5 py-2 border-fuchsia-400/50 text-fuchsia-300 hover:bg-fuchsia-400/15 hover:border-fuchsia-400"
+            className="btn text-base w-full border-fuchsia-400/50 text-fuchsia-300 hover:bg-fuchsia-400/15 hover:border-fuchsia-400"
             disabled={
               busy || inCombat || inDwelling || s.stones < 100000000 || energy < ENERGY_COST.wander
             }
@@ -281,14 +281,14 @@ function CultivationBar() {
           >
             {t("btnWander")}
           </button>
-          <span className="text-xs text-faded font-mono">
+          <span className="text-xs text-faded font-mono leading-snug">
             -5000 {t("lifeCostSuffix")} · {formatStones(100000000)} · -{ENERGY_COST.wander}{" "}
             {t("energyCostSuffix")}
           </span>
         </div>
-        <div className="flex flex-col items-start gap-1">
+        <div className="bg-coal/90 p-3 flex flex-col items-center gap-1.5 text-center">
           <button
-            className={`btn text-base px-5 py-2 ${canBreak && !inDwelling ? "border-gold text-gold animate-pulse" : ""}`}
+            className={`btn text-base w-full ${canBreak && !inDwelling ? "border-gold text-gold animate-pulse" : ""}`}
             disabled={busy || inCombat || inDwelling || !canBreak || energy < ENERGY_COST.breakthrough}
             onClick={() => act("breakthrough")}
             title={inDwelling ? t("inDwellingTip") : breakTitle}
@@ -296,17 +296,17 @@ function CultivationBar() {
             {t("btnBreakthrough")}
             {canBreak && !inDwelling ? ` (${Math.round(chance * 100)}%)` : ""}
           </button>
-          <span className="text-xs text-faded font-mono">
+          <span className="text-xs text-faded font-mono leading-snug">
             -{ENERGY_COST.breakthrough} {t("energyCostSuffix")}
           </span>
         </div>
-        <span className="text-xs text-faded ml-auto font-mono self-center">
-          {t("cultivationSummaryLine")
-            .replace("{exp}", String(s.exp))
-            .replace("{need}", String(expNeed))
-            .replace("{chance}", String(Math.round(chance * 100)))}
-        </span>
       </div>
+      <p className="text-xs text-faded font-mono mt-2 text-right">
+        {t("cultivationSummaryLine")
+          .replace("{exp}", String(s.exp))
+          .replace("{need}", String(expNeed))
+          .replace("{chance}", String(Math.round(chance * 100)))}
+      </p>
       {needsZhenxian && !hasZhenxian && (
         <p className="text-xs text-fuchsia-300 mt-2">{t("zhenxianNote")}</p>
       )}

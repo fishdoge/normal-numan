@@ -9,6 +9,14 @@ export interface ChangelogEntry {
 // 新版在前
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.3",
+    date: "2026-08-24",
+    title: "修煉欄改用對齊格線排版",
+    highlights: [
+      "打坐修煉/調息/雲遊四海/嘗試突破四顆按鈕改用格線排版(窄螢幕兩欄、寬螢幕四欄),取代原本按鈕與代價小字因文字長短不一擠成高低不齊柵欄的排法,寬度一致、上下對齊成一張小表格。",
+    ],
+  },
+  {
     version: "2.2",
     date: "2026-08-24",
     title: "修煉欄代價花費改為按鈕下方小字",

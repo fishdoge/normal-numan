@@ -253,7 +253,7 @@ function CultivationBar() {
           >
             {t("btnCultivate")}
           </button>
-          <span className="text-xs text-faded font-mono leading-snug">
+          <span className="text-[10px] text-faded/80 font-mono leading-snug">
             -{cost} {t("lifeCostSuffix")} · -{ENERGY_COST.cultivate} {t("energyCostSuffix")}
           </span>
         </div>
@@ -266,7 +266,7 @@ function CultivationBar() {
           >
             {t("btnRest")}
           </button>
-          <span className="text-xs text-faded font-mono leading-snug">
+          <span className="text-[10px] text-faded/80 font-mono leading-snug">
             -{cost * 2} {t("lifeCostSuffix")} · -{ENERGY_COST.rest} {t("energyCostSuffix")}
           </span>
         </div>
@@ -281,7 +281,7 @@ function CultivationBar() {
           >
             {t("btnWander")}
           </button>
-          <span className="text-xs text-faded font-mono leading-snug">
+          <span className="text-[10px] text-faded/80 font-mono leading-snug">
             -5000 {t("lifeCostSuffix")} · {formatStones(100000000)} · -{ENERGY_COST.wander}{" "}
             {t("energyCostSuffix")}
           </span>
@@ -296,7 +296,7 @@ function CultivationBar() {
             {t("btnBreakthrough")}
             {canBreak && !inDwelling ? ` (${Math.round(chance * 100)}%)` : ""}
           </button>
-          <span className="text-xs text-faded font-mono leading-snug">
+          <span className="text-[10px] text-faded/80 font-mono leading-snug">
             -{ENERGY_COST.breakthrough} {t("energyCostSuffix")}
           </span>
         </div>

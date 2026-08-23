@@ -66,10 +66,10 @@ export default function ActionTabs() {
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-2.5 py-1 text-sm rounded-sm transition-colors ${
+            className={`shrink-0 whitespace-nowrap px-2.5 py-0.5 text-sm rounded-sm border transition-colors ${
               tab === t
-                ? "bg-gold/15 text-gold border border-gold/40"
-                : "text-faded hover:text-cream border border-transparent"
+                ? "bg-gold/15 text-gold border-gold/40"
+                : "border-faded/25 text-faded hover:text-cream hover:border-faded/50"
             }`}
           >
             {label}

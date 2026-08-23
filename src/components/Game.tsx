@@ -421,12 +421,12 @@ export default function Game() {
         <CultivationBar />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-[300px_1fr] lg:grid-cols-[300px_1fr_340px]">
+      <div className="grid gap-4 md:grid-cols-[300px_minmax(0,1fr)] lg:grid-cols-[300px_minmax(0,1fr)_340px]">
         <div className="space-y-4">
           <StatusPanel />
           <RealmProgressPanel />
         </div>
-        <div className="space-y-4 md:col-start-2">
+        <div className="space-y-4 md:col-start-2 min-w-0">
           <CombatPanel />
           <ActionTabs />
         </div>

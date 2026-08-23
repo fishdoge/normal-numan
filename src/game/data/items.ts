@@ -31,6 +31,10 @@ export const ITEMS: ItemDef[] = [
   { id: "jinyuan_suipian", name: "金源碎晶", kind: "material", desc: "金源仙關崩落的碎晶,金光內蘊,較靈砂略遜一籌卻更易採得。", element: "金", price: 700 },
   { id: "manhuang_yungu", name: "蠻荒隕骨", kind: "material", desc: "蠻荒異界怪物體內殘留的隕骨,堅逾玄鐵,乃太乙境爐火的珍稀輔料。", price: 950 },
 
+  // ── 金源仙域 / 蠻荒異界回復類丹藥主材(1.24 版新增) ──
+  { id: "jinyuan_shenglian", name: "金源聖蓮", kind: "material", desc: "金源仙域深處綻放的聖蓮,蘊藏磅礴生機,乃煉製迴天丹藥的絕佳藥引。", element: "木", price: 3000 },
+  { id: "manhuang_lingsui", name: "蠻荒靈髓", kind: "material", desc: "蠻荒異界妖獸體內凝結的靈髓,法力氣息醇厚,乃煉製回復法力丹藥的珍稀藥引。", element: "水", price: 3500 },
+
   // ── 仙草 ──
   { id: "huanglongcao", name: "黃龍草", kind: "herb", desc: "常見靈草,煉製黃龍丹主藥。", price: 6, exp: 8 },
   { id: "zhuguo", name: "朱果", kind: "herb", desc: "百年一熟的靈果,服之可增修為。", price: 13, exp: 26 },
@@ -76,6 +80,14 @@ export const ITEMS: ItemDef[] = [
   // ── 真仙專屬丹藥(煉丹堂,需圖譜解鎖) ──
   { id: "xisuidan", name: "洗髓丹", kind: "pill", desc: "洗髓伐骨的真仙至藥,修為大補,唯真仙以上煉丹堂可煉,需圖譜方解配方。", price: 0, exp: 8000000, reqStage: 10 },
   { id: "ningxiandan", name: "凝仙丹", kind: "special", desc: "凝練仙靈力的真仙至藥,小補仙靈力,唯真仙以上煉丹堂可煉,需圖譜方解配方。", price: 0, xianli: 1, reqStage: 10 },
+
+  // ── 金源仙域 / 蠻荒異界回復丹藥(1.24 版新增,真仙以上煉器＆煉丹可直接煉製,毋須圖譜) ──
+  { id: "jinyuan_shengtidan", name: "金源聖體丹", kind: "pill", desc: "金源聖蓮反覆淬煉的聖體奇丹,服之氣血瞬間大復。", price: 0, heal: 5000000, reqStage: 10 },
+  { id: "manhuang_zhenyuandan", name: "混沌真元丹", kind: "pill", desc: "蠻荒靈髓合煉的真元奇丹,法力如潮水般瞬間湧回。", price: 0, mp: 3000000, reqStage: 10 },
+  { id: "taiyi_huiqidan", name: "太乙回氣丹", kind: "pill", desc: "金源聖蓮與蠻荒靈髓合煉的回氣奇丹,一息之間精力充盈。", price: 0, energy: 80, reqStage: 10 },
+
+  // ── 乾坤袋(黑眼貔貅專屬掉落,1.24 版新增) ──
+  { id: "qiankun_dai", name: "乾坤袋", kind: "special", desc: "黑眼貔貅隕落後遺留的奇物,袋中自成天地,可將靈石存入隨身收納——戰敗遁走時遺散的僅是袋外靈石,袋中所藏分毫不失。", price: 0, dropOnly: true },
 
   // ── 仙法秘笈 ──
   { id: "m_qingzhufeng", name: "《青竹風雲劍訣》殘卷", kind: "manual", desc: "研讀後可習得青竹風雲劍訣。", price: 800, teaches: "qingzhufeng" },

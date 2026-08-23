@@ -181,7 +181,7 @@ export async function GET(req: NextRequest) {
   // 順便補上 dwelling_since,讓 /api/action 的仙境修為累算能重新抓到正確位置,而不只是這次查詢顯示正確
   if (meRow && meRow.dwelling_slot !== myDwellingSlot) {
     if (myDwellingSlot != null) {
-      await sql`UPDATE saves SET data = jsonb_set(data, '{dwellingSlot}', to_jsonb(${myDwellingSlot})),
+      await sql`UPDATE saves SET data = jsonb_set(data, '{dwellingSlot}', to_jsonb(${myDwellingSlot}::int)),
         dwelling_since = COALESCE(dwelling_since, now()) WHERE user_id = ${user.id}`;
     } else {
       await sql`UPDATE saves SET data = jsonb_set(data, '{dwellingSlot}', 'null'::jsonb),
@@ -422,7 +422,7 @@ export async function POST(req: NextRequest) {
         WHERE sect_id = ${sectId} AND slot_idx = ${slotIdx} AND occupant_user_id IS NULL
         RETURNING slot_idx`;
       if (!rows.length) return NextResponse.json({ error: "此位置已有同門停泊" }, { status: 400 });
-      await sql`UPDATE saves SET data = jsonb_set(data, '{dwellingSlot}', to_jsonb(${slotIdx})),
+      await sql`UPDATE saves SET data = jsonb_set(data, '{dwellingSlot}', to_jsonb(${slotIdx}::int)),
         dwelling_since = now() WHERE user_id = ${user.id}`;
       return NextResponse.json({ ok: true, slotIdx });
     }

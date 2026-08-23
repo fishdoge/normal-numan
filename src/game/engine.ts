@@ -71,6 +71,7 @@ export interface SaveData {
   energyPotionStacks: number; // 倍力丹已疊加次數(0~5),每疊永久 +10% 精力上限
   bornEra: number; // 這一世修仙之旅開始時的恆紀年(總年數),newSave() 當下的 currentEraYears()
   oracleOffered: boolean; // 雲遊四海機緣觸發的「天算術」黑市機會是否待處理(購買或婉拒前持續為 true)
+  pouchStones: number; // 存於乾坤袋中的靈石(1.24 版新增,黑眼貔貅掉落);與 stones 分開計算,戰敗遺失/被盜皆不受影響
 }
 
 export interface Modal {
@@ -294,6 +295,7 @@ export function newSave(name: string, sectId: string): SaveData {
     energyPotionStacks: 0,
     bornEra: currentEraYears(),
     oracleOffered: false,
+    pouchStones: 0,
   };
   const { hpMax, mpMax } = statsOf(s);
   s.hp = hpMax;
@@ -1449,6 +1451,12 @@ function applyActionInner(
         };
       }
 
+      // 乾坤袋:隨身法寶,不消耗、不需「使用」,持有即可於儲物袋存取靈石
+      if (item.kind === "special" && itemId === "qiankun_dai") {
+        log(s, "【乾坤袋】乃隨身法寶,無需服用——持有即可於儲物袋中存入、取出靈石。");
+        return { save: s };
+      }
+
       // 增靈珠須於「仙法」欄位使用
       if (item.kind === "special") {
         log(s, `【${item.name}】須於「仙法」欄位選定一門仙法後使用。`);
@@ -1464,6 +1472,10 @@ function applyActionInner(
       if (item.mp) {
         s.mp = Math.min(mpMax, s.mp + item.mp);
         effects.push(`回復法力 ${item.mp}`);
+      }
+      if (item.energy) {
+        s.energy = Math.min(energyMaxOf(s), (s.energy ?? 0) + item.energy);
+        effects.push(`回復精力 ${item.energy}`);
       }
       if (item.exp) {
         s.exp += item.exp;
@@ -1523,6 +1535,28 @@ function applyActionInner(
         if (s.equippedMing === item.id) s.equippedMing = null;
       }
       log(s, `售出 ${item.name},得 ${gain} 靈石。`);
+      return { save: s };
+    }
+
+    // 乾坤袋:存入/取出靈石(1.24 版新增,黑眼貔貅掉落)。袋中靈石與 s.stones 分開計算,
+    // 戰敗遁走遺失一半靈石、或雲遊途中被順走靈石,皆只動用 s.stones,袋中所藏分毫不失。
+    case "depositPouch": {
+      if ((s.inventory["qiankun_dai"] ?? 0) <= 0) return { save: s, error: "未持有乾坤袋" };
+      const amount = Math.max(0, Math.floor(Number(payload.amount ?? 0)));
+      if (amount <= 0 || amount > s.stones) return { save: s, error: "靈石不足" };
+      s.stones -= amount;
+      s.pouchStones = (s.pouchStones ?? 0) + amount;
+      log(s, `你將 ${amount} 枚靈石存入乾坤袋,袋中自成天地,即便戰敗遁走亦不會遺散。`);
+      return { save: s };
+    }
+    case "withdrawPouch": {
+      if ((s.inventory["qiankun_dai"] ?? 0) <= 0) return { save: s, error: "未持有乾坤袋" };
+      const amount = Math.max(0, Math.floor(Number(payload.amount ?? 0)));
+      const have = s.pouchStones ?? 0;
+      if (amount <= 0 || amount > have) return { save: s, error: "乾坤袋中靈石不足" };
+      s.pouchStones = have - amount;
+      s.stones += amount;
+      log(s, `你自乾坤袋中取出 ${amount} 枚靈石。`);
       return { save: s };
     }
 

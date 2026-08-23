@@ -221,6 +221,7 @@ export function itemStatLine(item: ItemDef, t: (k: DictKey) => string): string {
   if (item.price) parts.push(t("statLinePrice").replace("{n}", formatStones(item.price)));
   if (item.heal) parts.push(t("statLineHeal").replace("{n}", String(item.heal)));
   if (item.mp) parts.push(t("statLineMp").replace("{n}", String(item.mp)));
+  if (item.energy) parts.push(t("statLineEnergy").replace("{n}", String(item.energy)));
   if (item.exp) parts.push(t("statLineExp").replace("{n}", String(item.exp)));
   if (item.life) parts.push(t("statLineLife").replace("{n}", String(item.life)));
   if (item.lifePct) parts.push(t("statLineLifePct").replace("{n}", String(Math.round(item.lifePct * 100))));

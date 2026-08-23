@@ -361,6 +361,14 @@ export function StatusPanel() {
         <span className="text-right text-gold">
           <StoneAmount n={s.stones} />
         </span>
+        {(s.pouchStones ?? 0) > 0 && (
+          <>
+            <span className="text-fuchsia-300/80">{t("pouchTitle")}</span>
+            <span className="text-right text-fuchsia-300">
+              <StoneAmount n={s.pouchStones ?? 0} />
+            </span>
+          </>
+        )}
       </div>
 
       <div className="divider">{t("statEquip")}</div>

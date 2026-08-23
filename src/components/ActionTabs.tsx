@@ -231,6 +231,8 @@ function BagTab() {
   const t = useT();
   const entries = Object.entries(s.inventory);
   const [filter, setFilter] = useState<DictKey | "filterAll">("filterAll");
+  const [pouchAmount, setPouchAmount] = useState(1000);
+  const hasPouch = (s.inventory["qiankun_dai"] ?? 0) > 0;
   if (entries.length === 0) return <p className="text-faded text-sm">{t("bagEmpty")}</p>;
 
   const equippedIds = [
@@ -357,6 +359,40 @@ function BagTab() {
 
   return (
     <div className="space-y-2">
+      {hasPouch && (
+        <div className="border border-fuchsia-400/40 bg-fuchsia-400/5 rounded-sm p-3">
+          <div className="flex items-baseline justify-between flex-wrap gap-2">
+            <span className="font-bold text-fuchsia-300">{t("pouchTitle")}</span>
+            <span className="text-sm font-mono text-fuchsia-300">
+              <StoneAmount n={s.pouchStones ?? 0} />
+            </span>
+          </div>
+          <p className="text-xs text-faded mt-1">{t("pouchDesc")}</p>
+          <div className="mt-2 flex flex-wrap gap-2 items-center">
+            <input
+              type="number"
+              min={1}
+              value={pouchAmount}
+              onChange={(e) => setPouchAmount(Math.max(1, +e.target.value || 1))}
+              className="w-32 bg-smoke border border-faded/30 rounded-sm px-2 py-1.5 text-sm text-parchment"
+            />
+            <button
+              className="btn"
+              disabled={busy || s.stones < pouchAmount}
+              onClick={() => act("depositPouch", { amount: pouchAmount })}
+            >
+              {t("pouchDepositBtn")}
+            </button>
+            <button
+              className="btn"
+              disabled={busy || (s.pouchStones ?? 0) < pouchAmount}
+              onClick={() => act("withdrawPouch", { amount: pouchAmount })}
+            >
+              {t("pouchWithdrawBtn")}
+            </button>
+          </div>
+        </div>
+      )}
       <div className="flex flex-wrap gap-1.5 pb-1">
         <button
           onClick={() => setFilter("filterAll")}
@@ -564,6 +600,7 @@ function CraftTab() {
                 {result.speedBonus ? (lang === "en" ? `SPD+${result.speedBonus}` : `速+${result.speedBonus}`) : ""}
                 {result.heal ? (lang === "en" ? `HP+${result.heal} ` : `氣血+${result.heal} `) : ""}
                 {result.mp ? (lang === "en" ? `MP+${result.mp} ` : `法力+${result.mp} `) : ""}
+                {result.energy ? (lang === "en" ? `Energy+${result.energy} ` : `精力+${result.energy} `) : ""}
                 {result.exp ? (lang === "en" ? `Exp+${result.exp} ` : `修為+${result.exp} `) : ""}
                 {result.life ? (lang === "en" ? `Lifespan+${result.life} ` : `壽元上限+${result.life} `) : ""}
                 {result.lifePct

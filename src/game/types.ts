@@ -157,6 +157,7 @@ export interface ItemDef {
   heal?: number;
   mp?: number;
   exp?: number;
+  energy?: number; // 回復精力點數(1.24 版新增)
   life?: number; // 延壽(載)——極品,坊市不售
   lifePct?: number; // 依當前壽元上限的百分比延壽(增元丹 = 0.05)
   xianli?: number; // 給予仙靈力點數(天仙丹、先天仙器,真仙專屬)

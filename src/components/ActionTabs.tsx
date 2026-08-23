@@ -496,13 +496,14 @@ function CraftTab() {
           <button
             className="btn mt-2 border-fuchsia-400/60 text-fuchsia-300 hover:bg-fuchsia-400/15"
             disabled={busy || fragmentCount < 10 || soulCount < 1 || energyLackXuantian}
-            title={energyLackXuantian ? `${t("energyInsufficientTip")} (${ENERGY_COST.craftXuantian})` : undefined}
+            title={
+              energyLackXuantian
+                ? `${t("energyInsufficientTip")} (${ENERGY_COST.craftXuantian})`
+                : `-${ENERGY_COST.craftXuantian} ${t("energyCostSuffix")}`
+            }
             onClick={() => act("craftXuantian")}
           >
-            {t("xuantianCraftBtn")}{" "}
-            <span className="font-mono text-xs">
-              -{ENERGY_COST.craftXuantian} {t("energyCostSuffix")}
-            </span>
+            {t("xuantianCraftBtn")}
           </button>
         </div>
       )}
@@ -583,14 +584,11 @@ function CraftTab() {
                     ? t("exploreStageLocked").replace("{n}", String(rec.reqStage))
                     : energyLackCraft
                       ? `${t("energyInsufficientTip")} (${ENERGY_COST.craft})`
-                      : ""
+                      : `-${ENERGY_COST.craft} ${t("energyCostSuffix")}`
               }
               onClick={() => act("craft", { recipeId: rec.id })}
             >
-              {locked ? t("craftBtnLocked") : stageLocked ? t("stageInsufficient") : t("craftBtn")}{" "}
-              <span className="font-mono text-xs">
-                -{ENERGY_COST.craft} {t("energyCostSuffix")}
-              </span>
+              {locked ? t("craftBtnLocked") : stageLocked ? t("stageInsufficient") : t("craftBtn")}
             </button>
           </div>
         );

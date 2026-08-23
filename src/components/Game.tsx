@@ -247,23 +247,28 @@ function CultivationBar() {
           className="btn text-base px-5 py-2"
           disabled={busy || inCombat || inDwelling || energy < ENERGY_COST.cultivate}
           onClick={() => act("cultivate")}
-          title={inDwelling ? t("inDwellingTip") : energyTip(ENERGY_COST.cultivate)}
+          title={
+            inDwelling
+              ? t("inDwellingTip")
+              : (energyTip(ENERGY_COST.cultivate) ?? `-${ENERGY_COST.cultivate} ${t("energyCostSuffix")}`)
+          }
         >
           {t("btnCultivate")}{" "}
           <span className="ml-1 font-mono text-xs">
-            -{cost} {t("lifeCostSuffix")} · -{ENERGY_COST.cultivate} {t("energyCostSuffix")}
+            -{cost} {t("lifeCostSuffix")}
           </span>
         </button>
         <button
           className="btn text-base px-5 py-2"
           disabled={busy || inCombat || inDwelling || s.hp >= hpMax || energy < ENERGY_COST.rest}
           onClick={() => act("rest")}
-          title={inDwelling ? t("inDwellingTip") : energyTip(ENERGY_COST.rest)}
+          title={
+            inDwelling
+              ? t("inDwellingTip")
+              : (energyTip(ENERGY_COST.rest) ?? `-${ENERGY_COST.rest} ${t("energyCostSuffix")}`)
+          }
         >
-          {t("btnRest")}{" "}
-          <span className="ml-1 font-mono text-xs">
-            -{ENERGY_COST.rest} {t("energyCostSuffix")}
-          </span>
+          {t("btnRest")}
         </button>
         <button
           className="btn text-base px-5 py-2 border-fuchsia-400/50 text-fuchsia-300 hover:bg-fuchsia-400/15 hover:border-fuchsia-400"
@@ -273,10 +278,7 @@ function CultivationBar() {
           onClick={() => act("wander")}
           title={inDwelling ? t("inDwellingTip") : (energyTip(ENERGY_COST.wander) ?? t("wanderTooltip"))}
         >
-          {t("btnWander")}{" "}
-          <span className="ml-1 font-mono text-xs">
-            -{ENERGY_COST.wander} {t("energyCostSuffix")}
-          </span>
+          {t("btnWander")}
         </button>
         <button
           className={`btn text-base px-5 py-2 ${canBreak && !inDwelling ? "border-gold text-gold animate-pulse" : ""}`}

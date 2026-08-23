@@ -106,8 +106,11 @@ export async function GET(req: NextRequest) {
   }
 
   const meRows =
-    await sql`SELECT data->>'sectId' AS sect_id, (data->>'dwellingSlot')::int AS dwelling_slot FROM saves WHERE user_id = ${user.id}`;
-  const meRow = meRows[0] as { sect_id: string | null; dwelling_slot: number | null } | undefined;
+    await sql`SELECT data->>'sectId' AS sect_id, (data->>'dwellingSlot')::int AS dwelling_slot, dwelling_since
+      FROM saves WHERE user_id = ${user.id}`;
+  const meRow = meRows[0] as
+    | { sect_id: string | null; dwelling_slot: number | null; dwelling_since: string | null }
+    | undefined;
   const sectId = meRow?.sect_id;
   if (!sectId) return NextResponse.json({ ok: false, error: "尚未拜入宗門" }, { status: 400 });
 
@@ -154,18 +157,37 @@ export async function GET(req: NextRequest) {
 
   await ensureDwellingSlots(sectId, cur.dwellingSlots);
   const dwellingRows = await sql`
-    SELECT d.slot_idx, d.level, u.name AS occupant_name
+    SELECT d.slot_idx, d.level, u.name AS occupant_name, d.occupant_user_id
     FROM sect_dwelling d LEFT JOIN users u ON u.id = d.occupant_user_id
     WHERE d.sect_id = ${sectId} AND d.slot_idx < ${cur.dwellingSlots}
     ORDER BY d.slot_idx`;
-  const dwellings = (dwellingRows as { slot_idx: number; level: number; occupant_name: string | null }[]).map(
-    (d) => ({
-      slotIdx: d.slot_idx,
-      level: d.level,
-      occupantName: d.occupant_name,
-      nextLevel: nextDwellingLevelOf(d.level),
-    }),
-  );
+  const dwellingRowsTyped = dwellingRows as {
+    slot_idx: number;
+    level: number;
+    occupant_name: string | null;
+    occupant_user_id: number | null;
+  }[];
+  const dwellings = dwellingRowsTyped.map((d) => ({
+    slotIdx: d.slot_idx,
+    level: d.level,
+    occupantName: d.occupant_name,
+    nextLevel: nextDwellingLevelOf(d.level),
+  }));
+  // 以 sect_dwelling 佔用紀錄本身為準(而非 saves.dwellingSlot 快取欄位),避免兩者不同步時「離開」按鈕失效
+  const myDwellingSlot =
+    dwellingRowsTyped.find((d) => d.occupant_user_id === user.id)?.slot_idx ?? null;
+
+  // 校正 saves.dwellingSlot 快取(例如測試資料直接改過 sect_dwelling 造成不同步),
+  // 順便補上 dwelling_since,讓 /api/action 的仙境修為累算能重新抓到正確位置,而不只是這次查詢顯示正確
+  if (meRow && meRow.dwelling_slot !== myDwellingSlot) {
+    if (myDwellingSlot != null) {
+      await sql`UPDATE saves SET data = jsonb_set(data, '{dwellingSlot}', to_jsonb(${myDwellingSlot})),
+        dwelling_since = COALESCE(dwelling_since, now()) WHERE user_id = ${user.id}`;
+    } else {
+      await sql`UPDATE saves SET data = jsonb_set(data, '{dwellingSlot}', 'null'::jsonb),
+        dwelling_since = NULL WHERE user_id = ${user.id}`;
+    }
+  }
 
   return NextResponse.json({
     ok: true,
@@ -177,7 +199,7 @@ export async function GET(req: NextRequest) {
     memberCap: cur.memberCap,
     dwellingSlots: cur.dwellingSlots,
     contribution,
-    myDwellingSlot: meRow?.dwelling_slot ?? null,
+    myDwellingSlot,
     dwellings,
     nextTier: next
       ? { ...next, ready: blockedBy.length === 0, blockedBy, missingMaterials }

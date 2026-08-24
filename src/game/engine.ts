@@ -113,8 +113,8 @@ export const maxLifeOf = (s: Pick<SaveData, "realmIdx" | "lifeBonus">) =>
 
 // 精力上限:隨大境界緩慢遞增(非氣血/法力那種指數翻倍),煉氣期 100、每個大境界 +15;
 // 倍力丹每疊(最多 5 疊)永久 +10% 上限。
-const ENERGY_BASE = 100;
-const ENERGY_PER_STAGE = 15;
+const ENERGY_BASE = 300;
+const ENERGY_PER_STAGE = 50;
 export const energyMaxOf = (s: Pick<SaveData, "realmIdx" | "energyPotionStacks">) => {
   const base = ENERGY_BASE + ENERGY_PER_STAGE * (REALMS[s.realmIdx].stage - 1);
   return Math.floor(base * (1 + 0.1 * (s.energyPotionStacks ?? 0)));

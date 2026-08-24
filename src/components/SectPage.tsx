@@ -183,10 +183,20 @@ export default function SectPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const j = await res.json();
+      // 伺服器發生非預期錯誤時(例如未捕捉的例外),回應本體可能不是 JSON——
+      // 解析失敗也要讓使用者看到錯誤,而不是整個動作悄無聲息地什麼都沒發生。
+      let j: { error?: string } = {};
+      try {
+        j = await res.json();
+      } catch {
+        /* 非 JSON 回應,沿用下方的通用錯誤訊息 */
+      }
       setErr(res.ok ? "" : (j.error ?? t("sectActionFailed")));
       await Promise.all([refresh(), reloadSave()]);
       return res.ok;
+    } catch {
+      setErr(t("netErr"));
+      return false;
     } finally {
       setBusy(false);
     }

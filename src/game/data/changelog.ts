@@ -9,6 +9,14 @@ export interface ChangelogEntry {
 // 新版在前
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.4",
+    date: "2026-08-24",
+    title: "修復宗門倉庫存入功能完全失效",
+    highlights: [
+      "宗門倉庫「存入」原本 100% 會因 SQL 型別推斷錯誤而失敗(伺服器 500),且前端沒有錯誤提示、看起來像什麼都沒發生——已修復 SQL 寫法,並補上前端的錯誤顯示防呆,伺服器出錯時一律會看到訊息。",
+    ],
+  },
+  {
     version: "2.3",
     date: "2026-08-24",
     title: "修煉欄改用對齊格線排版",

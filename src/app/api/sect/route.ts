@@ -350,7 +350,7 @@ export async function POST(req: NextRequest) {
         ),
         bank AS (
           INSERT INTO sect_bank (sect_id, items)
-          SELECT ${sectId}, jsonb_build_object(${itemId}, ${qty})
+          SELECT ${sectId}, jsonb_build_object(${itemId}::text, ${qty}::int)
           WHERE EXISTS (SELECT 1 FROM upd)
           ON CONFLICT (sect_id) DO UPDATE SET
             items = jsonb_set(

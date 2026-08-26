@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useGame, statsOf, SECT_STAGE_BONUS, sectDamageMultOfStages } from "@/game/store";
+import {
+  useGame,
+  statsOf,
+  SECT_STAGE_BONUS,
+  sectDamageMultOfStages,
+  ENERGY_REGEN_PER_TICK,
+  dwellingEnergyBonusOf,
+} from "@/game/store";
 import { REALMS } from "@/game/data/realms";
 import { SECTS } from "@/game/data/sects";
 import { MONSTERS } from "@/game/data/world";
@@ -127,6 +134,8 @@ export default function SectPage() {
     [livingMembers],
   );
   const curTier = sectTierOf(tier);
+  // 停泊宗門仙境每小時精力回復量:與宗門等級掛鉤,不論停泊哪個位置、位置等級為何皆相同(2.5 版新增)
+  const dwellingEnergyPerHour = (ENERGY_REGEN_PER_TICK + dwellingEnergyBonusOf(tier)) * 12;
 
   const refresh = async () => {
     setLoading(true);
@@ -476,7 +485,8 @@ export default function SectPage() {
                         >
                           {t("btnUpgradeDwelling")
                             .replace("{lv}", String(d.nextLevel.level))
-                            .replace("{exp}", String(d.nextLevel.expPerHour))}
+                            .replace("{exp}", String(d.nextLevel.expPerHour))
+                            .replace("{energy}", String(dwellingEnergyPerHour))}
                         </button>
                       </div>
                     ) : (

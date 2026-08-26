@@ -9,6 +9,14 @@ export interface ChangelogEntry {
 // 新版在前
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.8",
+    date: "2026-08-26",
+    title: "宗門仙境升級按鈕補上精力增量顯示",
+    highlights: [
+      "「宗門仙境」各位置的升級按鈕原本只顯示修為增量,現在同時顯示停泊該位置每小時可獲得的精力回復加成(與宗門等級掛鉤,各位置皆相同)。",
+    ],
+  },
+  {
     version: "2.7",
     date: "2026-08-26",
     title: "宗門升級改吃獨立「宗門捐獻」,不再共用宗門倉庫",

@@ -9,6 +9,14 @@ export interface ChangelogEntry {
 // 新版在前
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.6",
+    date: "2026-08-26",
+    title: "「宗門升級」獨立成新分頁",
+    highlights: [
+      "貢獻靈石、宗門下一階門檻、倉庫材料缺口清單、晉升按鈕獨立成新分頁「宗門升級」,不再與「宗門任務」的執事堂告示欄混在一起顯示。",
+    ],
+  },
+  {
     version: "2.5",
     date: "2026-08-26",
     title: "精力回復加倍,宗門仙境加成改與宗門等級掛鉤",

@@ -98,9 +98,9 @@ export default function SectPage() {
   const [amount, setAmount] = useState(1000);
   const [itemId, setItemId] = useState("");
   const [itemQty, setItemQty] = useState(1);
-  const [view, setView] = useState<"damage" | "members" | "warehouse" | "dwelling" | "mission" | "list">(
-    "dwelling",
-  );
+  const [view, setView] = useState<
+    "damage" | "members" | "warehouse" | "dwelling" | "upgrade" | "mission" | "list"
+  >("dwelling");
 
   const [otherSects, setOtherSects] = useState<OtherSect[]>([]);
   const [listLoading, setListLoading] = useState(false);
@@ -210,7 +210,7 @@ export default function SectPage() {
   const missionProgress = (m: (typeof MISSIONS)[number]) =>
     m.kind === "kill" ? (s.kills[m.targetId] ?? 0) - s.missionBase : (s.inventory[m.targetId] ?? 0);
 
-  // 貢獻靈石 + 宗門等級晉升(併入「宗門任務」分頁內)
+  // 貢獻靈石 + 宗門等級晉升(獨立「宗門升級」分頁,與宗門任務區分開來)
   const contributeSection = (
     <div className="border border-gold/40 bg-gold/5 rounded-sm p-3">
       <div className="flex items-baseline justify-between flex-wrap gap-2">
@@ -334,6 +334,7 @@ export default function SectPage() {
           {(
             [
               ["dwelling", t("sectTabDwelling")],
+              ["upgrade", t("sectTabUpgrade")],
               ["mission", t("sectTabMission")],
               ["damage", t("sectTabDamage")],
               ["members", t("sectTabMembers")],
@@ -438,10 +439,10 @@ export default function SectPage() {
           </div>
         )}
 
+        {!loading && view === "upgrade" && <div className="space-y-3">{contributeSection}</div>}
+
         {!loading && view === "mission" && (
           <div className="space-y-3">
-            {contributeSection}
-
             <div className="divider">{t("stewardMissionsDivider")}</div>
 
             {activeMission ? (

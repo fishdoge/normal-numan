@@ -23,9 +23,16 @@ interface MemberRow {
 }
 
 async function loadTier(sectId: string) {
-  const rows = await sql`SELECT tier, contribution FROM sect_tier WHERE sect_id = ${sectId}`;
-  const r = rows[0] as { tier: number; contribution: string | number } | undefined;
-  return { tier: r?.tier ?? 1, contribution: Number(r?.contribution ?? 0) };
+  const rows =
+    await sql`SELECT tier, contribution, donated_items FROM sect_tier WHERE sect_id = ${sectId}`;
+  const r = rows[0] as
+    | { tier: number; contribution: string | number; donated_items: Record<string, number> | null }
+    | undefined;
+  return {
+    tier: r?.tier ?? 1,
+    contribution: Number(r?.contribution ?? 0),
+    donatedItems: r?.donated_items ?? {},
+  };
 }
 
 // 結算停泊中位置自上次結算以來累積的修為(供離開/轉換仙境位置前呼叫,避免中間這段時間的修為憑空消失)
@@ -129,9 +136,31 @@ export async function GET(req: NextRequest) {
   const bankRows = await sql`SELECT items FROM sect_bank WHERE sect_id = ${sectId}`;
   const items = (bankRows[0] as { items: Record<string, number> } | undefined)?.items ?? {};
 
-  const { tier, contribution } = await loadTier(sectId);
+  const { tier, contribution, donatedItems } = await loadTier(sectId);
   const cur = sectTierOf(tier);
   const next = nextSectTierOf(tier);
+
+  // 一次性資料遷移(2.7 版):素材改走獨立的宗門捐獻(donated_items),不再沿用可提領的宗門倉庫。
+  // 舊制下已擺在倉庫、尚未計入捐獻的下一階所需素材,自動轉為捐獻,避免既有宗門升級進度因改版歸零。
+  if (next?.materials) {
+    for (const m of next.materials) {
+      const already = donatedItems[m.id] ?? 0;
+      const inBank = items[m.id] ?? 0;
+      if (already < m.n && inBank > 0) {
+        const move = Math.min(inBank, m.n - already);
+        await sql`UPDATE sect_bank SET items = jsonb_set(
+          items, ARRAY[${m.id}], to_jsonb(GREATEST(0, COALESCE((items->>${m.id})::int, 0) - ${move}))
+        ), updated_at = now() WHERE sect_id = ${sectId}`;
+        await sql`UPDATE sect_tier SET donated_items = jsonb_set(
+          COALESCE(donated_items, '{}'::jsonb), ARRAY[${m.id}],
+          to_jsonb(COALESCE((donated_items->>${m.id})::int, 0) + ${move})
+        ), updated_at = now() WHERE sect_id = ${sectId}`;
+        donatedItems[m.id] = already + move;
+        items[m.id] = inBank - move;
+      }
+    }
+  }
+
   const blockedBy: string[] = [];
   let missingMaterials: { id: string; name: string; need: number; have: number }[] = [];
   if (next) {
@@ -142,10 +171,10 @@ export async function GET(req: NextRequest) {
           id: m.id,
           name: itemById(m.id)?.name ?? m.id,
           need: m.n,
-          have: items[m.id] ?? 0,
+          have: donatedItems[m.id] ?? 0,
         }))
         .filter((m) => m.have < m.need);
-      if (missingMaterials.length > 0) blockedBy.push("宗門倉庫素材不足");
+      if (missingMaterials.length > 0) blockedBy.push("宗門捐獻素材不足");
     }
     if (next.requireStage && next.requireCount) {
       const n = (members as MemberRow[]).filter(
@@ -194,6 +223,7 @@ export async function GET(req: NextRequest) {
     sectId,
     members,
     items,
+    donatedItems,
     tier,
     tierName: cur.name,
     memberCap: cur.memberCap,
@@ -208,8 +238,9 @@ export async function GET(req: NextRequest) {
 }
 
 // POST:
-//   { action: "contribute", amount }                          —— 貢獻靈石(不可取回,計入宗門貢獻)
-//   { action: "depositItem" | "withdrawItem", itemId, qty }   —— 宗門倉庫物品存取
+//   { action: "contribute", amount }                          —— 貢獻靈石(宗門捐獻,不可取回,計入宗門貢獻)
+//   { action: "donateItem", itemId, qty }                     —— 捐獻素材(宗門捐獻,不可取回,計入晉升門檻)
+//   { action: "depositItem" | "withdrawItem", itemId, qty }   —— 宗門倉庫物品存取(可自由提領,與宗門捐獻無關)
 //   { action: "upgradeTier" }                                 —— 晉升宗門等級
 //   { action: "assignDwelling" | "leaveDwelling", slotIdx? }  —— 停泊 / 離開宗門仙境
 //   { action: "upgradeDwelling", slotIdx }                    —— 升級指定仙境位置
@@ -226,7 +257,7 @@ export async function POST(req: NextRequest) {
   if (!sectId) return NextResponse.json({ error: "尚未拜入宗門" }, { status: 400 });
 
   if (action === "upgradeTier") {
-    const { tier, contribution } = await loadTier(sectId);
+    const { tier, contribution, donatedItems } = await loadTier(sectId);
     const next = nextSectTierOf(tier);
     if (!next) return NextResponse.json({ error: "已是宗門最高等級" }, { status: 400 });
     if (contribution < next.contribution) {
@@ -249,33 +280,23 @@ export async function POST(req: NextRequest) {
       }
     }
     if (next.materials && next.materials.length > 0) {
-      const bankRows = await sql`SELECT items FROM sect_bank WHERE sect_id = ${sectId}`;
-      const items = (bankRows[0] as { items: Record<string, number> } | undefined)?.items ?? {};
-      const short = next.materials.find((m) => (items[m.id] ?? 0) < m.n);
+      const short = next.materials.find((m) => (donatedItems[m.id] ?? 0) < m.n);
       if (short) {
         return NextResponse.json(
-          { error: `晉升【${next.name}】尚缺宗門倉庫素材【${itemById(short.id)?.name ?? short.id}】` },
+          { error: `晉升【${next.name}】尚缺宗門捐獻素材【${itemById(short.id)?.name ?? short.id}】` },
           { status: 400 },
         );
       }
     }
     // 樂觀併發鎖:僅在目前等級仍為 tier 時才寫入,避免重複點擊重複晉升。
-    // 務必先搶佔等級變更、成功後才消耗素材——若順序相反,兩個同門同時點擊晉升時,
-    // 只有一方能真正晉升,但兩邊都會各自扣一次素材,倉庫平白損失且晉升未必成功。
+    // 宗門捐獻(靈石貢獻、捐獻素材)皆是只增不減的累積門檻,與宗門仙境獨立升級材料源自可提領的
+    // 宗門倉庫不同,晉升成功後不需要、也不應該扣除——道理與貢獻靈石本身晉升後不會被扣回一致。
     const rows = await sql`
       INSERT INTO sect_tier (sect_id, tier, contribution) VALUES (${sectId}, ${next.tier}, ${contribution})
       ON CONFLICT (sect_id) DO UPDATE SET tier = ${next.tier}, updated_at = now()
       WHERE sect_tier.tier = ${tier}
       RETURNING tier`;
     if (!rows.length) return NextResponse.json({ error: "晉升失敗,請重試" }, { status: 400 });
-    if (next.materials && next.materials.length > 0) {
-      // 依序扣除倉庫素材(逐一 jsonb_set,數量不多,單一宗門晉升次數稀少,效能無虞)
-      for (const m of next.materials) {
-        await sql`UPDATE sect_bank SET items = jsonb_set(
-          items, ARRAY[${m.id}], to_jsonb(GREATEST(0, COALESCE((items->>${m.id})::int, 0) - ${m.n}))
-        ), updated_at = now() WHERE sect_id = ${sectId}`;
-      }
-    }
     return NextResponse.json({ ok: true, tier: next.tier, tierName: next.name });
   }
 
@@ -388,6 +409,42 @@ export async function POST(req: NextRequest) {
     const r = rows[0] as { n: string; items: Record<string, number> | null };
     if (Number(r.n) === 0) return NextResponse.json({ error: "宗門倉庫物品不足" }, { status: 400 });
     return NextResponse.json({ ok: true, items: r.items });
+  }
+
+  // 宗門捐獻素材(晉升宗門用,獨立於可提領的宗門倉庫):存入 sect_tier.donated_items,只增不減、不可提領
+  if (action === "donateItem") {
+    const itemId = String(body.itemId ?? "");
+    const qty = body.qty;
+    const item = itemById(itemId);
+    if (!item) return NextResponse.json({ error: "無此物品" }, { status: 400 });
+    if (!Number.isInteger(qty) || qty < 1) {
+      return NextResponse.json({ error: "數量須為正整數" }, { status: 400 });
+    }
+    const rows = await sql`
+      WITH upd AS (
+        UPDATE saves SET data = jsonb_set(
+          data, ARRAY['inventory', ${itemId}],
+          to_jsonb(GREATEST(0, COALESCE((data->'inventory'->>${itemId})::int, 0) - ${qty}))
+        )
+        WHERE user_id = ${user.id} AND COALESCE((data->'inventory'->>${itemId})::int, 0) >= ${qty}
+        RETURNING 1
+      ),
+      tierUpd AS (
+        INSERT INTO sect_tier (sect_id, donated_items)
+        SELECT ${sectId}, jsonb_build_object(${itemId}::text, ${qty}::int)
+        WHERE EXISTS (SELECT 1 FROM upd)
+        ON CONFLICT (sect_id) DO UPDATE SET
+          donated_items = jsonb_set(
+            COALESCE(sect_tier.donated_items, '{}'::jsonb), ARRAY[${itemId}],
+            to_jsonb(COALESCE((sect_tier.donated_items->>${itemId})::int, 0) + ${qty})
+          ),
+          updated_at = now()
+        RETURNING donated_items
+      )
+      SELECT (SELECT count(*) FROM upd) AS n, (SELECT donated_items FROM tierUpd) AS items`;
+    const r = rows[0] as { n: string; items: Record<string, number> | null };
+    if (Number(r.n) === 0) return NextResponse.json({ error: "物品數量不足" }, { status: 400 });
+    return NextResponse.json({ ok: true, donatedItems: r.items });
   }
 
   if (action === "assignDwelling" || action === "leaveDwelling" || action === "upgradeDwelling") {

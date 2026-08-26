@@ -49,6 +49,7 @@ interface NextTierInfo {
   memberCap: number;
   dwellingSlots: number;
   contribution: number;
+  materials?: { id: string; n: number }[];
   requireStage?: number;
   requireCount?: number;
   ready: boolean;
@@ -86,6 +87,7 @@ export default function SectPage() {
 
   const [members, setMembers] = useState<SectMember[]>([]);
   const [items, setItems] = useState<Record<string, number>>({});
+  const [donatedItems, setDonatedItems] = useState<Record<string, number>>({});
   const [tier, setTier] = useState(1);
   const [contribution, setContribution] = useState(0);
   const [dwellingSlots, setDwellingSlots] = useState(0);
@@ -98,6 +100,8 @@ export default function SectPage() {
   const [amount, setAmount] = useState(1000);
   const [itemId, setItemId] = useState("");
   const [itemQty, setItemQty] = useState(1);
+  const [donateItemId, setDonateItemId] = useState("");
+  const [donateQty, setDonateQty] = useState(1);
   const [view, setView] = useState<
     "damage" | "members" | "warehouse" | "dwelling" | "upgrade" | "mission" | "list"
   >("dwelling");
@@ -131,6 +135,7 @@ export default function SectPage() {
       if (j.ok) {
         setMembers(j.members ?? []);
         setItems(j.items ?? {});
+        setDonatedItems(j.donatedItems ?? {});
         setTier(j.tier ?? 1);
         setContribution(j.contribution ?? 0);
         setDwellingSlots(j.dwellingSlots ?? 0);
@@ -210,37 +215,94 @@ export default function SectPage() {
   const missionProgress = (m: (typeof MISSIONS)[number]) =>
     m.kind === "kill" ? (s.kills[m.targetId] ?? 0) - s.missionBase : (s.inventory[m.targetId] ?? 0);
 
-  // 貢獻靈石 + 宗門等級晉升(獨立「宗門升級」分頁,與宗門任務區分開來)
+  // 宗門捐獻(靈石 + 素材,獨立「宗門升級」分頁):兩者皆存入即歸宗門所有、不可取回,
+  // 與「宗門倉庫」(任何同門皆可自由存取提領)完全分開的兩套資料,唯一用途是累積宗門升級門檻。
   const contributeSection = (
-    <div className="border border-gold/40 bg-gold/5 rounded-sm p-3">
-      <div className="flex items-baseline justify-between flex-wrap gap-2">
-        <span className="font-bold text-gold">{t("contributeTitle")}</span>
-        <span className="text-sm font-mono text-gold">
-          <StoneAmount n={contribution} /> {nextTier && <>/ <StoneAmount n={nextTier.contribution} /></>}
-        </span>
-      </div>
-      <p className="text-sm text-faded mt-1">
-        {t("contributeDesc")}
-        <span className="text-gold">
-          <StoneAmount n={s.stones} />
-        </span>
-      </p>
-      <div className="mt-2 flex flex-wrap gap-2 items-center">
-        <input
-          type="number"
-          min={1}
-          value={amount}
-          onChange={(e) => setAmount(Math.max(1, +e.target.value || 1))}
-          className="w-32 bg-smoke border border-faded/30 rounded-sm px-2 py-1.5 text-sm text-parchment"
-        />
-        <button className="btn" disabled={busy} onClick={() => post({ action: "contribute", amount })}>
-          {t("btnContribute")}
-        </button>
+    <div className="border border-gold/40 bg-gold/5 rounded-sm p-3 space-y-4">
+      <div>
+        <span className="font-bold text-gold">{t("donationTitle")}</span>
+        <p className="text-sm text-faded mt-1">{t("donationDesc")}</p>
       </div>
 
+      <div>
+        <div className="flex items-baseline justify-between flex-wrap gap-2">
+          <span className="text-sm font-bold text-cream">{t("contributeTitle")}</span>
+          <span className="text-sm font-mono text-gold">
+            <StoneAmount n={contribution} /> {nextTier && <>/ <StoneAmount n={nextTier.contribution} /></>}
+          </span>
+        </div>
+        <p className="text-sm text-faded mt-1">
+          {t("contributeDesc")}
+          <span className="text-gold">
+            <StoneAmount n={s.stones} />
+          </span>
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2 items-center">
+          <input
+            type="number"
+            min={1}
+            value={amount}
+            onChange={(e) => setAmount(Math.max(1, +e.target.value || 1))}
+            className="w-32 bg-smoke border border-faded/30 rounded-sm px-2 py-1.5 text-sm text-parchment"
+          />
+          <button className="btn" disabled={busy} onClick={() => post({ action: "contribute", amount })}>
+            {t("btnContribute")}
+          </button>
+        </div>
+      </div>
+
+      {nextTier?.materials && nextTier.materials.length > 0 && (
+        <div>
+          <span className="text-sm font-bold text-cream">{t("donateMaterialTitle")}</span>
+          <div className="mt-2 flex flex-wrap gap-2 items-center">
+            <select
+              value={donateItemId}
+              onChange={(e) => setDonateItemId(e.target.value)}
+              className="bg-smoke border border-faded/30 rounded-sm px-2 py-1.5 text-sm text-parchment"
+            >
+              <option value="">{t("selectItemPlaceholder")}</option>
+              {nextTier.materials.map((m) => {
+                const it = itemById(m.id);
+                const have = s.inventory[m.id] ?? 0;
+                return (
+                  <option key={m.id} value={m.id}>
+                    {it ? itemDisplayName(it, lang) : m.id} × {have}
+                  </option>
+                );
+              })}
+            </select>
+            <input
+              type="number"
+              min={1}
+              value={donateQty}
+              onChange={(e) => setDonateQty(Math.max(1, +e.target.value || 1))}
+              className="w-24 bg-smoke border border-faded/30 rounded-sm px-2 py-1.5 text-sm text-parchment"
+            />
+            <button
+              className="btn"
+              disabled={busy || !donateItemId}
+              onClick={() => post({ action: "donateItem", itemId: donateItemId, qty: donateQty })}
+            >
+              {t("btnDonateMaterial")}
+            </button>
+          </div>
+          <ul className="mt-2 space-y-0.5">
+            {nextTier.materials.map((m) => {
+              const have = donatedItems[m.id] ?? 0;
+              const it = itemById(m.id);
+              return (
+                <li key={m.id} className={`text-sm ${have >= m.n ? "text-jade" : "text-vermillion"}`}>
+                  {it ? itemDisplayName(it, lang) : m.id} {have}/{m.n}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
       {nextTier ? (
-        <>
-          <div className="stat-bar mt-3">
+        <div>
+          <div className="stat-bar">
             <div
               className="h-full bg-gold/70"
               style={{
@@ -266,15 +328,6 @@ export default function SectPage() {
               </>
             )}
           </p>
-          {nextTier.missingMaterials.length > 0 && (
-            <p className="text-sm text-vermillion mt-1">
-              {t("warehouseMissing")}
-              {nextTier.missingMaterials
-                .map((m) => `${itemDisplayName({ id: m.id, name: m.name }, lang)} ${m.have}/${m.need}`)
-                .join("、")}
-              {t("warehouseMissingNote")}
-            </p>
-          )}
           <button
             className="btn mt-2"
             disabled={busy || !nextTier.ready}
@@ -284,9 +337,9 @@ export default function SectPage() {
             {t("btnUpgradeTier").replace("{name}", sectTierDisplayName(nextTier, lang))}
             {nextTier.blockedBy.length > 0 ? `(${nextTier.blockedBy.join("、")})` : ""}
           </button>
-        </>
+        </div>
       ) : (
-        <p className="text-sm text-faded mt-2">
+        <p className="text-sm text-faded">
           {t("maxTierReached").replace("{name}", sectTierDisplayName(curTier, lang))}
         </p>
       )}

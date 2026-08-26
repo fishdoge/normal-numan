@@ -54,6 +54,9 @@ export function ensureSchema() {
         contribution BIGINT NOT NULL DEFAULT 0,
         updated_at TIMESTAMPTZ DEFAULT now()
       )`;
+      // 宗門捐獻的素材(2.7 版新增):{ itemId: qty, ... },與 sect_bank.items(可自由提領的倉庫)
+      // 是完全分開的兩套資料,只增不減、不可提領,唯一用途是累積宗門升級門檻
+      await sql`ALTER TABLE sect_tier ADD COLUMN IF NOT EXISTS donated_items JSONB NOT NULL DEFAULT '{}'::jsonb`;
       // 宗門仙境(1.9 版新增):每個宗門依等級開放固定數量位置,同門可停泊修煉、緩慢增長修為
       await sql`CREATE TABLE IF NOT EXISTS sect_dwelling (
         sect_id TEXT NOT NULL,

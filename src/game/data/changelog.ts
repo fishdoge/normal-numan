@@ -9,6 +9,15 @@ export interface ChangelogEntry {
 // 新版在前
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.9",
+    date: "2026-08-26",
+    title: "修正見聞錄/對話集捲動異常(根因:/api/save 無限重複請求)",
+    highlights: [
+      "修正 useT() 未固定函式參考導致的連鎖無限迴圈——原本只要遊戲分頁開著,就會每秒不斷對伺服器發出多餘的存檔查詢請求。",
+      "見聞錄、對話集改為「貼底感知」自動捲動:手動往上捲回顧舊訊息後不會再被新訊息強制拉回底部。",
+    ],
+  },
+  {
     version: "2.8",
     date: "2026-08-26",
     title: "宗門仙境升級按鈕補上精力增量顯示",

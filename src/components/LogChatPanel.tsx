@@ -28,7 +28,22 @@ export default function LogChatPanel() {
   const tt = useT();
 
   const logBoxRef = useRef<HTMLDivElement>(null);
+  // 是否貼齊底部:手動往上捲回顧舊訊息後就不再被新訊息強制拉走,除非重新貼底或切換頁籤回來
+  const logPinnedRef = useRef(true);
+  const handleLogScroll = () => {
+    const el = logBoxRef.current;
+    if (!el) return;
+    logPinnedRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+  };
   useEffect(() => {
+    if (tab !== "log") return;
+    logPinnedRef.current = true;
+    const el = logBoxRef.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
+  useEffect(() => {
+    if (!logPinnedRef.current) return;
     const el = logBoxRef.current;
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [log]);
@@ -38,6 +53,12 @@ export default function LogChatPanel() {
   const [sending, setSending] = useState(false);
   const [chatErr, setChatErr] = useState("");
   const chatBoxRef = useRef<HTMLDivElement>(null);
+  const chatPinnedRef = useRef(true);
+  const handleChatScroll = () => {
+    const el = chatBoxRef.current;
+    if (!el) return;
+    chatPinnedRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+  };
   const lastIdRef = useRef(0);
 
   const poll = async (initial = false) => {
@@ -63,9 +84,16 @@ export default function LogChatPanel() {
 
   useEffect(() => {
     if (tab !== "chat") return;
+    chatPinnedRef.current = true;
     const el = chatBoxRef.current;
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-  }, [messages, tab]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
+  useEffect(() => {
+    if (tab !== "chat" || !chatPinnedRef.current) return;
+    const el = chatBoxRef.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }, [messages]);
 
   const send = async () => {
     const t = text.trim();
@@ -116,7 +144,11 @@ export default function LogChatPanel() {
       </div>
 
       {tab === "log" && (
-        <div ref={logBoxRef} className="flex-1 overflow-y-auto space-y-1.5 pr-1 text-sm leading-relaxed">
+        <div
+          ref={logBoxRef}
+          onScroll={handleLogScroll}
+          className="flex-1 overflow-y-auto space-y-1.5 pr-1 text-sm leading-relaxed"
+        >
           {log.length === 0 && <p className="text-faded/50">{tt("logEmptyMsg")}</p>}
           {log.map((l, i) => (
             <p key={i} className="animate-floatUp">
@@ -129,7 +161,11 @@ export default function LogChatPanel() {
 
       {tab === "chat" && (
         <div className="flex-1 flex flex-col min-h-0">
-          <div ref={chatBoxRef} className="flex-1 overflow-y-auto space-y-1.5 pr-1 text-sm leading-relaxed">
+          <div
+            ref={chatBoxRef}
+            onScroll={handleChatScroll}
+            className="flex-1 overflow-y-auto space-y-1.5 pr-1 text-sm leading-relaxed"
+          >
             {messages.length === 0 && <p className="text-faded/50">{tt("chatEmptyMsg")}</p>}
             {messages.map((m) => (
               <p key={m.id}>

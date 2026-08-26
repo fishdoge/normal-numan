@@ -133,7 +133,16 @@ export const ENERGY_COST: Record<string, number> = {
 };
 export const MAX_ENERGY_POTION_STACKS = 5;
 
-// 精力回復:每 5 分鐘真實時間 1 點,由 /api/action、/api/save 依 last_energy_at 差距換算成點數呼叫。
+// 精力回復速率(2.5 版起加倍):平時每 5 分鐘真實時間回復 2 點。
+// 停泊宗門仙境閉關潛修時,額外再加成:基礎 +2,宗門每提升一階再 +1(依宗門目前等級),
+// 加成與平時速率相加,而非另外乘倍——由 /api/action、/api/save 依各自查到的宗門等級呼叫。
+export const ENERGY_REGEN_PER_TICK = 2;
+export const DWELLING_ENERGY_BONUS_BASE = 2;
+export const DWELLING_ENERGY_BONUS_PER_TIER = 1;
+export const dwellingEnergyBonusOf = (tier: number) =>
+  DWELLING_ENERGY_BONUS_BASE + DWELLING_ENERGY_BONUS_PER_TIER * Math.max(0, tier - 1);
+
+// 精力回復:由 /api/action、/api/save 依 last_energy_at 差距換算成點數呼叫。
 export function applyEnergyRegen(s: SaveData, points: number) {
   if (points <= 0) return;
   s.energy = Math.min(energyMaxOf(s), (s.energy ?? 0) + points);

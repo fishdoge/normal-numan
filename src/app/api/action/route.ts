@@ -7,6 +7,8 @@ import {
   applyEnergyRegen,
   newSave,
   sectDamageMultOfStages,
+  ENERGY_REGEN_PER_TICK,
+  dwellingEnergyBonusOf,
   SaveData,
 } from "@/game/engine";
 import { REALMS } from "@/game/data/realms";
@@ -92,14 +94,21 @@ export async function POST(req: NextRequest) {
   );
   if (hours > 0) applyRealTimeAging(save, hours);
 
-  // 精力回復:每 5 分鐘真實時間 1 點,只推進「已兌現成點數」的整數分鐘,餘數留到下次結算
-  // 停泊宗門仙境閉關潛修時,精力回復速度加倍(每 5 分鐘 2 點)
+  // 精力回復:平時每 5 分鐘真實時間 2 點,只推進「已兌現成點數」的整數分鐘,餘數留到下次結算。
+  // 停泊宗門仙境閉關潛修時額外加成:基礎 +2,宗門每提升一階再 +1(依宗門目前等級)。
   const energyMinutesTotal = Math.max(
     0,
     Math.floor((Date.now() - new Date(row.last_energy_at).getTime()) / 60000),
   );
   const energyTicks = Math.floor(energyMinutesTotal / 5);
-  const energyPoints = energyTicks * (save.dwellingSlot != null ? 2 : 1);
+  let energyPerTick = ENERGY_REGEN_PER_TICK;
+  if (energyTicks > 0 && save.dwellingSlot != null && save.sectId) {
+    const [tierRow] = (await sql`SELECT tier FROM sect_tier WHERE sect_id = ${save.sectId}`) as {
+      tier: number;
+    }[];
+    energyPerTick += dwellingEnergyBonusOf(tierRow?.tier ?? 1);
+  }
+  const energyPoints = energyTicks * energyPerTick;
   const energyMinutesConsumed = energyTicks * 5;
   if (energyPoints > 0) applyEnergyRegen(save, energyPoints);
 

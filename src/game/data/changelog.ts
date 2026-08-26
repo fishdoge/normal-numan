@@ -9,6 +9,15 @@ export interface ChangelogEntry {
 // 新版在前
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.5",
+    date: "2026-08-26",
+    title: "精力回復加倍,宗門仙境加成改與宗門等級掛鉤",
+    highlights: [
+      "平時精力回復從每 5 分鐘 +1 點提升為 +2 點,直接加倍。",
+      "宗門仙境停泊的精力加成改為「基礎 +2,宗門每提升一階再 +1」,與平時速率相加而非另外乘倍——宗門等級越高,同門停泊時精力回復越快。",
+    ],
+  },
+  {
     version: "2.4",
     date: "2026-08-24",
     title: "修復宗門倉庫存入功能完全失效",

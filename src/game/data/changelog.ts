@@ -9,6 +9,14 @@ export interface ChangelogEntry {
 // 新版在前
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.11",
+    date: "2026-08-28",
+    title: "裝備屬性顯示方式改回滑鼠懸停提示",
+    highlights: [
+      "2.10 版新增的裝備屬性顯示改回滑鼠移上道具名稱才顯示的懸停提示,不再直接塞進版面拉高列表。",
+    ],
+  },
+  {
     version: "2.10",
     date: "2026-08-28",
     title: "修正交易行喊價上限 bug;裝備屬性明文標示;調降仙靈力丹藥掉落率;真仙品級改標紫",

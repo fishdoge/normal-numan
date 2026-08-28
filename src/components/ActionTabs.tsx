@@ -37,6 +37,7 @@ import { realmDisplayName } from "@/i18n/realmText";
 import { sectDisplayName } from "@/i18n/sectText";
 import { kindLabel, elementLabel } from "@/i18n/labelText";
 import StoneAmount from "./StoneAmount";
+import Tooltip from "./Tooltip";
 
 // 道具名稱標色:玄天仙器維持原本的流動漸層特效(優先),其餘達真仙品級需求的道具一律標紫,兩者皆非則不特別上色
 const itemNameColor = (item: Pick<ItemDef, "reqStage">, xuantian: boolean) =>
@@ -1488,16 +1489,35 @@ function PlayerDetailCard({ profile, onClose }: { profile: PlayerProfile; onClos
       </div>
       <div className="divider">{t("profileEquip")}</div>
       <div className="grid grid-cols-2 gap-y-1 text-sm">
-        {gear.map(([labelKey, id]) => (
-          <div key={labelKey} className="contents">
-            <span className="text-faded">{t(labelKey)}</span>
-            <span
-              className={`text-right ${id ? (labelKey === "slotPet" ? "text-fuchsia-300" : "text-cream") : "text-faded/50"}`}
-            >
-              {id ? itemDisplayName(itemById(id), lang) : "—"}
-            </span>
-          </div>
-        ))}
+        {gear.map(([labelKey, id]) => {
+          const it = id ? itemById(id) : null;
+          const xuantian = id ? isXuantianArtifact(id) : false;
+          const nameCls = xuantian
+            ? "text-xuantian"
+            : labelKey === "slotPet"
+              ? "text-fuchsia-300"
+              : it && isXianItem(it)
+                ? XIAN_ITEM_COLOR
+                : "text-cream";
+          return (
+            <div key={labelKey} className="contents">
+              <span className="text-faded">{t(labelKey)}</span>
+              {it ? (
+                <span className="text-right">
+                  <Tooltip
+                    content={[itemStatLine(it, t), itemDisplayDesc(it, lang)].filter(Boolean).join(" · ")}
+                  >
+                    <span className={`${nameCls} cursor-help underline decoration-dotted decoration-faded/40 underline-offset-2`}>
+                      {itemDisplayName(it, lang)}
+                    </span>
+                  </Tooltip>
+                </span>
+              ) : (
+                <span className="text-right text-faded/50">—</span>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

@@ -9,6 +9,14 @@ export interface ChangelogEntry {
 // 新版在前
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.12",
+    date: "2026-08-28",
+    title: "排行榜玩家詳情卡的裝備補上懸停屬性提示",
+    highlights: [
+      "排行榜搜尋修士道號彈出的玩家詳情卡,裝備(法器/法衣/護身符/符籙/靈寵/命器)名稱補上滑鼠懸停提示,跟道籍面板一致可看到屬性加成數字。",
+    ],
+  },
+  {
     version: "2.11",
     date: "2026-08-28",
     title: "裝備屬性顯示方式改回滑鼠懸停提示",

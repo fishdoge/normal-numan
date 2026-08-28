@@ -249,6 +249,12 @@ function BagTab() {
     const item = itemById(id);
     const equipped = equippedIds.includes(id);
     const xuantian = isXuantianArtifact(id);
+    const statLine = itemStatLine(item, t);
+    const nameSpan = (
+      <span className={`${itemNameColor(item, xuantian)}${statLine ? " cursor-help underline decoration-dotted decoration-faded/40 underline-offset-2" : ""}`}>
+        {itemDisplayName(item, lang)}
+      </span>
+    );
     return (
       <div
         key={id}
@@ -256,7 +262,7 @@ function BagTab() {
       >
         <div className="min-w-0">
           <span className="font-bold">
-            <span className={itemNameColor(item, xuantian)}>{itemDisplayName(item, lang)}</span>{" "}
+            {statLine ? <Tooltip content={statLine}>{nameSpan}</Tooltip> : nameSpan}{" "}
             <span className="text-faded font-normal">×{n}</span>
             <span className="chip ml-2 text-faded/80 border-faded/30">{kindLabel(item.kind, lang)}</span>
             {item.element && (
@@ -815,6 +821,14 @@ function BlackMarketSection() {
       {BLACK_MARKET_CATALOG.map(({ itemId, priceUsd }) => {
         const item = itemById(itemId);
         if (!item) return null;
+        const statLine = itemStatLine(item, t);
+        const nameSpan = (
+          <span
+            className={`${itemNameColor(item, isXuantianArtifact(itemId))}${statLine ? " cursor-help underline decoration-dotted decoration-faded/40 underline-offset-2" : ""}`}
+          >
+            {itemDisplayName(item, lang)}
+          </span>
+        );
         return (
           <div
             key={itemId}
@@ -822,9 +836,7 @@ function BlackMarketSection() {
           >
             <div className="min-w-0">
               <span className="font-bold">
-                <span className={itemNameColor(item, isXuantianArtifact(itemId))}>
-                  {itemDisplayName(item, lang)}
-                </span>
+                {statLine ? <Tooltip content={statLine}>{nameSpan}</Tooltip> : nameSpan}
                 <span className="chip ml-2 text-faded/80 border-faded/30">
                   {kindLabel(item.kind, lang)}
                 </span>
@@ -908,14 +920,25 @@ function MarketTab() {
               <div key={key}>
                 <div className="divider">{t(key)}</div>
                 <div className="space-y-2">
-                  {group.map((item) => (
+                  {group.map((item) => {
+                    const statLine = itemStatLine(item, t);
+                    const nameNode = statLine ? (
+                      <Tooltip content={statLine}>
+                        <span className="cursor-help underline decoration-dotted decoration-faded/40 underline-offset-2">
+                          {itemDisplayName(item, lang)}
+                        </span>
+                      </Tooltip>
+                    ) : (
+                      itemDisplayName(item, lang)
+                    );
+                    return (
                     <div
                       key={item.id}
                       className="flex items-center justify-between border border-faded/20 rounded-sm p-2.5"
                     >
                       <div className="min-w-0">
                         <span className="font-bold">
-                          {itemDisplayName(item, lang)}
+                          {nameNode}
                           <span className="chip ml-2 text-faded/80 border-faded/30">
                             {kindLabel(item.kind, lang)}
                           </span>
@@ -935,7 +958,8 @@ function MarketTab() {
                         {formatStones(item.price)}
                       </button>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -1161,6 +1185,14 @@ function TradeTab() {
         if (!item) return null;
         const mine = l.seller_name === s.name;
         const xuantian = isXuantianArtifact(l.item_id);
+        const statLine = itemStatLine(item, t);
+        const nameSpan = (
+          <span
+            className={`${itemNameColor(item, xuantian)}${statLine ? " cursor-help underline decoration-dotted decoration-faded/40 underline-offset-2" : ""}`}
+          >
+            {itemDisplayName(item, lang)}
+          </span>
+        );
         return (
           <div
             key={l.id}
@@ -1168,7 +1200,7 @@ function TradeTab() {
           >
             <div className="min-w-0">
               <span className="font-bold">
-                <span className={itemNameColor(item, xuantian)}>{itemDisplayName(item, lang)}</span>{" "}
+                {statLine ? <Tooltip content={statLine}>{nameSpan}</Tooltip> : nameSpan}{" "}
                 <span className="text-faded font-normal">×{l.qty}</span>
                 {mine && <span className="chip ml-2 text-gold border-gold/50">{t("myListingTag")}</span>}
               </span>

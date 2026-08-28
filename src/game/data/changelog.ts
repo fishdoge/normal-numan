@@ -9,6 +9,14 @@ export interface ChangelogEntry {
 // 新版在前
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.13",
+    date: "2026-08-28",
+    title: "儲物袋/坊市/黑市/交易行道具名稱補上懸停數值提示",
+    highlights: [
+      "儲物袋、坊市、黑市、交易行的道具名稱,只要本身帶有可換算數值(攻防速度加成、修為、回血等),滑鼠移上去就會顯示這些數字,不用再靠敘述文字用猜的。",
+    ],
+  },
+  {
     version: "2.12",
     date: "2026-08-28",
     title: "排行榜玩家詳情卡的裝備補上懸停屬性提示",

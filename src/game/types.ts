@@ -30,7 +30,7 @@ export const XIANLI_COLOR = "text-fuchsia-400";
 // 真仙品級道具標色:達真仙(stage 10)以上境界需求的一般道具,不分坊市/掉落/交易行/混沌萬靈榜等顯示情境,
 // 一律以紫色標註名稱以資醒目。玄天仙器(見 isXuantianArtifact)另有專屬的流動漸層特效,優先於此。
 export const isXianItem = (item: Pick<ItemDef, "reqStage">) => (item.reqStage ?? 0) >= 10;
-export const XIAN_ITEM_COLOR = "text-fuchsia-400";
+export const XIAN_ITEM_COLOR = "text-purple-400";
 
 // 玩家道號依境界配色:化神以下(stage < 5)綠、化神~渡劫(5~9)藍、真仙以上(≥10)維持既有的流動金紫漸層。
 // 不分道籍面板/排行榜/同門名錄/對話集等顯示情境,一律套用同一份規則。

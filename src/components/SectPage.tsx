@@ -249,7 +249,7 @@ export default function SectPage() {
           min={1}
           value={amount}
           onChange={(e) => setAmount(Math.max(1, +e.target.value || 1))}
-          className="w-32 bg-smoke border border-faded/30 rounded-sm px-2 py-1.5 text-sm text-parchment"
+          className="w-40 bg-smoke border border-faded/30 rounded-sm px-2 py-1.5 text-sm text-parchment"
         />
         <button className="btn" disabled={busy} onClick={() => post({ action: "contribute", amount })}>
           {t("btnContribute")}

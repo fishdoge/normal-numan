@@ -1001,7 +1001,12 @@ function TradeTab() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ itemId: sellItem, qty: sellQty, price: sellPrice }),
       });
-      const j = await res.json();
+      let j: { error?: string } = {};
+      try {
+        j = await res.json();
+      } catch {
+        /* 伺服器回傳非 JSON(如未捕捉例外的 500 頁面),當作一般失敗處理 */
+      }
       if (res.ok) {
         pushLog(
           t("listSuccessLog")
@@ -1014,6 +1019,8 @@ function TradeTab() {
         pushLog(t("listFailLog").replace("{err}", j.error ?? t("listFailGeneric")));
       }
       await Promise.all([refresh(), reloadSave()]);
+    } catch {
+      pushLog(t("netErr"));
     } finally {
       setBusy(false);
     }
@@ -1027,19 +1034,26 @@ function TradeTab() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: l.id, action: "buy" }),
       });
-      const j = await res.json();
+      let j: { error?: string; total?: number; itemId?: string; qty?: number } = {};
+      try {
+        j = await res.json();
+      } catch {
+        /* 同上 */
+      }
       if (res.ok) {
         pushLog(
           t("buySuccessLog")
-            .replace("{total}", formatStones(j.total))
-            .replace("{item}", itemDisplayName(itemById(j.itemId), lang))
-            .replace("{qty}", String(j.qty))
+            .replace("{total}", formatStones(j.total ?? 0))
+            .replace("{item}", itemDisplayName(itemById(j.itemId ?? ""), lang))
+            .replace("{qty}", String(j.qty ?? 0))
             .replace("{seller}", l.seller_name),
         );
       } else {
         pushLog(t("buyFailLog").replace("{err}", j.error ?? t("alreadyBoughtErr")));
       }
       await Promise.all([refresh(), reloadSave()]);
+    } catch {
+      pushLog(t("netErr"));
     } finally {
       setBusy(false);
     }
@@ -1053,7 +1067,12 @@ function TradeTab() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: l.id, action: "cancel" }),
       });
-      const j = await res.json();
+      let j: { error?: string } = {};
+      try {
+        j = await res.json();
+      } catch {
+        /* 同上 */
+      }
       if (res.ok) {
         pushLog(
           t("cancelSuccessLog")
@@ -1064,6 +1083,8 @@ function TradeTab() {
         pushLog(t("cancelFailLog").replace("{err}", j.error ?? t("listFailGeneric")));
       }
       await Promise.all([refresh(), reloadSave()]);
+    } catch {
+      pushLog(t("netErr"));
     } finally {
       setBusy(false);
     }
@@ -1121,7 +1142,7 @@ function TradeTab() {
               min={1}
               value={sellPrice}
               onChange={(e) => setSellPrice(+e.target.value)}
-              className="w-24 ml-1 bg-smoke border border-faded/30 rounded-sm px-2 py-1 text-sm text-parchment"
+              className="w-36 ml-1 bg-smoke border border-faded/30 rounded-sm px-2 py-1 text-sm text-parchment"
             />
           </label>
           <button className="btn" disabled={busy || !sellItem} onClick={list}>

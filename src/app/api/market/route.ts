@@ -9,7 +9,10 @@ export async function GET() {
     SELECT l.id, l.item_id, l.qty, l.price, l.seller_id, u.name AS seller_name
     FROM listings l JOIN users u ON u.id = l.seller_id
     ORDER BY l.created_at DESC LIMIT 200`;
-  return NextResponse.json({ ok: true, listings: rows });
+  // price 為 BIGINT,驅動程式回傳字串以避免精度誤差,這裡轉回一般 number 給前端使用
+  // (遊戲內靈石數量遠低於 Number.MAX_SAFE_INTEGER,轉換不會失真)
+  const listings = rows.map((r) => ({ ...r, price: Number(r.price) }));
+  return NextResponse.json({ ok: true, listings });
 }
 
 // POST:掛賣 { itemId, qty, price }
@@ -22,7 +25,7 @@ export async function POST(req: NextRequest) {
     typeof itemId !== "string" ||
     !Number.isInteger(qty) ||
     qty < 1 ||
-    !Number.isInteger(price) ||
+    !Number.isSafeInteger(price) ||
     price < 1
   ) {
     return NextResponse.json({ error: "參數有誤" }, { status: 400 });
@@ -42,7 +45,7 @@ export async function POST(req: NextRequest) {
     ),
     ins AS (
       INSERT INTO listings (seller_id, item_id, qty, price)
-      SELECT ${user.id}, ${itemId}, ${qty}, ${price}
+      SELECT ${user.id}, ${itemId}, ${qty}, ${price}::bigint
       WHERE EXISTS (SELECT 1 FROM upd)
       RETURNING id
     )

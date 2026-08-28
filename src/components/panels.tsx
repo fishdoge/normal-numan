@@ -15,7 +15,7 @@ import { MONSTERS } from "@/game/data/world";
 import { itemById, isXuantianArtifact } from "@/game/data/items";
 import { currentEraYears, eraLabelText } from "@/game/data/eraTime";
 import { techById } from "@/game/data/techniques";
-import { ELEMENT_COLOR, ELEMENTS, XIANLI_COLOR, EQUIP_SLOTS, nameColorOf } from "@/game/types";
+import { ELEMENT_COLOR, ELEMENTS, XIANLI_COLOR, EQUIP_SLOTS, nameColorOf, isXianItem, XIAN_ITEM_COLOR } from "@/game/types";
 import { useT } from "@/i18n/useT";
 import { itemDisplayName, itemDisplayDesc, itemStatLine } from "@/i18n/itemText";
 import Tooltip from "./Tooltip";
@@ -378,19 +378,28 @@ export function StatusPanel() {
           const it = id ? itemById(id) : null;
           const xuantian = id ? isXuantianArtifact(id) : false;
           const valueCls = `text-right ${xuantian ? "text-xuantian" : it ? (slot === "pet" ? "text-fuchsia-300" : "text-cream") : "text-faded/50"}`;
+          const statLine = it ? itemStatLine(it, t) : "";
+          const nameCls = xuantian
+            ? "text-xuantian"
+            : slot === "pet"
+              ? "text-fuchsia-300"
+              : it && isXianItem(it)
+                ? XIAN_ITEM_COLOR
+                : "text-cream";
           return (
             <div key={slot} className="contents">
-              <span className="text-faded">{equipSlotLabel(slot, label, lang)}</span>
+              <span className="text-faded self-start pt-0.5">{equipSlotLabel(slot, label, lang)}</span>
               {it ? (
-                <span className="text-right">
-                  <Tooltip
-                    content={[itemStatLine(it, t), itemDisplayDesc(it, lang)].filter(Boolean).join(" · ")}
-                  >
-                    <span className={`${xuantian ? "text-xuantian" : slot === "pet" ? "text-fuchsia-300" : "text-cream"} cursor-help underline decoration-dotted decoration-faded/40 underline-offset-2`}>
+                <div className="text-right">
+                  <Tooltip content={itemDisplayDesc(it, lang) || itemDisplayName(it, lang)}>
+                    <span className={`${nameCls} cursor-help underline decoration-dotted decoration-faded/40 underline-offset-2`}>
                       {itemDisplayName(it, lang)}
                     </span>
                   </Tooltip>
-                </span>
+                  {statLine && (
+                    <div className="text-[11px] text-jade/80 font-mono leading-snug">{statLine}</div>
+                  )}
+                </div>
               ) : (
                 <span className={valueCls}>—</span>
               )}

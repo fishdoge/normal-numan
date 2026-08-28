@@ -36,9 +36,12 @@ export function ensureSchema() {
         seller_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         item_id TEXT NOT NULL,
         qty INTEGER NOT NULL CHECK (qty > 0),
-        price INTEGER NOT NULL CHECK (price > 0),
+        price BIGINT NOT NULL CHECK (price > 0),
         created_at TIMESTAMPTZ DEFAULT now()
       )`;
+      // price 原為 INTEGER(上限約 21 億,折合約 21 仙元石),高階道具動輒喊價數十仙元石就會溢位、
+      // 導致掛賣後端丟出未捕捉例外(前端表現為「按了沒反應」)——改為 BIGINT 與其餘靈石欄位一致
+      await sql`ALTER TABLE listings ALTER COLUMN price TYPE BIGINT`;
       // 宗門共享資源池(1.6 版):每個宗門一筆,存放全宗門共用靈石
       await sql`CREATE TABLE IF NOT EXISTS sect_bank (
         sect_id TEXT PRIMARY KEY,

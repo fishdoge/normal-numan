@@ -354,6 +354,7 @@ export const DICT = {
     learningRemain: "尚需 {n} 年",
     btnGatherMp: "聚靈回力(按住持續耗靈石回法力)",
     counterNote: "五行相剋:金克木 · 木克土 · 土克水 · 水克火 · 火克金 —— 相剋傷害 ×1.5",
+    combatTianjieNote: "天劫神靈降世,插翅難逃——斬滅此劫,飛昇機率翻倍;不敵此劫,機率減半。",
 
     combatMonHp: "妖獸氣血",
     combatFierce: "激 戰",
@@ -361,6 +362,8 @@ export const DICT = {
     combatFutu: "⚠ 浮 屠 塔",
     combatIllusionChip: "幻象",
     combatLordChip: "地域王",
+    combatTianjieArrives: "⚠ 天 劫 降 臨",
+    combatTianjieChip: "天劫",
     btnWeaponAttack: "法器攻擊",
     btnFlee: "遁走",
 
@@ -758,6 +761,7 @@ export const DICT = {
     learningRemain: "{n} years remaining",
     btnGatherMp: "Gather Spirit Qi (hold to spend spirit stones for mana)",
     counterNote: "Elemental cycle: Metal>Wood>Earth>Water>Fire>Metal — counter damage ×1.5",
+    combatTianjieNote: "The Heavenly Tribulation Spirit has descended — there is no fleeing. Slay it and your ascension odds double; fall to it and they are halved.",
 
     combatMonHp: "Monster HP",
     combatFierce: "Battle",
@@ -765,6 +769,8 @@ export const DICT = {
     combatFutu: "⚠ The Pagoda",
     combatIllusionChip: "Illusion",
     combatLordChip: "Regional Lord",
+    combatTianjieArrives: "⚠ Heavenly Tribulation",
+    combatTianjieChip: "Tribulation",
     btnWeaponAttack: "Artifact Attack",
     btnFlee: "Flee",
 

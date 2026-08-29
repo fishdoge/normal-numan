@@ -17,6 +17,7 @@ export interface CombatState {
   futuFloor?: number; // 浮屠塔:正在挑戰的層數(幻象太歲天尊)
   bossHpMax?: number; // 動態 BOSS 的氣血上限(浮屠塔用)
   bossAtk?: number; // 動態 BOSS 的攻擊(浮屠塔用)
+  tianjieTrial?: boolean; // 渡劫→真仙:服下真仙丹後降臨的天劫神靈試煉,勝負直接決定本次突破機率翻倍/減半
 }
 
 export interface Learning {
@@ -458,6 +459,50 @@ export function rollOracleItem(): string {
   return ORACLE_POOL[0].id;
 }
 
+// 渡劫→真仙的最終判定(天劫神靈試煉勝負後代入翻倍/減半後的機率呼叫;與 REALMS 中 dujie→feisheng 唯一銜接的一次跳境,
+// 固定走「白日飛昇」文案,不像一般突破需依 next.stage 分支)
+function resolveAscensionRoll(s: SaveData, chance: number): Modal {
+  const realm = REALMS[s.realmIdx]; // 此時仍是渡劫期,尚未晉升
+  // 消耗型命器:機率已計入本次 chance,只要確實擲骰嘗試,無論成敗都會化為飛灰
+  if (s.equippedMing) {
+    const mingItem = itemById(s.equippedMing);
+    if (mingItem?.consumable) {
+      take(s, s.equippedMing);
+      s.equippedMing = null;
+    }
+  }
+  if (Math.random() < chance) {
+    s.realmIdx += 1;
+    s.exp -= realm.expNeed;
+    const { hpMax, mpMax } = statsOf(s);
+    s.hp = hpMax;
+    s.mp = mpMax;
+    const lines = [
+      "九霄之上雷雲翻湧,萬丈金光自天門傾瀉——你踏碎虛空,白日飛昇!",
+      "自山村凡童至真仙之軀,這一步,你走了一生。",
+    ];
+    log(s, ...lines);
+    return { success: true, title: "白 日 飛 昇", lines };
+  }
+  const lost = s.exp;
+  const lifeCut = Math.floor(maxLifeOf(s) * 0.15);
+  s.exp = 0;
+  s.lifeBonus -= lifeCut;
+  const cap = maxLifeOf(s);
+  const lines = [
+    `靈氣暴走,經脈俱震!修為盡數潰散,歸零損失 ${lost}。`,
+    `道基受創,最大壽元折損 ${lifeCut} 年(現上限 ${cap} 年)。`,
+  ];
+  if (s.age >= cap) {
+    s.age = cap;
+    s.dead = true;
+    s.combat = null;
+    lines.push("壽元隨道基崩毀而枯竭——你隕落於突破途中。");
+  }
+  log(s, ...lines);
+  return { success: false, title: "突 破 失 敗", lines };
+}
+
 // 回傳戰敗彈窗(defeat 有值時代表這回合被打到氣血歸零,呼叫端應以此彈窗取代靜默記錄)
 function monsterTurn(s: SaveData): { lines: string[]; defeat?: Modal } {
   if (!s.combat) return { lines: [] };
@@ -480,6 +525,18 @@ function monsterTurn(s: SaveData): { lines: string[]; defeat?: Modal } {
   );
   s.hp -= dmg;
   if (s.hp <= 0) {
+    // 天劫神靈試煉:敗於此劫不損靈石,但飛昇機率減半——直接代入減半後機率完成本次渡劫判定
+    if (s.combat!.tianjieTrial) {
+      const surviveHp = Math.max(1, Math.floor(hpMax * 0.3));
+      lines.push(
+        `你不敵天劫神靈之威,身受重創、倉皇脫身——道基因此動搖,飛昇之機大減!`,
+      );
+      s.hp = surviveHp;
+      s.combat = null;
+      log(s, ...lines);
+      const chance = Math.max(0, breakChanceOf(s) * 0.5);
+      return { lines, defeat: resolveAscensionRoll(s, chance) };
+    }
     const lost = Math.floor(s.stones / 2);
     const surviveHp = Math.max(1, Math.floor(hpMax * 0.3));
     lines.push(`你身受重傷不敵,倉皇遁走…… 遺失了 ${lost} 靈石。`);
@@ -507,6 +564,14 @@ function monsterTurn(s: SaveData): { lines: string[]; defeat?: Modal } {
 function winCombat(s: SaveData): Modal {
   const mon = monsterById(s.combat!.monsterId);
   const { stoneMult } = statsOf(s);
+
+  // 天劫神靈試煉:斬滅此劫,飛昇機率翻倍——不掉落任何道具,直接代入翻倍後機率完成本次渡劫判定
+  if (s.combat!.tianjieTrial) {
+    s.combat = null;
+    log(s, "你力挽狂瀾,竟將天劫神靈當場斬滅!劫雲消散,飛昇之機大增!");
+    const chance = Math.min(1, breakChanceOf(s) * 2);
+    return resolveAscensionRoll(s, chance);
+  }
 
   // 浮屠塔:通關一層 → 記錄層數、給予隨層數遞增的獎勵
   const floor = s.combat!.futuFloor;
@@ -951,15 +1016,30 @@ function applyActionInner(
         );
         return { save: s };
       }
-      // 渡劫→真仙:除修為外,還需一枚真仙丹(唯靈界地域王「太古龍祖」掉落)。
-      // 無論這次突破成敗,真仙丹都會被耗盡。
+      // 渡劫→真仙:除修為外,還需一枚真仙丹(唯靈界地域王「太古龍祖」、九龍獄墮落真仙馬良掉落)。
+      // 無論這次突破成敗,真仙丹都會被耗盡;服下之後,天劫神靈自天門降臨,須先過此劫方能渡劫飛昇——
+      // 斬滅天劫神靈,飛昇機率翻倍;不敵此劫,飛昇機率減半,不會另外扣損靈石(2.18 版新增)。
       const needsZhenxian = realm.id === "dujie";
       if (needsZhenxian && (s.inventory["zhenxiandan"] ?? 0) < 1) {
         log(s, "天劫將至,然你尚未集得【真仙丹】——僅憑修為,道基終究不穩,無法渡劫飛昇。");
         return { save: s };
       }
-      if (needsZhenxian) take(s, "zhenxiandan");
       s.energy -= energyCost;
+      if (needsZhenxian) {
+        take(s, "zhenxiandan");
+        const tianjie = monsterById("tianjie_shenling");
+        s.combat = {
+          monsterId: tianjie.id,
+          monsterHp: tianjie.hp,
+          locationId: "__tianjie__",
+          isLord: true,
+          tianjieTrial: true,
+        };
+        if (!s.seen.includes(tianjie.id)) s.seen.push(tianjie.id);
+        if (!s.lordsSeen.includes(tianjie.id)) s.lordsSeen.push(tianjie.id);
+        log(s, "你服下【真仙丹】,九霄雷雲驟然翻湧——天劫神靈自天門凝形而降,阻你飛昇之路!");
+        return { save: s };
+      }
       const chance = breakChanceOf(s);
       // 消耗型命器:機率已計入本次 chance,只要確實擲骰嘗試,無論成敗都會化為飛灰
       if (s.equippedMing) {
@@ -1175,6 +1255,9 @@ function applyActionInner(
 
     case "flee": {
       if (!s.combat) return { save: s, error: "並無戰鬥" };
+      if (s.combat.tianjieTrial) {
+        return { save: s, error: "天劫神靈自天門降下,插翅難逃,唯有放手一搏!" };
+      }
       const mon = monsterById(s.combat.monsterId);
       if (Math.random() < 0.6) {
         s.combat = null;

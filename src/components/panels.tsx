@@ -471,6 +471,7 @@ export function CombatPanel() {
   const mon = MONSTERS.find((m) => m.id === combat.monsterId)!;
   const usable = s.learned.map(techById);
   const isLord = combat.isLord || mon.isLord;
+  const isTianjieTrial = !!combat.tianjieTrial;
   const hpMaxMon = combat.bossHpMax ?? mon.hp; // 浮屠塔動態 BOSS 用其實際上限
   const monName = monsterDisplayName(mon, lang);
   const displayName = combat.futuFloor ? `${monName} · 第 ${combat.futuFloor} 層` : monName;
@@ -478,17 +479,33 @@ export function CombatPanel() {
   return (
     <div
       ref={panelRef}
-      className={`panel deco-frame ${isLord ? "border-fuchsia-400/70 shadow-[0_0_18px_rgba(232,121,249,0.25)]" : "border-vermillion/40"}`}
+      className={`panel deco-frame ${
+        isTianjieTrial
+          ? "border-red-500/80 shadow-[0_0_18px_rgba(239,68,68,0.4)]"
+          : isLord
+            ? "border-fuchsia-400/70 shadow-[0_0_18px_rgba(232,121,249,0.25)]"
+            : "border-vermillion/40"
+      }`}
     >
-      <p className={`panel-title ${isLord ? "text-fuchsia-300" : "text-cinnabar"}`}>
-        {combat.futuFloor ? t("combatFutu") : isLord ? t("combatLordArrives") : t("combatFierce")}
+      <p className={`panel-title ${isTianjieTrial ? "text-red-400" : isLord ? "text-fuchsia-300" : "text-cinnabar"}`}>
+        {isTianjieTrial
+          ? t("combatTianjieArrives")
+          : combat.futuFloor
+            ? t("combatFutu")
+            : isLord
+              ? t("combatLordArrives")
+              : t("combatFierce")}
       </p>
       <div className="flex items-baseline justify-between">
-        <span className={`text-lg font-bold ${isLord ? "text-fuchsia-300" : ""}`}>
-          {isLord && (
-            <span className="chip mr-2 text-fuchsia-400 border-fuchsia-400/60">
-              {combat.futuFloor ? t("combatIllusionChip") : t("combatLordChip")}
-            </span>
+        <span className={`text-lg font-bold ${isTianjieTrial ? "text-red-400" : isLord ? "text-fuchsia-300" : ""}`}>
+          {isTianjieTrial ? (
+            <span className="chip mr-2 text-red-400 border-red-500/60">{t("combatTianjieChip")}</span>
+          ) : (
+            isLord && (
+              <span className="chip mr-2 text-fuchsia-400 border-fuchsia-400/60">
+                {combat.futuFloor ? t("combatIllusionChip") : t("combatLordChip")}
+              </span>
+            )
           )}
           {displayName}
         </span>
@@ -529,11 +546,15 @@ export function CombatPanel() {
             <span className="ml-1 text-xs text-faded">({t.mpCost})</span>
           </button>
         ))}
-        <button className="btn btn-danger" disabled={busy} onClick={() => act("flee")}>
-          {t("btnFlee")}
-        </button>
+        {!isTianjieTrial && (
+          <button className="btn btn-danger" disabled={busy} onClick={() => act("flee")}>
+            {t("btnFlee")}
+          </button>
+        )}
       </div>
-      <p className="text-xs text-faded/60 mt-3">{t("counterNote")}</p>
+      <p className="text-xs text-faded/60 mt-3">
+        {isTianjieTrial ? t("combatTianjieNote") : t("counterNote")}
+      </p>
     </div>
   );
 }

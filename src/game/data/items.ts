@@ -246,7 +246,7 @@ export const ITEMS: ItemDef[] = [
   { id: "tianjifu", name: "天極符", kind: "mingqi", desc: "黑市秘傳的消耗型命器,裝備後下一次嘗試突破成功率 +8%,無論成敗,突破後即化為飛灰。", price: 0, dropOnly: true, breakBonus: 0.08, consumable: true },
 
   // ── 真仙丹(渡劫飛昇必備,唯太古龍祖、九龍獄墮落真仙馬良掉落;嘗試突破時無論成敗皆消耗) ──
-  { id: "zhenxiandan", name: "真仙丹", kind: "special", desc: "太古龍祖精血凝成的無上奇丹,渡劫飛昇的必備之物。嘗試渡劫時,無論突破成敗皆會耗盡藥力。", price: 0 },
+  { id: "zhenxiandan", name: "真仙丹", kind: "special", desc: "太古龍祖精血凝成的無上奇丹,渡劫飛昇的必備之物。服下即會引來天劫神靈試煉,斬滅之則飛昇機率翻倍,不敵則機率減半;無論突破成敗皆會耗盡藥力。", price: 0 },
 
   // ── 煉神術(2.14 版新增,九龍獄墮落真仙馬良極稀有掉落,終身限用一次) ──
   { id: "lianshenshu", name: "煉神術", kind: "special", desc: "墮落真仙馬良殞落前留下的殘卷,記載脫胎換骨的煉神秘法。終身僅可修習一次,修成後精力上限永久倍增。", price: 0 },

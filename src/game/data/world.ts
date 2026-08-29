@@ -243,14 +243,14 @@ export const LOCATIONS: Location[] = [
   },
   // 靈界 · 風元大陸(2.14 版新增)
   {
-    id: "yeyangcheng", name: "夜叉族夜陽城", region: "lingjie", reqStage: 7,
+    id: "yeyangcheng", name: "夜叉族夜陽城", region: "lingjie", reqStage: 7, continent: "fengyuan",
     desc: "風元大陸夜叉一族的雄城,城牆赤紅如血,終年風聲呼嘯不絕。",
     monsters: ["yecha_renwei", "yehuo_yecha", "yeyang_yaoji"],
     materials: ["fengyuanjing", "yecha_hunjing"], herbs: [],
     manualChance: 0, manuals: [],
   },
   {
-    id: "mulingsenlin", name: "木靈森林", region: "lingjie", reqStage: 7,
+    id: "mulingsenlin", name: "木靈森林", region: "lingjie", reqStage: 7, continent: "fengyuan",
     desc: "風元大陸腹地的無盡古林,千年古木參天蔽日,靈氣自成一方天地。",
     monsters: ["tengman_yaojing", "gumu_jingpo", "fengling_die"],
     materials: ["fengyuanjing"], herbs: ["lingmu_xianye"],
@@ -258,21 +258,21 @@ export const LOCATIONS: Location[] = [
   },
   // 靈界 · 雷鳴大陸(2.14 版新增)
   {
-    id: "tianxiaocheng", name: "飛靈族天霄城", region: "lingjie", reqStage: 8,
+    id: "tianxiaocheng", name: "飛靈族天霄城", region: "lingjie", reqStage: 8, continent: "leiming",
     desc: "雷鳴大陸雲霄之上的飛靈族城池,終年雷雲環繞,城樓隱於九霄雷海之中。",
     monsters: ["tianxiao_pengwei", "jifeng_lingshi", "xiaohan_jianling"],
     materials: ["leimingshi"], herbs: [],
     manualChance: 0, manuals: [],
   },
   {
-    id: "jiaomanyu", name: "角蚩族角蠻獄", region: "lingjie", reqStage: 8,
+    id: "jiaomanyu", name: "角蚩族角蠻獄", region: "lingjie", reqStage: 8, continent: "leiming",
     desc: "雷鳴大陸地底的角蚩一族刑獄,雷角妖獸列陣看守,鎖鏈聲不絕於耳。",
     monsters: ["jiaochi_manbing", "leijiao_mojiang", "manyu_suohunshi"],
     materials: ["leimingshi", "jiaochi_tiesui"], herbs: [],
     manualChance: 0, manuals: [],
   },
   {
-    id: "minghezhidi", name: "蜉蝣族冥河之地", region: "lingjie", reqStage: 8,
+    id: "minghezhidi", name: "蜉蝣族冥河之地", region: "lingjie", reqStage: 8, continent: "leiming",
     desc: "雷鳴大陸邊境的幽冥之河,蜉蝣一族世代擺渡亡魂,河水終年不見天日。",
     monsters: ["minghe_fuyou", "youming_chuanfu", "wanghun_shiling"],
     materials: ["minghesha"], herbs: [],
@@ -280,21 +280,21 @@ export const LOCATIONS: Location[] = [
   },
   // 靈界 · 血天大陸(2.14 版新增,九龍獄/天鼎宮尤為兇險特殊)
   {
-    id: "dixue_xueyu", name: "地血族血獄", region: "lingjie", reqStage: 8,
+    id: "dixue_xueyu", name: "地血族血獄", region: "lingjie", reqStage: 8, continent: "xuetian",
     desc: "血天大陸地血一族的煉獄之地,終年血雨,大地赤紅如染。",
     monsters: ["xueyu_xingtu", "shixue_xiuluo", "dixue_moling"],
     materials: ["dixuejing"], herbs: [],
     manualChance: 0, manuals: [],
   },
   {
-    id: "jiulongyu", name: "九龍獄", region: "lingjie", reqStage: 8,
+    id: "jiulongyu", name: "九龍獄", region: "lingjie", reqStage: 8, continent: "xuetian",
     desc: "血天大陸深處鎮壓歷代凶靈的無底獄淵,九龍鎖柱矗立獄中,偶有墮落真仙馬良現身,兇險莫測。",
     monsters: ["longyu_kanshou", "suolong_shawei"], lordId: "duoluo_zhenxian_maliang",
     materials: ["longyu_linjia"], herbs: [],
     manualChance: 0, manuals: [],
   },
   {
-    id: "tiandinggong", name: "天鼎宮", region: "lingjie", reqStage: 8,
+    id: "tiandinggong", name: "天鼎宮", region: "lingjie", reqStage: 8, continent: "xuetian",
     desc: "血天大陸最深處的上古宮闕,九座巨鼎鎮守其中,虛天鼎、虛皇鼎皆藏於此。",
     monsters: ["tianding_shouwei", "tianding_zhishi"],
     materials: ["tianding_suipian"], herbs: [],

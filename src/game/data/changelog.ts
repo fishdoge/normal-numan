@@ -9,6 +9,14 @@ export interface ChangelogEntry {
 // 新版在前
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.15",
+    date: "2026-08-29",
+    title: "遊歷探索新增大陸篩選按鈕(風元/雷鳴/血天)",
+    highlights: [
+      "靈界秘境清單新增「全部/風元大陸/雷鳴大陸/血天大陸」篩選按鈕,不用再從 10 處秘境的長清單裡逐一尋找。",
+    ],
+  },
+  {
     version: "2.14",
     date: "2026-08-29",
     title: "靈界新增三大陸(風元/雷鳴/血天);太乙境突破不再直接饋贈仙法",

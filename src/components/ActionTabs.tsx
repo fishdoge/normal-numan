@@ -26,6 +26,7 @@ import {
   isXianItem,
   XIAN_ITEM_COLOR,
   nameColorOf,
+  CONTINENTS,
 } from "@/game/types";
 import { useT } from "@/i18n/useT";
 import type { DictKey } from "@/i18n/dict";
@@ -100,8 +101,13 @@ function ExploreTab() {
   const inCombat = !!s.combat;
   const inDwelling = s.dwellingSlot != null;
   const [regionId, setRegionId] = useState("tiannan");
+  const [continentId, setContinentId] = useState("all");
   const region = REGIONS.find((r) => r.id === regionId)!;
   const locs = LOCATIONS.filter((l) => l.region === regionId);
+  // 大陸子分類(目前僅靈界三大陸使用):未標示 continent 的秘境不受篩選影響、一律顯示
+  const regionContinents = CONTINENTS.filter((c) => locs.some((l) => l.continent === c.id));
+  const visibleLocs =
+    continentId === "all" ? locs : locs.filter((l) => !l.continent || l.continent === continentId);
   const energy = s.energy ?? 0;
   const energyLackGather = energy < ENERGY_COST.gather;
   const energyLackHunt = energy < ENERGY_COST.hunt;
@@ -121,7 +127,11 @@ function ExploreTab() {
           return (
             <button
               key={r.id}
-              onClick={() => !rLocked && setRegionId(r.id)}
+              onClick={() => {
+                if (rLocked) return;
+                setRegionId(r.id);
+                setContinentId("all");
+              }}
               title={rLocked ? t("exploreStageLocked").replace("{n}", String(r.reqStage)) : regionDisplayDesc(r, lang)}
               className={`px-2.5 py-1 text-xs rounded-sm border transition-colors ${
                 regionId === r.id
@@ -142,6 +152,33 @@ function ExploreTab() {
         })}
       </div>
       <p className="text-xs text-faded">{regionDisplayDesc(region, lang)}</p>
+      {regionContinents.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          <button
+            onClick={() => setContinentId("all")}
+            className={`px-2.5 py-1 text-xs rounded-sm border transition-colors ${
+              continentId === "all"
+                ? "border-gold bg-gold/15 text-gold"
+                : "border-faded/30 text-cream hover:border-gold/60"
+            }`}
+          >
+            {t("filterAll")}
+          </button>
+          {regionContinents.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => setContinentId(c.id)}
+              className={`px-2.5 py-1 text-xs rounded-sm border transition-colors ${
+                continentId === c.id
+                  ? "border-gold bg-gold/15 text-gold"
+                  : "border-faded/30 text-cream hover:border-gold/60"
+              }`}
+            >
+              {c.name}
+            </button>
+          ))}
+        </div>
+      )}
       {regionId === "jinyuan" && s.jinyuanUnlocked && realm.stage >= 10 && (
         <div className="border border-amber-300/50 bg-amber-300/5 rounded-sm p-3">
           <div className="flex items-baseline justify-between">
@@ -162,7 +199,7 @@ function ExploreTab() {
           </button>
         </div>
       )}
-      {locs.map((loc) => {
+      {visibleLocs.map((loc) => {
         const locked = realm.stage < loc.reqStage;
         return (
           <div

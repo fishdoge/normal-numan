@@ -600,6 +600,11 @@ function CraftTab() {
             {rec.dropOnly && (
               <span className="chip ml-2 text-azure border-azure/60">{t("blueprintTag")}</span>
             )}
+            {rec.failChance ? (
+              <span className="chip ml-2 text-vermillion border-vermillion/50">
+                {t("craftFailChanceTag").replace("{n}", String(Math.round(rec.failChance * 100)))}
+              </span>
+            ) : null}
           </span>
           <span className="shrink-0 flex items-center gap-2">
             {rec.lifeCost ? (

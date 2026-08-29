@@ -42,8 +42,30 @@ export const ITEMS: ItemDef[] = [
   { id: "jiaochi_tiesui", name: "角蚩鐵髓", kind: "material", desc: "角蚩族妖體中淬鍊的鐵髓,堅逾玄鐵,角蠻獄妖獸體內方有。", element: "金", price: 9200 },
   { id: "minghesha", name: "冥河沙", kind: "material", desc: "冥河之地的幽沙,浸潤亡魂怨氣,蜉蝣族妖獸出沒之處遍地皆是。", element: "水", price: 8000 },
   { id: "dixuejing", name: "地血晶", kind: "material", desc: "地血族煉化地脈精血凝成的晶石,色赤如血,血獄特產。", price: 13000 },
-  { id: "longyu_linjia", name: "龍獄鱗甲", kind: "material", desc: "九龍獄看守妖獸蛻下的鱗甲,堅韌無匹,隱有龍屬威壓。", price: 21000 },
+  { id: "longyu_linjia", name: "龍獄鱗", kind: "material", desc: "九龍獄看守妖獸蛻下的鱗甲,堅韌無匹,隱有龍屬威壓。", price: 21000 },
   { id: "tianding_suipian", name: "天鼎碎片", kind: "material", desc: "天鼎宮守衛體內殘留的鼎器碎片,靈光隱現,乃虛天鼎、虛皇鼎的爐火之源。", element: "金", price: 26000 },
+
+  // ── 靈界十處秘境補充素材(2.17 版新增,每處秘境至少湊齊 2~3 種可採/可掉落素材) ──
+  { id: "zhenling_suipian", name: "真靈碎晶", kind: "material", desc: "天淵城外圍地脈中滲出的真靈碎晶,靈氣稀薄卻俯拾即是。", price: 4000 },
+  { id: "tianyuan_yaogu", name: "天淵妖骨", kind: "material", desc: "天淵城外圍妖獸遺骸風化而成的骨渣,質地堅脆。", price: 4300 },
+  { id: "leiling_suixie", name: "雷靈碎屑", kind: "material", desc: "飛昇台天劫雷靈掠過後遺落的碎屑,雷光殘留不散。", element: "金", price: 9800 },
+  { id: "feisheng_yunwu", name: "飛昇雲霧", kind: "herb", desc: "飛昇台終年繚繞的奇異雲霧,吸納一口便覺神清氣爽。", price: 5000 },
+  { id: "yeyang_yankuang", name: "夜陽岩礦", kind: "material", desc: "夜陽城地底赤紅岩層鑿出的礦石,觸手灼熱。", element: "火", price: 4500 },
+  { id: "fengren_yeye", name: "風刃夜葉", kind: "herb", desc: "夜陽城外圍風刃樹所生的夜葉,葉緣鋒利如刃。", element: "木", price: 4600 },
+  { id: "gumu_shupi", name: "古木樹皮", kind: "material", desc: "木靈森林千年古木剝落的樹皮,質地輕韌。", element: "木", price: 4400 },
+  { id: "senlin_lulu", name: "森林露珠", kind: "herb", desc: "木靈森林清晨凝結的露珠,靈氣清冽,略能提神。", price: 4700 },
+  { id: "feiling_yumao", name: "飛靈羽毛", kind: "material", desc: "天霄城飛靈族妖獸蛻落的羽毛,輕若無物卻堅韌異常。", element: "金", price: 9000 },
+  { id: "tianxiao_yunqi", name: "天霄雲氣", kind: "herb", desc: "天霄城終年不散的雲氣,吸納後精神為之一振。", price: 9200 },
+  { id: "jiaoman_suolian", name: "角蠻鎖鏈", kind: "material", desc: "角蠻獄看守用以鎖魂的鏈環殘段,寒鐵所鑄。", element: "金", price: 9500 },
+  { id: "manyu_xueshi", name: "蠻獄血石", kind: "material", desc: "角蠻獄地底浸血的岩石,隱有戾氣。", price: 9600 },
+  { id: "minghe_shuizao", name: "冥河水藻", kind: "herb", desc: "冥河之地水面漂浮的幽藻,亡魂怨氣浸潤卻無害於人。", element: "水", price: 8200 },
+  { id: "fuyou_chibang", name: "蜉蝣翅膀", kind: "material", desc: "冥河蜉蝣蛻落的薄翼,輕透如紙,隱有幽光。", element: "水", price: 8300 },
+  { id: "xueyu_yansha", name: "血獄岩沙", kind: "material", desc: "血獄地表終年浸血的岩沙,色赤如凝血。", price: 13200 },
+  { id: "dixue_caogen", name: "地血草根", kind: "herb", desc: "血獄縫隙中頑強生長的草根,吸食地脈精血而生。", price: 13400 },
+  { id: "jiulong_suoshi", name: "九龍鎖石", kind: "material", desc: "九龍獄鎖柱基座崩落的石塊,隱有龍屬威壓封印其中。", price: 21500 },
+  { id: "longyu_yinhuo", name: "龍獄陰火", kind: "material", desc: "九龍獄深處終年不熄的陰火,凝而不散,冷冽刺骨。", price: 21800 },
+  { id: "tianding_linghuo", name: "天鼎靈火", kind: "material", desc: "天鼎宮九鼎爐心外溢的靈火,溫潤而不灼人。", element: "金", price: 26500 },
+  { id: "jiuding_xiangyun", name: "九鼎祥雲", kind: "herb", desc: "天鼎宮九鼎交輝所化的祥雲,吸納後精力為之一振。", price: 26800 },
 
   // ── 仙草 ──
   { id: "huanglongcao", name: "黃龍草", kind: "herb", desc: "常見靈草,煉製黃龍丹主藥。", price: 6, exp: 8 },
@@ -96,6 +118,11 @@ export const ITEMS: ItemDef[] = [
   { id: "jinyuan_shengtidan", name: "金源聖體丹", kind: "pill", desc: "金源聖蓮反覆淬煉的聖體奇丹,服之氣血瞬間大復。", price: 0, heal: 5000000, reqStage: 10 },
   { id: "manhuang_zhenyuandan", name: "混沌真元丹", kind: "pill", desc: "蠻荒靈髓合煉的真元奇丹,法力如潮水般瞬間湧回。", price: 0, mp: 3000000, reqStage: 10 },
   { id: "taiyi_huiqidan", name: "太乙回氣丹", kind: "pill", desc: "金源聖蓮與蠻荒靈髓合煉的回氣奇丹,一息之間精力充盈。", price: 0, energy: 80, reqStage: 10 },
+
+  // ── 靈界三大陸回氣丹(2.17 版新增,以各大陸補充素材煉成,回復少量精力) ──
+  { id: "fengyuan_huiqidan", name: "風元回氣丹", kind: "pill", desc: "飛昇雲霧、風刃夜葉與森林露珠合煉的回氣小丹,一口氣清神明。", price: 0, energy: 10 },
+  { id: "leiming_huiqidan", name: "雷鳴回氣丹", kind: "pill", desc: "天霄雲氣佐冥河水藻煉成的回氣小丹,雷氣醒神,精力微振。", price: 0, energy: 10 },
+  { id: "xuetian_huiqidan", name: "血天回氣丹", kind: "pill", desc: "地血草根佐九鼎祥雲煉成的回氣小丹,血氣調和,精力微振。", price: 0, energy: 10 },
 
   // ── 乾坤袋(黑眼貔貅專屬掉落,1.24 版新增) ──
   { id: "qiankun_dai", name: "乾坤袋", kind: "special", desc: "黑眼貔貅隕落後遺留的奇物,袋中自成天地,可將靈石存入隨身收納——戰敗遁走時遺散的僅是袋外靈石,袋中所藏分毫不失。", price: 0, dropOnly: true },
@@ -150,6 +177,12 @@ export const ITEMS: ItemDef[] = [
   // ── 靈界三大陸煉器(2.14 版新增,以風元/雷鳴/血天特產材料煉成) ──
   { id: "fengling_ren", name: "風靈刃", kind: "artifact", desc: "風元晶引動夜叉魂晶淬煉而成的飛刃,迅疾如風,一閃奪魂。", element: "木", price: 45000, atkBonus: 2800, defBonus: 300 },
 
+  // ── 靈界十處秘境補充煉器(2.17 版新增,消耗補充素材煉成) ──
+  { id: "gumu_zhanren", name: "古木戰刃", kind: "artifact", desc: "古木樹皮裹天淵妖骨為胎,佐真靈碎晶淬煉而成的戰刃,厚重沉穩。", element: "木", price: 40000, atkBonus: 2200, defBonus: 400 },
+  { id: "feiling_manxuejian", name: "飛靈蠻血劍", kind: "artifact", desc: "飛靈羽毛引動蠻獄血石與雷靈碎屑,鑄成的凌厲飛劍,劍風如刃。", element: "金", price: 85000, atkBonus: 4200 },
+  { id: "xueyu_yinhuoren", name: "血獄陰火刃", kind: "artifact", desc: "血獄岩沙淬體、龍獄陰火為引,佐角蠻鎖鏈定魄,煉成的陰寒戰刃。", price: 150000, atkBonus: 7000, defBonus: 500 },
+  { id: "tianding_zhenlingchui", name: "天鼎鎮靈鎚", kind: "artifact", desc: "天鼎靈火淬鍊、蜉蝣翅膀輕身,佐天鼎碎片鎮魂,煉成的沉穩巨鎚。", element: "金", price: 160000, atkBonus: 6500, defBonus: 2500 },
+
   // ── 護身之寶 ──
   { id: "hushenfu", name: "鐵護身符", kind: "amulet", desc: "注入法力後可擋一次致命攻擊的符籙。", price: 110, defBonus: 7 },
   { id: "wuguangyi", name: "烏光甲衣", kind: "robe", desc: "陰煞之氣淬煉的軟甲,烏光流轉。", price: 240, defBonus: 10 },
@@ -168,7 +201,8 @@ export const ITEMS: ItemDef[] = [
   { id: "fu_wulei", name: "雷電法符", kind: "talisman", desc: "五雷轟頂,攻速兼備的雷系符籙。", element: "金", price: 12000, atkBonus: 180, speedBonus: 20 },
   { id: "fu_xuanyin", name: "玄陰噬魂符", kind: "talisman", desc: "陰煞凝符,攻伐凌厲,大乘修士所用。", price: 342000, atkBonus: 2600, dropOnly: true, reqStage: 8 },
   { id: "minghe_lingfu", name: "冥河靈符", kind: "talisman", desc: "冥河沙攜雷鳴石之力凝成的符籙,亡魂怨氣附刃,速攻俱增。", price: 90000, atkBonus: 5000, speedBonus: 30 },
-  { id: "xuesha_suohunfu", name: "血煞鎖魂符", kind: "talisman", desc: "地血晶淬煉、龍獄鱗甲為引,鎖魂攝魄,殺伐之氣濃烈至極。", price: 180000, atkBonus: 8000 },
+  { id: "xuesha_suohunfu", name: "血煞鎖魂符", kind: "talisman", desc: "地血晶淬煉、龍獄鱗為引,鎖魂攝魄,殺伐之氣濃烈至極。", price: 180000, atkBonus: 8000 },
+  { id: "fengling_suohunfu", name: "風靈鎖魂符", kind: "talisman", desc: "風元晶、夜叉魂晶與夜陽岩礦三者合煉的鎖魂符籙,風刃裹魂,一觸即碎。", element: "木", price: 50000, atkBonus: 4500 },
   { id: "fu_taixu", name: "太虛混元符", kind: "talisman", desc: "仙家符籙,唯真仙可禦,攻伐之力超凡。", price: 1600000, atkBonus: 18000, dropOnly: true, reqStage: 10 },
 
   // ── 靈寵(寵物槽,僅探索秘境 5% 獲得;增益靈石收益與攻防) ──

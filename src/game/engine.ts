@@ -1635,6 +1635,18 @@ function applyActionInner(
         s.age += lifeCost;
         s.day = s.age;
       }
+      // 高階符籙配方(需三種以上材料)有一定機率煉製失敗:材料與靈石照樣耗盡,但煉不出成品
+      if (rec.failChance && Math.random() < rec.failChance) {
+        log(s, `爐火驟然失控,轟然一聲炸響——煉製【${rec.name}】失敗,材料盡數化為飛灰!`);
+        return {
+          save: s,
+          loot: {
+            title: "煉 製 失 敗",
+            success: false,
+            lines: [`煉製【${rec.name}】失敗`, "材料與靈石已耗盡,一無所獲。"],
+          },
+        };
+      }
       const result = itemById(rec.result);
       // 丹藥/仙物類產出效果不隨品質浮動(exp/heal/mp 等非 atkBonus/defBonus/speedBonus,浮動無意義),
       // 直接原樣給予;裝備類維持既有的 ±30% 屬性浮動機制。

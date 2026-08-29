@@ -204,6 +204,7 @@ export interface Recipe {
   dropOnly?: boolean; // 需由妖獸掉落圖譜解鎖後方可煉製(高階裝備/丹藥皆適用)
   reqStage?: number; // 需要境界
   lifeCost?: number; // 煉丹配方額外消耗壽元(載);煉器類配方不填即可,向後相容
+  failChance?: number; // 煉製失敗機率(2.17 版新增,目前僅需三種以上材料的符籙配方使用);材料與靈石照樣消耗,失敗則無成品
 }
 
 export interface Sect {

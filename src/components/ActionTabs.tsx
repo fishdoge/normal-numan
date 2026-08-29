@@ -104,10 +104,9 @@ function ExploreTab() {
   const [continentId, setContinentId] = useState("all");
   const region = REGIONS.find((r) => r.id === regionId)!;
   const locs = LOCATIONS.filter((l) => l.region === regionId);
-  // 大陸子分類(目前僅靈界三大陸使用):未標示 continent 的秘境不受篩選影響、一律顯示
+  // 大陸子分類(目前僅靈界三大陸使用)
   const regionContinents = CONTINENTS.filter((c) => locs.some((l) => l.continent === c.id));
-  const visibleLocs =
-    continentId === "all" ? locs : locs.filter((l) => !l.continent || l.continent === continentId);
+  const visibleLocs = continentId === "all" ? locs : locs.filter((l) => l.continent === continentId);
   const energy = s.energy ?? 0;
   const energyLackGather = energy < ENERGY_COST.gather;
   const energyLackHunt = energy < ENERGY_COST.hunt;

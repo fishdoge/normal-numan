@@ -9,6 +9,14 @@ export interface ChangelogEntry {
 // 新版在前
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.16",
+    date: "2026-08-29",
+    title: "天淵城外圍/飛昇台歸入風元大陸,大陸篩選改為嚴格篩選",
+    highlights: [
+      "天淵城外圍、飛昇台正式歸入「風元大陸」;大陸篩選改為嚴格比對,選到某個大陸就只顯示該大陸秘境,不再有一律顯示的例外。",
+    ],
+  },
+  {
     version: "2.15",
     date: "2026-08-29",
     title: "遊歷探索新增大陸篩選按鈕(風元/雷鳴/血天)",

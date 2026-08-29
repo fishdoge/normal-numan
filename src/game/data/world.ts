@@ -228,14 +228,14 @@ export const LOCATIONS: Location[] = [
   },
   // 靈界
   {
-    id: "tianyuancheng", name: "天淵城外圍", region: "lingjie", reqStage: 7,
+    id: "tianyuancheng", name: "天淵城外圍", region: "lingjie", reqStage: 7, continent: "fengyuan",
     desc: "靈界人族第一雄城之外的莽荒,真靈衛日夜巡弋。",
     monsters: ["zhenlingwei", "gulong", "hunyuanshou", "jiutianfeng"],
     materials: ["longjinggu", "xingchengang", "zhenlingsha"], herbs: ["huangjitiansui", "longlinguo"],
     manualChance: 0.06, manuals: ["m_zhenlong"],
   },
   {
-    id: "feishengtai", name: "飛昇台", region: "lingjie", reqStage: 8,
+    id: "feishengtai", name: "飛昇台", region: "lingjie", reqStage: 8, continent: "fengyuan",
     desc: "傳說中溝通仙界之地。天劫雷靈盤踞於此——渡過它,肉身成聖,白日飛昇。",
     monsters: ["tianjie", "gulong", "taixureng"],
     materials: ["longjinggu"], herbs: ["huangjitiansui"],

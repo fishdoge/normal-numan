@@ -72,6 +72,7 @@ export interface SaveData {
   bornEra: number; // 這一世修仙之旅開始時的恆紀年(總年數),newSave() 當下的 currentEraYears()
   oracleOffered: boolean; // 雲遊四海機緣觸發的「天算術」黑市機會是否待處理(購買或婉拒前持續為 true)
   pouchStones: number; // 存於乾坤袋中的靈石(1.24 版新增,黑眼貔貅掉落);與 stones 分開計算,戰敗遺失/被盜皆不受影響
+  energyDoubled?: boolean; // 是否已使用【煉神術】(九龍獄馬良極稀有掉落,終身限用一次,令精力上限永久翻倍)
 }
 
 export interface Modal {
@@ -115,9 +116,12 @@ export const maxLifeOf = (s: Pick<SaveData, "realmIdx" | "lifeBonus">) =>
 // 倍力丹每疊(最多 5 疊)永久 +10% 上限。
 const ENERGY_BASE = 300;
 const ENERGY_PER_STAGE = 50;
-export const energyMaxOf = (s: Pick<SaveData, "realmIdx" | "energyPotionStacks">) => {
+export const energyMaxOf = (
+  s: Pick<SaveData, "realmIdx" | "energyPotionStacks" | "energyDoubled">,
+) => {
   const base = ENERGY_BASE + ENERGY_PER_STAGE * (REALMS[s.realmIdx].stage - 1);
-  return Math.floor(base * (1 + 0.1 * (s.energyPotionStacks ?? 0)));
+  const withPotions = Math.floor(base * (1 + 0.1 * (s.energyPotionStacks ?? 0)));
+  return s.energyDoubled ? withPotions * 2 : withPotions;
 };
 
 // 各項行動消耗的精力(戰鬥中每回合的攻擊/施法/遁走不額外收費,已含在啟動獵殺的那次消耗裡)
@@ -1272,9 +1276,7 @@ function applyActionInner(
       const { hpMax: nhp3, mpMax: nmp3 } = statsOf(s);
       s.hp = nhp3;
       s.mp = nmp3;
-      give(s, "m_taiyi_hunyuan_lu", 1);
       log(s, "四枚太乙精魂同祭太乙殿,金光暴漲、天地共鳴——你自金仙一步踏入【太乙境】!");
-      log(s, "太乙殿感應道行圓滿,饋贈《太乙葫蘆天地訣》仙簡一份。");
       return {
         save: s,
         breakResult: {
@@ -1436,6 +1438,26 @@ function applyActionInner(
           `你服下【倍力丹】,精力充盈、經脈為之一闊——精力上限永久 +10%(現已疊加 ${s.energyPotionStacks}/${MAX_ENERGY_POTION_STACKS} 顆),精力全滿!`,
         );
         return { save: s };
+      }
+
+      // 煉神術(九龍獄墮落真仙馬良極稀有掉落):終身限用一次,直接令精力上限永久翻倍
+      if (item.kind === "special" && itemId === "lianshenshu") {
+        if (s.energyDoubled) {
+          log(s, "你已然煉神功成,精力上限早已倍增——【煉神術】對你已無用武之地。");
+          return { save: s };
+        }
+        take(s, itemId);
+        s.energyDoubled = true;
+        s.energy = energyMaxOf(s);
+        log(s, "你依《煉神術》祭煉真靈,周身經脈徹底脫胎換骨——精力上限就此永久倍增!");
+        return {
+          save: s,
+          loot: {
+            title: "煉 神 功 成",
+            success: true,
+            lines: ["精力上限永久 ×2", `現有精力上限:${energyMaxOf(s)}`],
+          },
+        };
       }
 
       // 真仙之物:凝練仙靈力(需已飛昇)

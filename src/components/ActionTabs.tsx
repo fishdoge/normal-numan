@@ -312,9 +312,18 @@ function BagTab() {
               {t("useInTechTab")}
             </span>
           )}
+          {item.kind === "special" && id === "lianshenshu" && (
+            <button
+              className="btn border-gold/60 text-gold"
+              disabled={busy}
+              onClick={() => act("useItem", { itemId: id })}
+            >
+              {t("btnUseLianshen")}
+            </button>
+          )}
           {item.kind === "special" &&
             !item.xianli &&
-            !["jinhundan", "xiantian_zaohuadan", "zenglingzhu"].includes(id) && (
+            !["jinhundan", "xiantian_zaohuadan", "zenglingzhu", "lianshenshu"].includes(id) && (
               <span className="chip text-fuchsia-400 border-fuchsia-400/50 self-center">
                 {t("autoOnCondition")}
               </span>

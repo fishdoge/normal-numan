@@ -35,6 +35,16 @@ export const ITEMS: ItemDef[] = [
   { id: "jinyuan_shenglian", name: "金源聖蓮", kind: "material", desc: "金源仙域深處綻放的聖蓮,蘊藏磅礴生機,乃煉製迴天丹藥的絕佳藥引。", element: "木", price: 3000 },
   { id: "manhuang_lingsui", name: "蠻荒靈髓", kind: "material", desc: "蠻荒異界妖獸體內凝結的靈髓,法力氣息醇厚,乃煉製回復法力丹藥的珍稀藥引。", element: "水", price: 3500 },
 
+  // ── 靈界三大陸特產材料(2.14 版新增:風元/雷鳴/血天,各有採集與妖獸掉落兩種來源) ──
+  { id: "fengyuanjing", name: "風元晶", kind: "material", desc: "風元大陸元氣凝結而成的晶石,風靈之氣充盈,煉器上品。", element: "木", price: 4200 },
+  { id: "yecha_hunjing", name: "夜叉魂晶", kind: "material", desc: "夜叉族妖體凝聚的魂晶,陰戾之氣濃烈,獵殺夜陽城妖獸方能取得。", price: 4800 },
+  { id: "leimingshi", name: "雷鳴石", kind: "material", desc: "雷鳴大陸雷雲終年轟鳴、凝結而成的靈石,觸之隱有雷光竄動。", element: "金", price: 8600 },
+  { id: "jiaochi_tiesui", name: "角蚩鐵髓", kind: "material", desc: "角蚩族妖體中淬鍊的鐵髓,堅逾玄鐵,角蠻獄妖獸體內方有。", element: "金", price: 9200 },
+  { id: "minghesha", name: "冥河沙", kind: "material", desc: "冥河之地的幽沙,浸潤亡魂怨氣,蜉蝣族妖獸出沒之處遍地皆是。", element: "水", price: 8000 },
+  { id: "dixuejing", name: "地血晶", kind: "material", desc: "地血族煉化地脈精血凝成的晶石,色赤如血,血獄特產。", price: 13000 },
+  { id: "longyu_linjia", name: "龍獄鱗甲", kind: "material", desc: "九龍獄看守妖獸蛻下的鱗甲,堅韌無匹,隱有龍屬威壓。", price: 21000 },
+  { id: "tianding_suipian", name: "天鼎碎片", kind: "material", desc: "天鼎宮守衛體內殘留的鼎器碎片,靈光隱現,乃虛天鼎、虛皇鼎的爐火之源。", element: "金", price: 26000 },
+
   // ── 仙草 ──
   { id: "huanglongcao", name: "黃龍草", kind: "herb", desc: "常見靈草,煉製黃龍丹主藥。", price: 6, exp: 8 },
   { id: "zhuguo", name: "朱果", kind: "herb", desc: "百年一熟的靈果,服之可增修為。", price: 13, exp: 26 },
@@ -46,6 +56,7 @@ export const ITEMS: ItemDef[] = [
   { id: "longlinguo", name: "龍鱗果", kind: "herb", desc: "形如龍鱗的靈果,服之肉身堅如蛟龍。", price: 880, exp: 2400 },
   { id: "huangjitiansui", name: "皇極天髓", kind: "herb", desc: "天地開闢時遺留的一縷精髓,化神以上方能承受。", price: 6900, exp: 21000 },
   { id: "nimetanti", name: "古龍真血", kind: "herb", desc: "遠古龍族遺留真血，提供破天修為。", price: 36900, exp: 160000 },
+  { id: "lingmu_xianye", name: "靈木仙葉", kind: "herb", desc: "木靈森林千年古木所生的仙葉,靈氣充盈,服之修為大進。", element: "木", price: 5200, exp: 6000 },
 
   // ── 延壽極品(坊市不售,可遇不可求) ──
   { id: "wanshoudan", name: "百壽丹", kind: "pill", desc: "以百種靈藥煉成的延壽奇丹,服之增壽百載。", price: 20000, life: 100 },
@@ -121,8 +132,8 @@ export const ITEMS: ItemDef[] = [
   // 宗門任務獎勵
   { id: "m_lusheng_jianjue", name: "《戮神劍訣》執事密傳", kind: "manual", desc: "合體修士常修的金系秘法,執事堂高階任務獎勵。需合體期。", price: 8500000, teaches: "lusheng_jianjue", dropOnly: true },
   { id: "m_jiutian_fenyang", name: "《九天焚陽訣》執事密傳", kind: "manual", desc: "大乘修士常修的火系秘法,執事堂高階任務獎勵。需大乘期。", price: 8500000, teaches: "jiutian_fenyang", dropOnly: true },
-  // 太乙殿突破當下的饋贈(僅由 ascendTaiyi 直接授予,無其他取得管道)
-  { id: "m_taiyi_hunyuan_lu", name: "《北冥六真天地訣》仙簡", kind: "manual", desc: "唯太乙境可修的至高仙法,太乙殿突破當下的饋贈。", price: 0, teaches: "taiyi_hunyuan_lu", dropOnly: true },
+  // 2.14 版起改為九龍獄墮落真仙馬良的極稀有掉落,不再是突破太乙境的直接饋贈
+  { id: "m_taiyi_hunyuan_lu", name: "《北冥六真天地訣》仙簡", kind: "manual", desc: "唯太乙境可修的至高仙法,九龍獄墮落真仙馬良身殞方遺此簡。", price: 0, teaches: "taiyi_hunyuan_lu", dropOnly: true },
 
   // ── 法器(煉製所得) ──
   { id: "qingsuo", name: "青索劍", kind: "artifact", desc: "青光如索的木系飛劍。", element: "木", price: 100, atkBonus: 6 },
@@ -136,16 +147,28 @@ export const ITEMS: ItemDef[] = [
   { id: "yuancishan", name: "元磁神山", kind: "artifact", desc: "萬丈元磁山煉成寸許小山,祭出時鎮壓一切飛遁。", element: "土", price: 60000, atkBonus: 3800, defBonus: 1400 },
   { id: "zhenlongyin", name: "真龍璽", kind: "artifact", desc: "真龍精骨所刻帝璽,蓋落之處,山河俱碎。", price: 360000, atkBonus: 12000, defBonus: 3900 },
 
+  // ── 靈界三大陸煉器(2.14 版新增,以風元/雷鳴/血天特產材料煉成) ──
+  { id: "fengling_ren", name: "風靈刃", kind: "artifact", desc: "風元晶引動夜叉魂晶淬煉而成的飛刃,迅疾如風,一閃奪魂。", element: "木", price: 45000, atkBonus: 2800, defBonus: 300 },
+
   // ── 護身之寶 ──
   { id: "hushenfu", name: "鐵護身符", kind: "amulet", desc: "注入法力後可擋一次致命攻擊的符籙。", price: 110, defBonus: 7 },
   { id: "wuguangyi", name: "烏光甲衣", kind: "robe", desc: "陰煞之氣淬煉的軟甲,烏光流轉。", price: 240, defBonus: 10 },
   { id: "fengleichi", name: "風雷翅", kind: "amulet", desc: "風火之鱗煉製的雙翅,雷光一閃百里之外,兼可護身增速。", price: 6000, defBonus: 560, speedBonus: 40 },
   { id: "jinganghu", name: "金剛璃甲", kind: "robe", desc: "蛟龍之鱗綴玄天寒鐵而成,刀劍難傷。", price: 2400, defBonus: 230 },
+  { id: "mulingjia", name: "木靈藤甲", kind: "robe", desc: "靈木仙葉與風元晶交織而成的藤甲,輕盈堅韌,自行療補靈氣。", price: 42000, defBonus: 3200, atkBonus: 200 },
+  { id: "leiming_zhanjia", name: "雷鳴戰甲", kind: "robe", desc: "雷鳴石淬體、角蚩鐵髓為甲,戰時雷光纏身,身法愈戰愈速。", price: 95000, defBonus: 5200, speedBonus: 40 },
+  { id: "tianding_hufu", name: "天鼎護心鏡", kind: "amulet", desc: "天鼎碎片與地血晶合煉的護心至寶,鼎氣護體,近乎不可摧。", element: "金", price: 170000, defBonus: 7500, speedBonus: 50 },
+
+  // ── 天鼎宮至寶(2.14 版新增,唯天鼎守衛掉落,坊市不售) ──
+  { id: "xutianding", name: "虛天鼎", kind: "amulet", desc: "天鼎宮尋常一脈鼎器,鼎身雖小,卻能引動些許虛空之力護體。", price: 220000, atkBonus: 3000, defBonus: 8500, dropOnly: true },
+  { id: "xuhuangding", name: "虛皇鼎", kind: "amulet", desc: "天鼎宮鎮宮至寶,九鼎之首,鼎中虛空自成天地,攻守速三者俱臻化境。", price: 500000, atkBonus: 9500, defBonus: 11000, speedBonus: 80, dropOnly: true },
 
   // ── 符籙(攻擊/輔助,符籙槽;高階由妖獸掉落) ──
   { id: "fu_liehuo", name: "烈火符", kind: "talisman", desc: "貼身催動,火靈附刃,攻擊大增。", element: "火", price: 320, atkBonus: 20 },
   { id: "fu_wulei", name: "雷電法符", kind: "talisman", desc: "五雷轟頂,攻速兼備的雷系符籙。", element: "金", price: 12000, atkBonus: 180, speedBonus: 20 },
   { id: "fu_xuanyin", name: "玄陰噬魂符", kind: "talisman", desc: "陰煞凝符,攻伐凌厲,大乘修士所用。", price: 342000, atkBonus: 2600, dropOnly: true, reqStage: 8 },
+  { id: "minghe_lingfu", name: "冥河靈符", kind: "talisman", desc: "冥河沙攜雷鳴石之力凝成的符籙,亡魂怨氣附刃,速攻俱增。", price: 90000, atkBonus: 5000, speedBonus: 30 },
+  { id: "xuesha_suohunfu", name: "血煞鎖魂符", kind: "talisman", desc: "地血晶淬煉、龍獄鱗甲為引,鎖魂攝魄,殺伐之氣濃烈至極。", price: 180000, atkBonus: 8000 },
   { id: "fu_taixu", name: "太虛混元符", kind: "talisman", desc: "仙家符籙,唯真仙可禦,攻伐之力超凡。", price: 1600000, atkBonus: 18000, dropOnly: true, reqStage: 10 },
 
   // ── 靈寵(寵物槽,僅探索秘境 5% 獲得;增益靈石收益與攻防) ──
@@ -188,8 +211,11 @@ export const ITEMS: ItemDef[] = [
   { id: "tianyunfu", name: "天運符", kind: "mingqi", desc: "黑市秘傳的消耗型命器,裝備後下一次嘗試突破成功率 +5%,無論成敗,突破後即化為飛灰。", price: 0, dropOnly: true, breakBonus: 0.05, consumable: true },
   { id: "tianjifu", name: "天極符", kind: "mingqi", desc: "黑市秘傳的消耗型命器,裝備後下一次嘗試突破成功率 +8%,無論成敗,突破後即化為飛灰。", price: 0, dropOnly: true, breakBonus: 0.08, consumable: true },
 
-  // ── 真仙丹(渡劫飛昇必備,唯太古龍祖掉落;嘗試突破時無論成敗皆消耗) ──
+  // ── 真仙丹(渡劫飛昇必備,唯太古龍祖、九龍獄墮落真仙馬良掉落;嘗試突破時無論成敗皆消耗) ──
   { id: "zhenxiandan", name: "真仙丹", kind: "special", desc: "太古龍祖精血凝成的無上奇丹,渡劫飛昇的必備之物。嘗試渡劫時,無論突破成敗皆會耗盡藥力。", price: 0 },
+
+  // ── 煉神術(2.14 版新增,九龍獄墮落真仙馬良極稀有掉落,終身限用一次) ──
+  { id: "lianshenshu", name: "煉神術", kind: "special", desc: "墮落真仙馬良殞落前留下的殘卷,記載脫胎換骨的煉神秘法。終身僅可修習一次,修成後精力上限永久倍增。", price: 0 },
 
 
   // ── 北寒仙尊獨有:更強大的仙法秘笈 ──

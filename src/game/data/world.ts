@@ -55,12 +55,42 @@ export const MONSTERS: Monster[] = [
   { id: "jiutianfeng", name: "九天玄鳳", element: "火", hp: 560000, atk: 24000, exp: 280000, stones: [9000, 18000], drops: [{ id: "pojiedan", chance: 0.35 }, { id: "huangjitiansui", chance: 0.2 }, { id: "longjinggu", chance: 0.6 }], desc: "浴火九天的玄色神鳳,一羽焚城,涅槃不滅。" },
   { id: "taixureng", name: "太虛人仙", element: "木", hp: 700000, atk: 30000, exp: 400000, stones: [11000, 22000], drops: [{ id: "pojiedan", chance: 0.45 }, { id: "huangjitiansui", chance: 0.2 }, { id: "yanshouguo", chance: 0.12 }, { id: "m_xuanbing_mieshi", chance: 0.02 }], desc: "遊走靈界邊緣、拒絕飛昇的太古人仙,一身道行深不可測。" },
 
+  // ── 靈界 · 風元大陸(2.14 版新增,夜叉族夜陽城 / 木靈森林) ──
+  { id: "yecha_renwei", name: "夜叉刃衛", element: "木", hp: 260000, atk: 12000, exp: 70000, stones: [3200, 6400], drops: [{ id: "fengyuanjing", chance: 0.5 }, { id: "yecha_hunjing", chance: 0.15 }], desc: "夜陽城把守城門的夜叉戰卒,雙刃如風,劈風斬影。" },
+  { id: "yehuo_yecha", name: "業火夜叉", element: "火", hp: 340000, atk: 15000, exp: 95000, stones: [4000, 8000], drops: [{ id: "fengyuanjing", chance: 0.4 }, { id: "yecha_hunjing", chance: 0.18 }], desc: "渾身業火纏繞的夜叉修士,一觸即焚,性情暴烈。" },
+  { id: "yeyang_yaoji", name: "夜陽妖姬", element: "火", hp: 300000, atk: 14000, exp: 85000, stones: [3600, 7200], drops: [{ id: "yecha_hunjing", chance: 0.2 }, { id: "fengyuanjing", chance: 0.4 }], desc: "夜陽城中魅惑人心的妖姬,歌聲一出,心神俱迷。" },
+  { id: "tengman_yaojing", name: "藤蔓妖精", element: "木", hp: 280000, atk: 12500, exp: 75000, stones: [3300, 6600], drops: [{ id: "lingmu_xianye", chance: 0.45 }, { id: "fengyuanjing", chance: 0.2 }], desc: "木靈森林深處的藤蔓精怪,枝蔓纏身,難以掙脫。" },
+  { id: "gumu_jingpo", name: "古木精魄", element: "木", hp: 380000, atk: 16000, exp: 110000, stones: [4600, 9200], drops: [{ id: "lingmu_xianye", chance: 0.5 }, { id: "huangjitiansui", chance: 0.05 }], desc: "千年古木孕育而生的精魄,軀幹如鐵,一拳千鈞。" },
+  { id: "fengling_die", name: "風靈蝶", element: "木", hp: 250000, atk: 11500, exp: 65000, stones: [3000, 6000], drops: [{ id: "fengyuanjing", chance: 0.5 }, { id: "lingmu_xianye", chance: 0.25 }], desc: "森林中成群飛舞的異蝶,振翅間風刃四溢。" },
+
+  // ── 靈界 · 雷鳴大陸(2.14 版新增,飛靈族天霄城 / 角蚩族角蠻獄 / 蜉蝣族冥河之地) ──
+  { id: "tianxiao_pengwei", name: "天霄鵬衛", element: "金", hp: 600000, atk: 25000, exp: 300000, stones: [9500, 19000], drops: [{ id: "leimingshi", chance: 0.45 }, { id: "jiaochi_tiesui", chance: 0.1 }], desc: "天霄城巡弋的飛靈族鵬衛,展翼刺破雷雲,俯衝之勢無可阻擋。" },
+  { id: "jifeng_lingshi", name: "疾風靈使", element: "金", hp: 560000, atk: 24000, exp: 280000, stones: [9000, 18000], drops: [{ id: "leimingshi", chance: 0.5 }], desc: "飛靈族修習疾風秘法的靈使,身法快若閃電。" },
+  { id: "xiaohan_jianling", name: "霄漢劍靈", element: "金", hp: 680000, atk: 27000, exp: 330000, stones: [10500, 21000], drops: [{ id: "leimingshi", chance: 0.4 }, { id: "jinleizhu", chance: 0.1 }], desc: "天霄城仙劍所化的劍靈,劍氣縱橫霄漢之間。" },
+  { id: "jiaochi_manbing", name: "角蚩蠻兵", element: "金", hp: 640000, atk: 26000, exp: 310000, stones: [10000, 20000], drops: [{ id: "jiaochi_tiesui", chance: 0.45 }, { id: "leimingshi", chance: 0.15 }], desc: "角蠻獄中列陣衝殺的角蚩族蠻兵,頭生雙角,悍不畏死。" },
+  { id: "leijiao_mojiang", name: "雷角魔將", element: "金", hp: 780000, atk: 30000, exp: 380000, stones: [12000, 24000], drops: [{ id: "jiaochi_tiesui", chance: 0.5 }, { id: "huangjitiansui", chance: 0.05 }], desc: "角蚩族中悍勇善戰的魔將,雙角蘊雷,一角觸敵雷光爆閃。" },
+  { id: "manyu_suohunshi", name: "蠻獄鎖魂使", element: "金", hp: 700000, atk: 28000, exp: 340000, stones: [11000, 22000], drops: [{ id: "jiaochi_tiesui", chance: 0.4 }, { id: "mojing", chance: 0.1 }], desc: "角蠻獄中掌管刑戮的鎖魂使者,鎖鏈一出,魂魄難逃。" },
+  { id: "minghe_fuyou", name: "冥河蜉蝣", element: "水", hp: 580000, atk: 24000, exp: 290000, stones: [9200, 18400], drops: [{ id: "minghesha", chance: 0.5 }], desc: "冥河之地成群漂浮的蜉蝣妖蟲,朝生暮死,卻怨氣纏身不散。" },
+  { id: "youming_chuanfu", name: "幽冥船夫", element: "水", hp: 720000, atk: 28000, exp: 350000, stones: [11500, 23000], drops: [{ id: "minghesha", chance: 0.45 }, { id: "yinsha", chance: 0.1 }], desc: "擺渡冥河亡魂的蜉蝣族船夫,篙點之處,河水盡皆凝滯。" },
+  { id: "wanghun_shiling", name: "亡魂蝕靈", element: "水", hp: 650000, atk: 26000, exp: 320000, stones: [10200, 20400], drops: [{ id: "minghesha", chance: 0.5 }, { id: "mojing", chance: 0.08 }], desc: "冥河沉積怨氣所化的蝕靈,無形無質,專蝕修士神魂。" },
+
+  // ── 靈界 · 血天大陸(2.14 版新增,地血族血獄 / 九龍獄 / 天鼎宮) ──
+  { id: "xueyu_xingtu", name: "血獄刑徒", element: "無", hp: 750000, atk: 29000, exp: 360000, stones: [12000, 24000], drops: [{ id: "dixuejing", chance: 0.5 }], desc: "地血族血獄中永世服刑的刑徒,渾身浴血,痛感全無。" },
+  { id: "shixue_xiuluo", name: "嗜血修羅", element: "無", hp: 850000, atk: 33000, exp: 420000, stones: [13500, 27000], drops: [{ id: "dixuejing", chance: 0.45 }, { id: "mojing", chance: 0.1 }], desc: "地血族中嗜血成性的修羅,見血愈戰愈勇,近乎瘋狂。" },
+  { id: "dixue_moling", name: "地血魔靈", element: "無", hp: 800000, atk: 31000, exp: 390000, stones: [12800, 25600], drops: [{ id: "dixuejing", chance: 0.5 }, { id: "huangjitiansui", chance: 0.06 }], desc: "地血族煉化地脈精血所化的魔靈,踏地而行,血氣沖天。" },
+  { id: "longyu_kanshou", name: "龍獄看守", element: "木", hp: 900000, atk: 35000, exp: 460000, stones: [14500, 29000], drops: [{ id: "longyu_linjia", chance: 0.5 }, { id: "longjinggu", chance: 0.1 }], desc: "九龍獄外圍看守的鱗甲妖獸,終年鎮壓獄中凶靈,體魄剛猛。" },
+  { id: "suolong_shawei", name: "鎖龍煞衛", element: "木", hp: 950000, atk: 37000, exp: 480000, stones: [15000, 30000], drops: [{ id: "longyu_linjia", chance: 0.45 }, { id: "dixuejing", chance: 0.15 }], desc: "九龍獄深處持鎖鏈巡守的煞衛,一鏈甩出,可鎖蛟縛龍。" },
+  { id: "tianding_shouwei", name: "天鼎守衛", element: "金", hp: 880000, atk: 34000, exp: 440000, stones: [14000, 28000], drops: [{ id: "tianding_suipian", chance: 0.5 }, { id: "xutianding", chance: 0.06 }], desc: "天鼎宮外圍列陣的守衛,渾身鼎紋,鼎氣護體堅不可摧。" },
+  { id: "tianding_zhishi", name: "天鼎執事", element: "金", hp: 1000000, atk: 38000, exp: 500000, stones: [16000, 32000], drops: [{ id: "tianding_suipian", chance: 0.55 }, { id: "xutianding", chance: 0.08 }, { id: "xuhuangding", chance: 0.012 }], desc: "天鼎宮中位階更高的執事守衛,掌管鼎火,偶得鼎中至寶餽贈。" },
+
   // ── 地域王(妖獸領主,極稀有,獵殺時 2%~3% 遭遇;掉落豐厚。1.6 版:靈石掉落一律 ×15) ──
   { id: "lord_tiannan", name: "青元蟒王", element: "木", isLord: true, hp: 860, atk: 57, exp: 230, stones: [1200, 3000], drops: [ { id: "zenglingzhu", chance: 0.35 }, { id: "tianlingguo", chance: 0.8 }, { id: "fu_liehuo", chance: 0.4 }], desc: "盤踞天南千年的蟒中之王,雙目如燈,鱗甲泛青,尋常修士見之膽裂。" },
   { id: "lord_jindi", name: "血獄魔君", element: "火", isLord: true, hp: 9000, atk: 570, exp: 3800, stones: [10500, 24000], drops: [ { id: "zenglingzhu", chance: 0.4 }, { id: "qiannianlingru", chance: 0.8 }, { id: "jinganghu", chance: 0.3 }], desc: "血色禁地深處自枯骨中重生的魔頭,渾身血焰,踏過之處寸草不生。" },
   { id: "lord_luanxinghai", name: "萬鱗海皇", element: "水", isLord: true, hp: 82000, atk: 5300, exp: 28000, stones: [60000, 120000], drops: [ { id: "zenglingzhu", chance: 0.45 }, { id: "panlongtao", chance: 0.2 }, { id: "ziyuanhua", chance: 0.8 }, { id: "fu_wulei", chance: 0.35 }], desc: "亂星海真正的主宰,一身萬鱗吞吐星光,翻身即掀起滔天巨浪。" },
   { id: "lord_dajin", name: "噬天鬼帝", element: "水", isLord: true, hp: 540000, atk: 35000, exp: 200000, stones: [240000, 480000], drops: [ { id: "zenglingzhu", chance: 0.5 }, { id: "panlongtao", chance: 0.2 }, { id: "huangjitiansui", chance: 0.8 }, { id: "blueprint_xuanyin", chance: 0.25 }], desc: "陰界萬鬼之主,鬼母亦要俯首,一念之間可令大晉一國化為鬼域。" },
   { id: "lord_lingjie", name: "太古龍祖", element: "木", isLord: true, hp: 2400000, atk: 130000, exp: 900000, stones: [600000, 1200000], drops: [{ id: "longjinggu", chance: 0.4 },{id:"nimetanti",chance:0.3},{id:"huangjitiansui",chance:0.3}, { id: "zenglingzhu", chance: 0.6 }, { id: "panlongtao", chance: 0.12 }, { id: "pojiedan", chance: 0.9 }, { id: "fu_xuanyin", chance: 0.3 }, { id: "blueprint_xuanyin", chance: 0.3 }, { id: "zhenxiandan", chance: 0.15 }], desc: "靈界所有真龍血脈的源頭,一聲龍吟,天淵城萬里雲海盡數翻覆。" },
+  // 九龍獄專屬地域王:曾為真仙,道基崩碎墮落於此,實力遠超同階妖獸,九龍獄看守/鎖龍煞衛偶爾提及其名皆色變
+  { id: "duoluo_zhenxian_maliang", name: "墮落真仙馬良", element: "無", isLord: true, hp: 5000000, atk: 220000, exp: 2000000, stones: [1200000, 2400000], drops: [{ id: "zhenxiandan", chance: 0.5 }, { id: "m_taiyi_hunyuan_lu", chance: 0.12 }, { id: "lianshenshu", chance: 0.02 }, { id: "longyu_linjia", chance: 0.6 }, { id: "huangjitiansui", chance: 0.4 }, { id: "zenglingzhu", chance: 0.5 }], desc: "曾位列真仙,卻因心魔入體、道基崩碎而墮落九龍獄的絕世凶靈,一身道行雖已癲狂顛倒,仍遠勝尋常合體大乘妖獸百倍。" },
 
   // ── 北寒仙域(真仙專屬,掉落先天仙器,予以仙靈力;靈石掉落已於 1.6 版兩度調整,現為原區間 ×3) ──
   { id: "bh_hanjiao", name: "玄冰仙蛟", element: "水", hp: 200000, atk: 12000, exp: 0, stones: [6000000, 9000000], drops: [{ id: "xiantian_zhong", chance: 0.002 }, { id: "xuanbingjing", chance: 0.1 }], desc: "北寒仙域萬載寒潭孕育的仙蛟,通體晶瑩如玉,一息成冰,已臻仙獸之列。" },
@@ -211,6 +241,65 @@ export const LOCATIONS: Location[] = [
     materials: ["longjinggu"], herbs: ["huangjitiansui"],
     manualChance: 0.1, manuals: ["m_zhenlong"],
   },
+  // 靈界 · 風元大陸(2.14 版新增)
+  {
+    id: "yeyangcheng", name: "夜叉族夜陽城", region: "lingjie", reqStage: 7,
+    desc: "風元大陸夜叉一族的雄城,城牆赤紅如血,終年風聲呼嘯不絕。",
+    monsters: ["yecha_renwei", "yehuo_yecha", "yeyang_yaoji"],
+    materials: ["fengyuanjing", "yecha_hunjing"], herbs: [],
+    manualChance: 0, manuals: [],
+  },
+  {
+    id: "mulingsenlin", name: "木靈森林", region: "lingjie", reqStage: 7,
+    desc: "風元大陸腹地的無盡古林,千年古木參天蔽日,靈氣自成一方天地。",
+    monsters: ["tengman_yaojing", "gumu_jingpo", "fengling_die"],
+    materials: ["fengyuanjing"], herbs: ["lingmu_xianye"],
+    manualChance: 0, manuals: [],
+  },
+  // 靈界 · 雷鳴大陸(2.14 版新增)
+  {
+    id: "tianxiaocheng", name: "飛靈族天霄城", region: "lingjie", reqStage: 8,
+    desc: "雷鳴大陸雲霄之上的飛靈族城池,終年雷雲環繞,城樓隱於九霄雷海之中。",
+    monsters: ["tianxiao_pengwei", "jifeng_lingshi", "xiaohan_jianling"],
+    materials: ["leimingshi"], herbs: [],
+    manualChance: 0, manuals: [],
+  },
+  {
+    id: "jiaomanyu", name: "角蚩族角蠻獄", region: "lingjie", reqStage: 8,
+    desc: "雷鳴大陸地底的角蚩一族刑獄,雷角妖獸列陣看守,鎖鏈聲不絕於耳。",
+    monsters: ["jiaochi_manbing", "leijiao_mojiang", "manyu_suohunshi"],
+    materials: ["leimingshi", "jiaochi_tiesui"], herbs: [],
+    manualChance: 0, manuals: [],
+  },
+  {
+    id: "minghezhidi", name: "蜉蝣族冥河之地", region: "lingjie", reqStage: 8,
+    desc: "雷鳴大陸邊境的幽冥之河,蜉蝣一族世代擺渡亡魂,河水終年不見天日。",
+    monsters: ["minghe_fuyou", "youming_chuanfu", "wanghun_shiling"],
+    materials: ["minghesha"], herbs: [],
+    manualChance: 0, manuals: [],
+  },
+  // 靈界 · 血天大陸(2.14 版新增,九龍獄/天鼎宮尤為兇險特殊)
+  {
+    id: "dixue_xueyu", name: "地血族血獄", region: "lingjie", reqStage: 8,
+    desc: "血天大陸地血一族的煉獄之地,終年血雨,大地赤紅如染。",
+    monsters: ["xueyu_xingtu", "shixue_xiuluo", "dixue_moling"],
+    materials: ["dixuejing"], herbs: [],
+    manualChance: 0, manuals: [],
+  },
+  {
+    id: "jiulongyu", name: "九龍獄", region: "lingjie", reqStage: 8,
+    desc: "血天大陸深處鎮壓歷代凶靈的無底獄淵,九龍鎖柱矗立獄中,偶有墮落真仙馬良現身,兇險莫測。",
+    monsters: ["longyu_kanshou", "suolong_shawei"], lordId: "duoluo_zhenxian_maliang",
+    materials: ["longyu_linjia"], herbs: [],
+    manualChance: 0, manuals: [],
+  },
+  {
+    id: "tiandinggong", name: "天鼎宮", region: "lingjie", reqStage: 8,
+    desc: "血天大陸最深處的上古宮闕,九座巨鼎鎮守其中,虛天鼎、虛皇鼎皆藏於此。",
+    monsters: ["tianding_shouwei", "tianding_zhishi"],
+    materials: ["tianding_suipian"], herbs: [],
+    manualChance: 0, manuals: [],
+  },
   // 北寒仙域(真仙專屬)
   {
     id: "xuanbing_yuan", name: "玄冰仙原", region: "beihan", reqStage: 10,
@@ -307,6 +396,13 @@ export const RECIPES: Recipe[] = [
   { id: "r_sanyanshan", result: "sanyanshan", name: "三焰扇", stones: 280000, desc: "三色火鳥翎羽合璧,扇骨以星辰鋼鍛成。", materials: [{ id: "fenghuolin", n: 5 }, { id: "xingchengang", n: 3 }, { id: "mojing", n: 3 }] },
   { id: "r_yuancishan", result: "yuancishan", name: "元磁神山", stones: 2400000, desc: "以皇極天髓溫養魔晶百日,凝聚元磁之力成山。", materials: [{ id: "mojing", n: 8 }, { id: "huangjitiansui", n: 1 }] },
   { id: "r_zhenlongyin", result: "zhenlongyin", name: "真龍璽", stones: 1820000, desc: "真龍精骨刻璽,天髓開光——靈界至寶,渡劫倚仗。", materials: [{ id: "longjinggu", n: 5 }, { id: "huangjitiansui", n: 2 }] },
+  // 靈界三大陸配方(2.14 版新增,以風元/雷鳴/血天特產材料煉成)
+  { id: "r_fengling_ren", result: "fengling_ren", name: "風靈刃", stones: 45000, desc: "風元晶引動夜叉魂晶,淬煉成迅疾奪魂的飛刃。", materials: [{ id: "fengyuanjing", n: 4 }, { id: "yecha_hunjing", n: 2 }] },
+  { id: "r_mulingjia", result: "mulingjia", name: "木靈藤甲", stones: 42000, desc: "靈木仙葉與風元晶交織煉成的輕盈藤甲。", materials: [{ id: "lingmu_xianye", n: 4 }, { id: "fengyuanjing", n: 2 }] },
+  { id: "r_leiming_zhanjia", result: "leiming_zhanjia", name: "雷鳴戰甲", stones: 95000, desc: "雷鳴石淬體、角蚩鐵髓為甲,戰時雷光纏身。", materials: [{ id: "leimingshi", n: 5 }, { id: "jiaochi_tiesui", n: 3 }] },
+  { id: "r_minghe_lingfu", result: "minghe_lingfu", name: "冥河靈符", stones: 90000, desc: "冥河沙攜雷鳴石之力凝成的符籙,亡魂怨氣附刃。", materials: [{ id: "minghesha", n: 4 }, { id: "leimingshi", n: 3 }] },
+  { id: "r_xuesha_suohunfu", result: "xuesha_suohunfu", name: "血煞鎖魂符", stones: 180000, desc: "地血晶淬煉、龍獄鱗甲為引,鎖魂攝魄。", reqStage: 8, materials: [{ id: "dixuejing", n: 5 }, { id: "longyu_linjia", n: 2 }] },
+  { id: "r_tianding_hufu", result: "tianding_hufu", name: "天鼎護心鏡", stones: 170000, desc: "天鼎碎片與地血晶合煉的護心至寶,鼎氣護體。", reqStage: 8, materials: [{ id: "tianding_suipian", n: 4 }, { id: "dixuejing", n: 3 }] },
   // 圖譜解鎖的高階符籙(需妖獸掉落圖譜)
   { id: "r_fu_xuanyin", result: "fu_xuanyin", name: "玄陰噬魂符", stones: 4000000, desc: "以魔晶為引,陰煞凝符,大乘修士的攻伐符籙。", dropOnly: true, reqStage: 8, materials: [{ id: "mojing", n: 5 }, { id: "yinsha", n: 8 }] },
   { id: "r_fu_taixu", result: "fu_taixu", name: "太虛混元符", stones: 3200000, desc: "仙家符籙,以真龍精骨與皇極天髓為引,唯真仙可煉。", dropOnly: true, reqStage: 10, materials: [{ id: "longjinggu", n: 10 }, { id: "huangjitiansui", n: 5 }] },

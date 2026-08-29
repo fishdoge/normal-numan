@@ -93,7 +93,7 @@ export const MONSTERS: Monster[] = [
   { id: "duoluo_zhenxian_maliang", name: "墮落真仙馬良", element: "無", isLord: true, hp: 7000000, atk: 220000, exp: 2000000, stones: [1200000, 2400000], drops: [{ id: "zhenxiandan", chance: 0.4 }, { id: "xuhuangding", chance: 0.12 }, { id: "m_taiyi_hunyuan_lu", chance: 0.12 }, { id: "xutianding", chance: 0.02 }, { id: "lianshenshu", chance: 0.02 }, { id: "longyu_linjia", chance: 0.6 }, { id: "huangjitiansui", chance: 0.4 }, { id: "zenglingzhu", chance: 0.5 }], desc: "曾位列真仙,卻因心魔入體、道基崩碎而墮落九龍獄的絕世凶靈,一身道行雖已癲狂顛倒,仍遠勝尋常合體大乘妖獸百倍。" },
   // 天劫神靈(2.18 版新增):非探索遭遇,而是渡劫期服下真仙丹嘗試突破時必定召喚的試煉之敵。
   // 不計修為、不掉靈石道具——單純以此戰勝負決定本次飛昇機率翻倍或減半,詳見 engine.ts 的 breakthrough/winCombat/monsterTurn。
-  { id: "tianjie_shenling", name: "天劫神靈", element: "金", isLord: true, hp: 3000000, atk: 150000, exp: 0, stones: [0, 0], drops: [], desc: "真仙丹引動九霄劫雲所凝的至高劫靈,唯有渡劫者服丹嘗試飛昇時方會現身,考驗其是否有資格白日飛昇。" },
+  { id: "tianjie_shenling", name: "天劫神靈", element: "金", isLord: true, hp: 6000000, atk: 100000, exp: 0, stones: [0, 0], drops: [], desc: "真仙丹引動九霄劫雲所凝的至高劫靈,唯有渡劫者服丹嘗試飛昇時方會現身,考驗其是否有資格白日飛昇。" },
 
   // ── 北寒仙域(真仙專屬,掉落先天仙器,予以仙靈力;靈石掉落已於 1.6 版兩度調整,現為原區間 ×3) ──
   { id: "bh_hanjiao", name: "玄冰仙蛟", element: "水", hp: 200000, atk: 12000, exp: 0, stones: [6000000, 9000000], drops: [{ id: "xiantian_zhong", chance: 0.002 }, { id: "xuanbingjing", chance: 0.1 }], desc: "北寒仙域萬載寒潭孕育的仙蛟,通體晶瑩如玉,一息成冰,已臻仙獸之列。" },

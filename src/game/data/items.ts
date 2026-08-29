@@ -49,23 +49,23 @@ export const ITEMS: ItemDef[] = [
   { id: "zhenling_suipian", name: "真靈碎晶", kind: "material", desc: "天淵城外圍地脈中滲出的真靈碎晶,靈氣稀薄卻俯拾即是。", price: 4000 },
   { id: "tianyuan_yaogu", name: "天淵妖骨", kind: "material", desc: "天淵城外圍妖獸遺骸風化而成的骨渣,質地堅脆。", price: 4300 },
   { id: "leiling_suixie", name: "雷靈碎屑", kind: "material", desc: "飛昇台天劫雷靈掠過後遺落的碎屑,雷光殘留不散。", element: "金", price: 9800 },
-  { id: "feisheng_yunwu", name: "飛昇雲霧", kind: "herb", desc: "飛昇台終年繚繞的奇異雲霧,吸納一口便覺神清氣爽。", price: 5000 },
+  { id: "feisheng_yunwu", name: "飛昇雲霧", kind: "herb", desc: "飛昇台終年繚繞的奇異雲霧,吸納一口便覺神清氣爽。", price: 5000, dropOnly: true },
   { id: "yeyang_yankuang", name: "夜陽岩礦", kind: "material", desc: "夜陽城地底赤紅岩層鑿出的礦石,觸手灼熱。", element: "火", price: 4500 },
-  { id: "fengren_yeye", name: "風刃夜葉", kind: "herb", desc: "夜陽城外圍風刃樹所生的夜葉,葉緣鋒利如刃。", element: "木", price: 4600 },
+  { id: "fengren_yeye", name: "風刃夜葉", kind: "herb", desc: "夜陽城外圍風刃樹所生的夜葉,葉緣鋒利如刃。", element: "木", price: 4600, dropOnly: true },
   { id: "gumu_shupi", name: "古木樹皮", kind: "material", desc: "木靈森林千年古木剝落的樹皮,質地輕韌。", element: "木", price: 4400 },
-  { id: "senlin_lulu", name: "森林露珠", kind: "herb", desc: "木靈森林清晨凝結的露珠,靈氣清冽,略能提神。", price: 4700 },
+  { id: "senlin_lulu", name: "森林露珠", kind: "herb", desc: "木靈森林清晨凝結的露珠,靈氣清冽,略能提神。", price: 4700, dropOnly: true },
   { id: "feiling_yumao", name: "飛靈羽毛", kind: "material", desc: "天霄城飛靈族妖獸蛻落的羽毛,輕若無物卻堅韌異常。", element: "金", price: 9000 },
-  { id: "tianxiao_yunqi", name: "天霄雲氣", kind: "herb", desc: "天霄城終年不散的雲氣,吸納後精神為之一振。", price: 9200 },
+  { id: "tianxiao_yunqi", name: "天霄雲氣", kind: "herb", desc: "天霄城終年不散的雲氣,吸納後精神為之一振。", price: 9200, dropOnly: true },
   { id: "jiaoman_suolian", name: "角蠻鎖鏈", kind: "material", desc: "角蠻獄看守用以鎖魂的鏈環殘段,寒鐵所鑄。", element: "金", price: 9500 },
   { id: "manyu_xueshi", name: "蠻獄血石", kind: "material", desc: "角蠻獄地底浸血的岩石,隱有戾氣。", price: 9600 },
-  { id: "minghe_shuizao", name: "冥河水藻", kind: "herb", desc: "冥河之地水面漂浮的幽藻,亡魂怨氣浸潤卻無害於人。", element: "水", price: 8200 },
+  { id: "minghe_shuizao", name: "冥河水藻", kind: "herb", desc: "冥河之地水面漂浮的幽藻,亡魂怨氣浸潤卻無害於人。", element: "水", price: 8200, dropOnly: true },
   { id: "fuyou_chibang", name: "蜉蝣翅膀", kind: "material", desc: "冥河蜉蝣蛻落的薄翼,輕透如紙,隱有幽光。", element: "水", price: 8300 },
   { id: "xueyu_yansha", name: "血獄岩沙", kind: "material", desc: "血獄地表終年浸血的岩沙,色赤如凝血。", price: 13200 },
-  { id: "dixue_caogen", name: "地血草根", kind: "herb", desc: "血獄縫隙中頑強生長的草根,吸食地脈精血而生。", price: 13400 },
+  { id: "dixue_caogen", name: "地血草根", kind: "herb", desc: "血獄縫隙中頑強生長的草根,吸食地脈精血而生。", price: 13400, dropOnly: true },
   { id: "jiulong_suoshi", name: "九龍鎖石", kind: "material", desc: "九龍獄鎖柱基座崩落的石塊,隱有龍屬威壓封印其中。", price: 21500 },
   { id: "longyu_yinhuo", name: "龍獄陰火", kind: "material", desc: "九龍獄深處終年不熄的陰火,凝而不散,冷冽刺骨。", price: 21800 },
   { id: "tianding_linghuo", name: "天鼎靈火", kind: "material", desc: "天鼎宮九鼎爐心外溢的靈火,溫潤而不灼人。", element: "金", price: 26500 },
-  { id: "jiuding_xiangyun", name: "九鼎祥雲", kind: "herb", desc: "天鼎宮九鼎交輝所化的祥雲,吸納後精力為之一振。", price: 26800 },
+  { id: "jiuding_xiangyun", name: "九鼎祥雲", kind: "herb", desc: "天鼎宮九鼎交輝所化的祥雲,吸納後精力為之一振,唯獵殺天鼎守衛/執事方能得之。", price: 26800, dropOnly: true },
 
   // ── 仙草 ──
   { id: "huanglongcao", name: "黃龍草", kind: "herb", desc: "常見靈草,煉製黃龍丹主藥。", price: 6, exp: 8 },
@@ -120,9 +120,9 @@ export const ITEMS: ItemDef[] = [
   { id: "taiyi_huiqidan", name: "太乙回氣丹", kind: "pill", desc: "金源聖蓮與蠻荒靈髓合煉的回氣奇丹,一息之間精力充盈。", price: 0, energy: 80, reqStage: 10 },
 
   // ── 靈界三大陸回氣丹(2.17 版新增,以各大陸補充素材煉成,回復少量精力) ──
-  { id: "fengyuan_huiqidan", name: "風元回氣丹", kind: "pill", desc: "飛昇雲霧、風刃夜葉與森林露珠合煉的回氣小丹,一口氣清神明。", price: 0, energy: 10 },
-  { id: "leiming_huiqidan", name: "雷鳴回氣丹", kind: "pill", desc: "天霄雲氣佐冥河水藻煉成的回氣小丹,雷氣醒神,精力微振。", price: 0, energy: 10 },
-  { id: "xuetian_huiqidan", name: "血天回氣丹", kind: "pill", desc: "地血草根佐九鼎祥雲煉成的回氣小丹,血氣調和,精力微振。", price: 0, energy: 10 },
+  { id: "fengyuan_huiqidan", name: "風元回氣丹", kind: "pill", desc: "飛昇雲霧、風刃夜葉與森林露珠合煉的回氣小丹,一口氣清神明。", price: 0, energy: 10, dropOnly: true },
+  { id: "leiming_huiqidan", name: "雷鳴回氣丹", kind: "pill", desc: "天霄雲氣佐冥河水藻煉成的回氣小丹,雷氣醒神,精力微振。", price: 0, energy: 10, dropOnly: true },
+  { id: "xuetian_huiqidan", name: "血天回氣丹", kind: "pill", desc: "地血草根佐九鼎祥雲煉成的回氣小丹,血氣調和,精力微振。", price: 0, energy: 10, dropOnly: true },
 
   // ── 乾坤袋(黑眼貔貅專屬掉落,1.24 版新增) ──
   { id: "qiankun_dai", name: "乾坤袋", kind: "special", desc: "黑眼貔貅隕落後遺留的奇物,袋中自成天地,可將靈石存入隨身收納——戰敗遁走時遺散的僅是袋外靈石,袋中所藏分毫不失。", price: 0, dropOnly: true },

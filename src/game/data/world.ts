@@ -80,8 +80,8 @@ export const MONSTERS: Monster[] = [
   { id: "dixue_moling", name: "地血魔靈", element: "無", hp: 800000, atk: 31000, exp: 390000, stones: [12800, 25600], drops: [{ id: "dixuejing", chance: 0.5 }, { id: "huangjitiansui", chance: 0.06 }], desc: "地血族煉化地脈精血所化的魔靈,踏地而行,血氣沖天。" },
   { id: "longyu_kanshou", name: "龍獄看守", element: "木", hp: 900000, atk: 35000, exp: 460000, stones: [14500, 29000], drops: [{ id: "longyu_linjia", chance: 0.5 }, { id: "longjinggu", chance: 0.1 }], desc: "九龍獄外圍看守的鱗甲妖獸,終年鎮壓獄中凶靈,體魄剛猛。" },
   { id: "suolong_shawei", name: "鎖龍煞衛", element: "木", hp: 950000, atk: 37000, exp: 480000, stones: [15000, 30000], drops: [{ id: "longyu_linjia", chance: 0.45 }, { id: "dixuejing", chance: 0.15 }], desc: "九龍獄深處持鎖鏈巡守的煞衛,一鏈甩出,可鎖蛟縛龍。" },
-  { id: "tianding_shouwei", name: "天鼎守衛", element: "金", hp: 1280000, atk: 34000, exp: 440000, stones: [14000, 28000], drops: [{ id: "tianding_suipian", chance: 0.5 }, { id: "xutianding", chance: 0.02 }], desc: "天鼎宮外圍列陣的守衛,渾身鼎紋,鼎氣護體堅不可摧。" },
-  { id: "tianding_zhishi", name: "天鼎執事", element: "金", hp: 1500000, atk: 38000, exp: 500000, stones: [16000, 32000], drops: [{ id: "tianding_suipian", chance: 0.55 }, { id: "xutianding", chance: 0.03 }, { id: "xuhuangding", chance: 0.012 }], desc: "天鼎宮中位階更高的執事守衛,掌管鼎火,偶得鼎中至寶餽贈。" },
+  { id: "tianding_shouwei", name: "天鼎守衛", element: "金", hp: 1280000, atk: 34000, exp: 440000, stones: [14000, 28000], drops: [{ id: "tianding_suipian", chance: 0.5 }, { id: "xutianding", chance: 0.02 }, { id: "jiuding_xiangyun", chance: 0.15 }], desc: "天鼎宮外圍列陣的守衛,渾身鼎紋,鼎氣護體堅不可摧。" },
+  { id: "tianding_zhishi", name: "天鼎執事", element: "金", hp: 1500000, atk: 38000, exp: 500000, stones: [16000, 32000], drops: [{ id: "tianding_suipian", chance: 0.55 }, { id: "xutianding", chance: 0.03 }, { id: "xuhuangding", chance: 0.012 }, { id: "jiuding_xiangyun", chance: 0.18 }], desc: "天鼎宮中位階更高的執事守衛,掌管鼎火,偶得鼎中至寶餽贈。" },
 
   // ── 地域王(妖獸領主,極稀有,獵殺時 2%~3% 遭遇;掉落豐厚。1.6 版:靈石掉落一律 ×15) ──
   { id: "lord_tiannan", name: "青元蟒王", element: "木", isLord: true, hp: 1260, atk: 50, exp: 230, stones: [1200, 3000], drops: [ { id: "zenglingzhu", chance: 0.35 }, { id: "tianlingguo", chance: 0.8 }, { id: "fu_liehuo", chance: 0.4 }], desc: "盤踞天南千年的蟒中之王,雙目如燈,鱗甲泛青,尋常修士見之膽裂。" },
@@ -300,7 +300,7 @@ export const LOCATIONS: Location[] = [
     id: "tiandinggong", name: "天鼎宮", region: "lingjie", reqStage: 8, continent: "xuetian",
     desc: "血天大陸最深處的上古宮闕,九座巨鼎鎮守其中,虛天鼎、虛皇鼎皆藏於此。",
     monsters: ["tianding_shouwei", "tianding_zhishi"],
-    materials: ["tianding_suipian", "tianding_linghuo"], herbs: ["jiuding_xiangyun"],
+    materials: ["tianding_suipian", "tianding_linghuo"], herbs: [],
     manualChance: 0, manuals: [],
   },
   // 北寒仙域(真仙專屬)

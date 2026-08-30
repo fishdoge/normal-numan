@@ -327,7 +327,7 @@ export const TECHNIQUES: Technique[] = [
     id: "taiyi_hunyuan_lu",
     name: "北冥六真天地訣",
     element: "無",
-    desc: "唯太乙境可修的至高仙法,葫蘆吞吐天地,一訣出,萬法歸元。九龍獄墮落真仙馬良身殞方遺此法。",
+    desc: "唯太乙境可修的至高仙法,葫蘆吞吐天地,一訣出,萬法歸元。唯登臨浮屠塔絕頂、窺見真正太歲天尊者方能悟得此法。",
     mpCost: 400000,
     power: 300,
     reqStage: 12,

@@ -91,7 +91,7 @@ export const ITEM_TEXT_EN: Record<string, { name: string; desc: string }> = {
   m_houtu_fengtian: { name: "Dragon Book: Deep Earth Heaven-Sealing Technique", desc: "A top-tier technique commonly cultivated by Tribulation Crossing cultivators, treasured by an ancient true dragon's remnant soul." },
   m_lusheng_jianjue: { name: "Steward's Secret Transmission: God-Slaying Sword Technique", desc: "A Metal-element technique commonly cultivated by Body Integration cultivators, a reward from advanced Steward Hall missions. Requires Body Integration." },
   m_jiutian_fenyang: { name: "Steward's Secret Transmission: Nine Heavens Sun-Scorching Technique", desc: "A Fire-element technique commonly cultivated by Mahayana cultivators, a reward from advanced Steward Hall missions. Requires Mahayana." },
-  m_taiyi_hunyuan_lu: { name: "Immortal Tablet: North Mystic Six-True Heaven-Earth Technique", desc: "The supreme technique cultivable only in the Taiyi Realm, a gift bestowed upon breaking through to the Taiyi Realm." },
+  m_taiyi_hunyuan_lu: { name: "Immortal Tablet: North Mystic Six-True Heaven-Earth Technique", desc: "The supreme technique cultivable only in the Taiyi Realm; only one who reaches the very peak of the Pagoda and glimpses the true Grand Duke of Jupiter may grasp it." },
 
   // ── 法器 ──
   qingsuo: { name: "Verdant Cord Sword", desc: "A Wood-element flying sword, its azure light like a coiling cord." },

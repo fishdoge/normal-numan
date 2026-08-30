@@ -160,7 +160,7 @@ export const ITEMS: ItemDef[] = [
   { id: "m_lusheng_jianjue", name: "《戮神劍訣》執事密傳", kind: "manual", desc: "合體修士常修的金系秘法,執事堂高階任務獎勵。需合體期。", price: 8500000, teaches: "lusheng_jianjue", dropOnly: true },
   { id: "m_jiutian_fenyang", name: "《九天焚陽訣》執事密傳", kind: "manual", desc: "大乘修士常修的火系秘法,執事堂高階任務獎勵。需大乘期。", price: 8500000, teaches: "jiutian_fenyang", dropOnly: true },
   // 2.14 版起改為九龍獄墮落真仙馬良的極稀有掉落,不再是突破太乙境的直接饋贈
-  { id: "m_taiyi_hunyuan_lu", name: "《北冥六真天地訣》仙簡", kind: "manual", desc: "唯太乙境可修的至高仙法,九龍獄墮落真仙馬良身殞方遺此簡。", price: 0, teaches: "taiyi_hunyuan_lu", dropOnly: true },
+  { id: "m_taiyi_hunyuan_lu", name: "《北冥六真天地訣》仙簡", kind: "manual", desc: "唯太乙境可修的至高仙法,唯登臨浮屠塔絕頂、窺見真正太歲天尊者方能悟得此簡。", price: 0, teaches: "taiyi_hunyuan_lu", dropOnly: true },
 
   // ── 法器(煉製所得) ──
   { id: "qingsuo", name: "青索劍", kind: "artifact", desc: "青光如索的木系飛劍。", element: "木", price: 100, atkBonus: 6 },

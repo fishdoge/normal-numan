@@ -37,7 +37,7 @@ export const TECH_TEXT_EN: Record<string, { name: string; desc: string }> = {
   hunyuan_yiqi: { name: "Primordial Unity Immortal Technique", desc: "The supreme technique of creation itself; one breath becomes the Three Purities, suppressing every technique under heaven. True immortals need centuries of hardship to master it." },
   taiqing_daoyun: { name: "Nine Revolutions of Taiqing Dao-Rhyme", desc: "The nine-revolution Dao-rhyme left by the Taiqing Immortal Venerable; every revolution is a world unto itself — wherever its golden light reaches, immortals and demons alike are annihilated. A top-tier technique for true immortals." },
   zhutian_shenlei: { name: "Heaven-Slaying Divine Thunder Golden Immortal Technique", desc: "The heaven-slaying divine thunder cultivable only by Golden Immortals; one bolt turns a hundred million leagues to scorched earth — the supreme slaughter technique of the Immortal Court used to suppress rebel immortals." },
-  taiyi_hunyuan_lu: { name: "North Mystic Six-True Heaven-Earth Technique", desc: "The supreme technique cultivable only in the Taiyi Realm; the gourd swallows and breathes heaven and earth, one incantation returning all techniques to their origin. A gift bestowed upon breaking through to the Taiyi Realm." },
+  taiyi_hunyuan_lu: { name: "North Mystic Six-True Heaven-Earth Technique", desc: "The supreme technique cultivable only in the Taiyi Realm; the gourd swallows and breathes heaven and earth, one incantation returning all techniques to their origin. Only one who reaches the very peak of the Pagoda and glimpses the true Grand Duke of Jupiter may grasp it." },
 };
 
 export function techDisplayName(t: { id: string; name: string }, lang: Language): string {

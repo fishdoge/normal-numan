@@ -91,15 +91,20 @@ export interface ActionResult {
 
 const MAX_LOG = 60;
 
-// 每部秘笈的學習年數:仙法可自訂 learnYears,否則境界需求 ×10 年
+// 打坐修煉每次消耗的壽元:5 年,隨大境界翻倍(練氣5 築基10 結丹20 元嬰40……)
+const cultCostForStage = (stage: number) => 5 * Math.pow(2, stage - 1);
+
+export const cultCostOf = (s: Pick<SaveData, "realmIdx">) =>
+  cultCostForStage(REALMS[s.realmIdx].stage);
+
+// 每部秘笈的學習年數:仙法可自訂 learnYears(真仙/金仙/太乙頂尖仙法極為稀有,手動設定天文數字);
+// 其餘依境界估算「約需打坐 reqStage×3 次」所需年數(打坐消耗壽元隨境界指數翻倍,若沿用舊版
+// 「境界需求×10 年」的線性公式,元嬰期起單次打坐消耗的壽元便已超過學習所需,秘笈形同一坐即成,
+// 與頂尖仙法動輒數十萬年的修習時間帶寬相差懸殊,2.20 版起改為隨境界指數成長以拉近落差)
 export const learnYears = (techId: string) => {
   const t = techById(techId);
-  return t.learnYears ?? t.reqStage * 10;
+  return t.learnYears ?? cultCostForStage(t.reqStage) * t.reqStage * 3;
 };
-
-// 打坐修煉每次消耗的壽元:5 年,隨大境界翻倍(練氣5 築基10 結丹20 元嬰40……)
-export const cultCostOf = (s: Pick<SaveData, "realmIdx">) =>
-  5 * Math.pow(2, REALMS[s.realmIdx].stage - 1);
 
 // 仙法等級(1~7),以增靈珠強化;每級 +30% 威力
 export const MAX_TECH_LEVEL = 7;
@@ -592,8 +597,12 @@ function winCombat(s: SaveData): Modal {
       give(s, "tianxiandan");
       lines.push("幻象崩解間,一枚【天仙丹】墜落!");
     }
-    // 高層機緣:頂尖仙法秘笈(極難)
-    if (floor >= 30 && !s.learned.includes("zhutian_shenlei") && Math.random() < 0.1) {
+    // 高層機緣:頂尖仙法秘笈(極難)。太乙頂尖仙法唯登臨絕頂、窺見真正太歲天尊方可悟得,
+    // 不應由九龍獄墮落真仙馬良(遠低於太乙之境)掉落,2.20 版起改為浮屠塔絕頂機緣
+    if (floor >= 50 && !s.learned.includes("taiyi_hunyuan_lu") && Math.random() < 0.08) {
+      give(s, "m_taiyi_hunyuan_lu");
+      lines.push("塔尖霞光沖霄,幻象盡數崩碎——你竟窺見那真正的【太歲天尊】,悟得傳說中的【《北冥六真天地訣》仙簡】!");
+    } else if (floor >= 30 && !s.learned.includes("zhutian_shenlei") && Math.random() < 0.1) {
       give(s, "m_zhutian");
       lines.push("塔頂金光大盛——你竟得傳說中的【《誅天神雷金仙法》仙簡】!");
     } else if (floor >= 15 && !s.learned.includes("taiqing_daoyun") && Math.random() < 0.12) {

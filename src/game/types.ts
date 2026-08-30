@@ -191,7 +191,7 @@ export interface Technique {
   mpCost: number; // 法力消耗
   power: number; // 威力倍率基底
   reqStage: number; // 需要境界 stage
-  learnYears?: number; // 修習年數覆寫(真仙/金仙仙法極長,預設為 reqStage×10)
+  learnYears?: number; // 修習年數覆寫(真仙/金仙/太乙頂尖仙法極長,預設隨境界指數成長,見 engine.ts learnYears)
 }
 
 export interface Recipe {

@@ -194,7 +194,7 @@ export const ITEMS: ItemDef[] = [
 
   // ── 天鼎宮至寶(2.14 版新增,唯天鼎守衛掉落,坊市不售) ──
   { id: "xutianding", name: "虛天鼎", kind: "amulet", desc: "天鼎宮尋常一脈鼎器,鼎身雖小,卻能引動些許虛空之力護體。", price: 220000, atkBonus: 3000, defBonus: 8500, dropOnly: true },
-  { id: "xuhuangding", name: "虛皇鼎", kind: "amulet", desc: "天鼎宮鎮宮至寶,九鼎之首,鼎中虛空自成天地,攻守速三者俱臻化境。", price: 500000, atkBonus: 9500, defBonus: 11000, speedBonus: 80, dropOnly: true },
+  { id: "xuhuangding", name: "虛皇鼎", kind: "amulet", desc: "天鼎宮鎮宮至寶,九鼎之首,鼎中虛空自成天地,攻守速三者俱臻化境。", price: 500000, atkBonus: 25500, defBonus: 11000, speedBonus: 80, dropOnly: true },
 
   // ── 符籙(攻擊/輔助,符籙槽;高階由妖獸掉落) ──
   { id: "fu_liehuo", name: "烈火符", kind: "talisman", desc: "貼身催動,火靈附刃,攻擊大增。", element: "火", price: 320, atkBonus: 20 },

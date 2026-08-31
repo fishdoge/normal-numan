@@ -366,6 +366,11 @@ export const DICT = {
     combatTianjieChip: "天劫",
     btnWeaponAttack: "法器攻擊",
     btnFlee: "遁走",
+    combatHandNote: "仙法卡牌化:每回合隨機從已學會的仙法中抽出手牌,法器攻擊不受影響、恆常可用。",
+    statusBurn: "燒傷",
+    statusPoison: "中毒",
+    statusFreeze: "冰封",
+    statusTurnsSuffix: "剩 {n} 回合",
 
     logTitle: "見 聞 錄",
     chatTitle: "對 話 集",
@@ -773,6 +778,11 @@ export const DICT = {
     combatTianjieChip: "Tribulation",
     btnWeaponAttack: "Artifact Attack",
     btnFlee: "Flee",
+    combatHandNote: "Techniques are dealt as a random hand each round from what you've learned. Artifact attack is unaffected and always available.",
+    statusBurn: "Burn",
+    statusPoison: "Poison",
+    statusFreeze: "Frozen",
+    statusTurnsSuffix: "{n} turn(s) left",
 
     logTitle: "Log",
     chatTitle: "Chat",

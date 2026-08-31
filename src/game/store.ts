@@ -22,6 +22,7 @@ import {
   MAX_ENERGY_POTION_STACKS,
   ENERGY_REGEN_PER_TICK,
   dwellingEnergyBonusOf,
+  HAND_SIZE,
 } from "./engine";
 
 export type { SaveData, Modal };
@@ -42,6 +43,7 @@ export {
   MAX_ENERGY_POTION_STACKS,
   ENERGY_REGEN_PER_TICK,
   dwellingEnergyBonusOf,
+  HAND_SIZE,
 };
 
 // 行動頁籤(ActionTabs)目前分頁,提到 store 讓其他面板(如道籍)也能切換頁籤

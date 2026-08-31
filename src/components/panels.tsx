@@ -8,6 +8,7 @@ import {
   energyMaxOf,
   XIANLI_MULT,
   sectDamageMultOfStages,
+  HAND_SIZE,
 } from "@/game/store";
 import { REALMS } from "@/game/data/realms";
 import { SECTS } from "@/game/data/sects";
@@ -17,6 +18,7 @@ import { currentEraYears, eraLabelText } from "@/game/data/eraTime";
 import { techById } from "@/game/data/techniques";
 import { ELEMENT_COLOR, ELEMENTS, XIANLI_COLOR, EQUIP_SLOTS, nameColorOf, isXianItem, XIAN_ITEM_COLOR } from "@/game/types";
 import { useT } from "@/i18n/useT";
+import type { DictKey } from "@/i18n/dict";
 import { itemDisplayName, itemDisplayDesc, itemStatLine } from "@/i18n/itemText";
 import Tooltip from "./Tooltip";
 import { monsterDisplayName, monsterDisplayDesc } from "@/i18n/monsterText";
@@ -469,12 +471,32 @@ export function CombatPanel() {
   }
 
   const mon = MONSTERS.find((m) => m.id === combat.monsterId)!;
-  const usable = s.learned.map(techById);
+  // 仙法卡牌化(2.21 版):可施展的仙法不再是「已學會的全部」,而是伺服器每回合隨機抽出的「手牌」
+  // (combat.hand)——已學會的仙法夠多時才會真的抽不完,逼玩家臨場決定要用哪張牌。法器攻擊不受手牌
+  // 限制,恆常可用。舊戰鬥(部署前就已開打、combat 缺少 hand 欄位)以「已學會的全部」作為後備顯示。
+  const usable = (combat.hand ?? s.learned).map(techById);
   const isLord = combat.isLord || mon.isLord;
   const isTianjieTrial = !!combat.tianjieTrial;
   const hpMaxMon = combat.bossHpMax ?? mon.hp; // 浮屠塔動態 BOSS 用其實際上限
   const monName = monsterDisplayName(mon, lang);
   const displayName = combat.futuFloor ? `${monName} · 第 ${combat.futuFloor} 層` : monName;
+  const STATUS_ICON: Record<string, string> = { burn: "🔥", poison: "☠️", freeze: "❄️" };
+  const STATUS_KEY: Record<string, DictKey> = {
+    burn: "statusBurn",
+    poison: "statusPoison",
+    freeze: "statusFreeze",
+  };
+  const statusChip = (kind: string, turns: number, tone: string) => (
+    <span key={kind} className={`chip ${tone}`}>
+      {STATUS_ICON[kind]} {t(STATUS_KEY[kind])} · {t("statusTurnsSuffix").replace("{n}", String(turns))}
+    </span>
+  );
+  const monsterStatusChips = (combat.monsterStatus ?? []).map((e) =>
+    statusChip(e.kind, e.turns, "text-vermillion border-vermillion/50"),
+  );
+  const playerStatusChips = (combat.playerStatus ?? []).map((e) =>
+    statusChip(e.kind, e.turns, "text-azure border-azure/50"),
+  );
 
   return (
     <div
@@ -529,6 +551,13 @@ export function CombatPanel() {
         </div>
       </div>
 
+      {(monsterStatusChips.length > 0 || playerStatusChips.length > 0) && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {monsterStatusChips}
+          {playerStatusChips}
+        </div>
+      )}
+
       <div className="mt-4 flex flex-wrap gap-2">
         <button className="btn" disabled={busy} onClick={() => act("attack")}>
           {t("btnWeaponAttack")}
@@ -555,6 +584,9 @@ export function CombatPanel() {
       <p className="text-xs text-faded/60 mt-3">
         {isTianjieTrial ? t("combatTianjieNote") : t("counterNote")}
       </p>
+      {s.learned.length > HAND_SIZE && !isTianjieTrial && (
+        <p className="text-xs text-faded/60">{t("combatHandNote")}</p>
+      )}
     </div>
   );
 }

@@ -9,6 +9,13 @@ import { MISSIONS } from "./data/missions";
 import { dwellingLevelOf } from "./data/sectTiers";
 import { currentEraYears } from "./data/eraTime";
 
+// 狀態效果(2.21 版新增,仙法卡牌化的一部分):掛在既有五行系統上,火→燒傷、木→中毒、水→冰封,
+// 不獨立發明新屬性池。turns 為剩餘回合數,歸零即移除。
+export interface StatusEffect {
+  kind: "burn" | "poison" | "freeze";
+  turns: number;
+}
+
 export interface CombatState {
   monsterId: string;
   monsterHp: number;
@@ -18,6 +25,9 @@ export interface CombatState {
   bossHpMax?: number; // 動態 BOSS 的氣血上限(浮屠塔用)
   bossAtk?: number; // 動態 BOSS 的攻擊(浮屠塔用)
   tianjieTrial?: boolean; // 渡劫→真仙:服下真仙丹後降臨的天劫神靈試煉,勝負直接決定本次突破機率翻倍/減半
+  hand?: string[]; // 本回合可施展的仙法卡牌 id(不含法器攻擊,法器攻擊恆常可用);由 rollHand() 每回合重新抽取
+  monsterStatus?: StatusEffect[]; // 怪物身上的狀態效果
+  playerStatus?: StatusEffect[]; // 玩家身上的狀態效果
 }
 
 export interface Learning {
@@ -250,6 +260,91 @@ function elementMult(attacker: Element | undefined, defender: Element): number {
 const MONSTER_DODGE_CHANCE: Record<string, number> = { lord_tianhu: 0.3 }; // 天狐:三成機率避過玩家攻擊
 const MONSTER_TRIPLE_ATK_CHANCE: Record<string, number> = { lord_zhenlong: 0.2 }; // 真龍:兩成機率反擊 ×3
 const SPELL_SEALED_MONSTERS = new Set(["lord_pixiu"]); // 黑眼貔貅:封鎖玩家法術,無法施展仙法
+
+// ═══ 仙法卡牌化 + 狀態效果(2.21 版新增)═══
+// 出招池隨機亮牌:每回合從已學會的仙法中隨機抽出至多 HAND_SIZE 張作為本回合可施展的「手牌」;
+// 法器攻擊不受此限,永遠可用,作為不需要手氣也能穩定出手的保底選項。仙法數量不足 HAND_SIZE 時全數亮出,
+// 不刻意藏牌——這個機制只在玩家學會夠多仙法、真的「選不完」時才產生決策感,符合設計文件方向 A 的訴求。
+export const HAND_SIZE = 3;
+function rollHand(s: Pick<SaveData, "learned">): string[] {
+  const pool = s.learned;
+  if (pool.length <= HAND_SIZE) return [...pool];
+  const shuffled = [...pool];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = rand(0, i);
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled.slice(0, HAND_SIZE);
+}
+
+// 狀態效果掛在既有五行系統上,不獨立發明新屬性池:火→燒傷(持續傷害)、木→中毒(持續傷害+攻擊力打折)、
+// 水→冰封(跳過一回合)。金/土先不掛狀態,留待驗證過這三種好不好玩後再擴充(見設計文件的收斂建議)。
+const STATUS_BY_ELEMENT: Partial<Record<Element, StatusEffect["kind"]>> = {
+  火: "burn",
+  木: "poison",
+  水: "freeze",
+};
+const STATUS_LABEL: Record<StatusEffect["kind"], string> = { burn: "燒傷", poison: "中毒", freeze: "冰封" };
+const STATUS_PROC_CHANCE = 0.3; // 對應屬性的招式命中時,額外機率附加狀態
+const STATUS_DURATION = 3; // 燒傷/中毒持續回合數
+const FREEZE_DURATION = 2; // 冰封持續回合數(較短,避免控制鏈過強)
+const BURN_TICK_PCT = 0.04; // 燒傷:每回合造成目標氣血上限 4% 的持續傷害
+const POISON_TICK_PCT = 0.025; // 中毒:每回合造成目標氣血上限 2.5% 的持續傷害
+const POISON_WEAKEN_MULT = 0.8; // 中毒:攻擊輸出打八折(法器攻擊與仙法皆適用)
+
+function hasStatus(list: StatusEffect[] | undefined, kind: StatusEffect["kind"]): boolean {
+  return !!list?.some((e) => e.kind === kind && e.turns > 0);
+}
+
+// 疊加/刷新狀態效果:同名狀態取剩餘回合數較大者,不疊加傷害倍率——避免同屬性連續命中無限堆疊爆炸
+function applyStatus(
+  list: StatusEffect[] | undefined,
+  kind: StatusEffect["kind"],
+  turns: number,
+): StatusEffect[] {
+  const arr = list ? [...list] : [];
+  const existing = arr.find((e) => e.kind === kind);
+  if (existing) existing.turns = Math.max(existing.turns, turns);
+  else arr.push({ kind, turns });
+  return arr;
+}
+
+// 扣減指定狀態一回合(用於冰封在跳過回合當下的消耗),歸零即移除
+function decrementStatus(list: StatusEffect[] | undefined, kind: StatusEffect["kind"]): StatusEffect[] {
+  return (list ?? [])
+    .map((e) => (e.kind === kind ? { ...e, turns: e.turns - 1 } : e))
+    .filter((e) => e.turns > 0);
+}
+
+// 中毒狀態下攻擊輸出打八折(不論法器攻擊或仙法皆適用,雙方通用)
+function atkMultFromStatus(list: StatusEffect[] | undefined): number {
+  return hasStatus(list, "poison") ? POISON_WEAKEN_MULT : 1;
+}
+
+// 結算燒傷/中毒的持續傷害(冰封不在此處理,由跳過回合的邏輯各自扣減),回傳傷害總和與新的狀態清單
+function tickDot(
+  list: StatusEffect[] | undefined,
+  maxHp: number,
+): { list: StatusEffect[]; dmg: number; labels: string[] } {
+  const arr = list ? [...list] : [];
+  let dmg = 0;
+  const labels: string[] = [];
+  for (const e of arr) {
+    if (e.kind === "burn") {
+      const d = Math.max(1, Math.floor(maxHp * BURN_TICK_PCT));
+      dmg += d;
+      labels.push(`燒傷 -${d}`);
+    } else if (e.kind === "poison") {
+      const d = Math.max(1, Math.floor(maxHp * POISON_TICK_PCT));
+      dmg += d;
+      labels.push(`中毒 -${d}`);
+    }
+  }
+  const next = arr
+    .map((e) => (e.kind === "burn" || e.kind === "poison" ? { ...e, turns: e.turns - 1 } : e))
+    .filter((e) => e.turns > 0);
+  return { list: next, dmg, labels };
+}
 
 function log(s: SaveData, ...msgs: string[]) {
   s.log = [...s.log, ...msgs].slice(-MAX_LOG);
@@ -508,13 +603,50 @@ function resolveAscensionRoll(s: SaveData, chance: number): Modal {
   return { success: false, title: "突 破 失 敗", lines };
 }
 
-// 回傳戰敗彈窗(defeat 有值時代表這回合被打到氣血歸零,呼叫端應以此彈窗取代靜默記錄)
+// 玩家氣血歸零時的統一處理——不論死因是怪物攻擊還是狀態效果的持續傷害(2.21 版起,DOT 也可能致死,
+// 抽成共用函式以免兩處各寫一份)。天劫神靈試煉例外:不扣靈石,直接以減半後機率完成渡劫判定。
+function handlePlayerDefeat(s: SaveData, causeLine: string): Modal {
+  const { hpMax } = statsOf(s);
+  const surviveHp = Math.max(1, Math.floor(hpMax * 0.3));
+  if (s.combat?.tianjieTrial) {
+    s.hp = surviveHp;
+    s.combat = null;
+    log(s, causeLine, "你不敵天劫神靈之威,身受重創、倉皇脫身——道基因此動搖,飛昇之機大減!");
+    const chance = Math.max(0, breakChanceOf(s) * 0.5);
+    return resolveAscensionRoll(s, chance);
+  }
+  const mon = monsterById(s.combat!.monsterId);
+  const lost = Math.floor(s.stones / 2);
+  s.hp = surviveHp;
+  s.stones -= lost;
+  s.combat = null;
+  log(s, causeLine, `你身受重傷不敵,倉皇遁走…… 遺失了 ${lost} 靈石。`);
+  return {
+    title: "戰 敗 遁 走",
+    success: false,
+    lines: [
+      `不敵【${mon.name}】,身受重傷!`,
+      `氣血驟降至 ${surviveHp}/${hpMax}(僅剩三成)。`,
+      `倉皇遁走間,遺失靈石 ${lost} 枚。`,
+    ],
+  };
+}
+
+// 回傳戰敗彈窗(defeat 有值時代表這回合被打到氣血歸零,呼叫端應以此彈窗取代靜默記錄)。
+// 冰封判定放在最前面:不論攻擊/施法/遁走失敗召來的這一回合,只要怪物身上仍有冰封,一律直接跳過其攻擊。
 function monsterTurn(s: SaveData): { lines: string[]; defeat?: Modal } {
   if (!s.combat) return { lines: [] };
-  const lines: string[] = [];
   const mon = monsterById(s.combat.monsterId);
-  const monAtk = s.combat.bossAtk ?? mon.atk;
-  const { def, hpMax, speed } = statsOf(s);
+  if (hasStatus(s.combat.monsterStatus, "freeze")) {
+    s.combat.monsterStatus = decrementStatus(s.combat.monsterStatus, "freeze");
+    const line = `${mon.name} 深陷冰封,動彈不得!`;
+    log(s, line);
+    return { lines: [line] };
+  }
+  const lines: string[] = [];
+  const monAtkBase = s.combat.bossAtk ?? mon.atk;
+  const monAtk = Math.floor(monAtkBase * atkMultFromStatus(s.combat.monsterStatus));
+  const { def, speed } = statsOf(s);
   const monSpeed = Math.floor(monAtk * 1.2);
   const dodge = Math.min(0.35, Math.max(0.05, (speed / (speed + monSpeed)) * 0.5));
   if (Math.random() < dodge) {
@@ -525,45 +657,59 @@ function monsterTurn(s: SaveData): { lines: string[]; defeat?: Modal } {
   let dmg = Math.max(1, rand(Math.floor(monAtk * 0.8), Math.floor(monAtk * 1.2)) - def);
   const enraged = Math.random() < (MONSTER_TRIPLE_ATK_CHANCE[mon.id] ?? 0);
   if (enraged) dmg *= 3;
+  let statusNote = "";
+  const statusKind = STATUS_BY_ELEMENT[mon.element];
+  if (statusKind && Math.random() < STATUS_PROC_CHANCE) {
+    s.combat.playerStatus = applyStatus(
+      s.combat.playerStatus,
+      statusKind,
+      statusKind === "freeze" ? FREEZE_DURATION : STATUS_DURATION,
+    );
+    statusNote = `,你因此${STATUS_LABEL[statusKind]}!`;
+  }
   lines.push(
-    `${mon.name} 反擊${enraged ? ",龍血狂暴,攻擊力驟增三倍" : ""},你受到 ${dmg} 點傷害。`,
+    `${mon.name} 反擊${enraged ? ",龍血狂暴,攻擊力驟增三倍" : ""},你受到 ${dmg} 點傷害${statusNote}。`,
   );
   s.hp -= dmg;
   if (s.hp <= 0) {
-    // 天劫神靈試煉:敗於此劫不損靈石,但飛昇機率減半——直接代入減半後機率完成本次渡劫判定
-    if (s.combat!.tianjieTrial) {
-      const surviveHp = Math.max(1, Math.floor(hpMax * 0.3));
-      lines.push(
-        `你不敵天劫神靈之威,身受重創、倉皇脫身——道基因此動搖,飛昇之機大減!`,
-      );
-      s.hp = surviveHp;
-      s.combat = null;
-      log(s, ...lines);
-      const chance = Math.max(0, breakChanceOf(s) * 0.5);
-      return { lines, defeat: resolveAscensionRoll(s, chance) };
-    }
-    const lost = Math.floor(s.stones / 2);
-    const surviveHp = Math.max(1, Math.floor(hpMax * 0.3));
-    lines.push(`你身受重傷不敵,倉皇遁走…… 遺失了 ${lost} 靈石。`);
-    s.hp = surviveHp;
-    s.stones -= lost;
-    s.combat = null;
-    log(s, ...lines);
-    return {
-      lines,
-      defeat: {
-        title: "戰 敗 遁 走",
-        success: false,
-        lines: [
-          `不敵【${mon.name}】,身受重傷!`,
-          `受創 ${dmg} 點,氣血驟降至 ${surviveHp}/${hpMax}(僅剩三成)。`,
-          `倉皇遁走間,遺失靈石 ${lost} 枚。`,
-        ],
-      },
-    };
+    return { lines, defeat: handlePlayerDefeat(s, lines[lines.length - 1]) };
   }
   log(s, ...lines);
   return { lines };
+}
+
+// 玩家出手(攻擊/施法/遁走失敗)後的共用回合收尾:怪物身上的燒傷/中毒持續傷害 → 判定怪物死亡 →
+// 怪物出手(冰封則跳過,見 monsterTurn)→ 玩家身上的燒傷/中毒持續傷害 → 判定玩家戰敗 → 重新抽取下回合手牌。
+// attack/cast/flee(失敗)三處共用同一套流程,確保狀態效果不論本回合做了什麼動作都會如實結算。
+function postPlayerTurn(s: SaveData): { loot?: Modal } {
+  if (!s.combat) return {};
+  const mon = monsterById(s.combat.monsterId);
+  const monMaxHp = s.combat.bossHpMax ?? mon.hp;
+
+  const monTick = tickDot(s.combat.monsterStatus, monMaxHp);
+  s.combat.monsterStatus = monTick.list;
+  if (monTick.dmg > 0) {
+    s.combat.monsterHp -= monTick.dmg;
+    log(s, `${mon.name} 因${monTick.labels.join("、")}持續受創!`);
+    if (s.combat.monsterHp <= 0) return { loot: winCombat(s) };
+  }
+
+  const turn = monsterTurn(s);
+  if (turn.defeat) return { loot: turn.defeat };
+  if (!s.combat) return {}; // 防禦性檢查:理論上戰敗已由上一行攔截
+
+  const { hpMax } = statsOf(s);
+  const plyTick = tickDot(s.combat.playerStatus, hpMax);
+  s.combat.playerStatus = plyTick.list;
+  if (plyTick.dmg > 0) {
+    s.hp -= plyTick.dmg;
+    const line = `你因${plyTick.labels.join("、")}持續受創!`;
+    if (s.hp <= 0) return { loot: handlePlayerDefeat(s, line) };
+    log(s, line);
+  }
+
+  s.combat.hand = rollHand(s);
+  return {};
 }
 
 function winCombat(s: SaveData): Modal {
@@ -808,6 +954,13 @@ function applyActionInner(
   // 恆紀年:舊存檔沒有創建當下的紀年快照,以「現在」回填(僅為顯示用,不影響任何遊戲數值)
   if (typeof s.bornEra !== "number") s.bornEra = currentEraYears();
   if (typeof s.oracleOffered !== "boolean") s.oracleOffered = false;
+  // 2.21 版:仙法卡牌化上線前,可能已有玩家戰鬥進行到一半(combat 存在但缺少 hand/狀態欄位),
+  // 補上手牌與空狀態清單,避免舊戰鬥因缺欄位而出錯或前端無牌可選
+  if (s.combat && !s.combat.hand) {
+    s.combat.hand = rollHand(s);
+    s.combat.monsterStatus = s.combat.monsterStatus ?? [];
+    s.combat.playerStatus = s.combat.playerStatus ?? [];
+  }
 
   if (s.dead && type !== "reset") return { save: s, error: "你已道隕,唯有轉世重修。" };
 
@@ -940,6 +1093,9 @@ function applyActionInner(
           monsterHp: boss.hp,
           locationId: "__wander__",
           isLord: true,
+          hand: rollHand(s),
+          monsterStatus: [],
+          playerStatus: [],
         };
         if (!s.seen.includes(boss.id)) s.seen.push(boss.id);
         if (!s.lordsSeen.includes(boss.id)) s.lordsSeen.push(boss.id);
@@ -1043,6 +1199,9 @@ function applyActionInner(
           locationId: "__tianjie__",
           isLord: true,
           tianjieTrial: true,
+          hand: rollHand(s),
+          monsterStatus: [],
+          playerStatus: [],
         };
         if (!s.seen.includes(tianjie.id)) s.seen.push(tianjie.id);
         if (!s.lordsSeen.includes(tianjie.id)) s.lordsSeen.push(tianjie.id);
@@ -1129,7 +1288,14 @@ function applyActionInner(
       if (Math.random() < 0.35 && loc.monsters.length) {
         const mid = loc.monsters[rand(0, loc.monsters.length - 1)];
         const mon = monsterById(mid);
-        s.combat = { monsterId: mid, monsterHp: mon.hp, locationId: loc.id };
+        s.combat = {
+          monsterId: mid,
+          monsterHp: mon.hp,
+          locationId: loc.id,
+          hand: rollHand(s),
+          monsterStatus: [],
+          playerStatus: [],
+        };
         if (!s.seen.includes(mid)) s.seen.push(mid);
         log(s, `你在 ${loc.name} 採集時,${mon.name} 突然襲來!`);
         return { save: s };
@@ -1176,7 +1342,15 @@ function applyActionInner(
       const lordChance = lcMin + Math.random() * (lcMax - lcMin);
       if (lordId && Math.random() < lordChance) {
         const lord = monsterById(lordId);
-        s.combat = { monsterId: lord.id, monsterHp: lord.hp, locationId: loc.id, isLord: true };
+        s.combat = {
+          monsterId: lord.id,
+          monsterHp: lord.hp,
+          locationId: loc.id,
+          isLord: true,
+          hand: rollHand(s),
+          monsterStatus: [],
+          playerStatus: [],
+        };
         if (!s.seen.includes(lord.id)) s.seen.push(lord.id);
         if (!s.lordsSeen.includes(lord.id)) s.lordsSeen.push(lord.id);
         log(
@@ -1187,7 +1361,15 @@ function applyActionInner(
       }
       const mid = loc.monsters[rand(0, loc.monsters.length - 1)];
       const mon = monsterById(mid);
-      s.combat = { monsterId: mid, monsterHp: mon.hp, locationId: loc.id, isLord: mon.isLord };
+      s.combat = {
+        monsterId: mid,
+        monsterHp: mon.hp,
+        locationId: loc.id,
+        isLord: mon.isLord,
+        hand: rollHand(s),
+        monsterStatus: [],
+        playerStatus: [],
+      };
       if (!s.seen.includes(mid)) s.seen.push(mid);
       if (mon.isLord && !s.lordsSeen.includes(mid)) s.lordsSeen.push(mid);
       log(
@@ -1206,7 +1388,21 @@ function applyActionInner(
       }
       const techId = String(payload.techId ?? "");
       if (!s.learned.includes(techId)) return { save: s, error: "未習得此仙法" };
+      // 仙法卡牌化:僅本回合手牌內的仙法可施展,不在手牌中一律拒絕(前端只會顯示手牌內的按鈕,此為後端防線)
+      if (!(s.combat.hand ?? []).includes(techId)) {
+        return { save: s, error: "此仙法本回合未在手牌中,無法施展" };
+      }
       const tech = techById(techId);
+
+      // 冰封:動彈不得,這一擊直接落空,不耗法力,但仍照樣結算本回合(怪物出手、雙方 DOT、重抽手牌)
+      if (hasStatus(s.combat.playerStatus, "freeze")) {
+        s.combat.playerStatus = decrementStatus(s.combat.playerStatus, "freeze");
+        log(s, "你深陷冰封,動彈不得,這一擊落空!");
+        const { loot } = postPlayerTurn(s);
+        if (loot) return { save: s, loot };
+        return { save: s };
+      }
+
       if (s.mp < tech.mpCost) {
         log(s, `法力不足,無法施展 ${tech.name}(需 ${tech.mpCost})。`);
         return { save: s };
@@ -1221,44 +1417,77 @@ function applyActionInner(
       if (Math.random() < (MONSTER_DODGE_CHANCE[mon.id] ?? 0)) {
         log(s, `你施展【${tech.name}】,${mon.name} 身形一晃,竟憑空避過這一擊!`);
       } else {
+        const weaken = atkMultFromStatus(s.combat.playerStatus);
         const dmg = Math.max(
           1,
-          Math.floor(atk * tech.power * lvlMult * mult * sectMult * (0.9 + Math.random() * 0.2)),
+          Math.floor(atk * tech.power * lvlMult * mult * sectMult * weaken * (0.9 + Math.random() * 0.2)),
         );
+        let statusNote = "";
+        const statusKind = STATUS_BY_ELEMENT[tech.element];
+        if (statusKind && Math.random() < STATUS_PROC_CHANCE) {
+          s.combat.monsterStatus = applyStatus(
+            s.combat.monsterStatus,
+            statusKind,
+            statusKind === "freeze" ? FREEZE_DURATION : STATUS_DURATION,
+          );
+          statusNote = `,${mon.name} 因此${STATUS_LABEL[statusKind]}!`;
+        }
         log(
           s,
           `你施展【${tech.name}】(${level} 級),對 ${mon.name} 造成 ${formatDamage(dmg)}傷害` +
             (mult > 1 ? "(五行相剋,威力大增!)" : mult < 1 ? "(屬性被剋,威力受阻)" : "") +
             (sectMult > 1 ? `(宗門聲勢加持 ×${sectMult.toFixed(2)})` : "") +
+            statusNote +
             "。",
         );
         s.combat.monsterHp -= dmg;
       }
       if (s.combat.monsterHp <= 0) return { save: s, loot: winCombat(s) };
-      const turn = monsterTurn(s);
-      if (turn.defeat) return { save: s, loot: turn.defeat };
+      const { loot } = postPlayerTurn(s);
+      if (loot) return { save: s, loot };
       return { save: s };
     }
 
     case "attack": {
       if (!s.combat) return { save: s, error: "並無戰鬥" };
       const mon = monsterById(s.combat.monsterId);
+
+      // 冰封:動彈不得,這一擊直接落空,但仍照樣結算本回合
+      if (hasStatus(s.combat.playerStatus, "freeze")) {
+        s.combat.playerStatus = decrementStatus(s.combat.playerStatus, "freeze");
+        log(s, "你深陷冰封,動彈不得,這一擊落空!");
+        const { loot } = postPlayerTurn(s);
+        if (loot) return { save: s, loot };
+        return { save: s };
+      }
+
       const { atk, weaponEl } = statsOf(s);
       const mult = elementMult(weaponEl, mon.element);
       const sectMult = Number(payload.sectDamageMult ?? 1);
       if (Math.random() < (MONSTER_DODGE_CHANCE[mon.id] ?? 0)) {
         log(s, `你御使法器直取要害,${mon.name} 身形一晃,竟憑空避過這一擊!`);
       } else {
-        const dmg = Math.max(1, Math.floor(atk * mult * sectMult * (0.85 + Math.random() * 0.3)));
+        const weaken = atkMultFromStatus(s.combat.playerStatus);
+        const dmg = Math.max(1, Math.floor(atk * mult * sectMult * weaken * (0.85 + Math.random() * 0.3)));
+        let statusNote = "";
+        const statusKind = weaponEl ? STATUS_BY_ELEMENT[weaponEl] : undefined;
+        if (statusKind && Math.random() < STATUS_PROC_CHANCE) {
+          s.combat.monsterStatus = applyStatus(
+            s.combat.monsterStatus,
+            statusKind,
+            statusKind === "freeze" ? FREEZE_DURATION : STATUS_DURATION,
+          );
+          statusNote = `,${mon.name} 因此${STATUS_LABEL[statusKind]}!`;
+        }
         log(
           s,
-          `你御使法器直取要害,對 ${mon.name} 造成 ${formatDamage(dmg)}傷害${sectMult > 1 ? `(宗門聲勢加持 ×${sectMult.toFixed(2)})` : ""}。`,
+          `你御使法器直取要害,對 ${mon.name} 造成 ${formatDamage(dmg)}傷害${sectMult > 1 ? `(宗門聲勢加持 ×${sectMult.toFixed(2)})` : ""}${statusNote}。`,
         );
         s.combat.monsterHp -= dmg;
       }
       if (s.combat.monsterHp <= 0) return { save: s, loot: winCombat(s) };
-      const turn = monsterTurn(s);
-      if (turn.defeat) return { save: s, loot: turn.defeat };
+      const { loot } = postPlayerTurn(s);
+      if (loot) return { save: s, loot };
       return { save: s };
     }
 
@@ -1271,11 +1500,11 @@ function applyActionInner(
       if (Math.random() < 0.6) {
         s.combat = null;
         log(s, `你祭出遁光,成功從 ${mon.name} 爪下逃離。`);
-      } else {
-        log(s, "遁走失敗!");
-        const turn = monsterTurn(s);
-        if (turn.defeat) return { save: s, loot: turn.defeat };
+        return { save: s };
       }
+      log(s, "遁走失敗!");
+      const { loot } = postPlayerTurn(s);
+      if (loot) return { save: s, loot };
       return { save: s };
     }
 
@@ -1302,6 +1531,9 @@ function applyActionInner(
         futuFloor: floor,
         bossHpMax: bossHp,
         bossAtk,
+        hand: rollHand(s),
+        monsterStatus: [],
+        playerStatus: [],
       };
       if (!s.seen.includes(base.id)) s.seen.push(base.id);
       if (!s.lordsSeen.includes(base.id)) s.lordsSeen.push(base.id);

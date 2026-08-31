@@ -7,6 +7,8 @@ import type { ItemKind } from "@/game/types";
 export const ITEM_SECTIONS: [DictKey, ItemKind[]][] = [
   ["bagSecMaterial", ["material"]],
   ["bagSecHerbPill", ["herb", "pill"]],
+  ["bagSecTactic", ["tactic"]], // 戰術卡(3.1 版新增),獨立分類方便戰鬥中快速找到
+
   ["bagSecGear", ["artifact", "robe", "treasure", "amulet", "talisman"]],
   ["bagSecPet", ["pet"]],
   ["bagSecMing", ["mingqi"]],

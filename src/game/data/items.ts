@@ -283,6 +283,14 @@ export const ITEMS: ItemDef[] = [
   { id: "m_hunyuan", name: "《混元一氣仙訣》殘卷", kind: "manual", desc: "開天混元至法,參悟需真仙之境,苦修三十萬載方能大成。金源仙帝身隕方出。", price: 0, teaches: "hunyuan_yiqi", dropOnly: true },
   { id: "m_taiqing", name: "《太清道韻九轉》玉冊", kind: "manual", desc: "太清仙尊遺留的九轉道韻,修習需五十萬載。太上金仙與浮屠塔高層機緣。", price: 0, teaches: "taiqing_daoyun", dropOnly: true },
   { id: "m_zhutian", name: "《誅天神雷金仙法》仙簡", kind: "manual", desc: "唯金仙可修的無上殺伐仙法,修習需百萬載。傳說僅浮屠塔絕頂可得。", price: 0, teaches: "zhutian_shenlei", dropOnly: true },
+
+  // ── 戰術卡(3.1 版新增):戰鬥中消耗型策略卡,效果依氣血上限百分比或固定機制運作,不隨境界過時 ──
+  { id: "hufu_fu", name: "護體法箓", kind: "tactic", desc: "貼身一符,瞬間凝聚護盾,優先抵擋接下來受到的傷害。", price: 60, shieldPct: 0.2 },
+  { id: "xishen_fu", name: "洗髓符", kind: "tactic", desc: "以符籙滌蕩經脈,清除自身當前所有負面狀態效果。", price: 55, cleanse: true },
+  { id: "shuairuo_zhen", name: "衰運針", kind: "tactic", desc: "暗渡陰針,令敵手周身氣機紊亂,攻擊輸出隨之下降。", price: 70, enemyWeaken: true },
+  { id: "liehuo_yin", name: "烈焰印", kind: "tactic", desc: "掌心烈焰印烙於敵身,必定引燃燒傷,不受命中機率限制。", element: "火", price: 65, forceStatus: "burn" },
+  { id: "shizhen_zhi", name: "蝕毒針", kind: "tactic", desc: "淬毒銀針一擊即中,必定令敵中毒,不受命中機率限制。", element: "木", price: 65, forceStatus: "poison" },
+  { id: "bingfeng_jian", name: "冰封箋", kind: "tactic", desc: "寒氣封箋一觸即發,必定令敵冰封動彈不得,不受命中機率限制。", element: "水", price: 80, forceStatus: "freeze" },
 ];
 
 // 玄天仙器(蠻荒異界玄天殘片 + 太乙精魂煉成,唯太乙境可用,屬性極強且浮動 100%~300%)

@@ -116,7 +116,8 @@ export type ItemKind =
   | "mingqi" // 命器(天命符/地運符等,突破成功率加成,命器槽)
   | "recipe" // 煉器圖譜(使用後解鎖配方)
   | "treasure" // 舊:護身之寶(向後相容,視為 robe)
-  | "special";
+  | "special"
+  | "tactic"; // 戰術卡(3.1 版新增):戰鬥中消耗型策略卡,見 ItemDef 下方的戰術卡專屬欄位
 
 // 裝備槽定義(順序即人物欄顯示順序)
 export type EquipSlot = "weapon" | "robe" | "amulet" | "talisman" | "pet" | "ming";
@@ -142,6 +143,7 @@ export const KIND_LABEL: Record<string, string> = {
   recipe: "圖譜",
   treasure: "法衣",
   special: "仙物",
+  tactic: "戰術卡",
 };
 export const slotOfKind = (kind: ItemKind): EquipSlot | null =>
   EQUIP_SLOTS.find((s) => s.kinds.includes(kind))?.slot ?? null;
@@ -181,6 +183,11 @@ export interface ItemDef {
   dropOnly?: boolean;
   // 消耗型命器專屬:裝備後,下一次「嘗試突破」無論成敗皆會自動卸下並消耗一枚(見 engine.ts 的 breakthrough case)
   consumable?: boolean;
+  // ── 戰術卡專屬(3.1 版新增,kind === "tactic" 時才有意義,戰鬥中以 useTacticCard 動作打出)──
+  shieldPct?: number; // 護體:立即獲得「氣血上限 × shieldPct」的護盾額度,優先抵擋接下來受到的直接傷害
+  cleanse?: boolean; // 清除自身當前所有負面狀態效果
+  enemyWeaken?: boolean; // 對敵方附加「虛弱」狀態(攻擊輸出下降,具體倍率與持續回合由引擎統一控制)
+  forceStatus?: "burn" | "poison" | "freeze"; // 對敵方必定附加指定狀態,不受一般命中機率限制
 }
 
 export interface Technique {

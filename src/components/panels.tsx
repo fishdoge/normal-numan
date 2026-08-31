@@ -9,6 +9,7 @@ import {
   XIANLI_MULT,
   sectDamageMultOfStages,
   HAND_SIZE,
+  rerollHandCost,
 } from "@/game/store";
 import { REALMS } from "@/game/data/realms";
 import { SECTS } from "@/game/data/sects";
@@ -471,8 +472,8 @@ export function CombatPanel() {
   }
 
   const mon = MONSTERS.find((m) => m.id === combat.monsterId)!;
-  // 仙法卡牌化(2.21 版):可施展的仙法不再是「已學會的全部」,而是伺服器每回合隨機抽出的「手牌」
-  // (combat.hand)——已學會的仙法夠多時才會真的抽不完,逼玩家臨場決定要用哪張牌。法器攻擊不受手牌
+  // 仙法卡牌化(2.21 版新增,3.1 版改為持有制):可施展的仙法不再是「已學會的全部」,而是伺服器維護的
+  // 「手牌」(combat.hand)——戰鬥開始抽一次,之後打出一張只換那一張,其餘留在手中。法器攻擊不受手牌
   // 限制,恆常可用。舊戰鬥(部署前就已開打、combat 缺少 hand 欄位)以「已學會的全部」作為後備顯示。
   const usable = (combat.hand ?? s.learned).map(techById);
   const isLord = combat.isLord || mon.isLord;
@@ -480,11 +481,12 @@ export function CombatPanel() {
   const hpMaxMon = combat.bossHpMax ?? mon.hp; // 浮屠塔動態 BOSS 用其實際上限
   const monName = monsterDisplayName(mon, lang);
   const displayName = combat.futuFloor ? `${monName} · 第 ${combat.futuFloor} 層` : monName;
-  const STATUS_ICON: Record<string, string> = { burn: "🔥", poison: "☠️", freeze: "❄️" };
+  const STATUS_ICON: Record<string, string> = { burn: "🔥", poison: "☠️", freeze: "❄️", weaken: "🔻" };
   const STATUS_KEY: Record<string, DictKey> = {
     burn: "statusBurn",
     poison: "statusPoison",
     freeze: "statusFreeze",
+    weaken: "statusWeaken",
   };
   const statusChip = (kind: string, turns: number, tone: string) => (
     <span key={kind} className={`chip ${tone}`}>
@@ -497,6 +499,19 @@ export function CombatPanel() {
   const playerStatusChips = (combat.playerStatus ?? []).map((e) =>
     statusChip(e.kind, e.turns, "text-azure border-azure/50"),
   );
+  const { mpMax } = statsOf(s);
+  if ((combat.playerShield ?? 0) > 0) {
+    playerStatusChips.push(
+      <span key="shield" className="chip text-jade border-jade/50">
+        🛡 {t("combatShieldChip").replace("{n}", String(combat.playerShield))}
+      </span>,
+    );
+  }
+  // 戰術卡(3.1 版新增):儲物袋中 kind === "tactic" 且持有數量 > 0 者,戰鬥中可直接打出
+  const tacticEntries = Object.entries(s.inventory)
+    .map(([id, n]) => ({ id, n, item: itemById(id) }))
+    .filter((e) => e.item.kind === "tactic" && e.n > 0);
+  const rerollCost = rerollHandCost(mpMax);
 
   return (
     <div
@@ -558,23 +573,78 @@ export function CombatPanel() {
         </div>
       )}
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        <button className="btn" disabled={busy} onClick={() => act("attack")}>
-          {t("btnWeaponAttack")}
+      <p className="text-[10px] tracking-[0.2em] text-faded/60 uppercase mt-4 mb-1.5">{t("combatHandTitle")}</p>
+      <div className="flex flex-wrap gap-2.5">
+        <button
+          className="spell-card border-gold/50"
+          disabled={busy}
+          onClick={() => act("attack")}
+          title={t("btnWeaponAttack")}
+        >
+          <span className="spell-card-badge border-gold/60 text-gold">{t("permanentCardTag")}</span>
+          <span className="spell-card-name">{t("btnWeaponAttack")}</span>
+          <span className="spell-card-foot">
+            <span>⚔️</span>
+          </span>
         </button>
-        {usable.map((t) => (
+        {usable.map((tech) => (
           <button
-            key={t.id}
-            className="btn"
-            disabled={busy || s.mp < t.mpCost}
-            onClick={() => act("cast", { techId: t.id })}
-            title={techDisplayDesc(t, lang)}
+            key={tech.id}
+            className={`spell-card ${ELEMENT_COLOR[tech.element]}`}
+            disabled={busy || s.mp < tech.mpCost}
+            onClick={() => act("cast", { techId: tech.id })}
+            title={techDisplayDesc(tech, lang)}
           >
-            <span className={`mr-1 ${ELEMENT_COLOR[t.element]}`}>{elementLabel(t.element, lang)}</span>
-            {techDisplayName(t, lang)}
-            <span className="ml-1 text-xs text-faded">({t.mpCost})</span>
+            <span className="spell-card-badge border-azure/60 text-azure">{tech.mpCost}</span>
+            <span className="spell-card-name text-cream">{techDisplayName(tech, lang)}</span>
+            <span className="spell-card-foot">
+              <span className={ELEMENT_COLOR[tech.element]}>{elementLabel(tech.element, lang)}</span>
+              <span>{tech.power.toFixed(1)}</span>
+            </span>
           </button>
         ))}
+        {!isTianjieTrial && (
+          <button
+            className="spell-card border-faded/30"
+            disabled={busy || s.mp < rerollCost}
+            onClick={() => act("rerollHand")}
+            title={t("rerollHandTitle").replace("{n}", String(rerollCost))}
+          >
+            <span className="spell-card-badge border-faded/50 text-faded">{rerollCost}</span>
+            <span className="spell-card-name">{t("btnRerollHand")}</span>
+            <span className="spell-card-foot">
+              <span>🔄</span>
+            </span>
+          </button>
+        )}
+      </div>
+
+      {tacticEntries.length > 0 && (
+        <>
+          <p className="text-[10px] tracking-[0.2em] text-faded/60 uppercase mt-4 mb-1.5">
+            {t("combatTacticTitle")}
+          </p>
+          <div className="flex flex-wrap gap-2.5">
+            {tacticEntries.map(({ id, n, item }) => (
+              <button
+                key={id}
+                className="spell-card border-jade/40"
+                disabled={busy}
+                onClick={() => act("useTacticCard", { itemId: id })}
+                title={itemDisplayDesc(item, lang)}
+              >
+                <span className="spell-card-badge border-jade/60 text-jade">×{n}</span>
+                <span className="spell-card-name">{itemDisplayName(item, lang)}</span>
+                <span className="spell-card-foot">
+                  <span>{t("btnPlayTactic")}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      <div className="mt-4">
         {!isTianjieTrial && (
           <button className="btn btn-danger" disabled={busy} onClick={() => act("flee")}>
             {t("btnFlee")}

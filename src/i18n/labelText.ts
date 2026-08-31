@@ -16,6 +16,7 @@ export const KIND_LABEL_EN: Record<string, string> = {
   recipe: "Blueprint",
   treasure: "Robe",
   special: "Relic",
+  tactic: "Tactic Card",
 };
 
 export const EQUIP_SLOT_LABEL_EN: Record<EquipSlot, string> = {

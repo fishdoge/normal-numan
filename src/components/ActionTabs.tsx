@@ -373,6 +373,18 @@ function BagTab() {
               {t("btnStudyBlueprint")}
             </button>
           )}
+          {item.kind === "tactic" &&
+            (s.combat ? (
+              <button
+                className="btn border-jade/60 text-jade"
+                disabled={busy}
+                onClick={() => act("useTacticCard", { itemId: id })}
+              >
+                {t("btnPlayTactic")}
+              </button>
+            ) : (
+              <span className="chip self-center text-faded/70">{t("tacticOnlyInCombat")}</span>
+            ))}
           {item.kind === "manual" && (
             <button
               className="btn"
@@ -923,7 +935,7 @@ function MarketTab() {
   const [marketView, setMarketView] = useState<"shop" | "blackmarket">("shop");
   const wares = ITEMS.filter(
     (i) =>
-      (["pill", "herb", "robe", "amulet", "talisman"].includes(i.kind) ||
+      (["pill", "herb", "robe", "amulet", "talisman", "tactic"].includes(i.kind) ||
         (i.kind === "manual" && i.shopSellable)) &&
       !i.life &&
       !i.lifePct &&

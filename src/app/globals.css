@@ -69,6 +69,24 @@ body::after {
     content: "";
     @apply flex-1 h-px bg-gradient-to-r from-transparent via-faded/40 to-transparent;
   }
+  /* 仙法卡牌化 3.1 版:戰鬥出招改用實體卡片外觀呈現(取代原本的普通長條按鈕),法器攻擊/戰術卡共用同一套樣式,
+     視覺上就是「一手牌」,而非一排看起來都一樣的按鈕。 */
+  .spell-card {
+    @apply relative flex flex-col justify-between text-left w-[100px] min-h-[112px] px-2 pt-3 pb-2
+      border border-faded/30 bg-smoke/50 rounded-md text-cream
+      hover:border-gold hover:bg-gold/10 transition-colors
+      disabled:opacity-30 disabled:pointer-events-none disabled:hover:bg-smoke/50;
+  }
+  .spell-card-badge {
+    @apply absolute -top-2 -right-2 min-w-[20px] h-5 px-1 rounded-full flex items-center justify-center
+      text-[10px] font-mono font-bold bg-coal border;
+  }
+  .spell-card-name {
+    @apply text-xs font-bold leading-tight;
+  }
+  .spell-card-foot {
+    @apply flex items-center justify-between text-[10px] text-faded mt-1;
+  }
   .deco-frame {
     position: relative;
   }

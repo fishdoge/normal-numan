@@ -9,10 +9,11 @@ import { MISSIONS } from "./data/missions";
 import { dwellingLevelOf } from "./data/sectTiers";
 import { currentEraYears } from "./data/eraTime";
 
-// 狀態效果(2.21 版新增,仙法卡牌化的一部分):掛在既有五行系統上,火→燒傷、木→中毒、水→冰封,
-// 不獨立發明新屬性池。turns 為剩餘回合數,歸零即移除。
+// 狀態效果(2.21 版新增,仙法卡牌化的一部分;3.1 版新增 weaken):掛在既有五行系統上,火→燒傷、木→中毒、
+// 水→冰封,不獨立發明新屬性池;weaken(虛弱)不對應五行,僅由戰術卡的「衰運針」附加。
+// turns 為剩餘回合數,歸零即移除。
 export interface StatusEffect {
-  kind: "burn" | "poison" | "freeze";
+  kind: "burn" | "poison" | "freeze" | "weaken";
   turns: number;
 }
 
@@ -25,9 +26,13 @@ export interface CombatState {
   bossHpMax?: number; // 動態 BOSS 的氣血上限(浮屠塔用)
   bossAtk?: number; // 動態 BOSS 的攻擊(浮屠塔用)
   tianjieTrial?: boolean; // 渡劫→真仙:服下真仙丹後降臨的天劫神靈試煉,勝負直接決定本次突破機率翻倍/減半
-  hand?: string[]; // 本回合可施展的仙法卡牌 id(不含法器攻擊,法器攻擊恆常可用);由 rollHand() 每回合重新抽取
+  // 本回合可施展的仙法卡牌 id(不含法器攻擊,法器攻擊恆常可用)。3.1 版起手牌為「持有制」:戰鬥開始時由
+  // rollHand() 抽一次,之後每打出一張手牌仙法,只換掉那一張(見 drawReplacement),未打出的牌會留在手中,
+  // 不再每回合整手重抽——讓「手牌」真正像手牌,而不是每回合隨機換一批建議清單。
+  hand?: string[];
   monsterStatus?: StatusEffect[]; // 怪物身上的狀態效果
   playerStatus?: StatusEffect[]; // 玩家身上的狀態效果
+  playerShield?: number; // 戰術卡「護體法箓」賦予的護盾額度(3.1 版新增),優先抵擋接下來受到的直接傷害,用完即消
 }
 
 export interface Learning {
@@ -261,10 +266,10 @@ const MONSTER_DODGE_CHANCE: Record<string, number> = { lord_tianhu: 0.3 }; // �
 const MONSTER_TRIPLE_ATK_CHANCE: Record<string, number> = { lord_zhenlong: 0.2 }; // 真龍:兩成機率反擊 ×3
 const SPELL_SEALED_MONSTERS = new Set(["lord_pixiu"]); // 黑眼貔貅:封鎖玩家法術,無法施展仙法
 
-// ═══ 仙法卡牌化 + 狀態效果(2.21 版新增)═══
-// 出招池隨機亮牌:每回合從已學會的仙法中隨機抽出至多 HAND_SIZE 張作為本回合可施展的「手牌」;
-// 法器攻擊不受此限,永遠可用,作為不需要手氣也能穩定出手的保底選項。仙法數量不足 HAND_SIZE 時全數亮出,
-// 不刻意藏牌——這個機制只在玩家學會夠多仙法、真的「選不完」時才產生決策感,符合設計文件方向 A 的訴求。
+// ═══ 仙法卡牌化 + 狀態效果(2.21 版新增,3.1 版改為持有制手牌 + 戰術卡)═══
+// 出招池抽牌:戰鬥開始時從已學會的仙法中隨機抽出至多 HAND_SIZE 張組成「手牌」;法器攻擊不受此限,
+// 永遠可用,作為不需要手氣也能穩定出手的保底選項。仙法數量不足 HAND_SIZE 時全數亮出,不刻意藏牌——
+// 這個機制只在玩家學會夠多仙法、真的「選不完」時才產生決策感,符合設計文件方向 A 的訴求。
 export const HAND_SIZE = 3;
 function rollHand(s: Pick<SaveData, "learned">): string[] {
   const pool = s.learned;
@@ -277,6 +282,25 @@ function rollHand(s: Pick<SaveData, "learned">): string[] {
   return shuffled.slice(0, HAND_SIZE);
 }
 
+// 手牌持有制(3.1 版新增):打出一張手牌仙法後,只從「已學會但不在剩餘手牌中」的仙法裡補一張,
+// 其餘未打出的牌留在手中不動——真正的「手牌」語意,而非每回合整批重抽。若已無其他新選項
+// (已學仙法數量太少、其餘全在手上),原張留在手中不換。
+function drawReplacement(hand: string[], pool: string[], playedId: string): string[] {
+  const remaining = hand.filter((id) => id !== playedId);
+  const candidates = pool.filter((id) => !remaining.includes(id));
+  if (candidates.length === 0) return hand;
+  const draw = candidates[rand(0, candidates.length - 1)];
+  return [...remaining, draw];
+}
+
+// 棄牌重抽(3.1 版新增):花費法力,放棄整手仙法、重新抽一手全新的牌——手牌是持有制之後才有意義的
+// 主動選項(手牌不再每回合自動整批換新),讓玩家在滿手爛牌時仍有辦法自救,但要付出法力與這一回合
+// 被怪物攻擊的代價,不是免費操作。
+const REROLL_MP_PCT = 0.15; // 棄牌重抽消耗法力上限的比例
+export function rerollHandCost(mpMax: number): number {
+  return Math.max(1, Math.floor(mpMax * REROLL_MP_PCT));
+}
+
 // 狀態效果掛在既有五行系統上,不獨立發明新屬性池:火→燒傷(持續傷害)、木→中毒(持續傷害+攻擊力打折)、
 // 水→冰封(跳過一回合)。金/土先不掛狀態,留待驗證過這三種好不好玩後再擴充(見設計文件的收斂建議)。
 const STATUS_BY_ELEMENT: Partial<Record<Element, StatusEffect["kind"]>> = {
@@ -284,13 +308,21 @@ const STATUS_BY_ELEMENT: Partial<Record<Element, StatusEffect["kind"]>> = {
   木: "poison",
   水: "freeze",
 };
-const STATUS_LABEL: Record<StatusEffect["kind"], string> = { burn: "燒傷", poison: "中毒", freeze: "冰封" };
+const STATUS_LABEL: Record<StatusEffect["kind"], string> = {
+  burn: "燒傷",
+  poison: "中毒",
+  freeze: "冰封",
+  weaken: "虛弱",
+};
 const STATUS_PROC_CHANCE = 0.3; // 對應屬性的招式命中時,額外機率附加狀態
 const STATUS_DURATION = 3; // 燒傷/中毒持續回合數
 const FREEZE_DURATION = 2; // 冰封持續回合數(較短,避免控制鏈過強)
 const BURN_TICK_PCT = 0.04; // 燒傷:每回合造成目標氣血上限 4% 的持續傷害
 const POISON_TICK_PCT = 0.025; // 中毒:每回合造成目標氣血上限 2.5% 的持續傷害
 const POISON_WEAKEN_MULT = 0.8; // 中毒:攻擊輸出打八折(法器攻擊與仙法皆適用)
+// 虛弱(3.1 版新增,僅由戰術卡「衰運針」附加,不與五行掛鉤):攻擊輸出打七折,持續 2 回合
+const WEAKEN_MULT = 0.7;
+const WEAKEN_DURATION = 2;
 
 function hasStatus(list: StatusEffect[] | undefined, kind: StatusEffect["kind"]): boolean {
   return !!list?.some((e) => e.kind === kind && e.turns > 0);
@@ -316,12 +348,16 @@ function decrementStatus(list: StatusEffect[] | undefined, kind: StatusEffect["k
     .filter((e) => e.turns > 0);
 }
 
-// 中毒狀態下攻擊輸出打八折(不論法器攻擊或仙法皆適用,雙方通用)
+// 中毒/虛弱狀態下攻擊輸出打折(不論法器攻擊或仙法皆適用,雙方通用);兩者同時存在時效果相乘
 function atkMultFromStatus(list: StatusEffect[] | undefined): number {
-  return hasStatus(list, "poison") ? POISON_WEAKEN_MULT : 1;
+  let mult = 1;
+  if (hasStatus(list, "poison")) mult *= POISON_WEAKEN_MULT;
+  if (hasStatus(list, "weaken")) mult *= WEAKEN_MULT;
+  return mult;
 }
 
-// 結算燒傷/中毒的持續傷害(冰封不在此處理,由跳過回合的邏輯各自扣減),回傳傷害總和與新的狀態清單
+// 結算燒傷/中毒的持續傷害(冰封不在此處理,由跳過回合的邏輯各自扣減),回傳傷害總和與新的狀態清單;
+// 虛弱沒有持續傷害,但仍與燒傷/中毒一併在此扣減剩餘回合數,歸零即移除
 function tickDot(
   list: StatusEffect[] | undefined,
   maxHp: number,
@@ -340,10 +376,18 @@ function tickDot(
       labels.push(`中毒 -${d}`);
     }
   }
-  const next = arr
-    .map((e) => (e.kind === "burn" || e.kind === "poison" ? { ...e, turns: e.turns - 1 } : e))
-    .filter((e) => e.turns > 0);
+  const next = arr.map((e) => (e.kind === "freeze" ? e : { ...e, turns: e.turns - 1 })).filter((e) => e.turns > 0);
   return { list: next, dmg, labels };
+}
+
+// 護體護盾(3.1 版新增,戰術卡「護體法箓」賦予):優先抵擋玩家接下來受到的直接傷害,額度用完即消;
+// 僅抵擋怪物的直接攻擊,不抵擋燒傷/中毒的持續傷害(與多數卡牌遊戲的「護盾只擋直接傷害」慣例一致)
+function absorbShield(s: SaveData, dmg: number): { dmg: number; absorbed: number } {
+  const shield = s.combat?.playerShield ?? 0;
+  if (shield <= 0 || dmg <= 0 || !s.combat) return { dmg, absorbed: 0 };
+  const absorbed = Math.min(shield, dmg);
+  s.combat.playerShield = shield - absorbed;
+  return { dmg: dmg - absorbed, absorbed };
 }
 
 function log(s: SaveData, ...msgs: string[]) {
@@ -667,10 +711,13 @@ function monsterTurn(s: SaveData): { lines: string[]; defeat?: Modal } {
     );
     statusNote = `,你因此${STATUS_LABEL[statusKind]}!`;
   }
+  const { dmg: dmgAfterShield, absorbed } = absorbShield(s, dmg);
   lines.push(
-    `${mon.name} 反擊${enraged ? ",龍血狂暴,攻擊力驟增三倍" : ""},你受到 ${dmg} 點傷害${statusNote}。`,
+    `${mon.name} 反擊${enraged ? ",龍血狂暴,攻擊力驟增三倍" : ""},你受到 ${dmgAfterShield} 點傷害${
+      absorbed > 0 ? `(護盾抵擋 ${absorbed} 點)` : ""
+    }${statusNote}。`,
   );
-  s.hp -= dmg;
+  s.hp -= dmgAfterShield;
   if (s.hp <= 0) {
     return { lines, defeat: handlePlayerDefeat(s, lines[lines.length - 1]) };
   }
@@ -679,8 +726,10 @@ function monsterTurn(s: SaveData): { lines: string[]; defeat?: Modal } {
 }
 
 // 玩家出手(攻擊/施法/遁走失敗)後的共用回合收尾:怪物身上的燒傷/中毒持續傷害 → 判定怪物死亡 →
-// 怪物出手(冰封則跳過,見 monsterTurn)→ 玩家身上的燒傷/中毒持續傷害 → 判定玩家戰敗 → 重新抽取下回合手牌。
-// attack/cast/flee(失敗)三處共用同一套流程,確保狀態效果不論本回合做了什麼動作都會如實結算。
+// 怪物出手(冰封則跳過,見 monsterTurn)→ 玩家身上的燒傷/中毒持續傷害 → 判定玩家戰敗。
+// attack/cast/flee(失敗)/useTacticCard/rerollHand 皆共用同一套流程,確保狀態效果不論本回合做了什麼
+// 動作都會如實結算。3.1 版起手牌為持有制,不在此整批重抽——手牌只在打出仙法時單張替換(見 drawReplacement)
+// 或玩家主動棄牌重抽(見 rerollHand),故此函式不再碰 s.combat.hand。
 function postPlayerTurn(s: SaveData): { loot?: Modal } {
   if (!s.combat) return {};
   const mon = monsterById(s.combat.monsterId);
@@ -708,7 +757,6 @@ function postPlayerTurn(s: SaveData): { loot?: Modal } {
     log(s, line);
   }
 
-  s.combat.hand = rollHand(s);
   return {};
 }
 
@@ -954,8 +1002,9 @@ function applyActionInner(
   // 恆紀年:舊存檔沒有創建當下的紀年快照,以「現在」回填(僅為顯示用,不影響任何遊戲數值)
   if (typeof s.bornEra !== "number") s.bornEra = currentEraYears();
   if (typeof s.oracleOffered !== "boolean") s.oracleOffered = false;
-  // 2.21 版:仙法卡牌化上線前,可能已有玩家戰鬥進行到一半(combat 存在但缺少 hand/狀態欄位),
-  // 補上手牌與空狀態清單,避免舊戰鬥因缺欄位而出錯或前端無牌可選
+  // 3.0 版:仙法卡牌化上線前,可能已有玩家戰鬥進行到一半(combat 存在但缺少 hand/狀態欄位),
+  // 補上手牌與空狀態清單,避免舊戰鬥因缺欄位而出錯或前端無牌可選(playerShield 為 undefined 時各處
+  // 皆以 ?? 0 處理,無需在此額外補值)
   if (s.combat && !s.combat.hand) {
     s.combat.hand = rollHand(s);
     s.combat.monsterStatus = s.combat.monsterStatus ?? [];
@@ -1414,6 +1463,8 @@ function applyActionInner(
       const lvlMult = techPowerMult(level);
       const sectMult = Number(payload.sectDamageMult ?? 1);
       s.mp -= tech.mpCost;
+      // 打出這張手牌:不論接下來是否被閃避,這張仙法都算「已出手」,單張補位抽一張新牌,其餘手牌不動
+      s.combat.hand = drawReplacement(s.combat.hand ?? [], s.learned, techId);
       if (Math.random() < (MONSTER_DODGE_CHANCE[mon.id] ?? 0)) {
         log(s, `你施展【${tech.name}】,${mon.name} 身形一晃,竟憑空避過這一擊!`);
       } else {
@@ -1503,6 +1554,77 @@ function applyActionInner(
         return { save: s };
       }
       log(s, "遁走失敗!");
+      const { loot } = postPlayerTurn(s);
+      if (loot) return { save: s, loot };
+      return { save: s };
+    }
+
+    // 戰術卡(3.1 版新增):儲物袋內 kind === "tactic" 的消耗型卡,戰鬥中打出後即消耗一張,
+    // 效果結算完照樣進入 postPlayerTurn(佔用這一回合、怪物仍會出手),不是免費操作。
+    case "useTacticCard": {
+      if (!s.combat) return { save: s, error: "並未身處戰鬥,無法使用戰術卡" };
+      const itemId = String(payload.itemId ?? "");
+      const item = itemById(itemId);
+      if (!item || item.kind !== "tactic" || (s.inventory[itemId] ?? 0) <= 0) {
+        return { save: s, error: "並無此戰術卡" };
+      }
+      const mon = monsterById(s.combat.monsterId);
+
+      // 冰封:動彈不得,連戰術卡都取用不了,但仍照樣結算本回合
+      if (hasStatus(s.combat.playerStatus, "freeze")) {
+        s.combat.playerStatus = decrementStatus(s.combat.playerStatus, "freeze");
+        log(s, "你深陷冰封,動彈不得,取不出這張戰術卡!");
+        const { loot } = postPlayerTurn(s);
+        if (loot) return { save: s, loot };
+        return { save: s };
+      }
+
+      take(s, itemId);
+      const lines: string[] = [`你打出戰術卡【${item.name}】!`];
+      if (item.shieldPct) {
+        const { hpMax } = statsOf(s);
+        const gain = Math.max(1, Math.floor(hpMax * item.shieldPct));
+        s.combat.playerShield = (s.combat.playerShield ?? 0) + gain;
+        lines.push(`凝聚護盾 ${gain} 點,將優先抵擋接下來受到的傷害。`);
+      }
+      if (item.cleanse) {
+        const had = (s.combat.playerStatus ?? []).length > 0;
+        s.combat.playerStatus = [];
+        lines.push(had ? "自身負面狀態盡數清除!" : "你身上並無負面狀態,此符暫無用武之地。");
+      }
+      if (item.enemyWeaken) {
+        s.combat.monsterStatus = applyStatus(s.combat.monsterStatus, "weaken", WEAKEN_DURATION);
+        lines.push(`${mon.name} 氣機紊亂,陷入虛弱!`);
+      }
+      if (item.forceStatus) {
+        const dur = item.forceStatus === "freeze" ? FREEZE_DURATION : STATUS_DURATION;
+        s.combat.monsterStatus = applyStatus(s.combat.monsterStatus, item.forceStatus, dur);
+        lines.push(`${mon.name} 中招,必定${STATUS_LABEL[item.forceStatus]}!`);
+      }
+      log(s, ...lines);
+      const { loot } = postPlayerTurn(s);
+      if (loot) return { save: s, loot };
+      return { save: s };
+    }
+
+    // 棄牌重抽(3.1 版新增):放棄整手仙法、花費法力重新抽一手全新的牌,並照樣結算這一回合
+    case "rerollHand": {
+      if (!s.combat) return { save: s, error: "並未身處戰鬥,無法棄牌重抽" };
+      if (hasStatus(s.combat.playerStatus, "freeze")) {
+        s.combat.playerStatus = decrementStatus(s.combat.playerStatus, "freeze");
+        log(s, "你深陷冰封,動彈不得,無法棄牌重抽!");
+        const { loot } = postPlayerTurn(s);
+        if (loot) return { save: s, loot };
+        return { save: s };
+      }
+      const { mpMax } = statsOf(s);
+      const cost = rerollHandCost(mpMax);
+      if (s.mp < cost) {
+        return { save: s, error: `法力不足,棄牌重抽需 ${cost} 點法力` };
+      }
+      s.mp -= cost;
+      s.combat.hand = rollHand(s);
+      log(s, `你棄去滿手仙法,凝神重新抽牌(法力 -${cost})。`);
       const { loot } = postPlayerTurn(s);
       if (loot) return { save: s, loot };
       return { save: s };

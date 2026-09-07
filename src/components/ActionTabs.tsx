@@ -509,15 +509,27 @@ function TechTab() {
   const pouch = effectivePouch(s);
   const pouchMin = pouchMinFor(s.learned.length);
   const inCombat = !!s.combat;
+  // 3.11 版新增:仙法分頁拆成「百寶袋」(符寶袋內容調整)跟「修練」(修習中進度 + 增靈珠強化)
+  // 兩個子頁籤,不再一次全部堆在同一頁。
+  const [techView, setTechView] = useState<"pouch" | "cultivate">("pouch");
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-faded">{t("techCapNote")}</p>
-        <span className="chip text-fuchsia-400 border-fuchsia-400/50">
-          {itemDisplayName(itemById("zenglingzhu"), lang)} ×{zenglingzhu}
-        </span>
+      <div className="flex gap-1.5">
+        <button
+          className={`btn ${techView === "pouch" ? "border-gold text-gold bg-gold/10" : ""}`}
+          onClick={() => setTechView("pouch")}
+        >
+          {t("techViewPouch")}
+        </button>
+        <button
+          className={`btn ${techView === "cultivate" ? "border-gold text-gold bg-gold/10" : ""}`}
+          onClick={() => setTechView("cultivate")}
+        >
+          {t("techViewCultivate")}
+        </button>
       </div>
 
+      {techView === "pouch" && (
       <div className="border border-gold/30 bg-gold/5 rounded-sm p-3">
         <div className="flex items-baseline justify-between mb-1">
           <span className="font-bold text-gold">{t("talismanPouchTitle")}</span>
@@ -590,6 +602,16 @@ function TechTab() {
           );
         })()}
       </div>
+      )}
+
+      {techView === "cultivate" && (
+      <>
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-faded">{t("techCapNote")}</p>
+        <span className="chip text-fuchsia-400 border-fuchsia-400/50">
+          {itemDisplayName(itemById("zenglingzhu"), lang)} ×{zenglingzhu}
+        </span>
+      </div>
       {s.learning && (
         <div className="border border-azure/40 bg-azure/5 rounded-sm p-3">
           <div className="flex items-baseline justify-between">
@@ -640,6 +662,8 @@ function TechTab() {
         );
       })}
       <p className="text-xs text-faded/60 mt-2">{t("techFooterNote")}</p>
+      </>
+      )}
     </div>
   );
 }

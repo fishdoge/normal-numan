@@ -103,6 +103,8 @@ export const DICT = {
     btnSell: "售 {n}",
 
     // 仙法頁籤
+    techViewPouch: "百 寶 袋",
+    techViewCultivate: "修 練",
     techCapNote: "法術最高 7 級,以增靈珠強化,每級威力大增。",
     techLearningLabel: "修習中:{name}",
     techLearningRemain: "尚需 {n} 年(打坐推進)",
@@ -538,6 +540,8 @@ export const DICT = {
     btnSell: "Sell {n}",
 
     // 仙法頁籤
+    techViewPouch: "Pouch",
+    techViewCultivate: "Cultivate",
     techCapNote: "Techniques cap at level 7; strengthen with Spirit-Boosting Beads for a large power boost per level.",
     techLearningLabel: "Studying: {name}",
     techLearningRemain: "{n} years remaining (advanced by meditating)",

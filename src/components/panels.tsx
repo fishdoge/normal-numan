@@ -623,18 +623,18 @@ export function CombatPanel() {
         </div>
       </div>
 
-      {(monsterStatusChips.length > 0 || playerStatusChips.length > 0) && (
-        <div className="mt-2 space-y-1">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[10px] font-mono text-faded/60 shrink-0">{t("statusSideMonster")}</span>
-            {monsterStatusChips.length > 0 ? monsterStatusChips : <span className="text-[10px] text-faded/40">—</span>}
-          </div>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[10px] font-mono text-faded/60 shrink-0">{t("statusSidePlayer")}</span>
-            {playerStatusChips.length > 0 ? playerStatusChips : <span className="text-[10px] text-faded/40">—</span>}
-          </div>
+      {/* 3.11 版修正:雙方狀態列改為戰鬥中恆常顯示(不再只有任一方有狀態才出現),避免剛開戰、雙方都
+          還沒中任何狀態效果時整個區塊直接消失不見、讓人誤以為這個功能不存在 */}
+      <div className="mt-2 space-y-1">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-[10px] font-mono text-faded/60 shrink-0">{t("statusSideMonster")}</span>
+          {monsterStatusChips.length > 0 ? monsterStatusChips : <span className="text-[10px] text-faded/40">—</span>}
         </div>
-      )}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-[10px] font-mono text-faded/60 shrink-0">{t("statusSidePlayer")}</span>
+          {playerStatusChips.length > 0 ? playerStatusChips : <span className="text-[10px] text-faded/40">—</span>}
+        </div>
+      </div>
 
       <p className="text-[10px] tracking-[0.2em] text-faded/60 uppercase mt-4 mb-1.5">{t("combatHandTitle")}</p>
       {/* 手牌固定為 HAND_SIZE(6)張,改用 grid 讓整排卡片寬度精確貼齊面板(不再是 flex-wrap 靠固定卡寬

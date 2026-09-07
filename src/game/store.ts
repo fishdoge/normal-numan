@@ -3,7 +3,7 @@
 // 前端薄殼:所有遊戲操作 POST /api/action,由伺服器引擎運算
 // 前端不再持有任何遊戲邏輯或 localStorage 存檔
 import { create } from "zustand";
-import type { SaveData, Modal } from "./engine";
+import type { SaveData, Modal, DamageEvent } from "./engine";
 import { DICT, type Language } from "@/i18n/dict";
 import {
   statsOf,
@@ -23,10 +23,13 @@ import {
   ENERGY_REGEN_PER_TICK,
   dwellingEnergyBonusOf,
   HAND_SIZE,
-  rerollHandCost,
+  POUCH_MIN,
+  POUCH_MAX_COPIES,
+  effectivePouch,
+  pouchMinFor,
 } from "./engine";
 
-export type { SaveData, Modal };
+export type { SaveData, Modal, DamageEvent };
 export {
   statsOf,
   maxLifeOf,
@@ -45,7 +48,10 @@ export {
   ENERGY_REGEN_PER_TICK,
   dwellingEnergyBonusOf,
   HAND_SIZE,
-  rerollHandCost,
+  POUCH_MIN,
+  POUCH_MAX_COPIES,
+  effectivePouch,
+  pouchMinFor,
 };
 
 // 行動頁籤(ActionTabs)目前分頁,提到 store 讓其他面板(如道籍)也能切換頁籤
@@ -80,8 +86,12 @@ interface ClientState {
   mainView: MainView;
   revivalUsed: boolean; // 六道輪迴盤(付費復活)是否已終身用過一次
   language: Language; // 介面顯示語言(中文 / English),見 src/i18n
+  // 戰鬥浮動傷害數字(3.5 版新增):每次 act() 回傳的 damageEvents 附上前端自產的唯一 id 後累積於此,
+  // CombatPanel 依 id 渲染浮動數字動畫,動畫結束呼叫 consumeDamageEvent 移除,避免重複觸發。
+  damageEvents: (DamageEvent & { id: string })[];
 
   act: (type: string, payload?: Record<string, unknown>) => Promise<void>;
+  consumeDamageEvent: (id: string) => void;
   setSave: (save: SaveData | null) => void;
   closeLoot: () => void;
   closeBreak: () => void;
@@ -104,8 +114,11 @@ export const useGame = create<ClientState>()((set, get) => ({
   mainView: "game",
   revivalUsed: false,
   language: getInitialLanguage(),
+  damageEvents: [],
 
   setSave: (save) => set({ save }),
+  consumeDamageEvent: (id) =>
+    set((st) => ({ damageEvents: st.damageEvents.filter((e) => e.id !== id) })),
   closeLoot: () => set({ loot: null }),
   closeBreak: () => set({ breakResult: null }),
   closePurchaseResult: () => set({ purchaseResult: null }),
@@ -135,6 +148,13 @@ export const useGame = create<ClientState>()((set, get) => ({
       if (j.save !== undefined) set({ save: j.save });
       if (j.loot) set({ loot: j.loot });
       if (j.breakResult) set({ breakResult: j.breakResult });
+      if (Array.isArray(j.damageEvents) && j.damageEvents.length > 0) {
+        const stamped = (j.damageEvents as DamageEvent[]).map((e, i) => ({
+          ...e,
+          id: `${Date.now()}-${i}-${Math.random().toString(36).slice(2, 8)}`,
+        }));
+        set((st) => ({ damageEvents: [...st.damageEvents, ...stamped] }));
+      }
       if (j.error && j.save) {
         // 錯誤訊息進見聞錄
         const s = get().save;

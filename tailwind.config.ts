@@ -38,9 +38,15 @@ const config: Config = {
           "0%,100%": { opacity: "1" },
           "50%": { opacity: "0.5" },
         },
+        dmgFloat: {
+          "0%": { opacity: "0", transform: "translateY(0) scale(0.9)" },
+          "15%": { opacity: "1", transform: "translateY(-4px) scale(1.05)" },
+          "100%": { opacity: "0", transform: "translateY(-38px) scale(1)" },
+        },
       },
       animation: {
         floatUp: "floatUp .4s ease-out",
+        dmgFloat: "dmgFloat 1.1s ease-out forwards",
       },
     },
   },

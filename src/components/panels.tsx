@@ -8,8 +8,6 @@ import {
   energyMaxOf,
   XIANLI_MULT,
   sectDamageMultOfStages,
-  HAND_SIZE,
-  rerollHandCost,
 } from "@/game/store";
 import { REALMS } from "@/game/data/realms";
 import { SECTS } from "@/game/data/sects";
@@ -17,7 +15,17 @@ import { MONSTERS } from "@/game/data/world";
 import { itemById, isXuantianArtifact } from "@/game/data/items";
 import { currentEraYears, eraLabelText } from "@/game/data/eraTime";
 import { techById } from "@/game/data/techniques";
-import { ELEMENT_COLOR, ELEMENTS, XIANLI_COLOR, EQUIP_SLOTS, nameColorOf, isXianItem, XIAN_ITEM_COLOR } from "@/game/types";
+import {
+  ELEMENT_COLOR,
+  ELEMENT_BORDER_COLOR,
+  ELEMENTS,
+  XIANLI_COLOR,
+  EQUIP_SLOTS,
+  nameColorOf,
+  isXianItem,
+  XIAN_ITEM_COLOR,
+  formatDamage,
+} from "@/game/types";
 import { useT } from "@/i18n/useT";
 import type { DictKey } from "@/i18n/dict";
 import { itemDisplayName, itemDisplayDesc, itemStatLine } from "@/i18n/itemText";
@@ -443,6 +451,29 @@ export function StatusPanel() {
   );
 }
 
+// 戰鬥浮動傷害數字(3.5 版新增):讀取 store.damageEvents,依 target 分別浮在怪物氣血條上方(對怪物
+// 造成傷害)或面板上方(玩家受到傷害),動畫結束(1.1s)後自行從 store 移除,不需要外部計時器。
+function DamageFloats({ target, tone }: { target: "monster" | "player"; tone: string }) {
+  const events = useGame((x) => x.damageEvents);
+  const consume = useGame((x) => x.consumeDamageEvent);
+  const mine = events.filter((e) => e.target === target);
+  if (mine.length === 0) return null;
+  return (
+    <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center overflow-visible z-10">
+      {mine.map((e) => (
+        <span
+          key={e.id}
+          className={`absolute font-mono font-black text-2xl animate-dmgFloat ${tone}`}
+          style={{ textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}
+          onAnimationEnd={() => consume(e.id)}
+        >
+          -{formatDamage(e.amount)}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export function CombatPanel() {
   const s = useGame((x) => x.save)!;
   const act = useGame((x) => x.act);
@@ -450,6 +481,13 @@ export function CombatPanel() {
   const t = useT();
   const lang = useGame((x) => x.language);
   const combat = s.combat;
+  // 出牌改為「先選取、按出牌才打出」(3.5 版新增):以手牌位置(slot)記錄選取,允許同名重複符寶
+  // 各自獨立選取。手牌內容一變(打出/回合結束重抽)就代表舊的選取位置全部失效,一併清空。
+  const [selectedSlots, setSelectedSlots] = useState<number[]>([]);
+  const handKey = (combat?.hand ?? []).join(",");
+  useEffect(() => {
+    setSelectedSlots([]);
+  }, [handKey]);
 
   // 手機版單欄排版時,遭遇戰鬥當下自動把畫面捲到戰況欄(桌面版通常已在可視範圍內,scrollIntoView 不會有明顯動作)
   const panelRef = useRef<HTMLDivElement>(null);
@@ -472,10 +510,11 @@ export function CombatPanel() {
   }
 
   const mon = MONSTERS.find((m) => m.id === combat.monsterId)!;
-  // 仙法卡牌化(2.21 版新增,3.1 版改為持有制):可施展的仙法不再是「已學會的全部」,而是伺服器維護的
-  // 「手牌」(combat.hand)——戰鬥開始抽一次,之後打出一張只換那一張,其餘留在手中。法器攻擊不受手牌
-  // 限制,恆常可用。舊戰鬥(部署前就已開打、combat 缺少 hand 欄位)以「已學會的全部」作為後備顯示。
-  const usable = (combat.hand ?? s.learned).map(techById);
+  // 符寶袋(3.4 版):可施展的仙法是伺服器維護的「手牌」(combat.hand)——開戰從符寶袋洗牌抽 5 張,
+  // 打出的牌進棄牌堆,回合結束手中剩牌一併棄置、重新抽 5 張。手牌可能有同名重複符寶(符寶袋本來就
+  // 允許放入多張同一門仙法),渲染時需要用陣列索引而非 tech.id 當 key。舊戰鬥(部署前就已開打、
+  // combat 缺少 hand 欄位)以「已學會的全部」作為後備顯示。
+  const usable = (combat.hand ?? s.learned).map((id, i) => ({ tech: techById(id), slot: i }));
   const isLord = combat.isLord || mon.isLord;
   const isTianjieTrial = !!combat.tianjieTrial;
   const hpMaxMon = combat.bossHpMax ?? mon.hp; // 浮屠塔動態 BOSS 用其實際上限
@@ -499,7 +538,6 @@ export function CombatPanel() {
   const playerStatusChips = (combat.playerStatus ?? []).map((e) =>
     statusChip(e.kind, e.turns, "text-azure border-azure/50"),
   );
-  const { mpMax } = statsOf(s);
   if ((combat.playerShield ?? 0) > 0) {
     playerStatusChips.push(
       <span key="shield" className="chip text-jade border-jade/50">
@@ -511,12 +549,29 @@ export function CombatPanel() {
   const tacticEntries = Object.entries(s.inventory)
     .map(([id, n]) => ({ id, n, item: itemById(id) }))
     .filter((e) => e.item.kind === "tactic" && e.n > 0);
-  const rerollCost = rerollHandCost(mpMax);
+
+  // 出牌改為「先選取、按出牌才打出」(3.5 版新增)
+  const selectedTechIds = selectedSlots.map((slot) => usable.find((u) => u.slot === slot)!.tech.id);
+  const selectedCost = selectedTechIds.reduce((sum, id) => sum + techById(id).mpCost, 0);
+  // 法器攻擊只能單獨出牌(3.8 版新增):選取它就清空其他選取,選取其他符寶時若手上已選著法器攻擊也會先清空
+  const toggleSlot = (slot: number) => {
+    const tech = usable.find((u) => u.slot === slot)!.tech;
+    setSelectedSlots((prev) => {
+      if (prev.includes(slot)) return prev.filter((x) => x !== slot);
+      if (tech.soloOnly) return [slot];
+      const hasSolo = prev.some((s2) => usable.find((u) => u.slot === s2)!.tech.soloOnly);
+      return hasSolo ? [slot] : [...prev, slot];
+    });
+  };
+  const playSelected = () => {
+    if (selectedTechIds.length === 0) return;
+    act("castBatch", { techIds: selectedTechIds });
+  };
 
   return (
     <div
       ref={panelRef}
-      className={`panel deco-frame ${
+      className={`panel deco-frame relative ${
         isTianjieTrial
           ? "border-red-500/80 shadow-[0_0_18px_rgba(239,68,68,0.4)]"
           : isLord
@@ -524,6 +579,7 @@ export function CombatPanel() {
             : "border-vermillion/40"
       }`}
     >
+      <DamageFloats target="player" tone="text-vermillion" />
       <p className={`panel-title ${isTianjieTrial ? "text-red-400" : isLord ? "text-fuchsia-300" : "text-cinnabar"}`}>
         {isTianjieTrial
           ? t("combatTianjieArrives")
@@ -551,7 +607,8 @@ export function CombatPanel() {
         </span>
       </div>
       <p className="text-sm text-faded mt-1">{monsterDisplayDesc(mon, lang)}</p>
-      <div className="mt-3">
+      <div className="mt-3 relative">
+        <DamageFloats target="monster" tone="text-gold" />
         <div className="flex justify-between text-xs text-faded mb-0.5">
           <span>{t("combatMonHp")}</span>
           <span>
@@ -567,56 +624,56 @@ export function CombatPanel() {
       </div>
 
       {(monsterStatusChips.length > 0 || playerStatusChips.length > 0) && (
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {monsterStatusChips}
-          {playerStatusChips}
+        <div className="mt-2 space-y-1">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[10px] font-mono text-faded/60 shrink-0">{t("statusSideMonster")}</span>
+            {monsterStatusChips.length > 0 ? monsterStatusChips : <span className="text-[10px] text-faded/40">—</span>}
+          </div>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[10px] font-mono text-faded/60 shrink-0">{t("statusSidePlayer")}</span>
+            {playerStatusChips.length > 0 ? playerStatusChips : <span className="text-[10px] text-faded/40">—</span>}
+          </div>
         </div>
       )}
 
       <p className="text-[10px] tracking-[0.2em] text-faded/60 uppercase mt-4 mb-1.5">{t("combatHandTitle")}</p>
-      <div className="flex flex-wrap gap-2.5">
-        <button
-          className="spell-card border-gold/50"
-          disabled={busy}
-          onClick={() => act("attack")}
-          title={t("btnWeaponAttack")}
-        >
-          <span className="spell-card-badge border-gold/60 text-gold">{t("permanentCardTag")}</span>
-          <span className="spell-card-name">{t("btnWeaponAttack")}</span>
-          <span className="spell-card-foot">
-            <span>⚔️</span>
-          </span>
-        </button>
-        {usable.map((tech) => (
-          <button
-            key={tech.id}
-            className={`spell-card ${ELEMENT_COLOR[tech.element]}`}
-            disabled={busy || s.mp < tech.mpCost}
-            onClick={() => act("cast", { techId: tech.id })}
-            title={techDisplayDesc(tech, lang)}
-          >
-            <span className="spell-card-badge border-azure/60 text-azure">{tech.mpCost}</span>
-            <span className="spell-card-name text-cream">{techDisplayName(tech, lang)}</span>
-            <span className="spell-card-foot">
-              <span className={ELEMENT_COLOR[tech.element]}>{elementLabel(tech.element, lang)}</span>
-              <span>{tech.power.toFixed(1)}</span>
-            </span>
-          </button>
-        ))}
-        {!isTianjieTrial && (
-          <button
-            className="spell-card border-faded/30"
-            disabled={busy || s.mp < rerollCost}
-            onClick={() => act("rerollHand")}
-            title={t("rerollHandTitle").replace("{n}", String(rerollCost))}
-          >
-            <span className="spell-card-badge border-faded/50 text-faded">{rerollCost}</span>
-            <span className="spell-card-name">{t("btnRerollHand")}</span>
-            <span className="spell-card-foot">
-              <span>🔄</span>
-            </span>
-          </button>
-        )}
+      {/* 手牌固定為 HAND_SIZE(6)張,改用 grid 讓整排卡片寬度精確貼齊面板(不再是 flex-wrap 靠固定卡寬
+          自然換行、右側留白對不齊「激戰」標題列/氣血條的寬度) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+        {usable.map(({ tech, slot }) => {
+          const selected = selectedSlots.includes(slot);
+          const elLabel = elementLabel(tech.element, lang);
+          const buffNote = tech.synergyPct
+            ? t("synergyNoteTemplate")
+                .replace("{el}", elLabel)
+                .replace("{pct}", String(Math.round(tech.synergyPct * 100)))
+            : tech.nextPlayBuffPct
+              ? t("nextBuffNoteTemplate")
+                  .replace("{el}", elLabel)
+                  .replace("{pct}", String(Math.round(tech.nextPlayBuffPct * 100)))
+              : null;
+          return (
+            <button
+              key={`${tech.id}-${slot}`}
+              className={`spell-card w-full ${ELEMENT_BORDER_COLOR[tech.element]} ${
+                selected ? "ring-2 ring-gold -translate-y-1" : ""
+              }`}
+              disabled={busy || (!selected && s.mp < tech.mpCost)}
+              onClick={() => toggleSlot(slot)}
+              title={techDisplayDesc(tech, lang)}
+            >
+              <span className="spell-card-badge border-azure/60 text-azure">{tech.mpCost}</span>
+              <span className="spell-card-name text-cream">{techDisplayName(tech, lang)}</span>
+              {buffNote && <span className="spell-card-buff">{buffNote}</span>}
+              <span className="spell-card-foot">
+                <span className={ELEMENT_COLOR[tech.element]}>
+                  {tech.id === "artifact_attack" ? t("perEquippedWeapon") : elLabel}
+                </span>
+                {tech.id !== "artifact_attack" && <span>{tech.power.toFixed(1)}</span>}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {tacticEntries.length > 0 && (
@@ -644,19 +701,29 @@ export function CombatPanel() {
         </>
       )}
 
-      <div className="mt-4">
+      <div className="mt-4 flex gap-2 items-center flex-wrap">
+        <button
+          className="btn border-gold text-gold hover:bg-gold/15"
+          disabled={busy || selectedTechIds.length === 0 || s.mp < selectedCost}
+          onClick={playSelected}
+        >
+          {t("btnPlayCards")}
+          {selectedTechIds.length > 0 ? ` ×${selectedTechIds.length}(${selectedCost})` : ""}
+        </button>
+        <button className="btn" disabled={busy} onClick={() => act("endTurn")}>
+          {t("btnEndTurn")}
+        </button>
         {!isTianjieTrial && (
           <button className="btn btn-danger" disabled={busy} onClick={() => act("flee")}>
             {t("btnFlee")}
           </button>
         )}
       </div>
-      <p className="text-xs text-faded/60 mt-3">
+      <p className="text-xs text-faded/60 mt-3">{t("combatTurnNote")}</p>
+      <p className="text-xs text-faded/60 mt-1">
         {isTianjieTrial ? t("combatTianjieNote") : t("counterNote")}
       </p>
-      {s.learned.length > HAND_SIZE && !isTianjieTrial && (
-        <p className="text-xs text-faded/60">{t("combatHandNote")}</p>
-      )}
+      {!isTianjieTrial && <p className="text-xs text-faded/60">{t("combatHandNote")}</p>}
     </div>
   );
 }

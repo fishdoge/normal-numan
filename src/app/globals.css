@@ -73,8 +73,8 @@ body::after {
      視覺上就是「一手牌」,而非一排看起來都一樣的按鈕。 */
   .spell-card {
     @apply relative flex flex-col justify-between text-left w-[100px] min-h-[112px] px-2 pt-3 pb-2
-      border border-faded/30 bg-smoke/50 rounded-md text-cream
-      hover:border-gold hover:bg-gold/10 transition-colors
+      border-2 bg-smoke/50 rounded-md text-cream
+      hover:bg-gold/10 transition-colors
       disabled:opacity-30 disabled:pointer-events-none disabled:hover:bg-smoke/50;
   }
   .spell-card-badge {
@@ -83,6 +83,10 @@ body::after {
   }
   .spell-card-name {
     @apply text-xs font-bold leading-tight;
+  }
+  /* 符寶連攜提示(3.9 版新增):同屬性疊加/延續加成的效果簡述,直接印在卡面上,不用另外把滑鼠移上去 */
+  .spell-card-buff {
+    @apply text-[9px] text-gold/85 leading-tight mt-0.5;
   }
   .spell-card-foot {
     @apply flex items-center justify-between text-[10px] text-faded mt-1;

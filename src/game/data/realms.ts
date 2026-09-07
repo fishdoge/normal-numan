@@ -21,6 +21,20 @@ const MINORS: [string, number, number][] = [
   ["後期", 5.5, 2.4],
 ];
 
+// ── 符寶戰鬥系統:法力上限改為緩步線性成長(設計文件 pvp-territory-design.md 第九節 9.2) ──
+// 舊制 mpMax 跟著 hp/atk 一起指數成長到真仙/金仙期兩百萬級,符寶化之後法力池要當「每回合的戰術
+// 籌碼」用(類似爐石法力水晶),不能再跟著境界爆炸——爆炸了「這回合要不要梭哈三招」的取捨感會被
+// 稀釋掉。改用固定的起始值 + 每次突破緩步加值,起手 200、一路突破到太乙境封頂 445,全程只成長
+// 約 2.2 倍,而不是舊制的近萬倍。
+const MP_BASE = 200; // 練氣期前期(角色起始)法力上限
+const MP_MINOR_STEP = 5; // 每次小境界突破(前期→中期→後期)
+const MP_MAJOR_BONUS = 10; // 大境界突破(跨大境界/晉升新大境界)在小境界成長之上的額外加成
+let mpRunning = MP_BASE;
+function nextMp(isMajorBreak: boolean): number {
+  mpRunning += MP_MINOR_STEP + (isMajorBreak ? MP_MAJOR_BONUS : 0);
+  return mpRunning;
+}
+
 export const REALMS: Realm[] = MAJORS.flatMap((M, i) =>
   MINORS.map(([label, expMul, statMul], j) => ({
     id: `r${i}_${j}`,
@@ -28,7 +42,7 @@ export const REALMS: Realm[] = MAJORS.flatMap((M, i) =>
     stage: i + 1,
     expNeed: Math.floor(M.exp * expMul),
     hpMax: Math.floor(M.hp * statMul),
-    mpMax: Math.floor(M.mp * statMul),
+    mpMax: i === 0 && j === 0 ? MP_BASE : nextMp(j === 0),
     atk: Math.floor(M.atk * statMul),
     // 後期→下一大境界 是大關卡,成功率驟降
     breakChance: j < 2 ? 0.95 : M.brk,
@@ -43,7 +57,7 @@ REALMS.push(
     stage: 9,
     expNeed: 600000,
     hpMax: 380000,
-    mpMax: 200000,
+    mpMax: nextMp(true),
     atk: 50000,
     breakChance: 0.3,
     lifespan: 100000,
@@ -54,7 +68,7 @@ REALMS.push(
     stage: 10,
     expNeed: 9999999999,
     hpMax: 500000,
-    mpMax: 500000,
+    mpMax: nextMp(true),
     atk: 30000,
     breakChance: 0,
     lifespan: 99999999, // 仙人無壽
@@ -65,7 +79,7 @@ REALMS.push(
     stage: 11,
     expNeed: 9999999999,
     hpMax: 1200000,
-    mpMax: 1200000,
+    mpMax: nextMp(true),
     atk: 80000,
     breakChance: 0,
     lifespan: 99999999, // 金仙超脫,以金魂丹自真仙突破而成
@@ -76,7 +90,7 @@ REALMS.push(
     stage: 12,
     expNeed: 9999999999,
     hpMax: 2000000,
-    mpMax: 2000000,
+    mpMax: nextMp(true),
     atk: 150000,
     breakChance: 0,
     lifespan: 99999999, // 太乙超脫,集齊蠻荒異界四大地域王的太乙精魂於浮屠塔太乙殿突破而成

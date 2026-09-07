@@ -8,6 +8,7 @@ export const SECTS: Sect[] = [
     element: "木",
     desc: "越國七派之一,韓立所屬。擅長丹藥、木系法術,底蘊深厚,弟子修煉穩紮穩打。",
     startTech: "mujian",
+    startTech2: "tengbian",
     bonus: { exp: 15 },
   },
   {
@@ -16,6 +17,7 @@ export const SECTS: Sect[] = [
     element: "水",
     desc: "以水月神功聞名,門中多女修,水系法術陰柔綿長,法力雄厚。",
     startTech: "shuijian",
+    startTech2: "hanchao",
     bonus: { mp: 40 },
   },
   {
@@ -24,6 +26,7 @@ export const SECTS: Sect[] = [
     element: "金",
     desc: "劍修門派,以巨劍術破萬法,攻擊凌厲,金系法器加成極高。",
     startTech: "jinren",
+    startTech2: "ruijin",
     bonus: { atk: 8 },
   },
   {
@@ -32,6 +35,7 @@ export const SECTS: Sect[] = [
     element: "火",
     desc: "刀修聚集之地,刀罡如火,近戰兇悍,體魄強橫。",
     startTech: "huoqiu",
+    startTech2: "huozhu",
     bonus: { hp: 60 },
   },
   {
@@ -40,6 +44,7 @@ export const SECTS: Sect[] = [
     element: "土",
     desc: "堡壘型門派,土系防禦法術冠絕越國,弟子皮糙肉厚,擅打持久戰。",
     startTech: "tudun",
+    startTech2: "gutu",
     bonus: { hp: 30, mp: 20 },
   },
 ];

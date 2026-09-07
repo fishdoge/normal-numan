@@ -24,6 +24,17 @@ export const ELEMENT_COLOR: Record<Element, string> = {
   無: "text-faded",
 };
 
+// 符寶卡片邊框色(3.9 版新增):符寶手牌照 Figma 設計稿改為依屬性上色邊框,取代原本一律灰色的邊框,
+// 一眼就能分辨手上有哪些屬性的符寶。
+export const ELEMENT_BORDER_COLOR: Record<Element, string> = {
+  金: "border-metal/50",
+  木: "border-wood/50",
+  水: "border-water/50",
+  火: "border-fire/50",
+  土: "border-earth/50",
+  無: "border-faded/30",
+};
+
 // 仙靈力顯示色(真仙專屬,紫色)
 export const XIANLI_COLOR = "text-fuchsia-400";
 
@@ -199,6 +210,16 @@ export interface Technique {
   power: number; // 威力倍率基底
   reqStage: number; // 需要境界 stage
   learnYears?: number; // 修習年數覆寫(真仙/金仙/太乙頂尖仙法極長,預設隨境界指數成長,見 engine.ts learnYears)
+  // 符寶連攜(3.5 版新增,見 pvp-territory-design.md 第九節):同一次「出牌」可一次打出多張符寶,
+  // 兩者皆為選用欄位,目前只有五行入門攻擊符寶與各門派第二張起手符寶掛有數值,其餘仙法留空即無效果。
+  synergyPct?: number; // 與本次批次出牌中每一張同元素符寶(含自己)疊加的傷害加成比例,例:0.25 = 每張 +25%
+  nextPlayBuffPct?: number; // 打出後對下一次出牌生效:若下一批次含同元素符寶,該符寶傷害額外加成此比例,單次消耗
+  // 基礎卡片(3.8 版新增,見 pvp-territory-design.md 第九節):法器攻擊/法術攻擊兩張與生俱來、
+  // 不需要修習即可放入符寶袋的基礎符寶,以 innate 標記跟真正需要修習的仙法區隔(UI 分開顯示、
+  // 也不受「已學仙法才能加入符寶袋」限制以外的規則影響)。soloOnly 僅用於法器攻擊:一次出牌只能
+  // 單獨打出,不能跟其他符寶一起選取合併結算。
+  innate?: boolean;
+  soloOnly?: boolean;
 }
 
 export interface Recipe {
@@ -220,6 +241,7 @@ export interface Sect {
   desc: string;
   element: Element;
   startTech: string; // technique id
+  startTech2: string; // 第二張起手仙法(3.5 版新增),與 startTech 一併於角色創建時傳授
   bonus: { exp?: number; atk?: number; hp?: number; mp?: number };
 }
 

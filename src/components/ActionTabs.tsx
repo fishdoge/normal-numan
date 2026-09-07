@@ -10,6 +10,9 @@ import {
   MAX_TECH_LEVEL,
   ENERGY_COST,
   Tab,
+  effectivePouch,
+  pouchMinFor,
+  POUCH_MAX_COPIES,
 } from "@/game/store";
 import { LOCATIONS, MONSTERS, RECIPES, REGIONS } from "@/game/data/world";
 import { ITEMS, itemById, isXuantianArtifact } from "@/game/data/items";
@@ -503,6 +506,9 @@ function TechTab() {
   const lang = useGame((x) => x.language);
   const t = useT();
   const zenglingzhu = s.inventory["zenglingzhu"] ?? 0;
+  const pouch = effectivePouch(s);
+  const pouchMin = pouchMinFor(s.learned.length);
+  const inCombat = !!s.combat;
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
@@ -510,6 +516,79 @@ function TechTab() {
         <span className="chip text-fuchsia-400 border-fuchsia-400/50">
           {itemDisplayName(itemById("zenglingzhu"), lang)} ×{zenglingzhu}
         </span>
+      </div>
+
+      <div className="border border-gold/30 bg-gold/5 rounded-sm p-3">
+        <div className="flex items-baseline justify-between mb-1">
+          <span className="font-bold text-gold">{t("talismanPouchTitle")}</span>
+          <span className="text-xs font-mono text-faded">
+            {t("talismanPouchCountLine")
+              .replace("{n}", String(pouch.length))
+              .replace("{min}", String(pouchMin))}
+          </span>
+        </div>
+        <p className="text-xs text-faded mb-2">{t("talismanPouchDesc")}</p>
+        {inCombat && <p className="text-xs text-vermillion mb-2">{t("talismanPouchInCombatNote")}</p>}
+        {(() => {
+          // 基礎卡片(法器攻擊/法術攻擊,與生俱來)跟真正修習來的仙法分開列,兩者都能調整符寶袋張數
+          const baseCards = s.learned.filter((id) => techById(id).innate);
+          const studiedTechs = s.learned.filter((id) => !techById(id).innate);
+          const row = (id: string) => {
+            const tech = techById(id);
+            const count = pouch.filter((p) => p === id).length;
+            const atMax = count >= POUCH_MAX_COPIES;
+            const atMin = pouch.length <= pouchMin;
+            return (
+              <div key={id} className="flex items-center justify-between gap-2 text-sm">
+                <span className={ELEMENT_COLOR[tech.element]}>
+                  {techDisplayName(tech, lang)}
+                  <span className="text-faded ml-1 text-xs">
+                    ({tech.mpCost}
+                    {tech.soloOnly ? ` · ${t("talismanPouchSoloTag")}` : ""})
+                  </span>
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    className="chip hover:text-gold px-2"
+                    disabled={busy || inCombat || count === 0 || atMin}
+                    onClick={() => act("pouchAdjust", { techId: id, delta: -1 })}
+                  >
+                    −
+                  </button>
+                  <span className="font-mono text-xs w-4 text-center">{count}</span>
+                  <button
+                    className="chip hover:text-gold px-2"
+                    disabled={busy || inCombat || atMax}
+                    title={
+                      atMax ? t("talismanPouchMaxCopiesNote").replace("{n}", String(POUCH_MAX_COPIES)) : ""
+                    }
+                    onClick={() => act("pouchAdjust", { techId: id, delta: 1 })}
+                  >
+                    ＋
+                  </button>
+                </div>
+              </div>
+            );
+          };
+          return (
+            <>
+              <p className="text-[10px] tracking-[0.2em] text-faded/60 uppercase mb-1">
+                {t("talismanPouchBaseCardsTitle")}
+              </p>
+              <div className="space-y-1.5 mb-3">{baseCards.map(row)}</div>
+              <p className="text-[10px] tracking-[0.2em] text-faded/60 uppercase mb-1">
+                {t("talismanPouchTechsTitle")}
+              </p>
+              <div className="space-y-1.5">
+                {studiedTechs.length === 0 ? (
+                  <p className="text-xs text-faded">{t("techNoneLearned")}</p>
+                ) : (
+                  studiedTechs.map(row)
+                )}
+              </div>
+            </>
+          );
+        })()}
       </div>
       {s.learning && (
         <div className="border border-azure/40 bg-azure/5 rounded-sm p-3">
@@ -523,8 +602,12 @@ function TechTab() {
           </div>
         </div>
       )}
-      {s.learned.length === 0 && <p className="text-faded text-sm">{t("techNoneLearned")}</p>}
-      {s.learned.map((id) => {
+      {s.learned.filter((id) => !techById(id).innate).length === 0 && (
+        <p className="text-faded text-sm">{t("techNoneLearned")}</p>
+      )}
+      {s.learned
+        .filter((id) => !techById(id).innate)
+        .map((id) => {
         const tech = techById(id);
         const level = techLevelOf(s, id);
         const maxed = level >= MAX_TECH_LEVEL;

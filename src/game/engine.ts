@@ -1,5 +1,5 @@
 // 伺服器權威遊戲引擎:所有獎勵運算在此執行,前端僅顯示
-import { COUNTERS, Element, Monster, ItemDef, formatDamage } from "./types";
+import { COUNTERS, Element, Monster, ItemDef, Technique, formatDamage } from "./types";
 import { REALMS } from "./data/realms";
 import { SECTS } from "./data/sects";
 import { techById } from "./data/techniques";
@@ -26,10 +26,15 @@ export interface CombatState {
   bossHpMax?: number; // 動態 BOSS 的氣血上限(浮屠塔用)
   bossAtk?: number; // 動態 BOSS 的攻擊(浮屠塔用)
   tianjieTrial?: boolean; // 渡劫→真仙:服下真仙丹後降臨的天劫神靈試煉,勝負直接決定本次突破機率翻倍/減半
-  // 本回合可施展的仙法卡牌 id(不含法器攻擊,法器攻擊恆常可用)。3.1 版起手牌為「持有制」:戰鬥開始時由
-  // rollHand() 抽一次,之後每打出一張手牌仙法,只換掉那一張(見 drawReplacement),未打出的牌會留在手中,
-  // 不再每回合整手重抽——讓「手牌」真正像手牌,而不是每回合隨機換一批建議清單。
+  // 本回合可施展的仙法卡牌 id(不含法器攻擊,法器攻擊恆常可用)。3.4 版起改為符寶袋抽棄牌制:
+  // 開戰由 startingCombatHand() 從符寶袋洗牌抽 HAND_SIZE 張,打出的牌進 discard,回合結束整批
+  // 棄置重抽(見 redrawHand())。
   hand?: string[];
+  deck?: string[]; // 符寶袋(3.4 版新增):本場戰鬥洗混後尚未抽出的牌堆
+  discard?: string[]; // 已打出/回合結束棄置的符寶,牌堆抽空時洗回牌堆繼續抽
+  // 符寶連攜的延續加成(3.5 版新增):上一次出牌若打出過帶 nextPlayBuffPct 的符寶,記錄其元素與
+  // 加成比例,供下一次出牌時比對(只有下一批次含同元素符寶才會觸發),觸發或跳過一次即清除。
+  pendingElementBuff?: { element: Element; pct: number };
   monsterStatus?: StatusEffect[]; // 怪物身上的狀態效果
   playerStatus?: StatusEffect[]; // 玩家身上的狀態效果
   playerShield?: number; // 戰術卡「護體法箓」賦予的護盾額度(3.1 版新增),優先抵擋接下來受到的直接傷害,用完即消
@@ -74,6 +79,8 @@ export interface SaveData {
   cultToday: number;
   xianli: number; // 仙靈力(真仙專屬,攻擊倍數單位,每點 +0.2 倍)
   techLevels: Record<string, number>; // 仙法等級(1~7),增靈珠強化
+  pouch?: string[]; // 符寶袋(3.4 版新增):玩家自選的符寶清單,可重複(同名仙法可放入多張);
+  // 未設定(新角色/舊存檔)時由 effectivePouch() 退回預設組合,不需要遷移欄位
   boonHp: number; // 雲遊四海永久加成(固定比例累加)
   boonAtk: number;
   boonDef: number;
@@ -97,11 +104,23 @@ export interface Modal {
   success?: boolean;
 }
 
+// 戰鬥浮動傷害數字(3.5 版新增):每次 applyAction 呼叫過程中(含巢狀呼叫,如 postPlayerTurn 觸發
+// 的 monsterTurn)累積發生的傷害事件,結尾一併回傳給前端,驅動畫面上跳出的浮動數字。
+export interface DamageEvent {
+  target: "monster" | "player";
+  amount: number;
+}
+let pendingDamageEvents: DamageEvent[] = [];
+function pushDamageEvent(target: DamageEvent["target"], amount: number) {
+  if (amount > 0) pendingDamageEvents.push({ target, amount });
+}
+
 export interface ActionResult {
   save: SaveData;
   loot?: Modal; // 採集/戰利品彈窗
   breakResult?: Modal; // 突破結果彈窗
   error?: string;
+  damageEvents?: DamageEvent[]; // 本次行動(含連鎖觸發的怪物出手/持續傷害)產生的浮動傷害數字
 }
 
 const MAX_LOG = 60;
@@ -266,39 +285,91 @@ const MONSTER_DODGE_CHANCE: Record<string, number> = { lord_tianhu: 0.3 }; // �
 const MONSTER_TRIPLE_ATK_CHANCE: Record<string, number> = { lord_zhenlong: 0.2 }; // 真龍:兩成機率反擊 ×3
 const SPELL_SEALED_MONSTERS = new Set(["lord_pixiu"]); // 黑眼貔貅:封鎖玩家法術,無法施展仙法
 
-// ═══ 仙法卡牌化 + 狀態效果(2.21 版新增,3.1 版改為持有制手牌 + 戰術卡)═══
-// 出招池抽牌:戰鬥開始時從已學會的仙法中隨機抽出至多 HAND_SIZE 張組成「手牌」;法器攻擊不受此限,
-// 永遠可用,作為不需要手氣也能穩定出手的保底選項。仙法數量不足 HAND_SIZE 時全數亮出,不刻意藏牌——
-// 這個機制只在玩家學會夠多仙法、真的「選不完」時才產生決策感,符合設計文件方向 A 的訴求。
-export const HAND_SIZE = 3;
-function rollHand(s: Pick<SaveData, "learned">): string[] {
-  const pool = s.learned;
-  if (pool.length <= HAND_SIZE) return [...pool];
-  const shuffled = [...pool];
-  for (let i = shuffled.length - 1; i > 0; i--) {
+// ═══ 符寶袋(2.21 版仙法卡牌化 → 3.1 持有制手牌 → 3.4 版全面改為符寶袋抽棄牌,見
+// pvp-territory-design.md 第九節 9.3/9.4)═══
+// 玩家從已學仙法中自選(可重複,同一門仙法可放入多張)組成至少 POUCH_MIN 張的符寶袋;開戰洗混
+// 成牌堆,抽 HAND_SIZE 張成為手牌,法力允許可連續出牌,打出的牌進棄牌堆,回合結束手中剩牌一併
+// 棄置、重新抽 HAND_SIZE 張,牌堆抽空則洗回棄牌堆繼續抽——真正的「抽牌/棄牌/洗牌」牌庫,取代
+// 3.0/3.1 版「從已學仙法隨機/持有」的手牌邏輯。法器攻擊仍不佔手牌、恆常可用。
+export const HAND_SIZE = 6;
+export const POUCH_MIN = 10;
+export const POUCH_MAX_COPIES = 5; // 單一仙法最多可放入符寶袋的張數,避免十張同名符寶的退化陣容
+
+function shuffled<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
     const j = rand(0, i);
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    [a[i], a[j]] = [a[j], a[i]];
   }
-  return shuffled.slice(0, HAND_SIZE);
+  return a;
 }
 
-// 手牌持有制(3.1 版新增):打出一張手牌仙法後,只從「已學會但不在剩餘手牌中」的仙法裡補一張,
-// 其餘未打出的牌留在手中不動——真正的「手牌」語意,而非每回合整批重抽。若已無其他新選項
-// (已學仙法數量太少、其餘全在手上),原張留在手中不換。
-function drawReplacement(hand: string[], pool: string[], playedId: string): string[] {
-  const remaining = hand.filter((id) => id !== playedId);
-  const candidates = pool.filter((id) => !remaining.includes(id));
-  if (candidates.length === 0) return hand;
-  const draw = candidates[rand(0, candidates.length - 1)];
-  return [...remaining, draw];
+// 符寶袋尚未由玩家設定(新角色/舊存檔)時的預設內容:把已學仙法輪流填滿至 POUCH_MIN 張,
+// 確保任何情況下都能湊出可用的符寶袋。已學仙法一門都沒有時回傳空陣列(理論上不會發生,
+// 各門派角色創建時必有一門起手仙法)。
+export function defaultPouch(learned: string[]): string[] {
+  if (learned.length === 0) return [];
+  const out: string[] = [];
+  for (let i = 0; i < POUCH_MIN; i++) out.push(learned[i % learned.length]);
+  return out;
 }
 
-// 棄牌重抽(3.1 版新增):花費法力,放棄整手仙法、重新抽一手全新的牌——手牌是持有制之後才有意義的
-// 主動選項(手牌不再每回合自動整批換新),讓玩家在滿手爛牌時仍有辦法自救,但要付出法力與這一回合
-// 被怪物攻擊的代價,不是免費操作。
-const REROLL_MP_PCT = 0.15; // 棄牌重抽消耗法力上限的比例
-export function rerollHandCost(mpMax: number): number {
-  return Math.max(1, Math.floor(mpMax * REROLL_MP_PCT));
+// 目前有效的符寶袋:玩家已設定過就用玩家的選擇(濾掉理論上不該發生、但防禦性排除已不在
+// 已學仙法中的殘留項目),否則退回預設符寶袋。
+export function effectivePouch(s: Pick<SaveData, "learned" | "pouch">): string[] {
+  const raw = (s.pouch ?? []).filter((id) => s.learned.includes(id));
+  return raw.length > 0 ? raw : defaultPouch(s.learned);
+}
+
+// 符寶袋最低張數需求:正常是 POUCH_MIN,但已學仙法太少(乘上單卡上限仍湊不滿)時降低門檻,
+// 避免極早期角色(通常只學會起手那一門仙法)被卡住無法組出合法符寶袋。
+export function pouchMinFor(learnedCount: number): number {
+  return Math.min(POUCH_MIN, learnedCount * POUCH_MAX_COPIES);
+}
+
+// 開戰抽牌:洗混符寶袋成牌堆,抽 HAND_SIZE 張成為手牌,其餘留在牌堆,棄牌堆清空。順帶把法力回滿
+// (開戰法力回滿,見設計文件 9.8)——放在這裡一併處理,8 個建立 CombatState 的地方都用
+// `...startingCombatHand(s)` 展開,不用每處各自補一行 s.mp = mpMax。
+function startingCombatHand(s: SaveData): { hand: string[]; deck: string[]; discard: string[] } {
+  const { mpMax } = statsOf(s);
+  s.mp = mpMax;
+  const deck = shuffled(effectivePouch(s));
+  const hand = deck.splice(0, HAND_SIZE);
+  return { hand, deck, discard: [] };
+}
+
+// 從牌堆抽 n 張;牌堆不夠時先把棄牌堆洗回牌堆再繼續抽(兩者都空,代表符寶袋本身不足欲抽張數,
+// 能抽多少算多少,不會出錯)。
+function drawCards(
+  deckIn: string[],
+  discardIn: string[],
+  n: number,
+): { drawn: string[]; deck: string[]; discard: string[] } {
+  let deck = [...deckIn];
+  let discard = [...discardIn];
+  const drawn: string[] = [];
+  for (let i = 0; i < n; i++) {
+    if (deck.length === 0) {
+      if (discard.length === 0) break;
+      deck = shuffled(discard);
+      discard = [];
+    }
+    drawn.push(deck.shift()!);
+  }
+  return { drawn, deck, discard };
+}
+
+// 回合結束:手中剩牌一併棄置,重新抽 HAND_SIZE 張補滿手牌。
+function redrawHand(combat: Pick<CombatState, "hand" | "deck" | "discard">) {
+  const discardAll = [...(combat.discard ?? []), ...(combat.hand ?? [])];
+  return drawCards(combat.deck ?? [], discardAll, HAND_SIZE);
+}
+
+// 移除手牌中「一張」指定仙法(手牌可能有同名重複符寶,只移掉打出的那一張,其餘留著)。
+function removeOneFromHand(hand: string[], id: string): string[] {
+  const idx = hand.indexOf(id);
+  if (idx === -1) return hand;
+  return [...hand.slice(0, idx), ...hand.slice(idx + 1)];
 }
 
 // 狀態效果掛在既有五行系統上,不獨立發明新屬性池:火→燒傷(持續傷害)、木→中毒(持續傷害+攻擊力打折)、
@@ -417,7 +488,21 @@ export function newSave(name: string, sectId: string): SaveData {
     mp: 0,
     stones: 20,
     inventory: { huanglongdan: 2, liaoshangdan: 1 },
-    learned: [sect.startTech],
+    // 法器攻擊/法術攻擊是與生俱來的基礎卡片,不需要修習,所有角色一律持有(見 techniques.ts innate 標記)
+    learned: ["artifact_attack", "spell_attack", sect.startTech, sect.startTech2],
+    // 起手符寶袋(3.8 版新增,固定 10 張):3 法器攻擊 + 3 法術攻擊 + 3 入門仙法 + 1 第二張起手仙法
+    pouch: [
+      "artifact_attack",
+      "artifact_attack",
+      "artifact_attack",
+      "spell_attack",
+      "spell_attack",
+      "spell_attack",
+      sect.startTech,
+      sect.startTech,
+      sect.startTech,
+      sect.startTech2,
+    ],
     learning: null,
     equippedWeapon: null,
     equippedArmor: null,
@@ -462,7 +547,7 @@ export function newSave(name: string, sectId: string): SaveData {
   log(
     s,
     `${s.name} 拜入 ${sect.name},自此踏上修仙之路。`,
-    `長老傳授入門仙法:${techById(sect.startTech).name}。`,
+    `長老傳授入門仙法:${techById(sect.startTech).name}、${techById(sect.startTech2).name}。`,
     "身上僅有 20 枚下品靈石與幾瓶丹藥,前路漫漫,道阻且長。",
   );
   return s;
@@ -650,10 +735,11 @@ function resolveAscensionRoll(s: SaveData, chance: number): Modal {
 // 玩家氣血歸零時的統一處理——不論死因是怪物攻擊還是狀態效果的持續傷害(2.21 版起,DOT 也可能致死,
 // 抽成共用函式以免兩處各寫一份)。天劫神靈試煉例外:不扣靈石,直接以減半後機率完成渡劫判定。
 function handlePlayerDefeat(s: SaveData, causeLine: string): Modal {
-  const { hpMax } = statsOf(s);
+  const { hpMax, mpMax } = statsOf(s);
   const surviveHp = Math.max(1, Math.floor(hpMax * 0.3));
   if (s.combat?.tianjieTrial) {
     s.hp = surviveHp;
+    s.mp = mpMax;
     s.combat = null;
     log(s, causeLine, "你不敵天劫神靈之威,身受重創、倉皇脫身——道基因此動搖,飛昇之機大減!");
     const chance = Math.max(0, breakChanceOf(s) * 0.5);
@@ -662,6 +748,7 @@ function handlePlayerDefeat(s: SaveData, causeLine: string): Modal {
   const mon = monsterById(s.combat!.monsterId);
   const lost = Math.floor(s.stones / 2);
   s.hp = surviveHp;
+  s.mp = mpMax;
   s.stones -= lost;
   s.combat = null;
   log(s, causeLine, `你身受重傷不敵,倉皇遁走…… 遺失了 ${lost} 靈石。`);
@@ -718,6 +805,7 @@ function monsterTurn(s: SaveData): { lines: string[]; defeat?: Modal } {
     }${statusNote}。`,
   );
   s.hp -= dmgAfterShield;
+  pushDamageEvent("player", dmgAfterShield);
   if (s.hp <= 0) {
     return { lines, defeat: handlePlayerDefeat(s, lines[lines.length - 1]) };
   }
@@ -725,11 +813,13 @@ function monsterTurn(s: SaveData): { lines: string[]; defeat?: Modal } {
   return { lines };
 }
 
-// 玩家出手(攻擊/施法/遁走失敗)後的共用回合收尾:怪物身上的燒傷/中毒持續傷害 → 判定怪物死亡 →
-// 怪物出手(冰封則跳過,見 monsterTurn)→ 玩家身上的燒傷/中毒持續傷害 → 判定玩家戰敗。
-// attack/cast/flee(失敗)/useTacticCard/rerollHand 皆共用同一套流程,確保狀態效果不論本回合做了什麼
-// 動作都會如實結算。3.1 版起手牌為持有制,不在此整批重抽——手牌只在打出仙法時單張替換(見 drawReplacement)
-// 或玩家主動棄牌重抽(見 rerollHand),故此函式不再碰 s.combat.hand。
+// 玩家「回合結束」時的共用收尾:怪物身上的燒傷/中毒持續傷害 → 判定怪物死亡 →
+// 怪物出手(冰封則跳過,見 monsterTurn)→ 玩家身上的燒傷/中毒持續傷害 → 判定玩家戰敗 →
+// 存活則進入下一個玩家回合(法力回滿、法器攻擊次數限制重置)。
+// 3.3 版起,回合結構改為「連續出牌直到主動施法結束」(見 pvp-territory-design.md 9.5):
+// attack/cast/useTacticCard/rerollHand 只在「冰封動彈不得」時才會呼叫這裡(冰封=整回合直接跳過);
+// 正常情況下這些動作只套用效果本身、不會結束回合,只有明確的 endTurn 動作與 flee 失敗會呼叫這裡。
+// 3.4 版起手牌為符寶袋抽棄牌制:回合結束時手中剩牌一併棄置、重新抽 HAND_SIZE 張(見 redrawHand())。
 function postPlayerTurn(s: SaveData): { loot?: Modal } {
   if (!s.combat) return {};
   const mon = monsterById(s.combat.monsterId);
@@ -739,6 +829,7 @@ function postPlayerTurn(s: SaveData): { loot?: Modal } {
   s.combat.monsterStatus = monTick.list;
   if (monTick.dmg > 0) {
     s.combat.monsterHp -= monTick.dmg;
+    pushDamageEvent("monster", monTick.dmg);
     log(s, `${mon.name} 因${monTick.labels.join("、")}持續受創!`);
     if (s.combat.monsterHp <= 0) return { loot: winCombat(s) };
   }
@@ -747,22 +838,34 @@ function postPlayerTurn(s: SaveData): { loot?: Modal } {
   if (turn.defeat) return { loot: turn.defeat };
   if (!s.combat) return {}; // 防禦性檢查:理論上戰敗已由上一行攔截
 
-  const { hpMax } = statsOf(s);
+  const { hpMax, mpMax } = statsOf(s);
   const plyTick = tickDot(s.combat.playerStatus, hpMax);
   s.combat.playerStatus = plyTick.list;
   if (plyTick.dmg > 0) {
     s.hp -= plyTick.dmg;
+    pushDamageEvent("player", plyTick.dmg);
     const line = `你因${plyTick.labels.join("、")}持續受創!`;
     if (s.hp <= 0) return { loot: handlePlayerDefeat(s, line) };
     log(s, line);
   }
+
+  // 下一個玩家回合開始:法力直接回滿(3.6 版一度誤刪、3.7 版修正改回——這條規則本身沒問題,
+  // 真正缺的是戰鬥結束後也要回滿,見設計文件 9.8)。
+  s.mp = mpMax;
+  // 符寶袋回合制(3.4 版):手中剩牌一併棄置,重新抽 HAND_SIZE 張補滿手牌(牌堆不夠會自動洗回棄牌堆)
+  const redrawn = redrawHand(s.combat);
+  s.combat.hand = redrawn.drawn;
+  s.combat.deck = redrawn.deck;
+  s.combat.discard = redrawn.discard;
 
   return {};
 }
 
 function winCombat(s: SaveData): Modal {
   const mon = monsterById(s.combat!.monsterId);
-  const { stoneMult } = statsOf(s);
+  const { stoneMult, mpMax } = statsOf(s);
+  // 戰鬥結束(獲勝)法力回滿,跟戰敗遁走一致,置於所有分支之前確保無論哪種勝利收尾都套用到
+  s.mp = mpMax;
 
   // 天劫神靈試煉:斬滅此劫,飛昇機率翻倍——不掉落任何道具,直接代入翻倍後機率完成本次渡劫判定
   if (s.combat!.tianjieTrial) {
@@ -956,11 +1059,13 @@ export function applyAction(
   type: string,
   payload: Record<string, unknown> = {},
 ): ActionResult {
+  pendingDamageEvents = [];
   const result = applyActionInner(s, type, payload);
   // 統一收尾:氣血 / 法力 不得超過各自上限(也不得為負)
   const { hpMax, mpMax } = statsOf(result.save);
   result.save.hp = Math.max(0, Math.min(hpMax, result.save.hp));
   result.save.mp = Math.max(0, Math.min(mpMax, result.save.mp));
+  if (pendingDamageEvents.length > 0) result.damageEvents = pendingDamageEvents;
   return result;
 }
 
@@ -970,6 +1075,10 @@ function applyActionInner(
   payload: Record<string, unknown> = {},
 ): ActionResult {
   // 向後相容:補齊舊存檔缺少的欄位
+  // 3.8 版:法器攻擊/法術攻擊改為與生俱來的基礎卡片,新角色由 newSave() 直接寫入 learned,
+  // 舊存檔沒有這兩項,补上以免完全沒有基礎攻擊手段可用(原本恆常可用的法器攻擊已移除)
+  if (!s.learned.includes("artifact_attack")) s.learned = ["artifact_attack", ...s.learned];
+  if (!s.learned.includes("spell_attack")) s.learned = ["spell_attack", ...s.learned];
   if (!Array.isArray(s.lordsSeen)) s.lordsSeen = [];
   if (typeof s.xianli !== "number") s.xianli = 0;
   if (!s.techLevels || typeof s.techLevels !== "object") s.techLevels = {};
@@ -1002,11 +1111,14 @@ function applyActionInner(
   // 恆紀年:舊存檔沒有創建當下的紀年快照,以「現在」回填(僅為顯示用,不影響任何遊戲數值)
   if (typeof s.bornEra !== "number") s.bornEra = currentEraYears();
   if (typeof s.oracleOffered !== "boolean") s.oracleOffered = false;
-  // 3.0 版:仙法卡牌化上線前,可能已有玩家戰鬥進行到一半(combat 存在但缺少 hand/狀態欄位),
-  // 補上手牌與空狀態清單,避免舊戰鬥因缺欄位而出錯或前端無牌可選(playerShield 為 undefined 時各處
-  // 皆以 ?? 0 處理,無需在此額外補值)
-  if (s.combat && !s.combat.hand) {
-    s.combat.hand = rollHand(s);
+  // 3.0/3.1/3.3 版:符寶袋上線前,可能已有玩家戰鬥進行到一半(combat 存在但缺少 deck/discard,
+  // 舊制 hand 就算存在也是不同邏輯抽出來的,一併重新洗一手新的),避免舊戰鬥因缺欄位而出錯或
+  // 前端無牌可選(playerShield 為 undefined 時各處皆以 ?? 0 處理,無需在此額外補值)
+  if (s.combat && !s.combat.deck) {
+    const draw = startingCombatHand(s);
+    s.combat.hand = draw.hand;
+    s.combat.deck = draw.deck;
+    s.combat.discard = draw.discard;
     s.combat.monsterStatus = s.combat.monsterStatus ?? [];
     s.combat.playerStatus = s.combat.playerStatus ?? [];
   }
@@ -1142,7 +1254,7 @@ function applyActionInner(
           monsterHp: boss.hp,
           locationId: "__wander__",
           isLord: true,
-          hand: rollHand(s),
+          ...startingCombatHand(s),
           monsterStatus: [],
           playerStatus: [],
         };
@@ -1248,7 +1360,7 @@ function applyActionInner(
           locationId: "__tianjie__",
           isLord: true,
           tianjieTrial: true,
-          hand: rollHand(s),
+          ...startingCombatHand(s),
           monsterStatus: [],
           playerStatus: [],
         };
@@ -1341,7 +1453,7 @@ function applyActionInner(
           monsterId: mid,
           monsterHp: mon.hp,
           locationId: loc.id,
-          hand: rollHand(s),
+          ...startingCombatHand(s),
           monsterStatus: [],
           playerStatus: [],
         };
@@ -1396,7 +1508,7 @@ function applyActionInner(
           monsterHp: lord.hp,
           locationId: loc.id,
           isLord: true,
-          hand: rollHand(s),
+          ...startingCombatHand(s),
           monsterStatus: [],
           playerStatus: [],
         };
@@ -1415,7 +1527,7 @@ function applyActionInner(
         monsterHp: mon.hp,
         locationId: loc.id,
         isLord: mon.isLord,
-        hand: rollHand(s),
+        ...startingCombatHand(s),
         monsterStatus: [],
         playerStatus: [],
       };
@@ -1427,6 +1539,124 @@ function applyActionInner(
           ? `⚠ 你踏入 ${loc.name},仙威如淵——【${mon.name}】(${mon.element}屬性)橫亙眼前!`
           : `你主動深入 ${loc.name} 尋妖,遭遇了 ${mon.name}(${mon.element}屬性)!`,
       );
+      return { save: s };
+    }
+
+    // 出牌(3.5 版新增,取代單張 cast 作為前端主要施法入口,見 pvp-territory-design.md 第九節):
+    // 一次「出牌」可同時打出多張手牌符寶(可重複,法力總和只要打得起即可),合併結算成一次傷害:
+    // 每張符寶各自算出「威力(power × 增靈珠倍率 × 連攜 synergyPct × 延續加成 pendingElementBuff ×
+    // 五行相剋)」後加總,宗門聲勢/虛弱狀態則對加總後的威力套用一次。法力歸零時自動觸發回合結束,
+    // 不需要玩家再按一次施法結束。
+    case "castBatch": {
+      if (!s.combat) return { save: s, error: "並無戰鬥" };
+      if (SPELL_SEALED_MONSTERS.has(s.combat.monsterId)) {
+        return { save: s, error: "黑眼貔貅雙目幽光暴閃,將你的法力波動盡數封鎖,此戰唯有以法器相搏!" };
+      }
+      const techIds = Array.isArray(payload.techIds) ? payload.techIds.map(String) : [];
+      if (techIds.length === 0) return { save: s, error: "尚未選取任何符寶" };
+
+      // 冰封:動彈不得,這一整批出牌落空,不耗法力,但仍照樣結算本回合
+      if (hasStatus(s.combat.playerStatus, "freeze")) {
+        s.combat.playerStatus = decrementStatus(s.combat.playerStatus, "freeze");
+        log(s, "你深陷冰封,動彈不得,這一擊落空!");
+        const { loot } = postPlayerTurn(s);
+        if (loot) return { save: s, loot };
+        return { save: s };
+      }
+
+      // 逐張核銷手牌:必須真的持有(允許同名重複,但不得超過手牌實際張數)
+      let remainingHand = [...(s.combat.hand ?? [])];
+      for (const id of techIds) {
+        if (!s.learned.includes(id)) return { save: s, error: "未習得此仙法" };
+        if (!remainingHand.includes(id)) {
+          return { save: s, error: "所選符寶不在手牌中,或選取張數超過手牌持有數量" };
+        }
+        remainingHand = removeOneFromHand(remainingHand, id);
+      }
+
+      const techs = techIds.map((id) => techById(id));
+      // 法器攻擊只能單獨出牌,不能跟其他符寶合併打出(包含跟另一張法器攻擊一起選)
+      if (techs.length > 1 && techs.some((t) => t.soloOnly)) {
+        return { save: s, error: "法器攻擊只能單獨出牌,無法與其他符寶一起打出。" };
+      }
+      const totalCost = techs.reduce((sum, t) => sum + t.mpCost, 0);
+      if (s.mp < totalCost) {
+        return { save: s, error: `法力不足,這次出牌共需 ${totalCost} 點法力` };
+      }
+
+      const mon = monsterById(s.combat.monsterId);
+      const { atk, weaponEl } = statsOf(s);
+      const sectMult = Number(payload.sectDamageMult ?? 1);
+      const weaken = atkMultFromStatus(s.combat.playerStatus);
+      const buff = s.combat.pendingElementBuff;
+      // 法器攻擊的屬性依裝備法器動態決定,不用資料表裡的佔位「無」屬性
+      const effEl = (t: Technique) => (t.id === "artifact_attack" ? weaponEl : t.element) ?? t.element;
+
+      // 同批次同元素張數(含自己),供 synergyPct 使用
+      const elementCounts = new Map<Element, number>();
+      for (const t of techs) elementCounts.set(effEl(t), (elementCounts.get(effEl(t)) ?? 0) + 1);
+
+      let rawPower = 0;
+      let bestElementMult = 1; // 戰報顯示用:批次內最高的相剋倍率
+      for (const t of techs) {
+        const level = techLevelOf(s, t.id);
+        let p = t.power * techPowerMult(level);
+        if (t.synergyPct) p *= 1 + t.synergyPct * (elementCounts.get(effEl(t)) ?? 1);
+        if (buff && buff.element === effEl(t)) p *= 1 + buff.pct;
+        const mult = elementMult(effEl(t), mon.element);
+        bestElementMult = Math.max(bestElementMult, mult);
+        p *= mult;
+        rawPower += p;
+      }
+      // 延續加成用掉即消耗,不論這次批次是否真的命中同元素都算用過一次機會
+      if (buff) s.combat.pendingElementBuff = undefined;
+
+      s.mp -= totalCost;
+      s.combat.hand = remainingHand;
+      s.combat.discard = [...(s.combat.discard ?? []), ...techIds];
+
+      // 打出後,若批次中有帶 nextPlayBuffPct 的符寶,登記給下一次出牌用(多張只取加成最高者)
+      const buffGivers = techs.filter((t) => t.nextPlayBuffPct);
+      if (buffGivers.length > 0) {
+        const strongest = buffGivers.reduce((a, b) => (b.nextPlayBuffPct! > a.nextPlayBuffPct! ? b : a));
+        s.combat.pendingElementBuff = { element: effEl(strongest), pct: strongest.nextPlayBuffPct! };
+      }
+
+      const names = techs.map((t) => t.name).join("、");
+      if (Math.random() < (MONSTER_DODGE_CHANCE[mon.id] ?? 0)) {
+        log(s, `你同時施展【${names}】,${mon.name} 身形一晃,竟憑空避過這一擊!`);
+      } else {
+        const dmg = Math.max(1, Math.floor(atk * rawPower * sectMult * weaken * (0.9 + Math.random() * 0.2)));
+        let statusNote = "";
+        for (const t of techs) {
+          const statusKind = STATUS_BY_ELEMENT[effEl(t)];
+          if (statusKind && Math.random() < STATUS_PROC_CHANCE) {
+            s.combat.monsterStatus = applyStatus(
+              s.combat.monsterStatus,
+              statusKind,
+              statusKind === "freeze" ? FREEZE_DURATION : STATUS_DURATION,
+            );
+            statusNote += `,${mon.name} 因此${STATUS_LABEL[statusKind]}!`;
+          }
+        }
+        log(
+          s,
+          `你同時施展【${names}】,對 ${mon.name} 造成 ${formatDamage(dmg)}傷害` +
+            (bestElementMult > 1 ? "(五行相剋,威力大增!)" : bestElementMult < 1 ? "(屬性被剋,威力受阻)" : "") +
+            (sectMult > 1 ? `(宗門聲勢加持 ×${sectMult.toFixed(2)})` : "") +
+            statusNote +
+            "。",
+        );
+        s.combat.monsterHp -= dmg;
+        pushDamageEvent("monster", dmg);
+      }
+      if (s.combat.monsterHp <= 0) return { save: s, loot: winCombat(s) };
+
+      // 法力歸零:自動觸發施法結束,不需要玩家再按一次
+      if (s.mp <= 0) {
+        const { loot } = postPlayerTurn(s);
+        if (loot) return { save: s, loot };
+      }
       return { save: s };
     }
 
@@ -1463,8 +1693,10 @@ function applyActionInner(
       const lvlMult = techPowerMult(level);
       const sectMult = Number(payload.sectDamageMult ?? 1);
       s.mp -= tech.mpCost;
-      // 打出這張手牌:不論接下來是否被閃避,這張仙法都算「已出手」,單張補位抽一張新牌,其餘手牌不動
-      s.combat.hand = drawReplacement(s.combat.hand ?? [], s.learned, techId);
+      // 打出這張手牌:不論接下來是否被閃避,這張符寶都算「已出手」,從手中移掉這一張(手牌可能有
+      // 同名重複符寶,只移掉這張)、送入棄牌堆,回合結束才會整批補回新的一手
+      s.combat.hand = removeOneFromHand(s.combat.hand ?? [], techId);
+      s.combat.discard = [...(s.combat.discard ?? []), techId];
       if (Math.random() < (MONSTER_DODGE_CHANCE[mon.id] ?? 0)) {
         log(s, `你施展【${tech.name}】,${mon.name} 身形一晃,竟憑空避過這一擊!`);
       } else {
@@ -1492,53 +1724,10 @@ function applyActionInner(
             "。",
         );
         s.combat.monsterHp -= dmg;
+        pushDamageEvent("monster", dmg);
       }
       if (s.combat.monsterHp <= 0) return { save: s, loot: winCombat(s) };
-      const { loot } = postPlayerTurn(s);
-      if (loot) return { save: s, loot };
-      return { save: s };
-    }
-
-    case "attack": {
-      if (!s.combat) return { save: s, error: "並無戰鬥" };
-      const mon = monsterById(s.combat.monsterId);
-
-      // 冰封:動彈不得,這一擊直接落空,但仍照樣結算本回合
-      if (hasStatus(s.combat.playerStatus, "freeze")) {
-        s.combat.playerStatus = decrementStatus(s.combat.playerStatus, "freeze");
-        log(s, "你深陷冰封,動彈不得,這一擊落空!");
-        const { loot } = postPlayerTurn(s);
-        if (loot) return { save: s, loot };
-        return { save: s };
-      }
-
-      const { atk, weaponEl } = statsOf(s);
-      const mult = elementMult(weaponEl, mon.element);
-      const sectMult = Number(payload.sectDamageMult ?? 1);
-      if (Math.random() < (MONSTER_DODGE_CHANCE[mon.id] ?? 0)) {
-        log(s, `你御使法器直取要害,${mon.name} 身形一晃,竟憑空避過這一擊!`);
-      } else {
-        const weaken = atkMultFromStatus(s.combat.playerStatus);
-        const dmg = Math.max(1, Math.floor(atk * mult * sectMult * weaken * (0.85 + Math.random() * 0.3)));
-        let statusNote = "";
-        const statusKind = weaponEl ? STATUS_BY_ELEMENT[weaponEl] : undefined;
-        if (statusKind && Math.random() < STATUS_PROC_CHANCE) {
-          s.combat.monsterStatus = applyStatus(
-            s.combat.monsterStatus,
-            statusKind,
-            statusKind === "freeze" ? FREEZE_DURATION : STATUS_DURATION,
-          );
-          statusNote = `,${mon.name} 因此${STATUS_LABEL[statusKind]}!`;
-        }
-        log(
-          s,
-          `你御使法器直取要害,對 ${mon.name} 造成 ${formatDamage(dmg)}傷害${sectMult > 1 ? `(宗門聲勢加持 ×${sectMult.toFixed(2)})` : ""}${statusNote}。`,
-        );
-        s.combat.monsterHp -= dmg;
-      }
-      if (s.combat.monsterHp <= 0) return { save: s, loot: winCombat(s) };
-      const { loot } = postPlayerTurn(s);
-      if (loot) return { save: s, loot };
+      // 3.3 版:出牌不再自動結束回合,法力允許就能接著出下一張,直到玩家主動施法結束(見 case "endTurn")
       return { save: s };
     }
 
@@ -1549,7 +1738,9 @@ function applyActionInner(
       }
       const mon = monsterById(s.combat.monsterId);
       if (Math.random() < 0.6) {
+        const { mpMax } = statsOf(s);
         s.combat = null;
+        s.mp = mpMax;
         log(s, `你祭出遁光,成功從 ${mon.name} 爪下逃離。`);
         return { save: s };
       }
@@ -1559,8 +1750,8 @@ function applyActionInner(
       return { save: s };
     }
 
-    // 戰術卡(3.1 版新增):儲物袋內 kind === "tactic" 的消耗型卡,戰鬥中打出後即消耗一張,
-    // 效果結算完照樣進入 postPlayerTurn(佔用這一回合、怪物仍會出手),不是免費操作。
+    // 戰術卡(3.1 版新增):儲物袋內 kind === "tactic" 的消耗型卡,戰鬥中打出後即消耗一張;
+    // 3.3 版起不再自動結束回合,只是同一回合裡的其中一次出手,消耗的道具本身就是稀缺性所在。
     case "useTacticCard": {
       if (!s.combat) return { save: s, error: "並未身處戰鬥,無法使用戰術卡" };
       const itemId = String(payload.itemId ?? "");
@@ -1602,29 +1793,16 @@ function applyActionInner(
         lines.push(`${mon.name} 中招,必定${STATUS_LABEL[item.forceStatus]}!`);
       }
       log(s, ...lines);
-      const { loot } = postPlayerTurn(s);
-      if (loot) return { save: s, loot };
+      // 3.3 版:打出戰術卡不再自動結束回合,同一回合內仍可接著出牌(見 case "endTurn")
       return { save: s };
     }
 
-    // 棄牌重抽(3.1 版新增):放棄整手仙法、花費法力重新抽一手全新的牌,並照樣結算這一回合
-    case "rerollHand": {
-      if (!s.combat) return { save: s, error: "並未身處戰鬥,無法棄牌重抽" };
-      if (hasStatus(s.combat.playerStatus, "freeze")) {
-        s.combat.playerStatus = decrementStatus(s.combat.playerStatus, "freeze");
-        log(s, "你深陷冰封,動彈不得,無法棄牌重抽!");
-        const { loot } = postPlayerTurn(s);
-        if (loot) return { save: s, loot };
-        return { save: s };
-      }
-      const { mpMax } = statsOf(s);
-      const cost = rerollHandCost(mpMax);
-      if (s.mp < cost) {
-        return { save: s, error: `法力不足,棄牌重抽需 ${cost} 點法力` };
-      }
-      s.mp -= cost;
-      s.combat.hand = rollHand(s);
-      log(s, `你棄去滿手仙法,凝神重新抽牌(法力 -${cost})。`);
+
+    // 施法結束(3.3 版新增,見 pvp-territory-design.md 9.5):回合結構改寫的核心——玩家一回合內
+    // 可連續使用 attack/cast/useTacticCard/rerollHand,直到主動呼叫這個動作才觸發怪物出手與雙方
+    // 狀態效果結算,對應原本 postPlayerTurn 一直在做的事。
+    case "endTurn": {
+      if (!s.combat) return { save: s, error: "並無戰鬥" };
       const { loot } = postPlayerTurn(s);
       if (loot) return { save: s, loot };
       return { save: s };
@@ -1653,7 +1831,7 @@ function applyActionInner(
         futuFloor: floor,
         bossHpMax: bossHp,
         bossAtk,
-        hand: rollHand(s),
+        ...startingCombatHand(s),
         monsterStatus: [],
         playerStatus: [],
       };
@@ -2254,6 +2432,35 @@ function applyActionInner(
       s.missionId = null;
       s.missionBase = 0;
       log(s, `你放棄了任務【${m.name}】,執事一臉不悅。`);
+      return { save: s };
+    }
+
+    // 符寶袋調整(3.4 版新增):挑選已學仙法放入符寶袋,可重複放入同一門仙法(每門上限
+    // POUCH_MAX_COPIES 張),移除時不得低於 pouchMinFor() 算出的最低張數——用「調整時擋下」取代
+    // 「開戰時擋下」,玩家永遠處於合法狀態,不會卡在無法開戰的中間態。
+    case "pouchAdjust": {
+      if (s.combat) return { save: s, error: "激戰之中,無法調整符寶袋。" };
+      const techId = String(payload.techId ?? "");
+      if (!s.learned.includes(techId)) return { save: s, error: "未習得此仙法" };
+      const delta = Number(payload.delta ?? 0);
+      if (delta !== 1 && delta !== -1) return { save: s, error: "無效操作" };
+      const pouch = s.pouch && s.pouch.length > 0 ? [...s.pouch] : defaultPouch(s.learned);
+      if (delta > 0) {
+        const count = pouch.filter((id) => id === techId).length;
+        if (count >= POUCH_MAX_COPIES) {
+          return { save: s, error: `單一仙法最多放入符寶袋 ${POUCH_MAX_COPIES} 張` };
+        }
+        pouch.push(techId);
+      } else {
+        const idx = pouch.indexOf(techId);
+        if (idx === -1) return { save: s, error: "符寶袋中並無此符寶" };
+        const minReq = pouchMinFor(s.learned.length);
+        if (pouch.length <= minReq) {
+          return { save: s, error: `符寶袋至少需保留 ${minReq} 張符寶` };
+        }
+        pouch.splice(idx, 1);
+      }
+      s.pouch = pouch;
       return { save: s };
     }
 

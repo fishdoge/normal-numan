@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
 
   // 宗門傷害加成:僅在實際造成傷害的行動時查詢,避免每次操作都打宗門聚合查詢
   const finalPayload: Record<string, unknown> = { ...(payload ?? {}) };
-  if ((type === "attack" || type === "cast") && save.sectId) {
+  if ((type === "cast" || type === "castBatch") && save.sectId) {
     finalPayload.sectDamageMult = await sectDamageMultOf(save.sectId);
   }
 
@@ -149,5 +149,6 @@ export async function POST(req: NextRequest) {
     loot: result.loot ?? null,
     breakResult: result.breakResult ?? null,
     error: result.error ?? null,
+    damageEvents: result.damageEvents ?? [],
   });
 }

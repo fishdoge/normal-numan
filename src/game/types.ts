@@ -35,6 +35,18 @@ export const ELEMENT_BORDER_COLOR: Record<Element, string> = {
   無: "border-faded/30",
 };
 
+// 卡面視覺標記對應的邊框樣式(3.12 版新增):legendary 走專用的 .spell-card-legendary 動畫樣式
+// (globals.css),curse 是純色邊框,兩者皆優先於 ELEMENT_BORDER_COLOR。呼叫端範例:
+// `spellCardBorderClass(tech)` 取代直接查 `ELEMENT_BORDER_COLOR[tech.element]`。
+export const VISUAL_TAG_BORDER_CLASS: Record<NonNullable<Technique["visualTag"]>, string> = {
+  legendary: "spell-card-legendary",
+  curse: "border-curse/60",
+};
+export function spellCardBorderClass(tech: Pick<Technique, "element" | "visualTag">): string {
+  if (tech.visualTag) return VISUAL_TAG_BORDER_CLASS[tech.visualTag];
+  return ELEMENT_BORDER_COLOR[tech.element];
+}
+
 // 仙靈力顯示色(真仙專屬,紫色)
 export const XIANLI_COLOR = "text-fuchsia-400";
 
@@ -220,6 +232,10 @@ export interface Technique {
   // 單獨打出,不能跟其他符寶一起選取合併結算。
   innate?: boolean;
   soloOnly?: boolean;
+  // 卡面視覺標記(3.12 版新增,預留給未來稀有/特殊主題符寶):只影響戰鬥面板卡片邊框樣式,
+  // 不影響五行相剋(仍照 element 欄位判定)。"legendary" = 閃電金色外框 + 微微明滅特效(超稀有,
+  // 例如未來的「電」屬性符寶);"curse" = 詛咒色外框(預留給未來詛咒類符寶)。目前尚無實際符寶使用。
+  visualTag?: "legendary" | "curse";
 }
 
 export interface Recipe {

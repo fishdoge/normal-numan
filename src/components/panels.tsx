@@ -17,7 +17,7 @@ import { currentEraYears, eraLabelText } from "@/game/data/eraTime";
 import { techById } from "@/game/data/techniques";
 import {
   ELEMENT_COLOR,
-  ELEMENT_BORDER_COLOR,
+  spellCardBorderClass,
   ELEMENTS,
   XIANLI_COLOR,
   EQUIP_SLOTS,
@@ -657,11 +657,13 @@ export function CombatPanel() {
               ? t("nextBuffNoteTemplate")
                   .replace("{el}", elLabel)
                   .replace("{pct}", String(Math.round(tech.nextPlayBuffPct * 100)))
-              : null;
+              : tech.soloOnly
+                ? t("talismanCardSoloNote")
+                : null;
           return (
             <button
               key={`${tech.id}-${slot}`}
-              className={`spell-card w-full ${ELEMENT_BORDER_COLOR[tech.element]} ${
+              className={`spell-card w-full ${spellCardBorderClass(tech)} ${
                 selected ? "ring-2 ring-gold -translate-y-1" : ""
               }`}
               disabled={busy || (!selected && s.mp < tech.mpCost)}

@@ -91,6 +91,11 @@ body::after {
   .spell-card-foot {
     @apply flex items-center justify-between text-[10px] text-faded mt-1;
   }
+  /* 超稀有符寶卡面樣式(3.12 版新增,見 spellCardBorderClass):閃電金色外框 + 微微明滅特效,
+     目前尚無實際符寶掛上此標記,先把樣式備好。 */
+  .spell-card-legendary {
+    @apply border-electric/70 animate-legendaryGlow;
+  }
   .deco-frame {
     position: relative;
   }

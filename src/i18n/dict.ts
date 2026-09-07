@@ -133,6 +133,11 @@ export const DICT = {
     shieldNoteTemplate: "打出後獲得氣血{pct}%護盾",
     forceStatusNoteTemplate: "必定令敵方{status}",
     endsTurnNoteTemplate: "打出後立即結束回合",
+    hitsNoteTemplate: "連續 {n} 段傷害",
+    chargeNoteTemplate: "蓄力,下回合傷害+{pct}%",
+    evadeNoteTemplate: "打出後必避過敵方下次攻擊",
+    cleanseNoteTemplate: "打出後清除自身負面狀態",
+    lifeStealNoteTemplate: "回復傷害 {pct}% 的氣血",
 
     // 煉器頁籤
     craftHeaderNote: "煉器堂——藍框配方需先由妖獸掉落圖譜參悟後方能煉製。裝備分類已於名稱旁標示,煉製屬性隨機浮動 ±30%。",
@@ -394,6 +399,7 @@ export const DICT = {
     statusPoison: "中毒",
     statusFreeze: "冰封",
     statusWeaken: "虛弱",
+    statusEvade: "縹緲",
     statusTurnsSuffix: "剩 {n} 回合",
     combatShieldChip: "護盾 {n}",
     statusSideMonster: "怪物狀態",
@@ -577,6 +583,11 @@ export const DICT = {
     shieldNoteTemplate: "Grants {pct}% HP shield on play",
     forceStatusNoteTemplate: "Always inflicts {status}",
     endsTurnNoteTemplate: "Ends the turn immediately",
+    hitsNoteTemplate: "Hits {n} times",
+    chargeNoteTemplate: "Charges up — next turn's damage +{pct}%",
+    evadeNoteTemplate: "Guarantees a dodge of the foe's next attack",
+    cleanseNoteTemplate: "Clears your own negative status on play",
+    lifeStealNoteTemplate: "Heals {pct}% of damage dealt",
 
     // 煉器頁籤
     craftHeaderNote: "The Forging Hall — blue-bordered recipes require studying a blueprint dropped by beasts first. Equipment category is marked beside the name; forged stats fluctuate randomly ±30%.",
@@ -838,6 +849,7 @@ export const DICT = {
     statusPoison: "Poison",
     statusFreeze: "Frozen",
     statusWeaken: "Weakened",
+    statusEvade: "Evasive",
     statusTurnsSuffix: "{n} turn(s) left",
     combatShieldChip: "Shield {n}",
     statusSideMonster: "Monster",

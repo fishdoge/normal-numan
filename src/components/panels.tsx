@@ -520,12 +520,13 @@ export function CombatPanel() {
   const hpMaxMon = combat.bossHpMax ?? mon.hp; // 浮屠塔動態 BOSS 用其實際上限
   const monName = monsterDisplayName(mon, lang);
   const displayName = combat.futuFloor ? `${monName} · 第 ${combat.futuFloor} 層` : monName;
-  const STATUS_ICON: Record<string, string> = { burn: "🔥", poison: "☠️", freeze: "❄️", weaken: "🔻" };
+  const STATUS_ICON: Record<string, string> = { burn: "🔥", poison: "☠️", freeze: "❄️", weaken: "🔻", evade: "🌫️" };
   const STATUS_KEY: Record<string, DictKey> = {
     burn: "statusBurn",
     poison: "statusPoison",
     freeze: "statusFreeze",
     weaken: "statusWeaken",
+    evade: "statusEvade",
   };
   const statusChip = (kind: string, turns: number, tone: string) => (
     <span key={kind} className={`chip ${tone}`}>
@@ -649,8 +650,12 @@ export function CombatPanel() {
         {usable.map(({ tech, slot }) => {
           const selected = validSelectedSlots.includes(slot);
           const elLabel = elementLabel(tech.element, lang);
-          // 3.13 版新增進階連攜特性的卡面提示,依優先序取第一個符合的效果顯示(單張符寶目前不會同時
-          // 掛兩種以上特性,不需要處理疊字)
+          // 雙/三屬性符寶(3.14 版新增):卡面屬性標籤把 extraElements 一併列出,例如「木・火」
+          const fullElLabel = tech.extraElements?.length
+            ? [tech.element, ...tech.extraElements].map((el) => elementLabel(el, lang)).join(lang === "en" ? "/" : "・")
+            : elLabel;
+          // 3.13/3.14 版新增進階連攜特性的卡面提示,依優先序取第一個符合的效果顯示(單張符寶目前不會
+          // 同時掛兩種以上特性,不需要處理疊字)
           const buffNote = tech.synergyPct
             ? t("synergyNoteTemplate")
                 .replace("{el}", elLabel)
@@ -667,20 +672,30 @@ export function CombatPanel() {
                     ? t("manaGainNoteTemplate").replace("{n}", String(tech.manaGain))
                     : tech.shieldPct
                       ? t("shieldNoteTemplate").replace("{pct}", String(Math.round(tech.shieldPct * 100)))
-                      : tech.forceStatus
-                        ? t("forceStatusNoteTemplate").replace(
-                            "{status}",
-                            t(
-                              (
-                                { burn: "statusBurn", poison: "statusPoison", freeze: "statusFreeze" } as const
-                              )[tech.forceStatus],
-                            ),
-                          )
-                        : tech.endsTurn
-                          ? t("endsTurnNoteTemplate")
-                          : tech.soloOnly
-                            ? t("talismanCardSoloNote")
-                            : null;
+                      : tech.hits && tech.hits > 1
+                        ? t("hitsNoteTemplate").replace("{n}", String(tech.hits))
+                        : tech.chargeNextTurnPct
+                          ? t("chargeNoteTemplate").replace("{pct}", String(Math.round(tech.chargeNextTurnPct * 100)))
+                          : tech.selfStatus === "evade"
+                            ? t("evadeNoteTemplate")
+                            : tech.selfCleanse
+                              ? t("cleanseNoteTemplate")
+                              : tech.lifeStealPct
+                                ? t("lifeStealNoteTemplate").replace("{pct}", String(Math.round(tech.lifeStealPct * 100)))
+                                : tech.forceStatus
+                              ? t("forceStatusNoteTemplate").replace(
+                                  "{status}",
+                                  t(
+                                    (
+                                      { burn: "statusBurn", poison: "statusPoison", freeze: "statusFreeze" } as const
+                                    )[tech.forceStatus],
+                                  ),
+                                )
+                              : tech.endsTurn
+                                ? t("endsTurnNoteTemplate")
+                                : tech.soloOnly
+                                  ? t("talismanCardSoloNote")
+                                  : null;
           return (
             <button
               key={`${tech.id}-${slot}`}
@@ -696,7 +711,7 @@ export function CombatPanel() {
               {buffNote && <span className="spell-card-buff">{buffNote}</span>}
               <span className="spell-card-foot">
                 <span className={ELEMENT_COLOR[tech.element]}>
-                  {tech.id === "artifact_attack" ? t("perEquippedWeapon") : elLabel}
+                  {tech.id === "artifact_attack" ? t("perEquippedWeapon") : fullElLabel}
                 </span>
                 {tech.id !== "artifact_attack" && <span>{tech.power.toFixed(1)}</span>}
               </span>

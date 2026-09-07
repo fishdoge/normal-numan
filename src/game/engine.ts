@@ -9,11 +9,12 @@ import { MISSIONS } from "./data/missions";
 import { dwellingLevelOf } from "./data/sectTiers";
 import { currentEraYears } from "./data/eraTime";
 
-// 狀態效果(2.21 版新增,仙法卡牌化的一部分;3.1 版新增 weaken):掛在既有五行系統上,火→燒傷、木→中毒、
-// 水→冰封,不獨立發明新屬性池;weaken(虛弱)不對應五行,僅由戰術卡的「衰運針」附加。
+// 狀態效果(2.21 版新增,仙法卡牌化的一部分;3.1 版新增 weaken;3.14 版新增 evade):掛在既有五行系統上,
+// 火→燒傷、木→中毒、水→冰封,不獨立發明新屬性池;weaken(虛弱)不對應五行,僅由戰術卡的「衰運針」附加;
+// evade(縹緲)只掛在玩家身上,僅由掛 selfStatus:"evade" 的符寶附加,保證避過怪物下一次攻擊,用掉即消。
 // turns 為剩餘回合數,歸零即移除。
 export interface StatusEffect {
-  kind: "burn" | "poison" | "freeze" | "weaken";
+  kind: "burn" | "poison" | "freeze" | "weaken" | "evade";
   turns: number;
 }
 
@@ -38,6 +39,10 @@ export interface CombatState {
   monsterStatus?: StatusEffect[]; // 怪物身上的狀態效果
   playerStatus?: StatusEffect[]; // 玩家身上的狀態效果
   playerShield?: number; // 戰術卡「護體法箓」賦予的護盾額度(3.1 版新增),優先抵擋接下來受到的直接傷害,用完即消
+  // 蓄力連攜(3.14 版新增):打出帶 chargeNextTurnPct 的符寶時先登記到 pending,回合結束時整批轉為
+  // active、供下一整個玩家回合的傷害計算套用,那個回合結束時 active 歸零(見 postPlayerTurn)。
+  pendingChargeBuffPct?: number;
+  activeChargeBuffPct?: number;
 }
 
 export interface Learning {
@@ -384,6 +389,7 @@ const STATUS_LABEL: Record<StatusEffect["kind"], string> = {
   poison: "中毒",
   freeze: "冰封",
   weaken: "虛弱",
+  evade: "縹緲",
 };
 const STATUS_PROC_CHANCE = 0.3; // 對應屬性的招式命中時,額外機率附加狀態
 const STATUS_DURATION = 3; // 燒傷/中毒持續回合數
@@ -775,6 +781,14 @@ function monsterTurn(s: SaveData): { lines: string[]; defeat?: Modal } {
     return { lines: [line] };
   }
   const lines: string[] = [];
+  // 縹緲(3.14 版新增,由 selfStatus:"evade" 符寶附加):保證避過這一次攻擊,用掉即消,
+  // 優先於下方以速度計算的一般機率式閃避判定。
+  if (hasStatus(s.combat.playerStatus, "evade")) {
+    s.combat.playerStatus = decrementStatus(s.combat.playerStatus, "evade");
+    const line = `${mon.name} 撲擊而來,你身法縹緲如影,穩穩避開了這一擊!`;
+    log(s, line);
+    return { lines: [line] };
+  }
   const monAtkBase = s.combat.bossAtk ?? mon.atk;
   const monAtk = Math.floor(monAtkBase * atkMultFromStatus(s.combat.monsterStatus));
   const { def, speed } = statsOf(s);
@@ -852,6 +866,10 @@ function postPlayerTurn(s: SaveData): { loot?: Modal } {
   // 下一個玩家回合開始:法力直接回滿(3.6 版一度誤刪、3.7 版修正改回——這條規則本身沒問題,
   // 真正缺的是戰鬥結束後也要回滿,見設計文件 9.8)。
   s.mp = mpMax;
+  // 蓄力連攜生效轉移(3.14 版新增):這回合累積的 pending 蓄力額度,轉為下一整個玩家回合的 active
+  // 加成;若這回合沒打蓄力符寶則兩者皆為 0,對一般戰鬥完全沒有影響。
+  s.combat.activeChargeBuffPct = s.combat.pendingChargeBuffPct ?? 0;
+  s.combat.pendingChargeBuffPct = 0;
   // 符寶袋回合制(3.4 版):手中剩牌一併棄置,重新抽 HAND_SIZE 張補滿手牌(牌堆不夠會自動洗回棄牌堆)
   const redrawn = redrawHand(s.combat);
   s.combat.hand = redrawn.drawn;
@@ -1591,10 +1609,13 @@ function applyActionInner(
       const buff = s.combat.pendingElementBuff;
       // 法器攻擊的屬性依裝備法器動態決定,不用資料表裡的佔位「無」屬性
       const effEl = (t: Technique) => (t.id === "artifact_attack" ? weaponEl : t.element) ?? t.element;
+      // 雙/三屬性符寶(3.14 版新增):除主屬性外,extraElements 列出的屬性一併視為這張符寶的屬性
+      const elemsOf = (t: Technique): Element[] => [effEl(t), ...(t.extraElements ?? [])];
 
-      // 同批次同元素張數(含自己),供 synergyPct 使用;不同元素種類數(不分張數),供 crossElementPct 使用
+      // 同批次同元素張數(含自己),供 synergyPct 使用;不同元素種類數(不分張數),供 crossElementPct 使用。
+      // 雙/三屬性符寶每個屬性都各自計入一次,讓其他符寶的同屬疊加/混屬加成也把它算進去。
       const elementCounts = new Map<Element, number>();
-      for (const t of techs) elementCounts.set(effEl(t), (elementCounts.get(effEl(t)) ?? 0) + 1);
+      for (const t of techs) for (const el of elemsOf(t)) elementCounts.set(el, (elementCounts.get(el) ?? 0) + 1);
       const distinctElementCount = elementCounts.size;
 
       let rawPower = 0;
@@ -1608,9 +1629,12 @@ function applyActionInner(
         if (t.comboSizePct) p *= 1 + t.comboSizePct * (techs.length - 1);
         if (t.crossElementPct) p *= 1 + t.crossElementPct * (distinctElementCount - 1);
         if (buff && buff.element === effEl(t)) p *= 1 + buff.pct;
-        const mult = elementMult(effEl(t), mon.element);
+        // 雙/三屬性符寶(3.14 版新增):相剋倍率取所有屬性中最高者,天生百搭、不怕撞上被剋的屬性
+        const mult = Math.max(...elemsOf(t).map((el) => elementMult(el, mon.element)));
         bestElementMult = Math.max(bestElementMult, mult);
         p *= mult;
+        // 蓄力連攜(3.14 版新增):上一回合若蓄力過,這整回合的傷害額外提升 activeChargeBuffPct
+        if (s.combat.activeChargeBuffPct) p *= 1 + s.combat.activeChargeBuffPct;
         rawPower += p;
       }
       // 延續加成用掉即消耗,不論這次批次是否真的命中同元素都算用過一次機會
@@ -1635,11 +1659,29 @@ function applyActionInner(
       if (shieldGain > 0) {
         s.combat.playerShield = (s.combat.playerShield ?? 0) + shieldGain;
       }
+      // 蓄力符寶(3.14 版新增):登記到 pending,回合結束時整批轉為下一整個玩家回合的 active 加成
+      const chargeGain = techs.reduce((sum, t) => sum + (t.chargeNextTurnPct ?? 0), 0);
+      if (chargeGain > 0) {
+        s.combat.pendingChargeBuffPct = (s.combat.pendingChargeBuffPct ?? 0) + chargeGain;
+      }
+      // 縹緲符寶(3.14 版新增):打出後為玩家附加一次保證避過怪物下次攻擊的效果
+      const grantsEvade = techs.some((t) => t.selfStatus === "evade");
+      if (grantsEvade) {
+        s.combat.playerStatus = applyStatus(s.combat.playerStatus, "evade", 1);
+      }
+      // 清心符寶(3.14 版新增):立即清除玩家身上所有負面狀態(燒傷/中毒/冰封/虛弱),不影響 evade
+      const doesCleanse = techs.some((t) => t.selfCleanse);
+      if (doesCleanse) {
+        s.combat.playerStatus = (s.combat.playerStatus ?? []).filter((e) => e.kind === "evade");
+      }
 
       const names = techs.map((t) => t.name).join("、");
       const extraNotes: string[] = [];
       if (manaGainSum > 0) extraNotes.push(`法力回復 ${manaGainSum} 點`);
       if (shieldGain > 0) extraNotes.push(`凝聚護盾 ${shieldGain} 點`);
+      if (chargeGain > 0) extraNotes.push(`蓄力,下回合傷害 +${Math.round(chargeGain * 100)}%`);
+      if (grantsEvade) extraNotes.push("身形縹緲,必避過對方下次攻擊");
+      if (doesCleanse) extraNotes.push("清除自身負面狀態");
       if (Math.random() < (MONSTER_DODGE_CHANCE[mon.id] ?? 0)) {
         log(s, `你同時施展【${names}】,${mon.name} 身形一晃,竟憑空避過這一擊!` + (extraNotes.length ? `(${extraNotes.join("、")})` : ""));
       } else {
@@ -1666,9 +1708,25 @@ function applyActionInner(
             statusNote += `,${mon.name} 因此${STATUS_LABEL[statusKind]}!`;
           }
         }
+        // 多段傷害(3.14 版新增):總傷害不變,單獨出牌且掛 hits 時拆成多段個別數字連續命中,
+        // 呈現「連續打擊」的觀感(慣例上搭配 soloOnly,批次混打時只會拿批次唯一那張符寶的 hits)
+        const soleHits = techs.length === 1 ? Math.max(1, techs[0].hits ?? 1) : 1;
+        if (soleHits > 1) {
+          let remaining = dmg;
+          const per = Math.max(1, Math.floor(dmg / soleHits));
+          for (let h = 0; h < soleHits; h++) {
+            const thisHit = h === soleHits - 1 ? remaining : Math.min(per, remaining);
+            remaining -= thisHit;
+            pushDamageEvent("monster", thisHit);
+          }
+        } else {
+          pushDamageEvent("monster", dmg);
+        }
         log(
           s,
-          `你同時施展【${names}】,對 ${mon.name} 造成 ${formatDamage(dmg)}傷害` +
+          `你同時施展【${names}】,` +
+            (soleHits > 1 ? `連續 ${soleHits} 段擊中` : "對") +
+            ` ${mon.name} ,合計造成 ${formatDamage(dmg)}傷害` +
             (bestElementMult > 1 ? "(五行相剋,威力大增!)" : bestElementMult < 1 ? "(屬性被剋,威力受阻)" : "") +
             (sectMult > 1 ? `(宗門聲勢加持 ×${sectMult.toFixed(2)})` : "") +
             statusNote +
@@ -1676,7 +1734,15 @@ function applyActionInner(
             "。",
         );
         s.combat.monsterHp -= dmg;
-        pushDamageEvent("monster", dmg);
+        // 吸血符寶(3.14 版新增):依這次造成的傷害的比例回復氣血,不超過氣血上限
+        const lifeStealSum = techs.reduce((sum, t) => sum + (t.lifeStealPct ?? 0), 0);
+        if (lifeStealSum > 0) {
+          const heal = Math.max(0, Math.floor(dmg * lifeStealSum));
+          if (heal > 0) {
+            s.hp = Math.min(hpMax, s.hp + heal);
+            log(s, `【${names}】汲取傷害轉化為生機,你回復 ${heal} 點氣血。`);
+          }
+        }
       }
       if (s.combat.monsterHp <= 0) return { save: s, loot: winCombat(s) };
 

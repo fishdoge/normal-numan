@@ -550,16 +550,22 @@ export function CombatPanel() {
     .map(([id, n]) => ({ id, n, item: itemById(id) }))
     .filter((e) => e.item.kind === "tactic" && e.n > 0);
 
-  // 出牌改為「先選取、按出牌才打出」(3.5 版新增)
-  const selectedTechIds = selectedSlots.map((slot) => usable.find((u) => u.slot === slot)!.tech.id);
+  // 出牌改為「先選取、按出牌才打出」(3.5 版新增)。手牌一變(打出/回合結束重抽)時,舊的選取位置
+  // 會由下面的 useEffect 清空,但那是非同步的——本次 render 仍可能先跑到、selectedSlots 裡还留著
+  // 已經不存在於新 usable 裡的 slot,這裡一律先過濾掉不存在的 slot 再使用,避免 .tech 噴 undefined。
+  const validSelectedSlots = selectedSlots.filter((slot) => usable.some((u) => u.slot === slot));
+  const selectedTechIds = validSelectedSlots.map((slot) => usable.find((u) => u.slot === slot)!.tech.id);
   const selectedCost = selectedTechIds.reduce((sum, id) => sum + techById(id).mpCost, 0);
   // 法器攻擊只能單獨出牌(3.8 版新增):選取它就清空其他選取,選取其他符寶時若手上已選著法器攻擊也會先清空
   const toggleSlot = (slot: number) => {
-    const tech = usable.find((u) => u.slot === slot)!.tech;
-    setSelectedSlots((prev) => {
+    const found = usable.find((u) => u.slot === slot);
+    if (!found) return;
+    const tech = found.tech;
+    setSelectedSlots(() => {
+      const prev = validSelectedSlots;
       if (prev.includes(slot)) return prev.filter((x) => x !== slot);
       if (tech.soloOnly) return [slot];
-      const hasSolo = prev.some((s2) => usable.find((u) => u.slot === s2)!.tech.soloOnly);
+      const hasSolo = prev.some((s2) => usable.find((u) => u.slot === s2)?.tech.soloOnly);
       return hasSolo ? [slot] : [...prev, slot];
     });
   };
@@ -641,7 +647,7 @@ export function CombatPanel() {
           自然換行、右側留白對不齊「激戰」標題列/氣血條的寬度) */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
         {usable.map(({ tech, slot }) => {
-          const selected = selectedSlots.includes(slot);
+          const selected = validSelectedSlots.includes(slot);
           const elLabel = elementLabel(tech.element, lang);
           const buffNote = tech.synergyPct
             ? t("synergyNoteTemplate")

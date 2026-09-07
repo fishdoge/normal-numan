@@ -127,6 +127,12 @@ export const DICT = {
     synergyNoteTemplate: "同{el}+{pct}%/張",
     nextBuffNoteTemplate: "下次{el}符寶+{pct}%",
     talismanCardSoloNote: "不能與其他法術共用",
+    comboSizeNoteTemplate: "每多打一張+{pct}%",
+    crossElementNoteTemplate: "每混一種屬性+{pct}%",
+    manaGainNoteTemplate: "打出後回復 {n} 點法力",
+    shieldNoteTemplate: "打出後獲得氣血{pct}%護盾",
+    forceStatusNoteTemplate: "必定令敵方{status}",
+    endsTurnNoteTemplate: "打出後立即結束回合",
 
     // 煉器頁籤
     craftHeaderNote: "煉器堂——藍框配方需先由妖獸掉落圖譜參悟後方能煉製。裝備分類已於名稱旁標示,煉製屬性隨機浮動 ±30%。",
@@ -565,6 +571,12 @@ export const DICT = {
     synergyNoteTemplate: "+{pct}% per {el} card",
     nextBuffNoteTemplate: "Next {el} card +{pct}%",
     talismanCardSoloNote: "Cannot combine with other spells",
+    comboSizeNoteTemplate: "+{pct}% per extra card played",
+    crossElementNoteTemplate: "+{pct}% per mixed element",
+    manaGainNoteTemplate: "Restores {n} MP on play",
+    shieldNoteTemplate: "Grants {pct}% HP shield on play",
+    forceStatusNoteTemplate: "Always inflicts {status}",
+    endsTurnNoteTemplate: "Ends the turn immediately",
 
     // 煉器頁籤
     craftHeaderNote: "The Forging Hall — blue-bordered recipes require studying a blueprint dropped by beasts first. Equipment category is marked beside the name; forged stats fluctuate randomly ±30%.",

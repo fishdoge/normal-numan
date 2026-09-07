@@ -1585,16 +1585,17 @@ function applyActionInner(
       }
 
       const mon = monsterById(s.combat.monsterId);
-      const { atk, weaponEl } = statsOf(s);
+      const { atk, weaponEl, hpMax } = statsOf(s);
       const sectMult = Number(payload.sectDamageMult ?? 1);
       const weaken = atkMultFromStatus(s.combat.playerStatus);
       const buff = s.combat.pendingElementBuff;
       // 法器攻擊的屬性依裝備法器動態決定,不用資料表裡的佔位「無」屬性
       const effEl = (t: Technique) => (t.id === "artifact_attack" ? weaponEl : t.element) ?? t.element;
 
-      // 同批次同元素張數(含自己),供 synergyPct 使用
+      // 同批次同元素張數(含自己),供 synergyPct 使用;不同元素種類數(不分張數),供 crossElementPct 使用
       const elementCounts = new Map<Element, number>();
       for (const t of techs) elementCounts.set(effEl(t), (elementCounts.get(effEl(t)) ?? 0) + 1);
+      const distinctElementCount = elementCounts.size;
 
       let rawPower = 0;
       let bestElementMult = 1; // 戰報顯示用:批次內最高的相剋倍率
@@ -1602,6 +1603,10 @@ function applyActionInner(
         const level = techLevelOf(s, t.id);
         let p = t.power * techPowerMult(level);
         if (t.synergyPct) p *= 1 + t.synergyPct * (elementCounts.get(effEl(t)) ?? 1);
+        // 進階連攜(3.13 版新增):批次張數越多疊得越高;批次含越多「不同」元素疊得越高——兩者
+        // 鼓勵的出牌習慣正好相反(前者鼓勵同名堆疊,後者鼓勵混搭),各自看符寶本身掛哪一種
+        if (t.comboSizePct) p *= 1 + t.comboSizePct * (techs.length - 1);
+        if (t.crossElementPct) p *= 1 + t.crossElementPct * (distinctElementCount - 1);
         if (buff && buff.element === effEl(t)) p *= 1 + buff.pct;
         const mult = elementMult(effEl(t), mon.element);
         bestElementMult = Math.max(bestElementMult, mult);
@@ -1612,6 +1617,9 @@ function applyActionInner(
       if (buff) s.combat.pendingElementBuff = undefined;
 
       s.mp -= totalCost;
+      // 法力回復符寶(3.13 版新增):打出後立即回復法力,可能部分/全額抵銷這次出牌的花費
+      const manaGainSum = techs.reduce((sum, t) => sum + (t.manaGain ?? 0), 0);
+      if (manaGainSum > 0) s.mp += manaGainSum;
       s.combat.hand = remainingHand;
       s.combat.discard = [...(s.combat.discard ?? []), ...techIds];
 
@@ -1622,13 +1630,32 @@ function applyActionInner(
         s.combat.pendingElementBuff = { element: effEl(strongest), pct: strongest.nextPlayBuffPct! };
       }
 
+      // 護盾符寶(3.13 版新增):打出後立即獲得護盾,沿用戰術卡護體法箓的機制(優先抵擋接下來的直接傷害)
+      const shieldGain = techs.reduce((sum, t) => sum + (t.shieldPct ? Math.floor(hpMax * t.shieldPct) : 0), 0);
+      if (shieldGain > 0) {
+        s.combat.playerShield = (s.combat.playerShield ?? 0) + shieldGain;
+      }
+
       const names = techs.map((t) => t.name).join("、");
+      const extraNotes: string[] = [];
+      if (manaGainSum > 0) extraNotes.push(`法力回復 ${manaGainSum} 點`);
+      if (shieldGain > 0) extraNotes.push(`凝聚護盾 ${shieldGain} 點`);
       if (Math.random() < (MONSTER_DODGE_CHANCE[mon.id] ?? 0)) {
-        log(s, `你同時施展【${names}】,${mon.name} 身形一晃,竟憑空避過這一擊!`);
+        log(s, `你同時施展【${names}】,${mon.name} 身形一晃,竟憑空避過這一擊!` + (extraNotes.length ? `(${extraNotes.join("、")})` : ""));
       } else {
         const dmg = Math.max(1, Math.floor(atk * rawPower * sectMult * weaken * (0.9 + Math.random() * 0.2)));
         let statusNote = "";
         for (const t of techs) {
+          // forceStatus(3.13 版新增):必定命中,不受一般命中機率限制,優先於機率判定
+          if (t.forceStatus) {
+            s.combat.monsterStatus = applyStatus(
+              s.combat.monsterStatus,
+              t.forceStatus,
+              t.forceStatus === "freeze" ? FREEZE_DURATION : STATUS_DURATION,
+            );
+            statusNote += `,${mon.name} 因此${STATUS_LABEL[t.forceStatus]}!`;
+            continue;
+          }
           const statusKind = STATUS_BY_ELEMENT[effEl(t)];
           if (statusKind && Math.random() < STATUS_PROC_CHANCE) {
             s.combat.monsterStatus = applyStatus(
@@ -1645,6 +1672,7 @@ function applyActionInner(
             (bestElementMult > 1 ? "(五行相剋,威力大增!)" : bestElementMult < 1 ? "(屬性被剋,威力受阻)" : "") +
             (sectMult > 1 ? `(宗門聲勢加持 ×${sectMult.toFixed(2)})` : "") +
             statusNote +
+            (extraNotes.length ? `(${extraNotes.join("、")})` : "") +
             "。",
         );
         s.combat.monsterHp -= dmg;
@@ -1652,8 +1680,8 @@ function applyActionInner(
       }
       if (s.combat.monsterHp <= 0) return { save: s, loot: winCombat(s) };
 
-      // 法力歸零:自動觸發施法結束,不需要玩家再按一次
-      if (s.mp <= 0) {
+      // 法力歸零,或批次中含終結技(endsTurn):自動觸發施法結束,不需要玩家再按一次
+      if (s.mp <= 0 || techs.some((t) => t.endsTurn)) {
         const { loot } = postPlayerTurn(s);
         if (loot) return { save: s, loot };
       }

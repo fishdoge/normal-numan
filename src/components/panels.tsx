@@ -649,6 +649,8 @@ export function CombatPanel() {
         {usable.map(({ tech, slot }) => {
           const selected = validSelectedSlots.includes(slot);
           const elLabel = elementLabel(tech.element, lang);
+          // 3.13 版新增進階連攜特性的卡面提示,依優先序取第一個符合的效果顯示(單張符寶目前不會同時
+          // 掛兩種以上特性,不需要處理疊字)
           const buffNote = tech.synergyPct
             ? t("synergyNoteTemplate")
                 .replace("{el}", elLabel)
@@ -657,9 +659,28 @@ export function CombatPanel() {
               ? t("nextBuffNoteTemplate")
                   .replace("{el}", elLabel)
                   .replace("{pct}", String(Math.round(tech.nextPlayBuffPct * 100)))
-              : tech.soloOnly
-                ? t("talismanCardSoloNote")
-                : null;
+              : tech.comboSizePct
+                ? t("comboSizeNoteTemplate").replace("{pct}", String(Math.round(tech.comboSizePct * 100)))
+                : tech.crossElementPct
+                  ? t("crossElementNoteTemplate").replace("{pct}", String(Math.round(tech.crossElementPct * 100)))
+                  : tech.manaGain
+                    ? t("manaGainNoteTemplate").replace("{n}", String(tech.manaGain))
+                    : tech.shieldPct
+                      ? t("shieldNoteTemplate").replace("{pct}", String(Math.round(tech.shieldPct * 100)))
+                      : tech.forceStatus
+                        ? t("forceStatusNoteTemplate").replace(
+                            "{status}",
+                            t(
+                              (
+                                { burn: "statusBurn", poison: "statusPoison", freeze: "statusFreeze" } as const
+                              )[tech.forceStatus],
+                            ),
+                          )
+                        : tech.endsTurn
+                          ? t("endsTurnNoteTemplate")
+                          : tech.soloOnly
+                            ? t("talismanCardSoloNote")
+                            : null;
           return (
             <button
               key={`${tech.id}-${slot}`}

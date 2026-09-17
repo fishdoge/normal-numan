@@ -78,9 +78,12 @@ function PrayForRevival() {
   const [err, setErr] = useState("");
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => () => {
-    if (pollRef.current) clearInterval(pollRef.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    },
+    [],
+  );
 
   const startPray = async () => {
     setErr("");
@@ -162,7 +165,9 @@ function DeathScreen() {
   return (
     <main className="max-w-2xl mx-auto px-4 py-24 text-center">
       <p className="font-mono text-xs tracking-[0.5em] text-faded mb-4">HERE LIES A CULTIVATOR</p>
-      <h1 className="text-5xl font-black tracking-widest text-vermillion mb-6">{t("deathHeadline")}</h1>
+      <h1 className="text-5xl font-black tracking-widest text-vermillion mb-6">
+        {t("deathHeadline")}
+      </h1>
       <div className="panel deco-frame text-left mx-auto max-w-md mb-8">
         <p className="panel-title">{t("deathEpitaphTitle")}</p>
         <p className="leading-loose text-cream">
@@ -277,7 +282,11 @@ function CultivationBar() {
               busy || inCombat || inDwelling || s.stones < 100000000 || energy < ENERGY_COST.wander
             }
             onClick={() => act("wander")}
-            title={inDwelling ? t("inDwellingTip") : (energyTip(ENERGY_COST.wander) ?? t("wanderTooltip"))}
+            title={
+              inDwelling
+                ? t("inDwellingTip")
+                : (energyTip(ENERGY_COST.wander) ?? t("wanderTooltip"))
+            }
           >
             {t("btnWander")}
           </button>
@@ -289,7 +298,9 @@ function CultivationBar() {
         <div className="bg-coal/90 p-3 flex flex-col items-center gap-1.5 text-center">
           <button
             className={`btn text-base w-full ${canBreak && !inDwelling ? "border-gold text-gold animate-pulse" : ""}`}
-            disabled={busy || inCombat || inDwelling || !canBreak || energy < ENERGY_COST.breakthrough}
+            disabled={
+              busy || inCombat || inDwelling || !canBreak || energy < ENERGY_COST.breakthrough
+            }
             onClick={() => act("breakthrough")}
             title={inDwelling ? t("inDwellingTip") : breakTitle}
           >
@@ -372,81 +383,89 @@ export default function Game() {
 
   if (save.dead) return <DeathScreen />;
 
-  if (mainView === "sect") return <SectPage />;
+  if (mainView === "sect" && !save.combat) return <SectPage />;
 
   const isXian = REALMS[save.realmIdx]?.stage >= 10;
 
   return (
-    <main className={`max-w-6xl mx-auto px-4 py-6 relative ${isXian ? "xian-aura" : ""}`}>
+    <main
+      className={`${save.combat ? "combat-screen" : "max-w-6xl mx-auto px-4 py-6 relative"} ${isXian ? "xian-aura" : ""}`}
+    >
       {purchaseResult && <ResultModal modal={purchaseResult} onClose={closePurchaseResult} />}
       {!purchaseResult && breakResult && <ResultModal modal={breakResult} onClose={closeBreak} />}
       {!purchaseResult && !breakResult && loot && <ResultModal modal={loot} onClose={closeLoot} />}
       {showChangelog && <ChangelogModal onClose={() => setShowChangelog(false)} />}
       {showGuide && <GuideModal onClose={() => setShowGuide(false)} />}
-      <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 mb-5">
-        <div>
-          <h1
-            className={`text-2xl font-black tracking-[0.35em] ${isXian ? "text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 via-amber-200 to-cyan-200" : ""}`}
-          >
-            {t("appTitle")}
-          </h1>
-          <p className="font-mono text-[10px] tracking-[0.4em] text-faded">
-            {isXian ? t("appSubtitleAscended") : t("appSubtitle")}
-          </p>
-          <p className="font-mono text-[10px] tracking-[0.2em] text-gold/70 mt-0.5">
-            {t("worldEraNow").replace("{era}", eraLabelText(currentEraYears()))}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-4 items-baseline">
-          <button
-            className="text-xs text-faded/60 hover:text-gold transition-colors border border-faded/30 rounded-sm px-1.5"
-            onClick={() => setLanguage(language === "zh" ? "en" : "zh")}
-            title={t("langToggleTooltip")}
-          >
-            {t("langToggle")}
-          </button>
-          <button
-            className="text-xs text-faded/60 hover:text-gold transition-colors"
-            onClick={() => setShowGuide(true)}
-          >
-            {t("navGuide")}
-          </button>
-          <button
-            className="text-xs text-faded/60 hover:text-gold transition-colors"
-            onClick={() => setShowChangelog(true)}
-          >
-            {t("navChangelog")}
-          </button>
+      {save.combat ? (
+        <CombatPanel />
+      ) : (
+        <>
+          <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 mb-5">
+            <div>
+              <h1
+                className={`text-2xl font-black tracking-[0.35em] ${isXian ? "text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 via-amber-200 to-cyan-200" : ""}`}
+              >
+                {t("appTitle")}
+              </h1>
+              <p className="font-mono text-[10px] tracking-[0.4em] text-faded">
+                {isXian ? t("appSubtitleAscended") : t("appSubtitle")}
+              </p>
+              <p className="font-mono text-[10px] tracking-[0.2em] text-gold/70 mt-0.5">
+                {t("worldEraNow").replace("{era}", eraLabelText(currentEraYears()))}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-4 items-baseline">
+              <button
+                className="text-xs text-faded/60 hover:text-gold transition-colors border border-faded/30 rounded-sm px-1.5"
+                onClick={() => setLanguage(language === "zh" ? "en" : "zh")}
+                title={t("langToggleTooltip")}
+              >
+                {t("langToggle")}
+              </button>
+              <button
+                className="text-xs text-faded/60 hover:text-gold transition-colors"
+                onClick={() => setShowGuide(true)}
+              >
+                {t("navGuide")}
+              </button>
+              <button
+                className="text-xs text-faded/60 hover:text-gold transition-colors"
+                onClick={() => setShowChangelog(true)}
+              >
+                {t("navChangelog")}
+              </button>
 
-          <button
-            className="text-xs text-faded/60 hover:text-gold transition-colors"
-            onClick={async () => {
-              await fetch("/api/auth/logout", { method: "POST" });
-              location.reload();
-            }}
-          >
-            {t("navLogout")}
-          </button>
-        </div>
-      </header>
+              <button
+                className="text-xs text-faded/60 hover:text-gold transition-colors"
+                onClick={async () => {
+                  await fetch("/api/auth/logout", { method: "POST" });
+                  location.reload();
+                }}
+              >
+                {t("navLogout")}
+              </button>
+            </div>
+          </header>
 
-      <div className="mb-4">
-        <CultivationBar />
-      </div>
+          <div className="mb-4">
+            <CultivationBar />
+          </div>
 
-      <div className="grid gap-4 md:grid-cols-[300px_minmax(0,1fr)] lg:grid-cols-[300px_minmax(0,1fr)_340px]">
-        <div className="space-y-4">
-          <StatusPanel />
-          <RealmProgressPanel />
-        </div>
-        <div className="space-y-4 md:col-start-2 min-w-0">
-          <CombatPanel />
-          <ActionTabs />
-        </div>
-        <div className="md:col-start-2 lg:col-start-3">
-          <LogChatPanel />
-        </div>
-      </div>
+          <div className="grid gap-4 md:grid-cols-[300px_minmax(0,1fr)] lg:grid-cols-[300px_minmax(0,1fr)_340px]">
+            <div className="space-y-4">
+              <StatusPanel />
+              <RealmProgressPanel />
+            </div>
+            <div className="space-y-4 md:col-start-2 min-w-0">
+              <CombatPanel />
+              <ActionTabs />
+            </div>
+            <div className="md:col-start-2 lg:col-start-3">
+              <LogChatPanel />
+            </div>
+          </div>
+        </>
+      )}
     </main>
   );
 }

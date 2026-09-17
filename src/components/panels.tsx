@@ -11,7 +11,7 @@ import {
 } from "@/game/store";
 import { REALMS } from "@/game/data/realms";
 import { SECTS } from "@/game/data/sects";
-import { MONSTERS } from "@/game/data/world";
+import { LOCATIONS, MONSTERS } from "@/game/data/world";
 import { itemById, isXuantianArtifact } from "@/game/data/items";
 import { currentEraYears, eraLabelText } from "@/game/data/eraTime";
 import { techById } from "@/game/data/techniques";
@@ -34,6 +34,7 @@ import { monsterDisplayName, monsterDisplayDesc } from "@/i18n/monsterText";
 import { techDisplayName, techDisplayDesc } from "@/i18n/techText";
 import { realmDisplayName } from "@/i18n/realmText";
 import { sectDisplayName } from "@/i18n/sectText";
+import { locationDisplayName } from "@/i18n/worldText";
 import { elementLabel, equipSlotLabel } from "@/i18n/labelText";
 import { MONSTER_TEXT_EN } from "@/i18n/monsterText";
 import StoneAmount from "./StoneAmount";
@@ -118,7 +119,8 @@ export function RealmProgressPanel() {
           <div className="flex items-baseline justify-between">
             <span className="font-bold text-fuchsia-300">{t("taiyiHallTitle")}</span>
             <span className="text-xs font-mono text-fuchsia-300/80">
-              {TAIYI_SOULS.filter((ts) => (s.inventory[ts.id] ?? 0) >= 1).length}/4 {t("taiyiSoulSuffix")}
+              {TAIYI_SOULS.filter((ts) => (s.inventory[ts.id] ?? 0) >= 1).length}/4{" "}
+              {t("taiyiSoulSuffix")}
             </span>
           </div>
           <p className="text-sm text-faded mt-1">{t("taiyiDesc")}</p>
@@ -126,7 +128,9 @@ export function RealmProgressPanel() {
             {TAIYI_SOULS.map((ts) => {
               const has = (s.inventory[ts.id] ?? 0) >= 1;
               const label =
-                lang === "en" ? (MONSTER_TEXT_EN[TAIYI_SOUL_LORD_ID[ts.id]]?.name ?? ts.label) : ts.label;
+                lang === "en"
+                  ? (MONSTER_TEXT_EN[TAIYI_SOUL_LORD_ID[ts.id]]?.name ?? ts.label)
+                  : ts.label;
               return (
                 <span
                   key={ts.id}
@@ -252,7 +256,9 @@ export function StatusPanel() {
           {sect ? sectDisplayName(sect, lang) : t("statLoose")}
         </span>
       </div>
-      <p className={`mb-1 ${isXian ? "text-fuchsia-300 font-bold" : "text-gold"}`}>{realmDisplayName(realm, lang)}</p>
+      <p className={`mb-1 ${isXian ? "text-fuchsia-300 font-bold" : "text-gold"}`}>
+        {realmDisplayName(realm, lang)}
+      </p>
       <p className="mb-3 text-[11px] font-mono text-faded/80">
         {t("bornEraLine").replace("{era}", eraLabelText(s.bornEra ?? currentEraYears()))}
       </p>
@@ -402,9 +408,13 @@ export function StatusPanel() {
               {it ? (
                 <span className="text-right">
                   <Tooltip
-                    content={[itemStatLine(it, t), itemDisplayDesc(it, lang)].filter(Boolean).join(" · ")}
+                    content={[itemStatLine(it, t), itemDisplayDesc(it, lang)]
+                      .filter(Boolean)
+                      .join(" · ")}
                   >
-                    <span className={`${nameCls} cursor-help underline decoration-dotted decoration-faded/40 underline-offset-2`}>
+                    <span
+                      className={`${nameCls} cursor-help underline decoration-dotted decoration-faded/40 underline-offset-2`}
+                    >
                       {itemDisplayName(it, lang)}
                     </span>
                   </Tooltip>
@@ -427,7 +437,9 @@ export function StatusPanel() {
                 {t("learningRemain").replace("{n}", String(s.learning.remain))}
               </span>
             </div>
-            <p className="text-cream mt-0.5">{techDisplayName(techById(s.learning.techId), lang)}</p>
+            <p className="text-cream mt-0.5">
+              {techDisplayName(techById(s.learning.techId), lang)}
+            </p>
           </div>
         </>
       )}
@@ -489,17 +501,6 @@ export function CombatPanel() {
     setSelectedSlots([]);
   }, [handKey]);
 
-  // 手機版單欄排版時,遭遇戰鬥當下自動把畫面捲到戰況欄(桌面版通常已在可視範圍內,scrollIntoView 不會有明顯動作)
-  const panelRef = useRef<HTMLDivElement>(null);
-  const hadCombatRef = useRef(false);
-  useEffect(() => {
-    const hasCombat = !!combat;
-    if (hasCombat && !hadCombatRef.current) {
-      panelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-    hadCombatRef.current = hasCombat;
-  }, [combat]);
-
   if (!combat) {
     return (
       <div className="panel deco-frame">
@@ -520,7 +521,16 @@ export function CombatPanel() {
   const hpMaxMon = combat.bossHpMax ?? mon.hp; // 浮屠塔動態 BOSS 用其實際上限
   const monName = monsterDisplayName(mon, lang);
   const displayName = combat.futuFloor ? `${monName} · 第 ${combat.futuFloor} 層` : monName;
-  const STATUS_ICON: Record<string, string> = { burn: "🔥", poison: "☠️", freeze: "❄️", weaken: "🔻", evade: "🌫️" };
+  const battleLocation = LOCATIONS.find((loc) => loc.id === combat.locationId);
+  const { hpMax, mpMax } = statsOf(s);
+  const elementGlyph: Record<string, string> = { 金: "金", 木: "木", 水: "水", 火: "火", 土: "土" };
+  const STATUS_ICON: Record<string, string> = {
+    burn: "🔥",
+    poison: "☠️",
+    freeze: "❄️",
+    weaken: "🔻",
+    evade: "🌫️",
+  };
   const STATUS_KEY: Record<string, DictKey> = {
     burn: "statusBurn",
     poison: "statusPoison",
@@ -530,7 +540,8 @@ export function CombatPanel() {
   };
   const statusChip = (kind: string, turns: number, tone: string) => (
     <span key={kind} className={`chip ${tone}`}>
-      {STATUS_ICON[kind]} {t(STATUS_KEY[kind])} · {t("statusTurnsSuffix").replace("{n}", String(turns))}
+      {STATUS_ICON[kind]} {t(STATUS_KEY[kind])} ·{" "}
+      {t("statusTurnsSuffix").replace("{n}", String(turns))}
     </span>
   );
   const monsterStatusChips = (combat.monsterStatus ?? []).map((e) =>
@@ -555,7 +566,9 @@ export function CombatPanel() {
   // 會由下面的 useEffect 清空,但那是非同步的——本次 render 仍可能先跑到、selectedSlots 裡还留著
   // 已經不存在於新 usable 裡的 slot,這裡一律先過濾掉不存在的 slot 再使用,避免 .tech 噴 undefined。
   const validSelectedSlots = selectedSlots.filter((slot) => usable.some((u) => u.slot === slot));
-  const selectedTechIds = validSelectedSlots.map((slot) => usable.find((u) => u.slot === slot)!.tech.id);
+  const selectedTechIds = validSelectedSlots.map(
+    (slot) => usable.find((u) => u.slot === slot)!.tech.id,
+  );
   const selectedCost = selectedTechIds.reduce((sum, id) => sum + techById(id).mpCost, 0);
   // 法器攻擊只能單獨出牌(3.8 版新增):選取它就清空其他選取,選取其他符寶時若手上已選著法器攻擊也會先清空
   const toggleSlot = (slot: number) => {
@@ -576,198 +589,326 @@ export function CombatPanel() {
   };
 
   return (
-    <div
-      ref={panelRef}
-      className={`panel deco-frame relative ${
-        isTianjieTrial
-          ? "border-red-500/80 shadow-[0_0_18px_rgba(239,68,68,0.4)]"
-          : isLord
-            ? "border-fuchsia-400/70 shadow-[0_0_18px_rgba(232,121,249,0.25)]"
-            : "border-vermillion/40"
-      }`}
+    <section
+      className={`battle-view ${isTianjieTrial ? "battle-trial" : isLord ? "battle-lord" : ""}`}
+      aria-label={t("combatTitle")}
     >
-      <DamageFloats target="player" tone="text-vermillion" />
-      <p className={`panel-title ${isTianjieTrial ? "text-red-400" : isLord ? "text-fuchsia-300" : "text-cinnabar"}`}>
-        {isTianjieTrial
-          ? t("combatTianjieArrives")
-          : combat.futuFloor
-            ? t("combatFutu")
-            : isLord
-              ? t("combatLordArrives")
-              : t("combatFierce")}
-      </p>
-      <div className="flex items-baseline justify-between">
-        <span className={`text-lg font-bold ${isTianjieTrial ? "text-red-400" : isLord ? "text-fuchsia-300" : ""}`}>
-          {isTianjieTrial ? (
-            <span className="chip mr-2 text-red-400 border-red-500/60">{t("combatTianjieChip")}</span>
-          ) : (
-            isLord && (
-              <span className="chip mr-2 text-fuchsia-400 border-fuchsia-400/60">
-                {combat.futuFloor ? t("combatIllusionChip") : t("combatLordChip")}
-              </span>
-            )
-          )}
-          {displayName}
-        </span>
-        <span className={`chip ${ELEMENT_COLOR[mon.element]}`}>
-          {lang === "en" ? elementLabel(mon.element, lang) : `${mon.element}屬性`}
-        </span>
-      </div>
-      <p className="text-sm text-faded mt-1">{monsterDisplayDesc(mon, lang)}</p>
-      <div className="mt-3 relative">
-        <DamageFloats target="monster" tone="text-gold" />
-        <div className="flex justify-between text-xs text-faded mb-0.5">
-          <span>{t("combatMonHp")}</span>
+      <header className="battle-header">
+        <div className="battle-brand">
+          <span className="battle-brand-mark">✦</span>
+          <div>
+            <p className="battle-eyebrow">{t("appTitle")}</p>
+            <h1>
+              {isTianjieTrial
+                ? t("combatTianjieArrives")
+                : combat.futuFloor
+                  ? t("combatFutu")
+                  : isLord
+                    ? t("combatLordArrives")
+                    : t("combatFierce")}
+            </h1>
+          </div>
+        </div>
+        <div className="battle-header-meta">
+          {battleLocation && <span>{locationDisplayName(battleLocation, lang)}</span>}
+          <span className="battle-header-player">{s.name}</span>
+          <span className="battle-header-rule" />
           <span>
-            {combat.monsterHp}/{hpMaxMon}
+            {t("statDay")} {s.day}
           </span>
         </div>
-        <div className="stat-bar">
-          <div
-            className="bg-vermillion h-full"
-            style={{ width: `${(combat.monsterHp / hpMaxMon) * 100}%` }}
-          />
-        </div>
-      </div>
+      </header>
 
-      {/* 3.11 版修正:雙方狀態列改為戰鬥中恆常顯示(不再只有任一方有狀態才出現),避免剛開戰、雙方都
-          還沒中任何狀態效果時整個區塊直接消失不見、讓人誤以為這個功能不存在 */}
-      <div className="mt-2 space-y-1">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-[10px] font-mono text-faded/60 shrink-0">{t("statusSideMonster")}</span>
-          {monsterStatusChips.length > 0 ? monsterStatusChips : <span className="text-[10px] text-faded/40">—</span>}
-        </div>
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-[10px] font-mono text-faded/60 shrink-0">{t("statusSidePlayer")}</span>
-          {playerStatusChips.length > 0 ? playerStatusChips : <span className="text-[10px] text-faded/40">—</span>}
-        </div>
-      </div>
-
-      <p className="text-[10px] tracking-[0.2em] text-faded/60 uppercase mt-4 mb-1.5">{t("combatHandTitle")}</p>
-      {/* 手牌固定為 HAND_SIZE(6)張,改用 grid 讓整排卡片寬度精確貼齊面板(不再是 flex-wrap 靠固定卡寬
-          自然換行、右側留白對不齊「激戰」標題列/氣血條的寬度) */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-        {usable.map(({ tech, slot }) => {
-          const selected = validSelectedSlots.includes(slot);
-          const elLabel = elementLabel(tech.element, lang);
-          // 雙/三屬性符寶(3.14 版新增):卡面屬性標籤把 extraElements 一併列出,例如「木・火」
-          const fullElLabel = tech.extraElements?.length
-            ? [tech.element, ...tech.extraElements].map((el) => elementLabel(el, lang)).join(lang === "en" ? "/" : "・")
-            : elLabel;
-          // 3.13/3.14 版新增進階連攜特性的卡面提示,依優先序取第一個符合的效果顯示(單張符寶目前不會
-          // 同時掛兩種以上特性,不需要處理疊字)
-          const buffNote = tech.synergyPct
-            ? t("synergyNoteTemplate")
-                .replace("{el}", elLabel)
-                .replace("{pct}", String(Math.round(tech.synergyPct * 100)))
-            : tech.nextPlayBuffPct
-              ? t("nextBuffNoteTemplate")
-                  .replace("{el}", elLabel)
-                  .replace("{pct}", String(Math.round(tech.nextPlayBuffPct * 100)))
-              : tech.comboSizePct
-                ? t("comboSizeNoteTemplate").replace("{pct}", String(Math.round(tech.comboSizePct * 100)))
-                : tech.crossElementPct
-                  ? t("crossElementNoteTemplate").replace("{pct}", String(Math.round(tech.crossElementPct * 100)))
-                  : tech.manaGain
-                    ? t("manaGainNoteTemplate").replace("{n}", String(tech.manaGain))
-                    : tech.shieldPct
-                      ? t("shieldNoteTemplate").replace("{pct}", String(Math.round(tech.shieldPct * 100)))
-                      : tech.hits && tech.hits > 1
-                        ? t("hitsNoteTemplate").replace("{n}", String(tech.hits))
-                        : tech.chargeNextTurnPct
-                          ? t("chargeNoteTemplate").replace("{pct}", String(Math.round(tech.chargeNextTurnPct * 100)))
-                          : tech.selfStatus === "evade"
-                            ? t("evadeNoteTemplate")
-                            : tech.selfCleanse
-                              ? t("cleanseNoteTemplate")
-                              : tech.lifeStealPct
-                                ? t("lifeStealNoteTemplate").replace("{pct}", String(Math.round(tech.lifeStealPct * 100)))
-                                : tech.forceStatus
-                              ? t("forceStatusNoteTemplate").replace(
-                                  "{status}",
-                                  t(
-                                    (
-                                      { burn: "statusBurn", poison: "statusPoison", freeze: "statusFreeze" } as const
-                                    )[tech.forceStatus],
-                                  ),
-                                )
-                              : tech.endsTurn
-                                ? t("endsTurnNoteTemplate")
-                                : tech.soloOnly
-                                  ? t("talismanCardSoloNote")
-                                  : null;
-          return (
-            <button
-              key={`${tech.id}-${slot}`}
-              className={`spell-card w-full ${spellCardBorderClass(tech)} ${
-                selected ? "ring-2 ring-gold -translate-y-1" : ""
-              }`}
-              disabled={busy || (!selected && s.mp < tech.mpCost)}
-              onClick={() => toggleSlot(slot)}
-              title={techDisplayDesc(tech, lang)}
-            >
-              <span className="spell-card-badge border-azure/60 text-azure">{tech.mpCost}</span>
-              <span className="spell-card-name text-cream">{techDisplayName(tech, lang)}</span>
-              {buffNote && <span className="spell-card-buff">{buffNote}</span>}
-              <span className="spell-card-foot">
-                <span className={ELEMENT_COLOR[tech.element]}>
-                  {tech.id === "artifact_attack" ? t("perEquippedWeapon") : fullElLabel}
-                </span>
-                {tech.id !== "artifact_attack" && <span>{tech.power.toFixed(1)}</span>}
+      <div className="battle-content">
+        <div className="battle-arena deco-frame">
+          <div className="battle-arena-copy">
+            <span className={`chip ${ELEMENT_COLOR[mon.element]}`}>
+              {lang === "en" ? elementLabel(mon.element, lang) : `${mon.element}屬性`}
+            </span>
+            {isTianjieTrial ? (
+              <span className="chip text-red-400 border-red-500/60">{t("combatTianjieChip")}</span>
+            ) : isLord ? (
+              <span className="chip text-fuchsia-400 border-fuchsia-400/60">
+                {combat.futuFloor ? t("combatIllusionChip") : t("combatLordChip")}
               </span>
-            </button>
-          );
-        })}
-      </div>
+            ) : null}
+            <h2>{displayName}</h2>
+            <p>{monsterDisplayDesc(mon, lang)}</p>
+          </div>
+          <div className="battle-sigil" aria-hidden="true">
+            <span className="battle-sigil-ring" />
+            <span className="battle-sigil-glyph">{elementGlyph[mon.element] ?? "妖"}</span>
+          </div>
+          <div className="battle-enemy-footer">
+            <div className="battle-enemy-health relative">
+              <DamageFloats target="monster" tone="text-gold" />
+              <div className="battle-bar-label">
+                <span>{t("combatMonHp")}</span>
+                <strong>
+                  {combat.monsterHp} / {hpMaxMon}
+                </strong>
+              </div>
+              <div className="battle-meter">
+                <span
+                  className="battle-meter-enemy"
+                  style={{
+                    width: `${Math.max(0, Math.min(100, (combat.monsterHp / hpMaxMon) * 100))}%`,
+                  }}
+                />
+              </div>
+            </div>
+            <div className="battle-status-line">
+              <span>{t("statusSideMonster")}</span>
+              {monsterStatusChips.length > 0 ? (
+                monsterStatusChips
+              ) : (
+                <span className="battle-no-status">—</span>
+              )}
+            </div>
+          </div>
+        </div>
 
-      {tacticEntries.length > 0 && (
-        <>
-          <p className="text-[10px] tracking-[0.2em] text-faded/60 uppercase mt-4 mb-1.5">
-            {t("combatTacticTitle")}
-          </p>
-          <div className="flex flex-wrap gap-2.5">
-            {tacticEntries.map(({ id, n, item }) => (
+        <div className="battle-player deco-frame">
+          <DamageFloats target="player" tone="text-vermillion" />
+          <div className="battle-player-name">
+            <span className="battle-player-symbol">◆</span>
+            <div>
+              <span>{t("statusSidePlayer")}</span>
+              <strong>{s.name}</strong>
+            </div>
+          </div>
+          <div className="battle-player-vitals">
+            <div className="battle-vital">
+              <div className="battle-bar-label">
+                <span>{t("statHp")}</span>
+                <strong>
+                  {s.hp} / {hpMax}
+                </strong>
+              </div>
+              <div className="battle-meter">
+                <span
+                  className="battle-meter-hp"
+                  style={{ width: `${Math.max(0, Math.min(100, (s.hp / hpMax) * 100))}%` }}
+                />
+              </div>
+            </div>
+            <div className="battle-vital">
+              <div className="battle-bar-label">
+                <span>{t("statMp")}</span>
+                <strong>
+                  {s.mp} / {mpMax}
+                </strong>
+              </div>
+              <div className="battle-meter">
+                <span
+                  className="battle-meter-mp"
+                  style={{ width: `${Math.max(0, Math.min(100, (s.mp / mpMax) * 100))}%` }}
+                />
+              </div>
+            </div>
+          </div>
+          <div className="battle-player-status">
+            <span>{t("statusSidePlayer")}</span>
+            {playerStatusChips.length > 0 ? (
+              playerStatusChips
+            ) : (
+              <span className="battle-no-status">—</span>
+            )}
+          </div>
+        </div>
+
+        <div className="battle-hand-heading">
+          <div>
+            <span className="battle-section-number">01 /</span>
+            <h2>{t("combatHandTitle")}</h2>
+            <span className="battle-hand-count">{usable.length}</span>
+          </div>
+          <p>{t("combatSelectHint")}</p>
+        </div>
+        <div className="battle-hand" aria-label={t("combatHandTitle")}>
+          {usable.length === 0 && <p className="battle-empty-hand">{t("combatEmptyHand")}</p>}
+          {usable.map(({ tech, slot }) => {
+            const selected = validSelectedSlots.includes(slot);
+            const elLabel = elementLabel(tech.element, lang);
+            const fullElLabel = tech.extraElements?.length
+              ? [tech.element, ...tech.extraElements]
+                  .map((el) => elementLabel(el, lang))
+                  .join(lang === "en" ? "/" : "・")
+              : elLabel;
+            const buffNote = tech.synergyPct
+              ? t("synergyNoteTemplate")
+                  .replace("{el}", elLabel)
+                  .replace("{pct}", String(Math.round(tech.synergyPct * 100)))
+              : tech.nextPlayBuffPct
+                ? t("nextBuffNoteTemplate")
+                    .replace("{el}", elLabel)
+                    .replace("{pct}", String(Math.round(tech.nextPlayBuffPct * 100)))
+                : tech.comboSizePct
+                  ? t("comboSizeNoteTemplate").replace(
+                      "{pct}",
+                      String(Math.round(tech.comboSizePct * 100)),
+                    )
+                  : tech.crossElementPct
+                    ? t("crossElementNoteTemplate").replace(
+                        "{pct}",
+                        String(Math.round(tech.crossElementPct * 100)),
+                      )
+                    : tech.manaGain
+                      ? t("manaGainNoteTemplate").replace("{n}", String(tech.manaGain))
+                      : tech.shieldPct
+                        ? t("shieldNoteTemplate").replace(
+                            "{pct}",
+                            String(Math.round(tech.shieldPct * 100)),
+                          )
+                        : tech.hits && tech.hits > 1
+                          ? t("hitsNoteTemplate").replace("{n}", String(tech.hits))
+                          : tech.chargeNextTurnPct
+                            ? t("chargeNoteTemplate").replace(
+                                "{pct}",
+                                String(Math.round(tech.chargeNextTurnPct * 100)),
+                              )
+                            : tech.selfStatus === "evade"
+                              ? t("evadeNoteTemplate")
+                              : tech.selfCleanse
+                                ? t("cleanseNoteTemplate")
+                                : tech.lifeStealPct
+                                  ? t("lifeStealNoteTemplate").replace(
+                                      "{pct}",
+                                      String(Math.round(tech.lifeStealPct * 100)),
+                                    )
+                                  : tech.forceStatus
+                                    ? t("forceStatusNoteTemplate").replace(
+                                        "{status}",
+                                        t(
+                                          (
+                                            {
+                                              burn: "statusBurn",
+                                              poison: "statusPoison",
+                                              freeze: "statusFreeze",
+                                            } as const
+                                          )[tech.forceStatus],
+                                        ),
+                                      )
+                                    : tech.endsTurn
+                                      ? t("endsTurnNoteTemplate")
+                                      : tech.soloOnly
+                                        ? t("talismanCardSoloNote")
+                                        : null;
+            return (
               <button
-                key={id}
-                className="spell-card border-jade/40"
-                disabled={busy}
-                onClick={() => act("useTacticCard", { itemId: id })}
-                title={itemDisplayDesc(item, lang)}
+                key={`${tech.id}-${slot}`}
+                type="button"
+                className={`battle-card ${spellCardBorderClass(tech)} ${selected ? "battle-card-selected" : ""}`}
+                disabled={busy || (!selected && s.mp < tech.mpCost)}
+                onClick={() => toggleSlot(slot)}
+                aria-pressed={selected}
+                title={techDisplayDesc(tech, lang)}
               >
-                <span className="spell-card-badge border-jade/60 text-jade">×{n}</span>
-                <span className="spell-card-name">{itemDisplayName(item, lang)}</span>
-                <span className="spell-card-foot">
-                  <span>{t("btnPlayTactic")}</span>
+                <span className="battle-card-top">
+                  <span className={ELEMENT_COLOR[tech.element]}>
+                    {tech.id === "artifact_attack" ? t("perEquippedWeapon") : fullElLabel}
+                  </span>
+                  <span>{String(slot + 1).padStart(2, "0")}</span>
+                </span>
+                <span className="battle-card-symbol" aria-hidden="true">
+                  {elementGlyph[tech.element] ?? "✦"}
+                </span>
+                <span className="battle-card-body">
+                  <strong>{techDisplayName(tech, lang)}</strong>
+                  <span>{buffNote || techDisplayDesc(tech, lang)}</span>
+                </span>
+                <span className="battle-card-bottom">
+                  <span>
+                    {t("statMp")} {tech.mpCost}
+                  </span>
+                  {tech.id !== "artifact_attack" && <span>{tech.power.toFixed(1)}</span>}
                 </span>
               </button>
-            ))}
-          </div>
-        </>
-      )}
+            );
+          })}
+        </div>
 
-      <div className="mt-4 flex gap-2 items-center flex-wrap">
-        <button
-          className="btn border-gold text-gold hover:bg-gold/15"
-          disabled={busy || selectedTechIds.length === 0 || s.mp < selectedCost}
-          onClick={playSelected}
-        >
-          {t("btnPlayCards")}
-          {selectedTechIds.length > 0 ? ` ×${selectedTechIds.length}(${selectedCost})` : ""}
-        </button>
-        <button className="btn" disabled={busy} onClick={() => act("endTurn")}>
-          {t("btnEndTurn")}
-        </button>
-        {!isTianjieTrial && (
-          <button className="btn btn-danger" disabled={busy} onClick={() => act("flee")}>
-            {t("btnFlee")}
-          </button>
+        {tacticEntries.length > 0 && (
+          <details className="battle-tactics">
+            <summary>
+              {t("combatTacticTitle")} <span>{tacticEntries.length}</span>
+            </summary>
+            <div className="battle-tactic-list">
+              {tacticEntries.map(({ id, n, item }) => (
+                <button
+                  key={id}
+                  className="btn border-jade/40"
+                  disabled={busy}
+                  onClick={() => act("useTacticCard", { itemId: id })}
+                  title={itemDisplayDesc(item, lang)}
+                >
+                  <span>
+                    {itemDisplayName(item, lang)} ×{n}
+                  </span>
+                  <span className="text-jade">{t("btnPlayTactic")}</span>
+                </button>
+              ))}
+            </div>
+          </details>
         )}
+        <details className="battle-tactics battle-rules" open={isTianjieTrial}>
+          <summary>{t("combatGuideTitle")}</summary>
+          <p>{t("combatTurnNote")}</p>
+          <p>{t("counterNote")}</p>
+          <p>{isTianjieTrial ? t("combatTianjieNote") : t("combatHandNote")}</p>
+        </details>
+        <details className="battle-log">
+          <summary>
+            <span>{t("logTitle")}</span>
+            <p aria-live="polite">{s.log.at(-1) ?? t("logEmptyMsg")}</p>
+          </summary>
+          <ol>
+            {s.log.map((line, index) => (
+              <li key={index}>{line}</li>
+            ))}
+          </ol>
+        </details>
       </div>
-      <p className="text-xs text-faded/60 mt-3">{t("combatTurnNote")}</p>
-      <p className="text-xs text-faded/60 mt-1">
-        {isTianjieTrial ? t("combatTianjieNote") : t("counterNote")}
-      </p>
-      {!isTianjieTrial && <p className="text-xs text-faded/60">{t("combatHandNote")}</p>}
-    </div>
+
+      <footer className="battle-actions">
+        <div className="battle-selection">
+          <span>
+            {t("combatSelectedLabel")} <strong>{selectedTechIds.length}</strong>
+          </span>
+          <span>
+            {t("combatCostLabel")} <strong>{selectedCost}</strong>
+          </span>
+          <span>
+            {t("combatRemainingLabel")}{" "}
+            <strong className={s.mp < selectedCost ? "text-vermillion" : ""}>
+              {s.mp - selectedCost}
+            </strong>
+          </span>
+        </div>
+        <div className="battle-action-buttons">
+          {!isTianjieTrial && (
+            <button
+              className="btn btn-danger battle-flee"
+              disabled={busy}
+              onClick={() => act("flee")}
+            >
+              {t("btnFlee")}
+            </button>
+          )}
+          <button className="btn battle-end" disabled={busy} onClick={() => act("endTurn")}>
+            {t("btnEndTurn")}
+          </button>
+          <button
+            className="btn battle-play"
+            disabled={busy || selectedTechIds.length === 0 || s.mp < selectedCost}
+            onClick={playSelected}
+          >
+            {t("btnPlayCards")}
+            {selectedTechIds.length > 0 ? ` ×${selectedTechIds.length}` : ""}
+            <span aria-hidden="true">↗</span>
+          </button>
+        </div>
+      </footer>
+    </section>
   );
 }

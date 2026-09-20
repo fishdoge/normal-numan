@@ -541,13 +541,16 @@ body::after {
 .battle-card-top > span:last-child {
   color: #8e7b5f;
 }
-.battle-card-symbol {
+.battle-card-art {
   position: absolute;
-  top: 20px;
-  align-self: center;
-  color: rgba(216, 188, 128, 0.24);
-  font-size: 56px;
-  line-height: 1;
+  top: 18px;
+  left: 50%;
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  transform: translateX(-50%);
+  -webkit-mask-image: radial-gradient(circle, #000 45%, transparent 74%);
+  mask-image: radial-gradient(circle, #000 45%, transparent 74%);
   pointer-events: none;
 }
 .battle-card-body {
@@ -848,18 +851,35 @@ body::after {
     font-size: 10px;
   }
   .battle-hand {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 9px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
   }
   .battle-card {
-    height: 150px;
-    padding: 9px 10px;
+    height: 166px;
+    padding: 8px 7px;
+  }
+  .battle-card-art {
+    top: 19px;
+    width: 76px;
+    height: 76px;
+  }
+  .battle-card-body {
+    min-height: 47px;
+    gap: 3px;
   }
   .battle-card-body strong {
-    font-size: 13px;
+    font-size: 12px;
   }
-  .battle-card-symbol {
-    font-size: 47px;
+  .battle-card-body > span {
+    font-size: 9px;
+  }
+  .battle-card-top,
+  .battle-card-bottom {
+    font-size: 9px;
+  }
+  .battle-card-bottom {
+    margin-top: 6px;
+    padding-top: 5px;
   }
   .battle-actions {
     display: block;

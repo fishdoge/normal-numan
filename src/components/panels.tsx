@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useCallback, useState } from "react";
 import {
   useGame,
@@ -16,6 +17,7 @@ import { itemById, isXuantianArtifact } from "@/game/data/items";
 import { currentEraYears, eraLabelText } from "@/game/data/eraTime";
 import { techById } from "@/game/data/techniques";
 import {
+  type Element,
   ELEMENT_COLOR,
   spellCardBorderClass,
   ELEMENTS,
@@ -38,6 +40,15 @@ import { locationDisplayName } from "@/i18n/worldText";
 import { elementLabel, equipSlotLabel } from "@/i18n/labelText";
 import { MONSTER_TEXT_EN } from "@/i18n/monsterText";
 import StoneAmount from "./StoneAmount";
+
+const CARD_ART: Record<Element, string> = {
+  金: "metal",
+  木: "wood",
+  水: "water",
+  火: "fire",
+  土: "earth",
+  無: "neutral",
+};
 
 // 太乙精魂對應的地域王 id(供英文翻譯查詢用,中文沿用既有 label)
 const TAIYI_SOUL_LORD_ID: Record<string, string> = {
@@ -810,9 +821,13 @@ export function CombatPanel() {
                   </span>
                   <span>{String(slot + 1).padStart(2, "0")}</span>
                 </span>
-                <span className="battle-card-symbol" aria-hidden="true">
-                  {elementGlyph[tech.element] ?? "✦"}
-                </span>
+                <Image
+                  className="battle-card-art"
+                  src={`/images/cards/${tech.id === "artifact_attack" ? "artifact" : CARD_ART[tech.element]}.webp`}
+                  alt=""
+                  width={96}
+                  height={96}
+                />
                 <span className="battle-card-body">
                   <strong>{techDisplayName(tech, lang)}</strong>
                   <span>{buffNote || techDisplayDesc(tech, lang)}</span>

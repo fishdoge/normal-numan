@@ -41,10 +41,12 @@ const config: Config = {
           "0%,100%": { opacity: "1" },
           "50%": { opacity: "0.5" },
         },
+        // 3.15 版:拉長顯示時間並補上一段「停留」,原本 1.1s 幾乎邊冒出來就邊開始淡出,常常來不及看清數字
         dmgFloat: {
           "0%": { opacity: "0", transform: "translateY(0) scale(0.9)" },
-          "15%": { opacity: "1", transform: "translateY(-4px) scale(1.05)" },
-          "100%": { opacity: "0", transform: "translateY(-38px) scale(1)" },
+          "12%": { opacity: "1", transform: "translateY(-4px) scale(1.08)" },
+          "70%": { opacity: "1", transform: "translateY(-30px) scale(1)" },
+          "100%": { opacity: "0", transform: "translateY(-46px) scale(0.96)" },
         },
         // 3.12 版新增:超稀有符寶(如未來的「電」屬性)卡面邊框微微明滅,呼應「閃電金色外框」的
         // 特效需求,幅度刻意收斂(box-shadow 而非位移/縮放)避免手牌區太吵。
@@ -55,7 +57,7 @@ const config: Config = {
       },
       animation: {
         floatUp: "floatUp .4s ease-out",
-        dmgFloat: "dmgFloat 1.1s ease-out forwards",
+        dmgFloat: "dmgFloat 1.6s ease-out forwards",
         legendaryGlow: "legendaryGlow 2.2s ease-in-out infinite",
       },
     },

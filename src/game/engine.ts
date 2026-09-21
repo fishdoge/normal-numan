@@ -86,6 +86,10 @@ export interface SaveData {
   techLevels: Record<string, number>; // 仙法等級(1~7),增靈珠強化
   pouch?: string[]; // 符寶袋(3.4 版新增):玩家自選的符寶清單,可重複(同名仙法可放入多張);
   // 未設定(新角色/舊存檔)時由 effectivePouch() 退回預設組合,不需要遷移欄位
+  techCopies?: Record<string, number>; // 符寶副本(見 ownedCopiesOf()):每門仙法在「已學會的 1 份」
+  // 之外額外擁有的副本數,決定符寶袋裡最多能放幾張同名仙法——不再是學會就能無限放,必須真的擁有
+  // 多份副本(再次參悟同一本秘笈可多得一份,見 useItem 的 manual 分支)。未設定視為全數 0(僅擁有
+  // 1 份);與生俱來的基礎卡片(法器攻擊/法術攻擊)不受此限,見 ownedCopiesOf()。
   boonHp: number; // 雲遊四海永久加成(固定比例累加)
   boonAtk: number;
   boonDef: number;
@@ -111,13 +115,23 @@ export interface Modal {
 
 // 戰鬥浮動傷害數字(3.5 版新增):每次 applyAction 呼叫過程中(含巢狀呼叫,如 postPlayerTurn 觸發
 // 的 monsterTurn)累積發生的傷害事件,結尾一併回傳給前端,驅動畫面上跳出的浮動數字。
+// element/advantage 為後續新增欄位:element 決定前端數字的屬性配色(未帶則沿用 target 預設色);
+// advantage 僅玩家出牌造成的傷害才有意義("super" = 五行相剋加成、"resist" = 被剋減傷),前端據此
+// 額外標示「克制!/抵抗」,怪物反擊與持續傷害(燒傷/中毒)只帶 element、不帶 advantage。
 export interface DamageEvent {
   target: "monster" | "player";
   amount: number;
+  element?: Element;
+  advantage?: "super" | "resist";
 }
 let pendingDamageEvents: DamageEvent[] = [];
-function pushDamageEvent(target: DamageEvent["target"], amount: number) {
-  if (amount > 0) pendingDamageEvents.push({ target, amount });
+function pushDamageEvent(
+  target: DamageEvent["target"],
+  amount: number,
+  element?: Element,
+  advantage?: DamageEvent["advantage"],
+) {
+  if (amount > 0) pendingDamageEvents.push({ target, amount, element, advantage });
 }
 
 export interface ActionResult {
@@ -309,27 +323,54 @@ function shuffled<T>(arr: T[]): T[] {
   return a;
 }
 
-// 符寶袋尚未由玩家設定(新角色/舊存檔)時的預設內容:把已學仙法輪流填滿至 POUCH_MIN 張,
-// 確保任何情況下都能湊出可用的符寶袋。已學仙法一門都沒有時回傳空陣列(理論上不會發生,
-// 各門派角色創建時必有一門起手仙法)。
-export function defaultPouch(learned: string[]): string[] {
+// 符寶副本(3.15 版新增,回應「學會即可無限放入符寶袋」的設計問題):與生俱來的基礎卡片(法器攻擊/
+// 法術攻擊)不受擁有份數限制,視為恆常擁有 POUCH_MAX_COPIES 份;真正修習來的仙法預設只擁有 1 份
+// (學會本身即代表擁有第一份符寶),額外份數來自 techCopies(見 SaveData 欄位註解、useItem 的
+// manual 分支——再次參悟已學會的秘笈可多得一份),封頂同樣是 POUCH_MAX_COPIES。
+export function ownedCopiesOf(s: Pick<SaveData, "techCopies">, techId: string): number {
+  const tech = techById(techId);
+  if (tech.innate) return POUCH_MAX_COPIES;
+  return Math.min(POUCH_MAX_COPIES, 1 + (s.techCopies?.[techId] ?? 0));
+}
+
+// 符寶袋尚未由玩家設定(新角色/舊存檔)時的預設內容:把已學仙法輪流填滿,每門仙法最多填到其擁有
+// 份數(ownedCopiesOf),湊滿 POUCH_MIN 張或擁有份數用盡為止(擁有份數用盡代表角色目前擁有的符寶
+// 副本天生就湊不滿 POUCH_MIN,屬於早期角色的正常情況,不需要也不應該硬湊超過擁有量)。
+export function defaultPouch(s: Pick<SaveData, "learned" | "techCopies">): string[] {
+  const learned = s.learned;
   if (learned.length === 0) return [];
+  const remaining = new Map(learned.map((id) => [id, ownedCopiesOf(s, id)] as const));
+  const totalAvailable = [...remaining.values()].reduce((a, b) => a + b, 0);
+  const target = Math.min(POUCH_MIN, totalAvailable);
   const out: string[] = [];
-  for (let i = 0; i < POUCH_MIN; i++) out.push(learned[i % learned.length]);
+  let i = 0;
+  while (out.length < target) {
+    const id = learned[i % learned.length];
+    const left = remaining.get(id)!;
+    if (left > 0) {
+      out.push(id);
+      remaining.set(id, left - 1);
+    }
+    i += 1;
+  }
   return out;
 }
 
 // 目前有效的符寶袋:玩家已設定過就用玩家的選擇(濾掉理論上不該發生、但防禦性排除已不在
 // 已學仙法中的殘留項目),否則退回預設符寶袋。
-export function effectivePouch(s: Pick<SaveData, "learned" | "pouch">): string[] {
+// 注意:這裡刻意不額外過濾「超過目前擁有份數」的殘留張數——擁有份數系統上線前就已組好的符寶袋
+// 維持原狀(不溯及既往、不會有玩家一登入符寶就無聲消失),之後只透過 pouchAdjust 擋下「新增」到超
+// 過擁有份數,不會強制砍掉玩家已經存在的設定。
+export function effectivePouch(s: Pick<SaveData, "learned" | "pouch" | "techCopies">): string[] {
   const raw = (s.pouch ?? []).filter((id) => s.learned.includes(id));
-  return raw.length > 0 ? raw : defaultPouch(s.learned);
+  return raw.length > 0 ? raw : defaultPouch(s);
 }
 
-// 符寶袋最低張數需求:正常是 POUCH_MIN,但已學仙法太少(乘上單卡上限仍湊不滿)時降低門檻,
-// 避免極早期角色(通常只學會起手那一門仙法)被卡住無法組出合法符寶袋。
-export function pouchMinFor(learnedCount: number): number {
-  return Math.min(POUCH_MIN, learnedCount * POUCH_MAX_COPIES);
+// 符寶袋最低張數需求:正常是 POUCH_MIN,但已學仙法/擁有份數太少(依 ownedCopiesOf 加總仍湊不滿)
+// 時降低門檻,避免極早期角色(通常只擁有起手那幾張符寶)被卡住無法組出合法符寶袋。
+export function pouchMinFor(s: Pick<SaveData, "learned" | "techCopies">): number {
+  const totalAvailable = s.learned.reduce((sum, id) => sum + ownedCopiesOf(s, id), 0);
+  return Math.min(POUCH_MIN, totalAvailable);
 }
 
 // 開戰抽牌:洗混符寶袋成牌堆,抽 HAND_SIZE 張成為手牌,其餘留在牌堆,棄牌堆清空。順帶把法力回滿
@@ -438,23 +479,26 @@ function atkMultFromStatus(list: StatusEffect[] | undefined): number {
 function tickDot(
   list: StatusEffect[] | undefined,
   maxHp: number,
-): { list: StatusEffect[]; dmg: number; labels: string[] } {
+): { list: StatusEffect[]; dmg: number; labels: string[]; events: { element: Element; dmg: number }[] } {
   const arr = list ? [...list] : [];
   let dmg = 0;
   const labels: string[] = [];
+  const events: { element: Element; dmg: number }[] = [];
   for (const e of arr) {
     if (e.kind === "burn") {
       const d = Math.max(1, Math.floor(maxHp * BURN_TICK_PCT));
       dmg += d;
       labels.push(`燒傷 -${d}`);
+      events.push({ element: "火", dmg: d });
     } else if (e.kind === "poison") {
       const d = Math.max(1, Math.floor(maxHp * POISON_TICK_PCT));
       dmg += d;
       labels.push(`中毒 -${d}`);
+      events.push({ element: "木", dmg: d });
     }
   }
   const next = arr.map((e) => (e.kind === "freeze" ? e : { ...e, turns: e.turns - 1 })).filter((e) => e.turns > 0);
-  return { list: next, dmg, labels };
+  return { list: next, dmg, labels, events };
 }
 
 // 護體護盾(3.1 版新增,戰術卡「護體法箓」賦予):優先抵擋玩家接下來受到的直接傷害,額度用完即消;
@@ -509,6 +553,9 @@ export function newSave(name: string, sectId: string): SaveData {
       sect.startTech,
       sect.startTech2,
     ],
+    // 擁有份數(3.15 版新增)需與上面的起手符寶袋對齊:startTech 起手就放了 3 張,故額外擁有 2 份
+    // (1 份來自學會本身 + 2 份 techCopies = 3 份),startTech2 起手只放 1 張,不需要額外份數。
+    techCopies: { [sect.startTech]: 2 },
     learning: null,
     equippedWeapon: null,
     equippedArmor: null,
@@ -819,7 +866,7 @@ function monsterTurn(s: SaveData): { lines: string[]; defeat?: Modal } {
     }${statusNote}。`,
   );
   s.hp -= dmgAfterShield;
-  pushDamageEvent("player", dmgAfterShield);
+  pushDamageEvent("player", dmgAfterShield, mon.element);
   if (s.hp <= 0) {
     return { lines, defeat: handlePlayerDefeat(s, lines[lines.length - 1]) };
   }
@@ -843,7 +890,7 @@ function postPlayerTurn(s: SaveData): { loot?: Modal } {
   s.combat.monsterStatus = monTick.list;
   if (monTick.dmg > 0) {
     s.combat.monsterHp -= monTick.dmg;
-    pushDamageEvent("monster", monTick.dmg);
+    for (const ev of monTick.events) pushDamageEvent("monster", ev.dmg, ev.element);
     log(s, `${mon.name} 因${monTick.labels.join("、")}持續受創!`);
     if (s.combat.monsterHp <= 0) return { loot: winCombat(s) };
   }
@@ -857,7 +904,7 @@ function postPlayerTurn(s: SaveData): { loot?: Modal } {
   s.combat.playerStatus = plyTick.list;
   if (plyTick.dmg > 0) {
     s.hp -= plyTick.dmg;
-    pushDamageEvent("player", plyTick.dmg);
+    for (const ev of plyTick.events) pushDamageEvent("player", ev.dmg, ev.element);
     const line = `你因${plyTick.labels.join("、")}持續受創!`;
     if (s.hp <= 0) return { loot: handlePlayerDefeat(s, line) };
     log(s, line);
@@ -1619,7 +1666,10 @@ function applyActionInner(
       const distinctElementCount = elementCounts.size;
 
       let rawPower = 0;
-      let bestElementMult = 1; // 戰報顯示用:批次內最高的相剋倍率
+      // 戰報/浮動數字顯示用:批次內「偏離中性(×1)最多」的相剋倍率——不能單純取 Math.max(初始值 1, mult),
+      // 那樣會讓「整批全被剋制、沒有任何一張克制或中性」的情況因為 max(1, 0.75)=1 而被吃掉,導致
+      // 「屬性被剋,威力受阻」的提示永遠不會出現(3.15 版修正,寫傷害事件的 advantage 標示時發現)。
+      let bestElementMult = 1;
       for (const t of techs) {
         const level = techLevelOf(s, t.id);
         let p = t.power * techPowerMult(level);
@@ -1631,7 +1681,7 @@ function applyActionInner(
         if (buff && buff.element === effEl(t)) p *= 1 + buff.pct;
         // 雙/三屬性符寶(3.14 版新增):相剋倍率取所有屬性中最高者,天生百搭、不怕撞上被剋的屬性
         const mult = Math.max(...elemsOf(t).map((el) => elementMult(el, mon.element)));
-        bestElementMult = Math.max(bestElementMult, mult);
+        if (Math.abs(mult - 1) > Math.abs(bestElementMult - 1)) bestElementMult = mult;
         p *= mult;
         // 蓄力連攜(3.14 版新增):上一回合若蓄力過,這整回合的傷害額外提升 activeChargeBuffPct
         if (s.combat.activeChargeBuffPct) p *= 1 + s.combat.activeChargeBuffPct;
@@ -1639,6 +1689,14 @@ function applyActionInner(
       }
       // 延續加成用掉即消耗,不論這次批次是否真的命中同元素都算用過一次機會
       if (buff) s.combat.pendingElementBuff = undefined;
+
+      // 浮動傷害數字的顯示屬性/加成標示(供前端上色與「克制!/抵抗」標示用):單張出牌就用那張的
+      // 屬性;多張混打時,若全部同屬性仍可標色,否則屬性不明確,前端退回預設色,但加成標示(取批次
+      // 內最高相剋倍率)不受影響,一樣照樣顯示。
+      const displayElement: Element | undefined =
+        techs.length === 1 ? effEl(techs[0]) : techs.every((t) => effEl(t) === effEl(techs[0])) ? effEl(techs[0]) : undefined;
+      const displayAdvantage: DamageEvent["advantage"] | undefined =
+        bestElementMult > 1 ? "super" : bestElementMult < 1 ? "resist" : undefined;
 
       s.mp -= totalCost;
       // 法力回復符寶(3.13 版新增):打出後立即回復法力,可能部分/全額抵銷這次出牌的花費
@@ -1717,10 +1775,10 @@ function applyActionInner(
           for (let h = 0; h < soleHits; h++) {
             const thisHit = h === soleHits - 1 ? remaining : Math.min(per, remaining);
             remaining -= thisHit;
-            pushDamageEvent("monster", thisHit);
+            pushDamageEvent("monster", thisHit, displayElement, displayAdvantage);
           }
         } else {
-          pushDamageEvent("monster", dmg);
+          pushDamageEvent("monster", dmg, displayElement, displayAdvantage);
         }
         log(
           s,
@@ -1818,7 +1876,7 @@ function applyActionInner(
             "。",
         );
         s.combat.monsterHp -= dmg;
-        pushDamageEvent("monster", dmg);
+        pushDamageEvent("monster", dmg, tech.element, mult > 1 ? "super" : mult < 1 ? "resist" : undefined);
       }
       if (s.combat.monsterHp <= 0) return { save: s, loot: winCombat(s) };
       // 3.3 版:出牌不再自動結束回合,法力允許就能接著出下一張,直到玩家主動施法結束(見 case "endTurn")
@@ -2015,8 +2073,23 @@ function applyActionInner(
       const { hpMax, mpMax, realm } = statsOf(s);
 
       if (item.kind === "manual" && item.teaches) {
+        // 已學會此仙法:改為「複製符寶副本」(3.15 版新增),不需要重新花年限修習——再次參悟已熟稔
+        // 的秘笈,直接多凝一份可放入符寶袋的副本。基礎卡片(法器攻擊/法術攻擊)不會出現在這裡,
+        // 因為它們沒有對應的 manual 道具。
         if (s.learned.includes(item.teaches)) {
-          log(s, "你已參透此篇仙法,無需再讀。");
+          const owned = ownedCopiesOf(s, item.teaches);
+          const tech = techById(item.teaches);
+          if (owned >= POUCH_MAX_COPIES) {
+            log(s, `你已擁有 ${owned} 份【${tech.name}】符寶副本,達符寶袋單卡上限,此篇秘笈對你已無用武之地。`);
+            return { save: s };
+          }
+          take(s, itemId);
+          s.techCopies = { ...s.techCopies, [item.teaches]: (s.techCopies?.[item.teaches] ?? 0) + 1 };
+          const newOwned = owned + 1;
+          log(
+            s,
+            `你重新參悟【${item.name}】,竟從中提煉出一枚全新的符寶副本!【${tech.name}】現擁有 ${newOwned} 份,符寶袋可多放一張。`,
+          );
           return { save: s };
         }
         const tech = techById(item.teaches);
@@ -2529,26 +2602,33 @@ function applyActionInner(
       return { save: s };
     }
 
-    // 符寶袋調整(3.4 版新增):挑選已學仙法放入符寶袋,可重複放入同一門仙法(每門上限
-    // POUCH_MAX_COPIES 張),移除時不得低於 pouchMinFor() 算出的最低張數——用「調整時擋下」取代
-    // 「開戰時擋下」,玩家永遠處於合法狀態,不會卡在無法開戰的中間態。
+    // 符寶袋調整(3.4 版新增;3.15 版改為受「擁有份數」節制,見 ownedCopiesOf):挑選已學仙法放入
+    // 符寶袋,可重複放入同一門仙法,但張數不得超過實際擁有的符寶副本數(基礎卡片不受此限);移除時
+    // 不得低於 pouchMinFor() 算出的最低張數——用「調整時擋下」取代「開戰時擋下」,玩家永遠處於合
+    // 法狀態,不會卡在無法開戰的中間態。
     case "pouchAdjust": {
       if (s.combat) return { save: s, error: "激戰之中,無法調整符寶袋。" };
       const techId = String(payload.techId ?? "");
       if (!s.learned.includes(techId)) return { save: s, error: "未習得此仙法" };
       const delta = Number(payload.delta ?? 0);
       if (delta !== 1 && delta !== -1) return { save: s, error: "無效操作" };
-      const pouch = s.pouch && s.pouch.length > 0 ? [...s.pouch] : defaultPouch(s.learned);
+      const pouch = s.pouch && s.pouch.length > 0 ? [...s.pouch] : defaultPouch(s);
       if (delta > 0) {
         const count = pouch.filter((id) => id === techId).length;
-        if (count >= POUCH_MAX_COPIES) {
-          return { save: s, error: `單一仙法最多放入符寶袋 ${POUCH_MAX_COPIES} 張` };
+        const owned = ownedCopiesOf(s, techId);
+        if (count >= owned) {
+          return {
+            save: s,
+            error: techById(techId).innate
+              ? `單一符寶最多放入符寶袋 ${POUCH_MAX_COPIES} 張`
+              : `你只擁有 ${owned} 份【${techById(techId).name}】符寶副本,無法放入更多張(再次參悟同門秘笈可多得一份)`,
+          };
         }
         pouch.push(techId);
       } else {
         const idx = pouch.indexOf(techId);
         if (idx === -1) return { save: s, error: "符寶袋中並無此符寶" };
-        const minReq = pouchMinFor(s.learned.length);
+        const minReq = pouchMinFor(s);
         if (pouch.length <= minReq) {
           return { save: s, error: `符寶袋至少需保留 ${minReq} 張符寶` };
         }

@@ -13,6 +13,7 @@ import {
   effectivePouch,
   pouchMinFor,
   POUCH_MAX_COPIES,
+  ownedCopiesOf,
 } from "@/game/store";
 import { LOCATIONS, MONSTERS, RECIPES, REGIONS } from "@/game/data/world";
 import { ITEMS, itemById, isXuantianArtifact } from "@/game/data/items";
@@ -388,15 +389,26 @@ function BagTab() {
             ) : (
               <span className="chip self-center text-faded/70">{t("tacticOnlyInCombat")}</span>
             ))}
-          {item.kind === "manual" && (
-            <button
-              className="btn"
-              disabled={busy || !!s.learning}
-              title={s.learning ? t("learningOther") : ""}
-              onClick={() => act("useItem", { itemId: id })}
-            >
-              {s.learning ? t("btnStudying") : t("btnStartStudy")}
-            </button>
+          {item.kind === "manual" && item.teaches && s.learned.includes(item.teaches) ? (
+            // 已學會此仙法:秘笈的用途變成「複製符寶副本」,不佔用修習中的名額,達份數上限則無按鈕可按
+            ownedCopiesOf(s, item.teaches) >= POUCH_MAX_COPIES ? (
+              <span className="chip self-center text-faded/70">{t("manualAtCopyCap")}</span>
+            ) : (
+              <button className="btn" disabled={busy} onClick={() => act("useItem", { itemId: id })}>
+                {t("btnDuplicateCard")}
+              </button>
+            )
+          ) : (
+            item.kind === "manual" && (
+              <button
+                className="btn"
+                disabled={busy || !!s.learning}
+                title={s.learning ? t("learningOther") : ""}
+                onClick={() => act("useItem", { itemId: id })}
+              >
+                {s.learning ? t("btnStudying") : t("btnStartStudy")}
+              </button>
+            )
           )}
           {EQUIPPABLE.includes(item.kind) && !equipped && (
             <button className="btn" disabled={busy} onClick={() => act("equip", { itemId: id })}>
@@ -507,7 +519,7 @@ function TechTab() {
   const t = useT();
   const zenglingzhu = s.inventory["zenglingzhu"] ?? 0;
   const pouch = effectivePouch(s);
-  const pouchMin = pouchMinFor(s.learned.length);
+  const pouchMin = pouchMinFor(s);
   const inCombat = !!s.combat;
   // 3.11 版新增:仙法分頁拆成「百寶袋」(符寶袋內容調整)跟「修練」(修習中進度 + 增靈珠強化)
   // 兩個子頁籤,不再一次全部堆在同一頁。
@@ -548,7 +560,8 @@ function TechTab() {
           const row = (id: string) => {
             const tech = techById(id);
             const count = pouch.filter((p) => p === id).length;
-            const atMax = count >= POUCH_MAX_COPIES;
+            const owned = ownedCopiesOf(s, id);
+            const atMax = count >= owned;
             const atMin = pouch.length <= pouchMin;
             return (
               <div key={id} className="flex items-center justify-between gap-2 text-sm">
@@ -558,6 +571,11 @@ function TechTab() {
                     ({tech.mpCost}
                     {tech.soloOnly ? ` · ${t("talismanPouchSoloTag")}` : ""})
                   </span>
+                  {!tech.innate && (
+                    <span className="chip ml-1.5 text-faded/80 border-faded/30">
+                      {t("talismanPouchOwnedTag").replace("{n}", String(owned))}
+                    </span>
+                  )}
                 </span>
                 <div className="flex items-center gap-2">
                   <button
@@ -572,7 +590,13 @@ function TechTab() {
                     className="chip hover:text-gold px-2"
                     disabled={busy || inCombat || atMax}
                     title={
-                      atMax ? t("talismanPouchMaxCopiesNote").replace("{n}", String(POUCH_MAX_COPIES)) : ""
+                      atMax
+                        ? tech.innate
+                          ? t("talismanPouchMaxCopiesNote").replace("{n}", String(POUCH_MAX_COPIES))
+                          : t("talismanPouchOwnedCapNote")
+                              .replace("{n}", String(owned))
+                              .replace("{max}", String(POUCH_MAX_COPIES))
+                        : ""
                     }
                     onClick={() => act("pouchAdjust", { techId: id, delta: 1 })}
                   >
@@ -598,6 +622,9 @@ function TechTab() {
                   studiedTechs.map(row)
                 )}
               </div>
+              {studiedTechs.length > 0 && (
+                <p className="text-[11px] text-faded/70 mt-2 leading-relaxed">{t("talismanPouchDupHint")}</p>
+              )}
             </>
           );
         })()}

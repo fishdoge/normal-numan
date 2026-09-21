@@ -27,6 +27,7 @@ import {
   POUCH_MAX_COPIES,
   effectivePouch,
   pouchMinFor,
+  ownedCopiesOf,
 } from "./engine";
 
 export type { SaveData, Modal, DamageEvent };
@@ -52,6 +53,7 @@ export {
   POUCH_MAX_COPIES,
   effectivePouch,
   pouchMinFor,
+  ownedCopiesOf,
 };
 
 // 行動頁籤(ActionTabs)目前分頁,提到 store 讓其他面板(如道籍)也能切換頁籤
@@ -68,6 +70,10 @@ export type Tab =
 
 // 主畫面切換:遊戲主頁 / 宗門獨立頁面(1.8 版新增,宗門改為全螢幕切換,不再是行動頁籤之一)
 export type MainView = "game" | "sect";
+
+// 秒殺收尾延遲(見 act() 內註解):讓致命一擊的浮動傷害數字/打擊特效有時間播出,才套用戰鬥結束的
+// 存檔與戰利品彈窗。刻意抓短一點——夠讓玩家看清這一下傷害就好,不需要等滿整段數字動畫。
+const LETHAL_TRANSITION_DELAY_MS = 700;
 
 // 純前端顯示偏好,存於 localStorage,不經過伺服器(伺服器端存檔內容不分語言)
 const LANG_KEY = "lang";
@@ -139,22 +145,32 @@ export const useGame = create<ClientState>()((set, get) => ({
     if (get().busy) return;
     set({ busy: true });
     try {
+      const prevCombat = get().save?.combat ?? null;
       const res = await fetch("/api/action", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ type, payload }),
       });
       const j = await res.json();
-      if (j.save !== undefined) set({ save: j.save });
-      if (j.loot) set({ loot: j.loot });
-      if (j.breakResult) set({ breakResult: j.breakResult });
-      if (Array.isArray(j.damageEvents) && j.damageEvents.length > 0) {
+      const hasDamage = Array.isArray(j.damageEvents) && j.damageEvents.length > 0;
+      if (hasDamage) {
         const stamped = (j.damageEvents as DamageEvent[]).map((e, i) => ({
           ...e,
           id: `${Date.now()}-${i}-${Math.random().toString(36).slice(2, 8)}`,
         }));
         set((st) => ({ damageEvents: [...st.damageEvents, ...stamped] }));
       }
+      // 秒殺/一擊帶走怪物時的收尾修正:戰鬥結束當下 save.combat 立刻變成 null,CombatPanel 會馬上
+      // 切回非戰鬥畫面,若跟傷害數字/戰利品彈窗同時套用,這一下傷害會完全來不及顯示,反而在「下一場
+      // 戰鬥」開打時才顯示出來(殘留的舊 damageEvents)。這裡延後套用 save/loot/breakResult,讓浮動
+      // 數字與打擊特效先播完一小段再切換畫面與跳出戰利品彈窗,busy 在等待期間維持 true,避免搶跑。
+      const isLethalTransition = !!prevCombat && !j.save?.combat && hasDamage;
+      if (isLethalTransition) {
+        await new Promise((resolve) => window.setTimeout(resolve, LETHAL_TRANSITION_DELAY_MS));
+      }
+      if (j.save !== undefined) set({ save: j.save });
+      if (j.loot) set({ loot: j.loot });
+      if (j.breakResult) set({ breakResult: j.breakResult });
       if (j.error && j.save) {
         // 錯誤訊息進見聞錄
         const s = get().save;

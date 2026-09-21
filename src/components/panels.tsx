@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useCallback, useState } from "react";
+import { useEffect, useRef, useCallback, useState, type CSSProperties } from "react";
 import {
   useGame,
   statsOf,
@@ -474,9 +474,29 @@ export function StatusPanel() {
   );
 }
 
-// 戰鬥浮動傷害數字(3.5 版新增):讀取 store.damageEvents,依 target 分別浮在怪物氣血條上方(對怪物
-// 造成傷害)或面板上方(玩家受到傷害),動畫結束(1.1s)後自行從 store 移除,不需要外部計時器。
+// 五行屬性 → 十六進位色碼(供打擊特效動態上色,對應 tailwind.config.ts 的 metal/wood/water/fire/earth)
+const ELEMENT_HEX: Record<Element, string> = {
+  金: "#d4af37",
+  木: "#5aa860",
+  水: "#5a8fd0",
+  火: "#e0603a",
+  土: "#b08040",
+  無: "#eeac43",
+};
+function hexToRgba(hex: string, alpha: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  const r = (n >> 16) & 255;
+  const g = (n >> 8) & 255;
+  const b = n & 255;
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+// 戰鬥浮動傷害數字(3.5 版新增,3.15 版擴充屬性配色/加成標示):讀取 store.damageEvents,依 target
+// 分別浮在怪物氣血條上方(對怪物造成傷害)或玩家面板上方(玩家受到傷害),動畫結束後自行從 store
+// 移除,不需要外部計時器。element 決定數字顏色(未帶則沿用預設 tone,例如法器/法術攻擊等無屬性
+// 傷害);advantage 額外標示「克制!/抵抗」,僅玩家出牌造成的傷害才會帶。
 function DamageFloats({ target, tone }: { target: "monster" | "player"; tone: string }) {
+  const t = useT();
   const events = useGame((x) => x.damageEvents);
   const consume = useGame((x) => x.consumeDamageEvent);
   const mine = events.filter((e) => e.target === target);
@@ -486,14 +506,52 @@ function DamageFloats({ target, tone }: { target: "monster" | "player"; tone: st
       {mine.map((e) => (
         <span
           key={e.id}
-          className={`absolute font-mono font-black text-2xl animate-dmgFloat ${tone}`}
+          className={`absolute flex flex-col items-center font-mono font-black text-2xl animate-dmgFloat ${
+            e.element && e.element !== "無" ? ELEMENT_COLOR[e.element] : tone
+          }`}
           style={{ textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}
           onAnimationEnd={() => consume(e.id)}
         >
-          -{formatDamage(e.amount)}
+          <span>-{formatDamage(e.amount)}</span>
+          {e.advantage && (
+            <span
+              className={`text-[11px] font-bold tracking-wide ${
+                e.advantage === "super" ? "text-gold" : "text-faded"
+              }`}
+            >
+              {e.advantage === "super" ? t("dmgAdvantageSuper") : t("dmgAdvantageResist")}
+            </span>
+          )}
         </span>
       ))}
     </div>
+  );
+}
+
+// 打擊特效(3.15 版新增):跟浮動數字共用同一份 damageEvents,但只取「最新一筆」驅動一次性的擊中
+// 爆閃/紅光,依屬性動態上色(monster 側;player 側統一用受擊紅)。跟 castEffect(出牌當下的樂觀特效,
+// 命中與否都會播)不同,這是伺服器確認真的造成傷害後才觸發,分開渲染避免擠在同一個容器裡搶位置。
+function HitImpact({ side }: { side: "monster" | "player" }) {
+  const events = useGame((x) => x.damageEvents);
+  const mine = events.filter((e) => e.target === side);
+  const latest = mine[mine.length - 1];
+  if (!latest) return null;
+  const hitHex = ELEMENT_HEX[latest.element ?? "無"];
+  return (
+    <span
+      key={latest.id}
+      aria-hidden="true"
+      className={side === "monster" ? "battle-hit-flash" : "battle-player-hit-flash"}
+      style={
+        side === "monster"
+          ? ({
+              "--hit-color": hitHex,
+              "--hit-color-soft": hexToRgba(hitHex, 0.5),
+              "--hit-color-glow": hexToRgba(hitHex, 0.32),
+            } as CSSProperties)
+          : undefined
+      }
+    />
   );
 }
 
@@ -665,6 +723,7 @@ export function CombatPanel() {
             <span className="battle-sigil-ring" />
             <span className="battle-sigil-glyph">{elementGlyph[mon.element] ?? "妖"}</span>
             {castEffect && <span key={castEffect.id} className="battle-cast-flash" />}
+            <HitImpact side="monster" />
           </div>
           <div className="battle-enemy-footer">
             <div className="battle-enemy-health relative">
@@ -696,6 +755,7 @@ export function CombatPanel() {
         </div>
 
         <div className="battle-player deco-frame">
+          <HitImpact side="player" />
           <DamageFloats target="player" tone="text-vermillion" />
           <div className="battle-player-name">
             <span className="battle-player-symbol">◆</span>

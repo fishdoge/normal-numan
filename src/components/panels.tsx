@@ -493,6 +493,30 @@ function hexToRgba(hex: string, alpha: number): string {
 // tone(target 預設色,見 DamageFloats)對應的色碼,供無屬性傷害(法器/法術攻擊等)的發光效果使用
 const TONE_HEX: Record<string, string> = { "text-gold": "#c9a227", "text-vermillion": "#c03a2b" };
 
+// 血條「拖尾消耗」動畫(3.17 版新增):血量減少時不是數值一變寬度就硬切,而是「主色條先(短暫過渡)
+// 扣到新寬度,淺色拖尾條停留在舊寬度一小段時間後才慢慢追上」——經典遊戲血條手法,讓「減少」看起來
+// 是一段持續的消耗過程。血量回升(治療/開戰重置)則不需要拖尾,直接跟上即可。
+function DrainBar({ pct, mainClass }: { pct: number; mainClass: string }) {
+  const clamped = Math.max(0, Math.min(100, pct));
+  const [ghostPct, setGhostPct] = useState(clamped);
+  const prevRef = useRef(clamped);
+  useEffect(() => {
+    if (clamped < prevRef.current) {
+      const timeout = window.setTimeout(() => setGhostPct(clamped), 180);
+      prevRef.current = clamped;
+      return () => window.clearTimeout(timeout);
+    }
+    prevRef.current = clamped;
+    setGhostPct(clamped);
+  }, [clamped]);
+  return (
+    <div className="battle-meter">
+      <span className="battle-meter-ghost" style={{ width: `${ghostPct}%` }} />
+      <span className={mainClass} style={{ width: `${clamped}%` }} />
+    </div>
+  );
+}
+
 // 戰鬥浮動傷害數字(3.5 版新增,3.15 版擴充屬性配色/加成標示,3.16 版加大加華麗):讀取
 // store.damageEvents,依 target 分別浮在怪物氣血條上方(對怪物造成傷害)或玩家面板上方(玩家受到
 // 傷害),動畫結束後自行從 store 移除,不需要外部計時器。element 決定數字顏色(未帶則沿用預設
@@ -762,14 +786,7 @@ export function CombatPanel() {
                   {combat.monsterHp} / {hpMaxMon}
                 </strong>
               </div>
-              <div className="battle-meter">
-                <span
-                  className="battle-meter-enemy"
-                  style={{
-                    width: `${Math.max(0, Math.min(100, (combat.monsterHp / hpMaxMon) * 100))}%`,
-                  }}
-                />
-              </div>
+              <DrainBar pct={(combat.monsterHp / hpMaxMon) * 100} mainClass="battle-meter-enemy" />
             </div>
             <div className="battle-status-line">
               <span>{t("statusSideMonster")}</span>
@@ -800,12 +817,7 @@ export function CombatPanel() {
                   {s.hp} / {hpMax}
                 </strong>
               </div>
-              <div className="battle-meter">
-                <span
-                  className="battle-meter-hp"
-                  style={{ width: `${Math.max(0, Math.min(100, (s.hp / hpMax) * 100))}%` }}
-                />
-              </div>
+              <DrainBar pct={(s.hp / hpMax) * 100} mainClass="battle-meter-hp" />
             </div>
             <div className="battle-vital">
               <div className="battle-bar-label">

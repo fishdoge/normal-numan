@@ -397,24 +397,37 @@ body::after {
   letter-spacing: 0;
 }
 .battle-meter {
+  position: relative;
   height: 7px;
   border: 1px solid rgba(255, 255, 255, 0.06);
   background: #0b0908;
   overflow: hidden;
 }
 .battle-meter > span {
+  position: absolute;
+  inset: 0 auto 0 0;
   display: block;
   height: 100%;
   transition: width 0.35s ease;
 }
 .battle-meter-enemy {
   background: linear-gradient(90deg, #8f2b23, #d9563b);
+  z-index: 2;
 }
 .battle-meter-hp {
   background: linear-gradient(90deg, #8d4635, #cb7258);
+  z-index: 2;
 }
 .battle-meter-mp {
   background: linear-gradient(90deg, #32657d, #67a9ca);
+}
+/* 拖尾條(3.17 版新增,見 panels.tsx 的 DrainBar):血量減少時,這條淺色殘影先停留在舊寬度,延遲
+   後才慢慢追上新寬度,疊在主色條後方(z-index 較低),做出「正在被消耗」的拖曳動態,而不是主色條
+   一變寬度就硬切——只用在氣血條(怪物/玩家),法力條維持原本單層、即時反應。 */
+.battle-meter-ghost {
+  background: rgba(255, 255, 255, 0.5);
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  z-index: 1;
 }
 .battle-status-line,
 .battle-player-status {

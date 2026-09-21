@@ -507,10 +507,20 @@ export function CombatPanel() {
   // 出牌改為「先選取、按出牌才打出」(3.5 版新增):以手牌位置(slot)記錄選取,允許同名重複符寶
   // 各自獨立選取。手牌內容一變(打出/回合結束重抽)就代表舊的選取位置全部失效,一併清空。
   const [selectedSlots, setSelectedSlots] = useState<number[]>([]);
+  const [castEffect, setCastEffect] = useState<{
+    id: number;
+    slots: number[];
+    handKey: string;
+  } | null>(null);
   const handKey = (combat?.hand ?? []).join(",");
   useEffect(() => {
     setSelectedSlots([]);
   }, [handKey]);
+  useEffect(() => {
+    if (!castEffect) return;
+    const timeout = window.setTimeout(() => setCastEffect(null), 450);
+    return () => window.clearTimeout(timeout);
+  }, [castEffect]);
 
   if (!combat) {
     return (
@@ -596,6 +606,11 @@ export function CombatPanel() {
   };
   const playSelected = () => {
     if (selectedTechIds.length === 0) return;
+    setCastEffect((current) => ({
+      id: (current?.id ?? 0) + 1,
+      slots: validSelectedSlots,
+      handKey,
+    }));
     act("castBatch", { techIds: selectedTechIds });
   };
 
@@ -649,6 +664,7 @@ export function CombatPanel() {
           <div className="battle-sigil" aria-hidden="true">
             <span className="battle-sigil-ring" />
             <span className="battle-sigil-glyph">{elementGlyph[mon.element] ?? "妖"}</span>
+            {castEffect && <span key={castEffect.id} className="battle-cast-flash" />}
           </div>
           <div className="battle-enemy-footer">
             <div className="battle-enemy-health relative">
@@ -809,7 +825,7 @@ export function CombatPanel() {
               <button
                 key={`${tech.id}-${slot}`}
                 type="button"
-                className={`battle-card ${spellCardBorderClass(tech)} ${selected ? "battle-card-selected" : ""}`}
+                className={`battle-card ${spellCardBorderClass(tech)} ${selected ? "battle-card-selected" : ""} ${castEffect?.handKey === handKey && castEffect.slots.includes(slot) ? "battle-card-casting" : ""}`}
                 disabled={busy || (!selected && s.mp < tech.mpCost)}
                 onClick={() => toggleSlot(slot)}
                 aria-pressed={selected}

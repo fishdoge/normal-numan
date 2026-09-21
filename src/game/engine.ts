@@ -90,6 +90,8 @@ export interface SaveData {
   // 之外額外擁有的副本數,決定符寶袋裡最多能放幾張同名仙法——不再是學會就能無限放,必須真的擁有
   // 多份副本(再次參悟同一本秘笈可多得一份,見 useItem 的 manual 分支)。未設定視為全數 0(僅擁有
   // 1 份);與生俱來的基礎卡片(法器攻擊/法術攻擊)不受此限,見 ownedCopiesOf()。
+  pouchTrimmed?: boolean; // 已執行 3.16 版符寶袋回溯修正(見 trimPouchToOwnership):砍除擁有份數
+  // 制上線前就已存在、超過目前擁有份數的符寶袋殘留張數,影響遊戲平衡故予以追溯修正,僅執行一次。
   boonHp: number; // 雲遊四海永久加成(固定比例累加)
   boonAtk: number;
   boonDef: number;
@@ -331,6 +333,19 @@ export function ownedCopiesOf(s: Pick<SaveData, "techCopies">, techId: string): 
   const tech = techById(techId);
   if (tech.innate) return POUCH_MAX_COPIES;
   return Math.min(POUCH_MAX_COPIES, 1 + (s.techCopies?.[techId] ?? 0));
+}
+
+// 符寶袋回溯修正(3.16 版新增):擁有份數制上線前,舊存檔的符寶袋可能已經放了超過目前擁有份數的
+// 張數(過去學會即可無限複製到單卡上限)。這會影響遊戲平衡,因此主動砍掉每門仙法超過擁有份數的
+// 多餘張數——跟 3.15 版原本「不溯及既往」的決定不同,見存檔欄位 pouchTrimmed(只執行一次)。
+function trimPouchToOwnership(s: SaveData) {
+  if (!s.pouch || s.pouch.length === 0) return;
+  const counts: Record<string, number> = {};
+  s.pouch = s.pouch.filter((id) => {
+    const owned = ownedCopiesOf(s, id);
+    counts[id] = (counts[id] ?? 0) + 1;
+    return counts[id] <= owned;
+  });
 }
 
 // 符寶袋尚未由玩家設定(新角色/舊存檔)時的預設內容:把已學仙法輪流填滿,每門仙法最多填到其擁有
@@ -1176,6 +1191,11 @@ function applyActionInner(
   // 恆紀年:舊存檔沒有創建當下的紀年快照,以「現在」回填(僅為顯示用,不影響任何遊戲數值)
   if (typeof s.bornEra !== "number") s.bornEra = currentEraYears();
   if (typeof s.oracleOffered !== "boolean") s.oracleOffered = false;
+  // 3.16 版:符寶袋回溯修正,只執行一次(見 trimPouchToOwnership 註解)
+  if (!s.pouchTrimmed) {
+    trimPouchToOwnership(s);
+    s.pouchTrimmed = true;
+  }
   // 3.0/3.1/3.3 版:符寶袋上線前,可能已有玩家戰鬥進行到一半(combat 存在但缺少 deck/discard,
   // 舊制 hand 就算存在也是不同邏輯抽出來的,一併重新洗一手新的),避免舊戰鬥因缺欄位而出錯或
   // 前端無牌可選(playerShield 為 undefined 時各處皆以 ?? 0 處理,無需在此額外補值)

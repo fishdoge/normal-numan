@@ -318,6 +318,11 @@ body::after {
   line-height: 1;
   text-shadow: 0 0 55px rgba(210, 149, 53, 0.3);
 }
+/* 怪物受擊震動(3.16 版新增):panels.tsx 每次真的造成傷害就把這個 span 換一個 key 強制重新掛載,
+   讓動畫跟著重播——單純加同一個 class 不會自動重播 CSS 動畫。 */
+.battle-sigil-glyph-shake {
+  animation: battleGlyphShake 0.4s ease-out;
+}
 .battle-cast-flash {
   position: absolute;
   width: min(30vw, 230px);
@@ -351,6 +356,18 @@ body::after {
   background: radial-gradient(ellipse at center, rgba(192, 58, 43, 0.32), transparent 72%);
   box-shadow: inset 0 0 0 2px rgba(192, 58, 43, 0.6);
   animation: battlePlayerHitFlash 0.5s ease-out both;
+}
+/* 傷害數字的爆閃襯底(3.16 版新增):只有屬性克制(advantage === "super")的傷害數字才會多這一圈,
+   襯在數字後方(z-index 負值),顏色透過 panels.tsx 傳入的 --burst-color 動態決定。 */
+.dmg-float-burst {
+  position: absolute;
+  inset: -12px -26px;
+  z-index: -1;
+  border-radius: 9999px;
+  background: radial-gradient(circle, var(--burst-color, #c9a227) 0%, transparent 70%);
+  opacity: 0.6;
+  animation: dmgBurstPop 0.5s ease-out both;
+  pointer-events: none;
 }
 .battle-enemy-footer {
   position: absolute;
@@ -621,6 +638,44 @@ body::after {
   }
   100% {
     opacity: 0;
+  }
+}
+@keyframes battleGlyphShake {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  15% {
+    transform: translate(-7px, 3px) rotate(-2.5deg);
+  }
+  30% {
+    transform: translate(6px, -3px) rotate(2.5deg);
+  }
+  45% {
+    transform: translate(-5px, 2px) rotate(-1.5deg);
+  }
+  60% {
+    transform: translate(4px, -1px) rotate(1.5deg);
+  }
+  75% {
+    transform: translate(-2px, 1px) rotate(-0.5deg);
+  }
+  90% {
+    transform: translate(1px, 0) rotate(0deg);
+  }
+}
+@keyframes dmgBurstPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  35% {
+    opacity: 0.65;
+    transform: scale(1.15);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.5);
   }
 }
 .battle-card:disabled {
@@ -1021,12 +1076,15 @@ body::after {
   .battle-card-casting,
   .battle-cast-flash,
   .battle-hit-flash,
-  .battle-player-hit-flash {
+  .battle-player-hit-flash,
+  .battle-sigil-glyph-shake,
+  .dmg-float-burst {
     animation: none;
   }
   .battle-cast-flash,
   .battle-hit-flash,
-  .battle-player-hit-flash {
+  .battle-player-hit-flash,
+  .dmg-float-burst {
     display: none;
   }
 }

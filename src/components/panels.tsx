@@ -490,11 +490,15 @@ function hexToRgba(hex: string, alpha: number): string {
   const b = n & 255;
   return `rgba(${r},${g},${b},${alpha})`;
 }
+// tone(target 預設色,見 DamageFloats)對應的色碼,供無屬性傷害(法器/法術攻擊等)的發光效果使用
+const TONE_HEX: Record<string, string> = { "text-gold": "#c9a227", "text-vermillion": "#c03a2b" };
 
-// 戰鬥浮動傷害數字(3.5 版新增,3.15 版擴充屬性配色/加成標示):讀取 store.damageEvents,依 target
-// 分別浮在怪物氣血條上方(對怪物造成傷害)或玩家面板上方(玩家受到傷害),動畫結束後自行從 store
-// 移除,不需要外部計時器。element 決定數字顏色(未帶則沿用預設 tone,例如法器/法術攻擊等無屬性
-// 傷害);advantage 額外標示「克制!/抵抗」,僅玩家出牌造成的傷害才會帶。
+// 戰鬥浮動傷害數字(3.5 版新增,3.15 版擴充屬性配色/加成標示,3.16 版加大加華麗):讀取
+// store.damageEvents,依 target 分別浮在怪物氣血條上方(對怪物造成傷害)或玩家面板上方(玩家受到
+// 傷害),動畫結束後自行從 store 移除,不需要外部計時器。element 決定數字顏色(未帶則沿用預設
+// tone,例如法器/法術攻擊等無屬性傷害);advantage 額外標示「克制!/抵抗」,僅玩家出牌造成的傷害
+// 才會帶,同時決定字級與發光強度——克制的這一下明顯放大 + 多一圈爆閃襯底,被剋則縮小示弱,一般
+// 傷害維持中等字級,拉開三者的視覺份量差異。
 function DamageFloats({ target, tone }: { target: "monster" | "player"; tone: string }) {
   const t = useT();
   const events = useGame((x) => x.damageEvents);
@@ -503,27 +507,41 @@ function DamageFloats({ target, tone }: { target: "monster" | "player"; tone: st
   if (mine.length === 0) return null;
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center overflow-visible z-10">
-      {mine.map((e) => (
-        <span
-          key={e.id}
-          className={`absolute flex flex-col items-center font-mono font-black text-2xl animate-dmgFloat ${
-            e.element && e.element !== "無" ? ELEMENT_COLOR[e.element] : tone
-          }`}
-          style={{ textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}
-          onAnimationEnd={() => consume(e.id)}
-        >
-          <span>-{formatDamage(e.amount)}</span>
-          {e.advantage && (
-            <span
-              className={`text-[11px] font-bold tracking-wide ${
-                e.advantage === "super" ? "text-gold" : "text-faded"
-              }`}
-            >
-              {e.advantage === "super" ? t("dmgAdvantageSuper") : t("dmgAdvantageResist")}
-            </span>
-          )}
-        </span>
-      ))}
+      {mine.map((e) => {
+        const hex = e.element && e.element !== "無" ? ELEMENT_HEX[e.element] : (TONE_HEX[tone] ?? "#eeac43");
+        const sizeClass =
+          e.advantage === "super" ? "text-4xl" : e.advantage === "resist" ? "text-xl" : "text-3xl";
+        return (
+          <span
+            key={e.id}
+            className={`absolute flex flex-col items-center font-mono font-black ${sizeClass} animate-dmgFloat ${
+              e.element && e.element !== "無" ? ELEMENT_COLOR[e.element] : tone
+            }`}
+            style={{
+              textShadow: `0 1px 3px rgba(0,0,0,0.75), 0 0 14px ${hexToRgba(hex, 0.85)}, 0 0 30px ${hexToRgba(hex, 0.4)}`,
+            }}
+            onAnimationEnd={() => consume(e.id)}
+          >
+            {e.advantage === "super" && (
+              <span
+                aria-hidden="true"
+                className="dmg-float-burst"
+                style={{ "--burst-color": hex } as CSSProperties}
+              />
+            )}
+            <span>-{formatDamage(e.amount)}</span>
+            {e.advantage && (
+              <span
+                className={`text-[11px] font-bold tracking-wide ${
+                  e.advantage === "super" ? "text-gold" : "text-faded"
+                }`}
+              >
+                {e.advantage === "super" ? t("dmgAdvantageSuper") : t("dmgAdvantageResist")}
+              </span>
+            )}
+          </span>
+        );
+      })}
     </div>
   );
 }
@@ -579,6 +597,11 @@ export function CombatPanel() {
     const timeout = window.setTimeout(() => setCastEffect(null), 450);
     return () => window.clearTimeout(timeout);
   }, [castEffect]);
+  // 怪物受擊震動(3.16 版新增):取最新一筆對怪物造成傷害的事件 id 當作圖騰的 key,每次真的造成
+  // 傷害就強制重新掛載該 span,讓 .battle-sigil-glyph-shake 的震動動畫跟著重播一次(CSS 動畫套用
+  // 同一個 class 不會自動重播,靠 key 換掉整個節點才會)。
+  const monsterHitEvents = useGame((x) => x.damageEvents).filter((e) => e.target === "monster");
+  const lastMonsterHitId = monsterHitEvents[monsterHitEvents.length - 1]?.id;
 
   if (!combat) {
     return (
@@ -721,7 +744,12 @@ export function CombatPanel() {
           </div>
           <div className="battle-sigil" aria-hidden="true">
             <span className="battle-sigil-ring" />
-            <span className="battle-sigil-glyph">{elementGlyph[mon.element] ?? "妖"}</span>
+            <span
+              key={lastMonsterHitId ?? "idle"}
+              className={`battle-sigil-glyph${lastMonsterHitId ? " battle-sigil-glyph-shake" : ""}`}
+            >
+              {elementGlyph[mon.element] ?? "妖"}
+            </span>
             {castEffect && <span key={castEffect.id} className="battle-cast-flash" />}
             <HitImpact side="monster" />
           </div>

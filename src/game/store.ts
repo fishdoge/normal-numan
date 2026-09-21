@@ -168,7 +168,15 @@ export const useGame = create<ClientState>()((set, get) => ({
       if (isLethalTransition) {
         await new Promise((resolve) => window.setTimeout(resolve, LETHAL_TRANSITION_DELAY_MS));
       }
-      if (j.save !== undefined) set({ save: j.save });
+      // 清空殘留傷害事件:戰鬥面板(DamageFloats/HitImpact)只在 combat 存在時掛載,一旦 combat 變
+      // null 就整個卸載,動畫播到一半也會被打斷、onAnimationEnd 不會觸發,事件永遠留在 damageEvents
+      // 裡消不掉——下一場戰鬥面板重新掛載時,這些殘留事件會被當成「這場」的傷害重新播一次,就是
+      // 玩家回報「下一場戰鬥開頭又跳出上一場的傷害」的成因。這裡在 combat 真的變成 null 的當下一併
+      // 清空,不論是否經過秒殺延遲都適用(飛升遁走成功等 combat 變 null 但沒有傷害事件的情況,
+      // 陣列本來就是空的,清空也不會有副作用)。
+      if (j.save !== undefined) {
+        set((st) => ({ save: j.save, damageEvents: j.save.combat ? st.damageEvents : [] }));
+      }
       if (j.loot) set({ loot: j.loot });
       if (j.breakResult) set({ breakResult: j.breakResult });
       if (j.error && j.save) {

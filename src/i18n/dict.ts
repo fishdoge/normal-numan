@@ -8,6 +8,30 @@
 // 描述)、修仙入門錄(GuideModal)內文、更新公告(changelog.ts)各版逐條內容本身。
 export const DICT = {
   zh: {
+    uiNavigation: "仙途導覽",
+    uiQuickNavigation: "常用功能",
+    uiJourney: "我的仙途",
+    uiWorld: "山海人間",
+    uiWorldCaption: "凡塵一念，仙途萬里",
+    uiWelcome: "道友 {name}，別來無恙",
+    uiHeroTitle: "一念入道，萬里仙途。",
+    uiHeroDescription: "山海之間，藏著未竟的奇遇。今日，又將去往何方？",
+    uiExplore: "啟程遊歷",
+    uiHeroFootnote: "青山不改 · 道心長存",
+    uiCharacterDetails: "屬性與裝備",
+    uiOpenMenu: "開啟導覽",
+    uiCloseMenu: "關閉導覽",
+    uiSkip: "跳至遊戲內容",
+    uiMore: "更多",
+    uiAuthQuote: "凡人之軀，亦可問道長生。",
+    uiAuthDescription: "一場始於微末、行向山海的修仙之旅。",
+    uiAuthReturn: "重返仙途",
+    uiAuthCreate: "寫下你的仙籍",
+    uiAuthHint: "山門已開，靜候道友。",
+    uiAvailable: "可前往",
+    uiLocked: "境界未至",
+    uiRegion: "秘境",
+    uiBattleTag: "秘境交鋒",
     appTitle: "凡人修仙傳",
     appSubtitle: "A MORTAL’S JOURNEY TO IMMORTALITY",
     appSubtitleAscended: "ASCENDED · 得 道 成 仙",
@@ -62,7 +86,8 @@ export const DICT = {
     exploreStageLocked: "需 {n} 階境界",
     futuTitle: "浮 屠 塔",
     futuCleared: "已通關第 {n} 層",
-    futuDesc: "塔中是一尊幻象太歲天尊,每打過一層便更強(氣血 ×1.5、攻擊 ×1.2),永無止境。挑戰下一層(第 {n} 層)——每 5 層得天仙丹、每 10 層得金魂丹,高層更藏頂尖仙法。",
+    futuDesc:
+      "塔中是一尊幻象太歲天尊,每打過一層便更強(氣血 ×1.5、攻擊 ×1.2),永無止境。挑戰下一層(第 {n} 層)——每 5 層得天仙丹、每 10 層得金魂丹,高層更藏頂尖仙法。",
     futuBtn: "登 塔 · 挑 戰 第 {n} 層",
     stageInsufficient: "境界不足",
     inDwellingTip: "正於宗門仙境閉關潛修,須先離開仙境方可行動",
@@ -115,7 +140,8 @@ export const DICT = {
     techNeedBead: "需要增靈珠",
     techMaxedBtn: "已達七級大圓滿",
     techUpgradeBtn: "以增靈珠強化 → {lv} 級",
-    techFooterNote: "秘笈需「開始修習」後,以打坐推進年月,期滿方成。一次僅能修習一部。增靈珠由地域王掉落。",
+    techFooterNote:
+      "秘笈需「開始修習」後,以打坐推進年月,期滿方成。一次僅能修習一部。增靈珠由地域王掉落。",
     talismanPouchTitle: "符 寶 袋",
     talismanPouchCountLine: "{n} / 最少 {min} 張",
     talismanPouchDesc: "從已學仙法中挑選放入符寶袋(同一門仙法可放入多張),開戰時抽 6 張成為手牌。",
@@ -125,8 +151,10 @@ export const DICT = {
     talismanPouchTechsTitle: "仙 法",
     talismanPouchSoloTag: "限單獨出牌",
     talismanPouchOwnedTag: "擁有 {n} 份",
-    talismanPouchOwnedCapNote: "你只擁有 {n} 份符寶副本,無法放入更多張(再次參悟同門秘笈可多得一份,上限 {max} 份)。",
-    talismanPouchDupHint: "仙法卡片的張數上限取決於你擁有的符寶副本數,並非學會就能無限放入——在儲物袋對已學會的秘笈按「複製符寶」可再多得一份。",
+    talismanPouchOwnedCapNote:
+      "你只擁有 {n} 份符寶副本,無法放入更多張(再次參悟同門秘笈可多得一份,上限 {max} 份)。",
+    talismanPouchDupHint:
+      "仙法卡片的張數上限取決於你擁有的符寶副本數,並非學會就能無限放入——在儲物袋對已學會的秘笈按「複製符寶」可再多得一份。",
     btnDuplicateCard: "複製符寶",
     manualAtCopyCap: "符寶副本已達上限",
     synergyNoteTemplate: "同{el}+{pct}%/張",
@@ -145,9 +173,11 @@ export const DICT = {
     lifeStealNoteTemplate: "回復傷害 {pct}% 的氣血",
 
     // 煉器頁籤
-    craftHeaderNote: "煉器堂——藍框配方需先由妖獸掉落圖譜參悟後方能煉製。裝備分類已於名稱旁標示,煉製屬性隨機浮動 ±30%。",
+    craftHeaderNote:
+      "煉器堂——藍框配方需先由妖獸掉落圖譜參悟後方能煉製。裝備分類已於名稱旁標示,煉製屬性隨機浮動 ±30%。",
     xuantianCraftTitle: "玄天仙器煉化",
-    xuantianCraftDesc: "以玄天殘片(蠻荒異界怪物掉落,需 10 枚)+ 太乙精魂(天狐/真龍/霸下/黑眼貔貅任一 1 枚)同淬爐火,隨機煉成【玄天斬靈劍】【玄天葫蘆】【破天槌】【天狐化血刃】【玄天斬魔劍】【幻天鏡】其中一種,屬性隨機浮動 100%~300%,唯太乙境可用。",
+    xuantianCraftDesc:
+      "以玄天殘片(蠻荒異界怪物掉落,需 10 枚)+ 太乙精魂(天狐/真龍/霸下/黑眼貔貅任一 1 枚)同淬爐火,隨機煉成【玄天斬靈劍】【玄天葫蘆】【破天槌】【天狐化血刃】【玄天斬魔劍】【幻天鏡】其中一種,屬性隨機浮動 100%~300%,唯太乙境可用。",
     xuantianCraftBtn: "煉 化 玄 天 仙 器",
     blueprintTag: "圖譜配方",
     craftFailChanceTag: "有 {n}% 機率煉製失敗",
@@ -163,13 +193,15 @@ export const DICT = {
     purchaseFailErr: "付款已收到,但道具未能順利發放,請聯繫客服處理。",
     netErr: "無法連線至伺服器,請稍後再試",
     actionNetErr: "【無法連線至伺服器,請稍後再試】",
-    blackMarketNote: "黑市不收靈石,只認真金白銀(Polar 金流,美金計價)。消耗型命器裝備後,下一次嘗試突破無論成敗皆會自動消耗。",
+    blackMarketNote:
+      "黑市不收靈石,只認真金白銀(Polar 金流,美金計價)。消耗型命器裝備後,下一次嘗試突破無論成敗皆會自動消耗。",
     breakBonusTag: "突破 +{n}%",
     payingBtn: "付款中…",
     usSpiritStones: "美利堅靈石",
     blackMarketDelivered: "黑市老板將【{item}】遞來,已收入儲物袋。",
     oracleTitle: "天算術 · 神秘機緣",
-    oracleDesc: "支付 50 美利堅靈石,由天機老者隨機賜下一件真仙等級道具——福禍難料,可能極強,可能極弱,信則有,不信則無。",
+    oracleDesc:
+      "支付 50 美利堅靈石,由天機老者隨機賜下一件真仙等級道具——福禍難料,可能極強,可能極弱,信則有,不信則無。",
     oracleBuyBtn: "50 美利堅靈石換購",
     oracleDismissBtn: "婉拒",
     oracleDelivered: "天機老者兌現了承諾,一件真仙等級道具已悄然入你儲物袋。",
@@ -208,7 +240,8 @@ export const DICT = {
     dexSeenNote: "已目擊 {seen}/{total} 種妖獸。遭遇即錄入圖鑑。",
     dexMonsterDivider: "妖 獸",
     dexLordDivider: "領 主",
-    dexLordNote: "地域王極為稀有,獵殺妖獸時約 2%~3% 機率遭遇。已遇 {seen}/{total} 位,斬之掉落豐厚——增元丹、增靈珠、高階符籙與圖譜。北寒仙尊更有機率傳下無上仙法;金源仙帝、太上金仙則掉落金魂丹等仙緣。",
+    dexLordNote:
+      "地域王極為稀有,獵殺妖獸時約 2%~3% 機率遭遇。已遇 {seen}/{total} 位,斬之掉落豐厚——增元丹、增靈珠、高階符籙與圖譜。北寒仙尊更有機率傳下無上仙法;金源仙帝、太上金仙則掉落金魂丹等仙緣。",
 
     // 混沌萬靈榜(itemStatLine)
     statLinePrice: "售價 {n}",
@@ -226,7 +259,8 @@ export const DICT = {
     statLineBreakBonus: "突破 +{n}%",
     statLineReqStage: "需 {n} 階境界",
     statLineDropOnly: "僅妖獸掉落",
-    wanlingLocked: "【混沌萬靈榜】乃仙界至寶,窺盡天地萬物,唯真仙以上境界方能查閱——你尚未飛昇,無緣得見其貌。",
+    wanlingLocked:
+      "【混沌萬靈榜】乃仙界至寶,窺盡天地萬物,唯真仙以上境界方能查閱——你尚未飛昇,無緣得見其貌。",
     wanlingNote: "混沌萬靈榜,錄盡天地萬物,共 {n} 種,真仙以上方能查閱全貌。",
 
     // 排行榜與玩家詳情卡
@@ -281,7 +315,8 @@ export const DICT = {
     sectLookupFailed: "查詢失敗",
     sectActionFailed: "操作失敗",
     donationTitle: "宗門捐獻(不可取回)",
-    donationDesc: "捐獻的靈石與素材歸宗門所有、不可提領,與可自由存取提領的「宗門倉庫」是完全分開的兩套資料,唯一用途是累積晉升下一等級所需的門檻。",
+    donationDesc:
+      "捐獻的靈石與素材歸宗門所有、不可提領,與可自由存取提領的「宗門倉庫」是完全分開的兩套資料,唯一用途是累積晉升下一等級所需的門檻。",
     contributeTitle: "貢獻靈石",
     contributeDesc: "現有靈石:",
     btnContribute: "貢獻",
@@ -293,7 +328,8 @@ export const DICT = {
     btnUpgradeTier: "晉升【{name}】",
     maxTierReached: "已臻宗門最高等級【{name}】。",
     sectPeopleCount: "{count}/{cap} 人",
-    sectDamageNote: "宗門聲勢隨在世高階同門人數增長,越多元嬰以上同門在世,全宗門戰鬥傷害越高。目前宗門加成:",
+    sectDamageNote:
+      "宗門聲勢隨在世高階同門人數增長,越多元嬰以上同門在世,全宗門戰鬥傷害越高。目前宗門加成:",
     sectTabDwelling: "宗門仙境",
     sectTabUpgrade: "宗門升級",
     sectTabMission: "宗門任務",
@@ -302,7 +338,8 @@ export const DICT = {
     sectTabWarehouse: "宗門倉庫",
     sectTabList: "宗門列表",
     querying: "查詢中…",
-    dwellingIntro: "宗門仙境:可將角色停泊於此靜心潛修,每小時真實時間緩慢增長修為,離線亦持續累積,精力回復速度亦額外加成(基礎 +2,宗門每提升一階再 +1)。位置數僅與宗門等級有關(目前 {n} 位),各位置等級則需消耗宗門倉庫素材個別升級,任何同門皆可出資。",
+    dwellingIntro:
+      "宗門仙境:可將角色停泊於此靜心潛修,每小時真實時間緩慢增長修為,離線亦持續累積,精力回復速度亦額外加成(基礎 +2,宗門每提升一階再 +1)。位置數僅與宗門等級有關(目前 {n} 位),各位置等級則需消耗宗門倉庫素材個別升級,任何同門皆可出資。",
     btnLeaveDwelling: "離開仙境(第 {n} 位)",
     dwellingSlotLabel: "第 {n} 位",
     youTag2: "你",
@@ -330,7 +367,8 @@ export const DICT = {
     noOtherMembers: "宗門暫無其他在冊同門。",
     memberExpLine: "修為 {n}",
     warehouseTitle: "宗門物品倉庫",
-    warehouseDesc: "存入的道具歸全宗門共用,任何同門都能直接提領使用;素材類存於此處亦是宗門仙境各位置升級的消耗來源(宗門整體升級改走「宗門升級」分頁的宗門捐獻,不消耗此處存放的道具)。",
+    warehouseDesc:
+      "存入的道具歸全宗門共用,任何同門都能直接提領使用;素材類存於此處亦是宗門仙境各位置升級的消耗來源(宗門整體升級改走「宗門升級」分頁的宗門捐獻,不消耗此處存放的道具)。",
     btnDeposit: "存入倉庫",
     warehouseEmpty: "倉庫暫無物品。",
     btnWithdrawOne: "提領一件",
@@ -359,20 +397,26 @@ export const DICT = {
     lifeCostSuffix: "年壽元",
     energyCostSuffix: "精力",
     energyInsufficientTip: "精力不足",
-    wanderTooltip: "消耗 5000 年壽元 + 100 極品靈石。約 5% 觸發探索秘境(紫色機緣),約 2.5% 直接得天仙丹,30% 得永久屬性,3% 遇金仙大 BOSS,餘則一無所獲。",
-    cultivationSummaryLine: "修為 {exp}/{need} · 突破成功率 {chance}% · 失敗修為歸零、折損最大壽元 15%",
-    zhenxianNote: "渡劫飛昇需集得【真仙丹】——唯靈界地域王「太古龍祖」掉落,無論突破成敗皆會耗盡藥力。",
-    dwellingActiveNote: "你正停泊於宗門仙境中閉關潛修,無法採集靈材、獵殺妖獸、雲遊四海、打坐修煉、調息或嘗試突破——須先於宗門頁面離開仙境方可行動。",
+    wanderTooltip:
+      "消耗 5000 年壽元 + 100 極品靈石。約 5% 觸發探索秘境(紫色機緣),約 2.5% 直接得天仙丹,30% 得永久屬性,3% 遇金仙大 BOSS,餘則一無所獲。",
+    cultivationSummaryLine:
+      "修為 {exp}/{need} · 突破成功率 {chance}% · 失敗修為歸零、折損最大壽元 15%",
+    zhenxianNote:
+      "渡劫飛昇需集得【真仙丹】——唯靈界地域王「太古龍祖」掉落,無論突破成敗皆會耗盡藥力。",
+    dwellingActiveNote:
+      "你正停泊於宗門仙境中閉關潛修,無法採集靈材、獵殺妖獸、雲遊四海、打坐修煉、調息或嘗試突破——須先於宗門頁面離開仙境方可行動。",
     loadingScreen: "道 藏 開 啟 中 …",
     langToggleTooltip: "中文 / English",
     tradeCredited: "交易行貨款已入帳。",
 
     manhuangTitle: "蠻 荒 異 界 · 五 色 異 星 盤",
-    manhuangDesc: "集滿金木水火土五色異星盤(金源仙域怪物稀有掉落),即可開啟蠻荒異界之門,內有天狐、真龍、霸下、貔貅四大領地。",
+    manhuangDesc:
+      "集滿金木水火土五色異星盤(金源仙域怪物稀有掉落),即可開啟蠻荒異界之門,內有天狐、真龍、霸下、貔貅四大領地。",
     manhuangBtn: "開 啟 蠻 荒 異 界 之 門",
     taiyiHallTitle: "太 乙 殿",
     taiyiSoulSuffix: "太乙精魂",
-    taiyiDesc: "浮屠塔登臨第 20 層後開啟。集滿蠻荒異界四大地域王(天狐/真龍/霸下/黑眼貔貅)身隕所遺的太乙精魂,金仙可於此突破【太乙境】,並為宗門帶來 +120% 額外戰鬥傷害。",
+    taiyiDesc:
+      "浮屠塔登臨第 20 層後開啟。集滿蠻荒異界四大地域王(天狐/真龍/霸下/黑眼貔貅)身隕所遺的太乙精魂,金仙可於此突破【太乙境】,並為宗門帶來 +120% 額外戰鬥傷害。",
     taiyiBtn: "飛 升 太 乙",
     taiyiBtnLocked: "唯金仙可於太乙殿突破",
     sectHallTooltip: "開啟宗門獨立頁面",
@@ -398,8 +442,10 @@ export const DICT = {
     btnPlayCards: "出牌",
     btnFlee: "遁走",
     perEquippedWeapon: "依裝備",
-    combatHandNote: "符寶袋制:開戰洗混符寶袋抽 6 張手牌,可複選符寶按【出牌】一次打出多張,回合結束手中剩牌一併棄置、重新抽 6 張;符寶袋內容可在「仙法」分頁調整。法器攻擊也是手牌之一,只能單獨出牌。",
-    combatTurnNote: "點選符寶可複選,按【出牌】才會一次打出;法力允許可以再選再出多次,直到按【施法結束】才輪到對方出手,法力歸零會自動結束(法器攻擊只能單獨出牌)。",
+    combatHandNote:
+      "符寶袋制:開戰洗混符寶袋抽 6 張手牌,可複選符寶按【出牌】一次打出多張,回合結束手中剩牌一併棄置、重新抽 6 張;符寶袋內容可在「仙法」分頁調整。法器攻擊也是手牌之一,只能單獨出牌。",
+    combatTurnNote:
+      "點選符寶可複選,按【出牌】才會一次打出;法力允許可以再選再出多次,直到按【施法結束】才輪到對方出手,法力歸零會自動結束(法器攻擊只能單獨出牌)。",
     statusBurn: "燒傷",
     statusPoison: "中毒",
     statusFreeze: "冰封",
@@ -470,6 +516,31 @@ export const DICT = {
     footer: "閎旺科技 設計 & 開發",
   },
   en: {
+    uiNavigation: "Journey navigation",
+    uiQuickNavigation: "Quick navigation",
+    uiJourney: "My journey",
+    uiWorld: "The living world",
+    uiWorldCaption: "A mortal beginning. An immortal journey.",
+    uiWelcome: "Welcome back, {name}",
+    uiHeroTitle: "Beyond the mortal realm.",
+    uiHeroDescription:
+      "Among mountains and mist, a new encounter awaits. Where will your path lead today?",
+    uiExplore: "Begin exploring",
+    uiHeroFootnote: "Enduring mountains · Unwavering spirit",
+    uiCharacterDetails: "Attributes & equipment",
+    uiOpenMenu: "Open navigation",
+    uiCloseMenu: "Close navigation",
+    uiSkip: "Skip to game content",
+    uiMore: "More",
+    uiAuthQuote: "A mortal life. An immortal calling.",
+    uiAuthDescription: "From humble beginnings to a world beyond the clouds.",
+    uiAuthReturn: "Return to your journey",
+    uiAuthCreate: "Begin your story",
+    uiAuthHint: "The mountain gates await you.",
+    uiAvailable: "Open to explore",
+    uiLocked: "Realm required",
+    uiRegion: "DESTINATION",
+    uiBattleTag: "SPIRIT ENCOUNTER",
     appTitle: "Mortal's Journey to Immortality",
     appSubtitle: "A MORTAL’S JOURNEY TO IMMORTALITY",
     appSubtitleAscended: "ASCENDED · IMMORTAL AT LAST",
@@ -525,7 +596,8 @@ export const DICT = {
     exploreStageLocked: "Requires stage {n}",
     futuTitle: "The Pagoda",
     futuCleared: "Cleared floor {n}",
-    futuDesc: "The pagoda houses an illusory incarnation of the Taisui Celestial Venerable — every floor climbed makes it stronger (HP ×1.5, ATK ×1.2), without end. Challenge the next floor (floor {n}) — every 5th floor grants a Celestial Immortal Pill, every 10th a Golden Soul Pill, with top-tier techniques hidden in higher floors.",
+    futuDesc:
+      "The pagoda houses an illusory incarnation of the Taisui Celestial Venerable — every floor climbed makes it stronger (HP ×1.5, ATK ×1.2), without end. Challenge the next floor (floor {n}) — every 5th floor grants a Celestial Immortal Pill, every 10th a Golden Soul Pill, with top-tier techniques hidden in higher floors.",
     futuBtn: "Climb · Challenge Floor {n}",
     stageInsufficient: "Stage insufficient",
     inDwellingTip: "Currently in seclusion at the sect dwelling — leave it first to act",
@@ -544,7 +616,8 @@ export const DICT = {
     filterAll: "All",
     bagEmpty: "Your inventory is empty.",
     pouchTitle: "Qiankun Pouch",
-    pouchDesc: "A pocket dimension of its own — stones stored here are untouched even if you lose half your stones fleeing defeat.",
+    pouchDesc:
+      "A pocket dimension of its own — stones stored here are untouched even if you lose half your stones fleeing defeat.",
     pouchDepositBtn: "Deposit",
     pouchWithdrawBtn: "Withdraw",
     xuantianTag: "Mystic Heaven Artifact",
@@ -568,7 +641,8 @@ export const DICT = {
     // 仙法頁籤
     techViewPouch: "Pouch",
     techViewCultivate: "Cultivate",
-    techCapNote: "Techniques cap at level 7; strengthen with Spirit-Boosting Beads for a large power boost per level.",
+    techCapNote:
+      "Techniques cap at level 7; strengthen with Spirit-Boosting Beads for a large power boost per level.",
     techLearningLabel: "Studying: {name}",
     techLearningRemain: "{n} years remaining (advanced by meditating)",
     techNoneLearned: "You haven't learned any techniques yet.",
@@ -578,18 +652,23 @@ export const DICT = {
     techNeedBead: "Requires a Spirit-Boosting Bead",
     techMaxedBtn: "Perfected at Level 7",
     techUpgradeBtn: "Strengthen with Bead → Lv {lv}",
-    techFooterNote: "Manuals require \"Start Studying\", then meditate to advance the years until complete. Only one technique can be studied at a time. Spirit-Boosting Beads drop from regional lords.",
+    techFooterNote:
+      'Manuals require "Start Studying", then meditate to advance the years until complete. Only one technique can be studied at a time. Spirit-Boosting Beads drop from regional lords.',
     talismanPouchTitle: "Talisman Pouch",
     talismanPouchCountLine: "{n} / min {min}",
-    talismanPouchDesc: "Choose learned techniques to load into your pouch (the same technique can be added multiple times); combat draws a 6-card hand from it.",
-    talismanPouchInCombatNote: "The pouch can't be adjusted mid-battle — configure it outside combat.",
+    talismanPouchDesc:
+      "Choose learned techniques to load into your pouch (the same technique can be added multiple times); combat draws a 6-card hand from it.",
+    talismanPouchInCombatNote:
+      "The pouch can't be adjusted mid-battle — configure it outside combat.",
     talismanPouchMaxCopiesNote: "Max {n} copies of a single technique.",
     talismanPouchBaseCardsTitle: "Base Cards",
     talismanPouchTechsTitle: "Techniques",
     talismanPouchSoloTag: "Solo only",
     talismanPouchOwnedTag: "Own {n} copies",
-    talismanPouchOwnedCapNote: "You only own {n} copies — can't add more (re-studying the same manual grants another copy, max {max}).",
-    talismanPouchDupHint: "A technique's max copies in your pouch is capped by how many card copies you own, not unlimited once learned — use \"Duplicate Card\" on an already-known manual in your bag to gain another copy.",
+    talismanPouchOwnedCapNote:
+      "You only own {n} copies — can't add more (re-studying the same manual grants another copy, max {max}).",
+    talismanPouchDupHint:
+      'A technique\'s max copies in your pouch is capped by how many card copies you own, not unlimited once learned — use "Duplicate Card" on an already-known manual in your bag to gain another copy.',
     btnDuplicateCard: "Duplicate Card",
     manualAtCopyCap: "Card copies maxed out",
     synergyNoteTemplate: "+{pct}% per {el} card",
@@ -608,9 +687,11 @@ export const DICT = {
     lifeStealNoteTemplate: "Heals {pct}% of damage dealt",
 
     // 煉器頁籤
-    craftHeaderNote: "The Forging Hall — blue-bordered recipes require studying a blueprint dropped by beasts first. Equipment category is marked beside the name; forged stats fluctuate randomly ±30%.",
+    craftHeaderNote:
+      "The Forging Hall — blue-bordered recipes require studying a blueprint dropped by beasts first. Equipment category is marked beside the name; forged stats fluctuate randomly ±30%.",
     xuantianCraftTitle: "Mystic Heaven Artifact Refinement",
-    xuantianCraftDesc: "Temper a Mystic Heaven Shard (10 needed, dropped by Wildlands beasts) together with 1 Taiyi Essence Soul (Heaven Fox / True Dragon / Baxia / Black-Eyed Pixiu, any one) to randomly forge one of: Mystic Heaven Spirit-Severing Sword, Mystic Heaven Gourd, Heaven-Breaking Hammer, Heaven Fox Blood-Transmuting Blade, Mystic Heaven Demon-Severing Sword, or Illusion-Heaven Mirror — stats fluctuate randomly 100%~300%. Taiyi Realm only.",
+    xuantianCraftDesc:
+      "Temper a Mystic Heaven Shard (10 needed, dropped by Wildlands beasts) together with 1 Taiyi Essence Soul (Heaven Fox / True Dragon / Baxia / Black-Eyed Pixiu, any one) to randomly forge one of: Mystic Heaven Spirit-Severing Sword, Mystic Heaven Gourd, Heaven-Breaking Hammer, Heaven Fox Blood-Transmuting Blade, Mystic Heaven Demon-Severing Sword, or Illusion-Heaven Mirror — stats fluctuate randomly 100%~300%. Taiyi Realm only.",
     xuantianCraftBtn: "Refine a Mystic Heaven Artifact",
     blueprintTag: "Blueprint Recipe",
     craftFailChanceTag: "{n}% chance to fail",
@@ -622,26 +703,34 @@ export const DICT = {
     buyFailGeneric: "Purchase failed, please try again later",
     purchaseSuccessTitle: "Purchase Successful",
     purchaseFailTitle: "Purchase Not Delivered",
-    purchaseFailLine: "Payment confirmed, but the item could not be delivered. Please contact support — do not pay again.",
-    purchaseFailErr: "Payment received, but the item could not be delivered. Please contact support.",
+    purchaseFailLine:
+      "Payment confirmed, but the item could not be delivered. Please contact support — do not pay again.",
+    purchaseFailErr:
+      "Payment received, but the item could not be delivered. Please contact support.",
     netErr: "Could not connect to the server, please try again later",
     actionNetErr: "【Could not connect to the server, please try again later】",
-    blackMarketNote: "The black market doesn't accept spirit stones — only hard currency (via Polar, priced in USD). Consumable Mingqi items are automatically consumed on the next breakthrough attempt, win or lose.",
+    blackMarketNote:
+      "The black market doesn't accept spirit stones — only hard currency (via Polar, priced in USD). Consumable Mingqi items are automatically consumed on the next breakthrough attempt, win or lose.",
     breakBonusTag: "Breakthrough +{n}%",
     payingBtn: "Processing payment…",
     usSpiritStones: "American Spirit Stones",
-    blackMarketDelivered: "The black market dealer hands over 【{item}】 — added to your inventory.",
+    blackMarketDelivered:
+      "The black market dealer hands over 【{item}】 — added to your inventory.",
     oracleTitle: "Heaven's Reckoning · A Strange Opportunity",
-    oracleDesc: "Pay 50 American Spirit Stones and a mysterious fortune-teller grants a random True Immortal-grade item — fortune favors none, it may be mighty or middling. Believe, or don't.",
+    oracleDesc:
+      "Pay 50 American Spirit Stones and a mysterious fortune-teller grants a random True Immortal-grade item — fortune favors none, it may be mighty or middling. Believe, or don't.",
     oracleBuyBtn: "Pay 50 American Spirit Stones",
     oracleDismissBtn: "Decline",
-    oracleDelivered: "The fortune-teller made good on the bargain — a True Immortal-grade item now rests quietly in your inventory.",
+    oracleDelivered:
+      "The fortune-teller made good on the bargain — a True Immortal-grade item now rests quietly in your inventory.",
     marketViewShop: "Shop",
     marketViewBlackmarket: "Black Market",
-    shopNote: "The market is sect-run with fixed prices. Mahayana-and-above immortal treasures aren't sold here — only won by slaying beasts. Spirit stones on hand:",
+    shopNote:
+      "The market is sect-run with fixed prices. Mahayana-and-above immortal treasures aren't sold here — only won by slaying beasts. Spirit stones on hand:",
 
     // 交易行
-    tradeNote: "The Myriad Treasures Exchange — cultivators freely list goods, settled in spirit stones, server-wide. Spirit stones on hand:",
+    tradeNote:
+      "The Myriad Treasures Exchange — cultivators freely list goods, settled in spirit stones, server-wide. Spirit stones on hand:",
     btnRefresh: "Refresh",
     listFailGeneric: "Unknown error",
     listSuccessLog: "You listed {item} ×{qty} on the exchange at {price} each.",
@@ -668,10 +757,12 @@ export const DICT = {
     dexUnknownLord: "A legendary regional lord, not yet sighted.",
     lordTag: "Regional Lord",
     monsterStatLine: "HP {hp} · ATK {atk} · Slain {kills}",
-    dexSeenNote: "Sighted {seen}/{total} beast species. Encountering one records it in the Bestiary.",
+    dexSeenNote:
+      "Sighted {seen}/{total} beast species. Encountering one records it in the Bestiary.",
     dexMonsterDivider: "Beasts",
     dexLordDivider: "Lords",
-    dexLordNote: "Regional Lords are extremely rare, roughly a 2%~3% chance while hunting. Encountered {seen}/{total} so far — slaying one yields rich rewards: Origin-Boosting Pills, Spirit-Boosting Beads, advanced talismans and blueprints. The North Frost Immortal Venerable may pass down supreme techniques; the Golden-Source Immortal Emperor and Grand Supreme Golden Immortal drop Golden Soul Pills and other immortal fortune.",
+    dexLordNote:
+      "Regional Lords are extremely rare, roughly a 2%~3% chance while hunting. Encountered {seen}/{total} so far — slaying one yields rich rewards: Origin-Boosting Pills, Spirit-Boosting Beads, advanced talismans and blueprints. The North Frost Immortal Venerable may pass down supreme techniques; the Golden-Source Immortal Emperor and Grand Supreme Golden Immortal drop Golden Soul Pills and other immortal fortune.",
 
     // 混沌萬靈榜(itemStatLine)
     statLinePrice: "Price {n}",
@@ -689,8 +780,10 @@ export const DICT = {
     statLineBreakBonus: "Breakthrough +{n}%",
     statLineReqStage: "Requires stage {n}",
     statLineDropOnly: "Beast drop only",
-    wanlingLocked: "The Codex of Myriad Things is a supreme immortal treasure, encompassing all of creation — viewable only by True Immortals and above. You have not yet ascended, and cannot glimpse its contents.",
-    wanlingNote: "The Codex of Myriad Things records all of creation — {n} entries in total, fully viewable only by True Immortals and above.",
+    wanlingLocked:
+      "The Codex of Myriad Things is a supreme immortal treasure, encompassing all of creation — viewable only by True Immortals and above. You have not yet ascended, and cannot glimpse its contents.",
+    wanlingNote:
+      "The Codex of Myriad Things records all of creation — {n} entries in total, fully viewable only by True Immortals and above.",
 
     // 排行榜與玩家詳情卡
     profileClose: "Close ✕",
@@ -744,7 +837,8 @@ export const DICT = {
     sectLookupFailed: "Query failed",
     sectActionFailed: "Action failed",
     donationTitle: "Sect Donation (non-refundable)",
-    donationDesc: "Donated spirit stones and materials belong to the sect and cannot be withdrawn — this is a completely separate pool from the freely-withdrawable \"Warehouse\", used solely toward the threshold for the next tier.",
+    donationDesc:
+      'Donated spirit stones and materials belong to the sect and cannot be withdrawn — this is a completely separate pool from the freely-withdrawable "Warehouse", used solely toward the threshold for the next tier.',
     contributeTitle: "Contribute Spirit Stones",
     contributeDesc: "Spirit stones on hand:",
     btnContribute: "Contribute",
@@ -756,7 +850,8 @@ export const DICT = {
     btnUpgradeTier: "Upgrade to {name}",
     maxTierReached: "The sect has reached its highest tier: {name}.",
     sectPeopleCount: "{count}/{cap} members",
-    sectDamageNote: "Sect prestige grows with the number of living high-realm disciples — more Nascent-Soul-and-above members boosts the whole sect's combat damage. Current bonus:",
+    sectDamageNote:
+      "Sect prestige grows with the number of living high-realm disciples — more Nascent-Soul-and-above members boosts the whole sect's combat damage. Current bonus:",
     sectTabDwelling: "Dwelling",
     sectTabUpgrade: "Sect Upgrade",
     sectTabMission: "Missions",
@@ -765,7 +860,8 @@ export const DICT = {
     sectTabWarehouse: "Warehouse",
     sectTabList: "Sect List",
     querying: "Querying…",
-    dwellingIntro: "Sect Dwelling: cultivators may park here in quiet seclusion, slowly gaining exp every real-time hour, even offline, and energy regeneration gets a bonus (base +2, plus +1 per sect tier). Slot count depends only on sect tier (currently {n} slots); each slot's own level requires sect-warehouse materials to upgrade, funded by any fellow disciple.",
+    dwellingIntro:
+      "Sect Dwelling: cultivators may park here in quiet seclusion, slowly gaining exp every real-time hour, even offline, and energy regeneration gets a bonus (base +2, plus +1 per sect tier). Slot count depends only on sect tier (currently {n} slots); each slot's own level requires sect-warehouse materials to upgrade, funded by any fellow disciple.",
     btnLeaveDwelling: "Leave Dwelling (Slot {n})",
     dwellingSlotLabel: "Slot {n}",
     youTag2: "You",
@@ -779,7 +875,8 @@ export const DICT = {
     missionProgress: "Progress {cur}/{max}",
     btnCompleteMission: "Turn In",
     btnAbandonMission: "Abandon",
-    noActiveMission: "Several mission tokens are pinned to the Steward Hall board — only one may be accepted at a time.",
+    noActiveMission:
+      "Several mission tokens are pinned to the Steward Hall board — only one may be accepted at a time.",
     noticeBoardDivider: "Notice Board",
     missionKindKill: "Slay",
     missionKindGather: "Hand in",
@@ -787,13 +884,15 @@ export const DICT = {
     missionExtraReward: " Also grants: {item}",
     btnAcceptMission: "Accept",
     sectTotalBonusTitle: "Total Sect Bonus",
-    baseMultNote: "Base multiplier ×1.00, stacked with the number of living members at each realm below.",
+    baseMultNote:
+      "Base multiplier ×1.00, stacked with the number of living members at each realm below.",
     perPersonBonus: "+{n}% each",
     peopleWithBonus: "{n} members",
     noOtherMembers: "No other registered disciples in the sect yet.",
     memberExpLine: "Exp {n}",
     warehouseTitle: "Sect Item Warehouse",
-    warehouseDesc: "Deposited items are shared sect-wide — any disciple may withdraw and use them directly. Materials stored here also fuel sect dwelling upgrades (sect-tier upgrades now use Sect Donation on the \"Sect Upgrade\" tab instead, which never touches items stored here).",
+    warehouseDesc:
+      'Deposited items are shared sect-wide — any disciple may withdraw and use them directly. Materials stored here also fuel sect dwelling upgrades (sect-tier upgrades now use Sect Donation on the "Sect Upgrade" tab instead, which never touches items stored here).',
     btnDeposit: "Deposit",
     warehouseEmpty: "The warehouse is empty.",
     btnWithdrawOne: "Withdraw One",
@@ -806,36 +905,48 @@ export const DICT = {
     versionLabel: "v{v}",
     prayFailGeneric: "Prayer failed, please try again later",
     revivalDoneTitle: "Back From the Dead",
-    revivalDoneLine1: "The Wheel of Reincarnation blazes with light — the Reincarnation Ancestor channels the Rebirth Technique to return you to the mortal world.",
-    revivalDoneLine2: "You have been revived — cultivation, realm, equipment, and inventory are unchanged.",
+    revivalDoneLine1:
+      "The Wheel of Reincarnation blazes with light — the Reincarnation Ancestor channels the Rebirth Technique to return you to the mortal world.",
+    revivalDoneLine2:
+      "You have been revived — cultivation, realm, equipment, and inventory are unchanged.",
     revivalFailErr: "Payment received, but revival could not be applied. Please contact support.",
     revivalFailTitle: "Revival Not Applied",
-    revivalFailLine: "Payment confirmed, but revival could not be applied. Please contact support — do not pay again.",
-    revivalOnceOnly: "The Wheel of Reincarnation may be used only once in a lifetime — you've spent this chance and must reincarnate.",
+    revivalFailLine:
+      "Payment confirmed, but revival could not be applied. Please contact support — do not pay again.",
+    revivalOnceOnly:
+      "The Wheel of Reincarnation may be used only once in a lifetime — you've spent this chance and must reincarnate.",
     revivalPrayBtn: "Pray to the Immortals · Revive via the Wheel of Reincarnation",
     revivalPrayPrice: "{n} American Spirit Stones (one-time use)",
-    revivalPraying: "The Reincarnation Ancestor is divining fate… once payment completes you'll be revived automatically. Do not close this page.",
+    revivalPraying:
+      "The Reincarnation Ancestor is divining fate… once payment completes you'll be revived automatically. Do not close this page.",
     btnAcknowledge: "Understood",
     breakNeedExp: "Needs {n} exp",
-    breakNeedZhenxian: "Ascending through the Tribulation first requires a True Immortal Pill (dropped only by the Primordial Dragon Ancestor)",
+    breakNeedZhenxian:
+      "Ascending through the Tribulation first requires a True Immortal Pill (dropped only by the Primordial Dragon Ancestor)",
     breakChancePct: "Success rate {n}%",
     lifeCostSuffix: "yr lifespan",
     energyCostSuffix: "energy",
     energyInsufficientTip: "Not enough energy",
-    wanderTooltip: "Costs 5000 years of lifespan + 100 top-grade spirit stones. ~5% chance to trigger a hidden-realm encounter, ~2.5% to gain a Celestial Immortal Pill directly, 30% to gain permanent stats, 3% to meet the Golden Immortal super-boss, otherwise nothing.",
-    cultivationSummaryLine: "Exp {exp}/{need} · Breakthrough success {chance}% · Failure zeroes exp and costs 15% of max lifespan",
-    zhenxianNote: "Ascending through the Tribulation requires a True Immortal Pill — dropped only by the Spirit Realm's regional lord \"Primordial Dragon Ancestor\"; its power is consumed whether the attempt succeeds or fails.",
-    dwellingActiveNote: "You are currently in seclusion at the sect dwelling and cannot gather, hunt, wander, meditate, rest, or attempt a breakthrough — leave the dwelling on the Sect page first.",
+    wanderTooltip:
+      "Costs 5000 years of lifespan + 100 top-grade spirit stones. ~5% chance to trigger a hidden-realm encounter, ~2.5% to gain a Celestial Immortal Pill directly, 30% to gain permanent stats, 3% to meet the Golden Immortal super-boss, otherwise nothing.",
+    cultivationSummaryLine:
+      "Exp {exp}/{need} · Breakthrough success {chance}% · Failure zeroes exp and costs 15% of max lifespan",
+    zhenxianNote:
+      'Ascending through the Tribulation requires a True Immortal Pill — dropped only by the Spirit Realm\'s regional lord "Primordial Dragon Ancestor"; its power is consumed whether the attempt succeeds or fails.',
+    dwellingActiveNote:
+      "You are currently in seclusion at the sect dwelling and cannot gather, hunt, wander, meditate, rest, or attempt a breakthrough — leave the dwelling on the Sect page first.",
     loadingScreen: "Opening the Immortal Records…",
     langToggleTooltip: "中文 / English",
     tradeCredited: "Payment from the exchange has been credited.",
 
     manhuangTitle: "Wildlands · Five Elemental Star Discs",
-    manhuangDesc: "Collect all five elemental Strange Star Discs (Metal/Wood/Water/Fire/Earth — rare drops from Golden-Source Immortal Realm beasts) to open the gate to the Wildlands, home to four domains: Heaven Fox, True Dragon, Baxia, and Pixiu.",
+    manhuangDesc:
+      "Collect all five elemental Strange Star Discs (Metal/Wood/Water/Fire/Earth — rare drops from Golden-Source Immortal Realm beasts) to open the gate to the Wildlands, home to four domains: Heaven Fox, True Dragon, Baxia, and Pixiu.",
     manhuangBtn: "Open the Gate to the Wildlands",
     taiyiHallTitle: "Taiyi Hall",
     taiyiSoulSuffix: "Taiyi Essence Souls",
-    taiyiDesc: "Unlocks after reaching floor 20 of the Pagoda. Collect the Taiyi Essence Souls left by all four Wildlands regional lords (Heaven Fox / True Dragon / Baxia / Black-Eyed Pixiu) — a Golden Immortal may then break through to the Taiyi Realm here, granting the sect +120% extra combat damage.",
+    taiyiDesc:
+      "Unlocks after reaching floor 20 of the Pagoda. Collect the Taiyi Essence Souls left by all four Wildlands regional lords (Heaven Fox / True Dragon / Baxia / Black-Eyed Pixiu) — a Golden Immortal may then break through to the Taiyi Realm here, granting the sect +120% extra combat damage.",
     taiyiBtn: "Ascend to the Taiyi Realm",
     taiyiBtnLocked: "Only Golden Immortals may break through at the Taiyi Hall",
     sectHallTooltip: "Open the Sect page",
@@ -847,7 +958,8 @@ export const DICT = {
     learningRemain: "{n} years remaining",
     btnGatherMp: "Gather Spirit Qi (hold to spend spirit stones for mana)",
     counterNote: "Elemental cycle: Metal>Wood>Earth>Water>Fire>Metal — counter damage ×1.5",
-    combatTianjieNote: "The Heavenly Tribulation Spirit has descended — there is no fleeing. Slay it and your ascension odds double; fall to it and they are halved.",
+    combatTianjieNote:
+      "The Heavenly Tribulation Spirit has descended — there is no fleeing. Slay it and your ascension odds double; fall to it and they are halved.",
 
     combatMonHp: "Monster HP",
     combatFierce: "Battle",
@@ -861,8 +973,10 @@ export const DICT = {
     btnPlayCards: "Play",
     btnFlee: "Flee",
     perEquippedWeapon: "Per weapon",
-    combatTurnNote: "Click talismans to multi-select, then press Play to cast them together; keep selecting and playing as long as mana allows, until you press End Turn — mana hitting zero ends the turn automatically (artifact attack can only be played alone).",
-    combatHandNote: "Pouch system: combat start shuffles your talisman pouch and draws a 6-card hand; multi-select talismans and press Play to cast them together, unplayed cards are discarded at end of turn and a fresh 6 are drawn. Edit your pouch on the Techniques tab. Artifact attack is a regular hand card too, and can only be played alone.",
+    combatTurnNote:
+      "Click talismans to multi-select, then press Play to cast them together; keep selecting and playing as long as mana allows, until you press End Turn — mana hitting zero ends the turn automatically (artifact attack can only be played alone).",
+    combatHandNote:
+      "Pouch system: combat start shuffles your talisman pouch and draws a 6-card hand; multi-select talismans and press Play to cast them together, unplayed cards are discarded at end of turn and a fresh 6 are drawn. Edit your pouch on the Techniques tab. Artifact attack is a regular hand card too, and can only be played alone.",
     statusBurn: "Burn",
     statusPoison: "Poison",
     statusFreeze: "Frozen",
@@ -911,7 +1025,8 @@ export const DICT = {
     authFooterNote: "Once registered, your lifespan grows by 1 year every real hour, even offline.",
 
     charTagline: "A poor boy from a mountain village, mediocre talent, but an unbending will.",
-    charTagline2: "Spirit stones for wealth, mana for a blade, the five elements in endless cycle — even a mortal may reach for immortality.",
+    charTagline2:
+      "Spirit stones for wealth, mana for a blade, the five elements in endless cycle — even a mortal may reach for immortality.",
     charDaoName: "Daoist Name",
     charDaoNameFallback: "Nameless Wanderer",
     charDaoNameNote: "This name was set at registration and will follow you your whole journey.",
@@ -924,7 +1039,8 @@ export const DICT = {
     deathEpitaphTitle: "Epitaph",
     deathLine1: "Lived {age} years, fell in the {realm} realm.",
     deathLine2: "Cultivated for {day} years, yet never reached the Dao's summit.",
-    deathLine3: "Who stands at the end of the immortal path? One glimpse of the origin, and the Dao turns to emptiness.",
+    deathLine3:
+      "Who stands at the end of the immortal path? One glimpse of the origin, and the Dao turns to emptiness.",
 
     authPasswordPlaceholder: "At least 4 characters",
     authErrGeneric: "An error occurred",

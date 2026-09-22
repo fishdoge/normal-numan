@@ -121,7 +121,7 @@ export default function LogChatPanel() {
   };
 
   return (
-    <div className="panel flex flex-col resize-y overflow-hidden h-[22rem] lg:h-[50rem] min-h-[12rem] max-h-[85vh]">
+    <div className="panel chronicle-panel flex flex-col resize-y overflow-hidden min-h-[12rem] max-h-[85vh]">
       <div className="flex gap-1.5 mb-2 shrink-0">
         {(
           [
@@ -169,7 +169,9 @@ export default function LogChatPanel() {
             {messages.length === 0 && <p className="text-faded/50">{tt("chatEmptyMsg")}</p>}
             {messages.map((m) => (
               <p key={m.id}>
-                <span className="text-faded/50 font-mono text-xs mr-1">{fmtTime(m.created_at)}</span>
+                <span className="text-faded/50 font-mono text-xs mr-1">
+                  {fmtTime(m.created_at)}
+                </span>
                 <span
                   className={`font-bold mr-1 ${m.name === myName ? "text-gold" : nameColorOf(REALMS[m.realm_idx]?.stage ?? 1)}`}
                 >

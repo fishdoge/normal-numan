@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useT } from "@/i18n/useT";
+import { GameBrand } from "./GameShell";
+import GameIcon from "./GameIcon";
 
 export default function AuthGate({ onAuthed }: { onAuthed: (name: string) => void }) {
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -13,6 +15,7 @@ export default function AuthGate({ onAuthed }: { onAuthed: (name: string) => voi
   const t = useT();
 
   const submit = async () => {
+    if (busy) return;
     setBusy(true);
     setErr("");
     try {
@@ -37,75 +40,110 @@ export default function AuthGate({ onAuthed }: { onAuthed: (name: string) => voi
   };
 
   return (
-    <main className="max-w-md mx-auto px-4 py-20">
-      <header className="text-center mb-10">
-        <p className="font-mono text-xs tracking-[0.5em] text-gold/70 mb-3">{t("authTagline")}</p>
-        <h1 className="text-5xl font-black tracking-widest text-parchment">{t("authTitle")}</h1>
-        <p className="mt-4 text-faded text-sm">{t("authSubtitle")}</p>
-      </header>
-
-      <section className="panel deco-frame">
-        <div className="flex gap-1 mb-4 border-b border-faded/20 pb-2">
-          {(["login", "register"] as const).map((m) => (
-            <button
-              key={m}
-              onClick={() => {
-                setMode(m);
-                setErr("");
-              }}
-              className={`px-3 py-1 text-sm rounded-sm transition-colors ${
-                mode === m
-                  ? "bg-gold/15 text-gold border border-gold/40"
-                  : "text-faded hover:text-cream"
-              }`}
-            >
-              {m === "login" ? t("authLogin") : t("authRegister")}
-            </button>
-          ))}
+    <main className="auth-screen">
+      <section className="auth-landscape" aria-label={t("authTitle")}>
+        <GameBrand />
+        <div className="auth-story">
+          <span className="eyebrow">THE PATH TO IMMORTALITY</span>
+          <h2>{t("uiAuthQuote")}</h2>
+          <p>{t("uiAuthDescription")}</p>
+          <span className="auth-story-line" />
         </div>
-
-        <div className="space-y-3">
-          {mode === "register" && (
+        <p className="auth-landscape-note">{t("uiHeroFootnote")}</p>
+      </section>
+      <section className="auth-form-panel">
+        <div className="auth-form-inner">
+          <span className="auth-emblem">
+            <GameIcon name="mountain" width={36} height={36} />
+          </span>
+          <p className="eyebrow">{mode === "login" ? "WELCOME BACK" : "A NEW CHAPTER"}</p>
+          <h1>{mode === "login" ? t("uiAuthReturn") : t("uiAuthCreate")}</h1>
+          <p className="auth-intro">{t("uiAuthHint")}</p>
+          <div className="auth-mode-switch" aria-label={t("authTitle")}>
+            {(["login", "register"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                disabled={busy}
+                aria-pressed={mode === m}
+                className={mode === m ? "is-active" : ""}
+                onClick={() => {
+                  setMode(m);
+                  setErr("");
+                }}
+              >
+                {m === "login" ? t("authLogin") : t("authRegister")}
+              </button>
+            ))}
+          </div>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              submit();
+            }}
+            className="auth-form"
+          >
+            {mode === "register" && (
+              <div>
+                <label htmlFor="dao-name">{t("authDaoName")}</label>
+                <input
+                  id="dao-name"
+                  name="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="韓立"
+                  maxLength={12}
+                  autoComplete="nickname"
+                  required
+                  disabled={busy}
+                />
+              </div>
+            )}
             <div>
-              <p className="text-xs text-faded mb-1">{t("authDaoName")}</p>
+              <label htmlFor="account">{t("authAccount")}</label>
               <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="韓立"
-                maxLength={12}
-                className="w-full bg-smoke border border-faded/30 rounded-sm px-3 py-2 text-parchment placeholder-faded/40 focus:outline-none focus:border-gold/60"
+                id="account"
+                name="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="account"
+                maxLength={32}
+                autoComplete="username"
+                required
+                disabled={busy}
               />
             </div>
-          )}
-          <div>
-            <p className="text-xs text-faded mb-1">{t("authAccount")}</p>
-            <input
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="account"
-              maxLength={32}
-              className="w-full bg-smoke border border-faded/30 rounded-sm px-3 py-2 text-parchment placeholder-faded/40 focus:outline-none focus:border-gold/60"
-            />
+            <div>
+              <label htmlFor="password">{t("authPassword")}</label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={t("authPasswordPlaceholder")}
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
+                required
+                disabled={busy}
+              />
+            </div>
+            {err && (
+              <p className="auth-error" role="alert">
+                {err}
+              </p>
+            )}
+            <button className="btn btn-primary auth-submit" type="submit" disabled={busy}>
+              {busy ? "……" : mode === "login" ? t("authSubmitLogin") : t("authSubmitRegister")}
+              <GameIcon name="arrow" />
+            </button>
+          </form>
+          <div className="auth-footnote">
+            <GameIcon name="spark" />
+            <p>{t("authSubtitle")}</p>
           </div>
-          <div>
-            <p className="text-xs text-faded mb-1">{t("authPassword")}</p>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder={t("authPasswordPlaceholder")}
-              onKeyDown={(e) => e.key === "Enter" && submit()}
-              className="w-full bg-smoke border border-faded/30 rounded-sm px-3 py-2 text-parchment placeholder-faded/40 focus:outline-none focus:border-gold/60"
-            />
-          </div>
-          {err && <p className="text-sm text-vermillion">{err}</p>}
-          <button className="btn w-full py-2.5 text-base" disabled={busy} onClick={submit}>
-            {busy ? "……" : mode === "login" ? t("authSubmitLogin") : t("authSubmitRegister")}
-          </button>
+          <p className="auth-lifetime-note">{t("authFooterNote")}</p>
         </div>
       </section>
-
-      <p className="text-center text-xs text-faded/60 mt-6">{t("authFooterNote")}</p>
     </main>
   );
 }

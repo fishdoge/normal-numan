@@ -240,7 +240,12 @@ export default function SectPage() {
           </span>
         </p>
         <span className="text-sm font-mono text-gold shrink-0">
-          <StoneAmount n={contribution} /> {nextTier && <>/ <StoneAmount n={nextTier.contribution} /></>}
+          <StoneAmount n={contribution} />{" "}
+          {nextTier && (
+            <>
+              / <StoneAmount n={nextTier.contribution} />
+            </>
+          )}
         </span>
       </div>
       <div className="mt-2 flex flex-wrap gap-2 items-center">
@@ -251,7 +256,11 @@ export default function SectPage() {
           onChange={(e) => setAmount(Math.max(1, +e.target.value || 1))}
           className="w-40 bg-smoke border border-faded/30 rounded-sm px-2 py-1.5 text-sm text-parchment"
         />
-        <button className="btn" disabled={busy} onClick={() => post({ action: "contribute", amount })}>
+        <button
+          className="btn"
+          disabled={busy}
+          onClick={() => post({ action: "contribute", amount })}
+        >
           {t("btnContribute")}
         </button>
       </div>
@@ -274,7 +283,10 @@ export default function SectPage() {
               const have = donatedItems[m.id] ?? 0;
               const it = itemById(m.id);
               return (
-                <li key={m.id} className={`text-sm ${have >= m.n ? "text-jade" : "text-vermillion"}`}>
+                <li
+                  key={m.id}
+                  className={`text-sm ${have >= m.n ? "text-jade" : "text-vermillion"}`}
+                >
                   {it ? itemDisplayName(it, lang) : m.id} {have}/{m.n}
                 </li>
               );
@@ -355,7 +367,7 @@ export default function SectPage() {
   );
 
   return (
-    <main className="max-w-5xl mx-auto px-4 py-6">
+    <section className="sect-page">
       <div className="flex items-baseline justify-between mb-5">
         <div>
           <h1 className="text-2xl font-black tracking-[0.35em]">{t("sectTitle")}</h1>
@@ -372,7 +384,9 @@ export default function SectPage() {
             <span className={ELEMENT_COLOR[(sect?.element ?? "金") as keyof typeof ELEMENT_COLOR]}>
               {sect ? sectDisplayName(sect, lang) : t("statLoose")}
             </span>
-            <span className="chip ml-3 text-gold border-gold/40">{sectTierDisplayName(curTier, lang)}</span>
+            <span className="chip ml-3 text-gold border-gold/40">
+              {sectTierDisplayName(curTier, lang)}
+            </span>
             <span className="chip ml-2 text-faded/80 border-faded/30">
               {t("sectPeopleCount")
                 .replace("{count}", String(members.length))
@@ -385,7 +399,9 @@ export default function SectPage() {
         </div>
         <p className="text-sm text-faded">
           {t("sectDamageNote")}
-          <span className="text-fuchsia-300 font-bold">{t("combatDamage")} ×{sectMult.toFixed(2)}</span>
+          <span className="text-fuchsia-300 font-bold">
+            {t("combatDamage")} ×{sectMult.toFixed(2)}
+          </span>
         </p>
 
         {err && <p className="text-sm text-vermillion">{err}</p>}
@@ -421,7 +437,9 @@ export default function SectPage() {
 
         {!loading && view === "dwelling" && (
           <div className="space-y-2">
-            <p className="text-sm text-faded">{t("dwellingIntro").replace("{n}", String(dwellingSlots))}</p>
+            <p className="text-sm text-faded">
+              {t("dwellingIntro").replace("{n}", String(dwellingSlots))}
+            </p>
             <div className="grid gap-2 sm:grid-cols-2">
               {dwellings.map((d) => {
                 const mine = myDwellingSlot === d.slotIdx;
@@ -442,10 +460,14 @@ export default function SectPage() {
                         {t("dwellingSlotLabel").replace("{n}", String(d.slotIdx + 1))}
                         <span className="chip ml-2 text-gold border-gold/40">Lv.{d.level}</span>
                       </span>
-                      {mine && <span className="chip text-gold border-gold/50">{t("youTag2")}</span>}
+                      {mine && (
+                        <span className="chip text-gold border-gold/50">{t("youTag2")}</span>
+                      )}
                     </div>
                     <p className="text-sm text-faded mt-1">
-                      {occupied ? t("dwellingOccupied").replace("{name}", d.occupantName!) : t("dwellingVacant")}
+                      {occupied
+                        ? t("dwellingOccupied").replace("{name}", d.occupantName!)
+                        : t("dwellingVacant")}
                     </p>
                     {/* 進駐/離開:僅與「我自己是否停泊於這個位置」有關 */}
                     <div className="mt-2 flex flex-wrap gap-2">
@@ -471,7 +493,9 @@ export default function SectPage() {
                     {/* 升級:與是否停泊無關,任何同門皆可出資,故獨立一區並清楚註明,避免看起來像是「進駐者」專屬操作 */}
                     {d.nextLevel ? (
                       <div className="mt-2 pt-2 border-t border-faded/15 flex flex-wrap items-center justify-between gap-2">
-                        <span className="text-xs text-faded/80">{t("dwellingUpgradeFundNote")}</span>
+                        <span className="text-xs text-faded/80">
+                          {t("dwellingUpgradeFundNote")}
+                        </span>
                         <button
                           className="chip hover:text-azure border-azure/40 text-azure py-1.5 px-2.5"
                           disabled={busy}
@@ -510,10 +534,15 @@ export default function SectPage() {
             {activeMission ? (
               <div className="border border-gold/40 bg-gold/5 rounded-sm p-3">
                 <div className="flex items-baseline justify-between">
-                  <span className="font-bold text-gold">{missionDisplayName(activeMission, lang)}</span>
+                  <span className="font-bold text-gold">
+                    {missionDisplayName(activeMission, lang)}
+                  </span>
                   <span className="text-sm font-mono text-faded">
                     {t("missionProgress")
-                      .replace("{cur}", String(Math.min(missionProgress(activeMission), activeMission.n)))
+                      .replace(
+                        "{cur}",
+                        String(Math.min(missionProgress(activeMission), activeMission.n)),
+                      )
                       .replace("{max}", String(activeMission.n))}
                   </span>
                 </div>
@@ -539,7 +568,10 @@ export default function SectPage() {
               const locked = realm.stage < m.reqStage;
               const target =
                 m.kind === "kill"
-                  ? monsterDisplayName(MONSTERS.find((x) => x.id === m.targetId)!, lang)
+                  ? monsterDisplayName(
+                      MONSTERS.find((x) => x.id === m.targetId)!,
+                      lang,
+                    )
                   : itemDisplayName(itemById(m.targetId), lang);
               return (
                 <div
@@ -550,18 +582,24 @@ export default function SectPage() {
                     <span className="font-bold">
                       {missionDisplayName(m, lang)}
                       <span className="chip ml-2">
-                        {m.kind === "kill" ? t("missionKindKill") : t("missionKindGather")} {target} ×{m.n}
+                        {m.kind === "kill" ? t("missionKindKill") : t("missionKindGather")} {target}{" "}
+                        ×{m.n}
                       </span>
                     </span>
                     <span className="text-sm font-mono text-gold">
-                      {t("missionRewardLine").replace("{stones}", String(m.stones)).replace("{exp}", String(m.exp))}
+                      {t("missionRewardLine")
+                        .replace("{stones}", String(m.stones))
+                        .replace("{exp}", String(m.exp))}
                     </span>
                   </div>
                   <p className="text-sm text-faded mt-1">
                     {missionDisplayDesc(m, lang)}
                     {m.item && (
                       <span className="text-cream">
-                        {t("missionExtraReward").replace("{item}", itemDisplayName(itemById(m.item), lang))}
+                        {t("missionExtraReward").replace(
+                          "{item}",
+                          itemDisplayName(itemById(m.item), lang),
+                        )}
                       </span>
                     )}
                   </p>
@@ -636,14 +674,20 @@ export default function SectPage() {
                     <span className={`font-bold ${nameColorOf(REALMS[m.realm_idx]?.stage ?? 1)}`}>
                       {m.name}
                     </span>
-                    {me && <span className="chip ml-2 text-gold border-gold/50">{t("youTag2")}</span>}
+                    {me && (
+                      <span className="chip ml-2 text-gold border-gold/50">{t("youTag2")}</span>
+                    )}
                     {m.dead && (
-                      <span className="chip ml-2 text-vermillion border-vermillion/50">{t("deadTag")}</span>
+                      <span className="chip ml-2 text-vermillion border-vermillion/50">
+                        {t("deadTag")}
+                      </span>
                     )}
                   </div>
                   <span className="text-sm text-cream shrink-0 ml-3">
                     {realmDisplayName(REALMS[m.realm_idx], lang)}
-                    <span className="text-sm text-faded ml-2">{t("memberExpLine").replace("{n}", String(m.exp))}</span>
+                    <span className="text-sm text-faded ml-2">
+                      {t("memberExpLine").replace("{n}", String(m.exp))}
+                    </span>
                   </span>
                 </div>
               );
@@ -664,7 +708,9 @@ export default function SectPage() {
                 >
                   <option value="">{t("selectItemPlaceholder")}</option>
                   {ITEM_SECTIONS.map(([key, kinds]) => {
-                    const group = myInventoryItems.filter(([id]) => kinds.includes(itemById(id).kind));
+                    const group = myInventoryItems.filter(([id]) =>
+                      kinds.includes(itemById(id).kind),
+                    );
                     if (!group.length) return null;
                     return (
                       <optgroup key={key} label={t(key)}>
@@ -720,12 +766,16 @@ export default function SectPage() {
                                   <span className={it && isXianItem(it) ? XIAN_ITEM_COLOR : ""}>
                                     {it ? itemDisplayName(it, lang) : id}
                                   </span>
-                                  <span className="chip ml-2 text-faded/80 border-faded/30">× {n}</span>
+                                  <span className="chip ml-2 text-faded/80 border-faded/30">
+                                    × {n}
+                                  </span>
                                 </span>
                                 <button
                                   className="chip hover:text-gold py-1.5 px-2.5"
                                   disabled={busy}
-                                  onClick={() => post({ action: "withdrawItem", itemId: id, qty: 1 })}
+                                  onClick={() =>
+                                    post({ action: "withdrawItem", itemId: id, qty: 1 })
+                                  }
                                 >
                                   {t("btnWithdrawOne")}
                                 </button>
@@ -757,7 +807,9 @@ export default function SectPage() {
                         {sectDisplayName(os, lang)}
                       </span>
                       {os.id === s.sectId && (
-                        <span className="chip ml-2 text-gold border-gold/50">{t("homeSectTag")}</span>
+                        <span className="chip ml-2 text-gold border-gold/50">
+                          {t("homeSectTag")}
+                        </span>
                       )}
                       <span className="chip ml-2 text-gold border-gold/40">
                         {sectTierDisplayName({ tier: os.tier, name: os.tierName }, lang)}
@@ -777,8 +829,12 @@ export default function SectPage() {
                       )}
                       {os.members.map((m, i) => (
                         <div key={m.name + i} className="flex items-center justify-between text-sm">
-                          <span className={nameColorOf(REALMS[m.realm_idx]?.stage ?? 1)}>{m.name}</span>
-                          <span className="text-faded text-sm">{realmDisplayName(REALMS[m.realm_idx], lang)}</span>
+                          <span className={nameColorOf(REALMS[m.realm_idx]?.stage ?? 1)}>
+                            {m.name}
+                          </span>
+                          <span className="text-faded text-sm">
+                            {realmDisplayName(REALMS[m.realm_idx], lang)}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -788,6 +844,6 @@ export default function SectPage() {
           </div>
         )}
       </div>
-    </main>
+    </section>
   );
 }

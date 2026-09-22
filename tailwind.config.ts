@@ -5,17 +5,17 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: "#0d0b08",
-        coal: "#161310",
-        smoke: "#211d18",
-        parchment: "#ecdcb8",
-        cream: "#d8c69a",
-        faded: "#9a8a68",
-        vermillion: "#c03a2b",
-        cinnabar: "#e05a3a",
-        jade: "#4d9970",
-        gold: "#c9a227",
-        azure: "#4a7fa5",
+        ink: "#0c171a",
+        coal: "#111f22",
+        smoke: "#1a2b2d",
+        parchment: "#e9e6dc",
+        cream: "#ced6ce",
+        faded: "#93a6a5",
+        vermillion: "#bd6960",
+        cinnabar: "#e79a7d",
+        jade: "#79b7a5",
+        gold: "#c6af7b",
+        azure: "#71a6bc",
         // 五行(3.12 版校正:金屬性原本是近乎灰白的 #d9d2c0,不夠像「金色」,改為明確的金色)
         metal: "#d4af37",
         wood: "#5aa860",

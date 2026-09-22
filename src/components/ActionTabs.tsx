@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
+import GameIcon from "./GameIcon";
+import { GAME_NAV } from "./GameShell";
+import { CARD_ART } from "@/game/data/cardArt";
 import {
   useGame,
   statsOf,
@@ -9,7 +13,6 @@ import {
   techPowerMult,
   MAX_TECH_LEVEL,
   ENERGY_COST,
-  Tab,
   effectivePouch,
   pouchMinFor,
   POUCH_MAX_COPIES,
@@ -37,7 +40,13 @@ import type { DictKey } from "@/i18n/dict";
 import { itemDisplayName, itemDisplayDesc, itemStatLine } from "@/i18n/itemText";
 import { monsterDisplayName, monsterDisplayDesc } from "@/i18n/monsterText";
 import { techDisplayName, techDisplayDesc } from "@/i18n/techText";
-import { regionDisplayName, regionDisplayDesc, locationDisplayName, locationDisplayDesc, recipeDisplayDesc } from "@/i18n/worldText";
+import {
+  regionDisplayName,
+  regionDisplayDesc,
+  locationDisplayName,
+  locationDisplayDesc,
+  recipeDisplayDesc,
+} from "@/i18n/worldText";
 import { realmDisplayName } from "@/i18n/realmText";
 import { sectDisplayName } from "@/i18n/sectText";
 import { kindLabel, elementLabel } from "@/i18n/labelText";
@@ -51,37 +60,17 @@ const itemNameColor = (item: Pick<ItemDef, "reqStage">, xuantian: boolean) =>
 export default function ActionTabs() {
   // 分頁狀態提到 store,讓道籍面板的「宗門」按鈕也能切換過來
   const tab = useGame((x) => x.activeTab);
-  const setTab = useGame((x) => x.setActiveTab);
-  const tt = useT(); // 命名為 tt,避免與下方 tabs.map(([t, label]) => ...) 的頁籤代號變數 t 衝突
-  const tabs: [Tab, string][] = [
-    ["explore", tt("tabExplore")],
-    ["bag", tt("tabBag")],
-    ["tech", tt("tabTech")],
-    ["craft", tt("tabCraft")],
-    ["market", tt("tabMarket")],
-    ["trade", tt("tabTrade")],
-    ["dex", tt("tabDex")],
-    ["wanling", tt("tabWanling")],
-    ["rank", tt("tabRank")],
-  ];
+  const tt = useT();
+  const item = GAME_NAV.find((item) => item.tab === tab)!;
   return (
-    <div className="panel">
-      {/* 按鈕依文字自然寬度換行(非橫向捲動),寬度足夠時排成兩排 */}
-      <div className="flex flex-wrap gap-1.5 mb-4 border-b border-faded/20 pb-2">
-        {tabs.map(([t, label]) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`shrink-0 whitespace-nowrap px-2.5 py-0.5 text-sm rounded-sm border transition-colors ${
-              tab === t
-                ? "bg-gold/15 text-gold border-gold/40"
-                : "border-faded/25 text-faded hover:text-cream hover:border-faded/50"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+    <section className={`panel action-panel action-panel-${tab}`} aria-labelledby="action-heading">
+      <header className="section-heading">
+        <div>
+          <p className="eyebrow">{item.caption}</p>
+          <h2 id="action-heading">{tt(item.label)}</h2>
+        </div>
+        <GameIcon name={item.icon} width={28} height={28} />
+      </header>
       {tab === "explore" && <ExploreTab />}
       {tab === "bag" && <BagTab />}
       {tab === "tech" && <TechTab />}
@@ -91,7 +80,7 @@ export default function ActionTabs() {
       {tab === "dex" && <DexTab />}
       {tab === "wanling" && <WanlingTab />}
       {tab === "rank" && <RankTab />}
-    </div>
+    </section>
   );
 }
 
@@ -110,14 +99,14 @@ function ExploreTab() {
   const locs = LOCATIONS.filter((l) => l.region === regionId);
   // 大陸子分類(目前僅靈界三大陸使用)
   const regionContinents = CONTINENTS.filter((c) => locs.some((l) => l.continent === c.id));
-  const visibleLocs = continentId === "all" ? locs : locs.filter((l) => l.continent === continentId);
+  const visibleLocs =
+    continentId === "all" ? locs : locs.filter((l) => l.continent === continentId);
   const energy = s.energy ?? 0;
   const energyLackGather = energy < ENERGY_COST.gather;
   const energyLackHunt = energy < ENERGY_COST.hunt;
 
   return (
     <div className="space-y-3">
-      <div className="divider">{t("exploreTitle")}</div>
       <div className="flex flex-wrap gap-1.5">
         {REGIONS.filter(
           (r) =>
@@ -130,12 +119,17 @@ function ExploreTab() {
           return (
             <button
               key={r.id}
+              disabled={rLocked}
               onClick={() => {
                 if (rLocked) return;
                 setRegionId(r.id);
                 setContinentId("all");
               }}
-              title={rLocked ? t("exploreStageLocked").replace("{n}", String(r.reqStage)) : regionDisplayDesc(r, lang)}
+              title={
+                rLocked
+                  ? t("exploreStageLocked").replace("{n}", String(r.reqStage))
+                  : regionDisplayDesc(r, lang)
+              }
               className={`px-2.5 py-1 text-xs rounded-sm border transition-colors ${
                 regionId === r.id
                   ? isPurple
@@ -202,51 +196,63 @@ function ExploreTab() {
           </button>
         </div>
       )}
-      {visibleLocs.map((loc) => {
-        const locked = realm.stage < loc.reqStage;
-        return (
-          <div
-            key={loc.id}
-            className={`border border-faded/20 rounded-sm p-3 ${locked ? "opacity-45" : ""}`}
-          >
-            <div className="flex items-baseline justify-between">
-              <span className="font-bold">{locationDisplayName(loc, lang)}</span>
-              {locked && <span className="chip">{t("stageInsufficient")}</span>}
+      <div className="location-grid">
+        {visibleLocs.map((loc, index) => {
+          const locked = realm.stage < loc.reqStage;
+          return (
+            <div
+              key={loc.id}
+              className={`location-card ${locked ? "is-locked" : ""}`}
+              data-scene={index % 2 === 0 ? "peaks" : "forest"}
+            >
+              <div className="location-art" aria-hidden="true">
+                <span>
+                  {String(index + 1).padStart(2, "0")} / {t("uiRegion")}
+                </span>
+              </div>
+              <div className="location-copy">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="font-bold">{locationDisplayName(loc, lang)}</span>
+                  <span className={`location-state ${locked ? "" : "is-open"}`}>
+                    {locked ? t("uiLocked") : t("uiAvailable")}
+                  </span>
+                </div>
+                <p className="text-sm text-faded mt-1">{locationDisplayDesc(loc, lang)}</p>
+                <div className="mt-2 flex gap-2">
+                  <button
+                    className="btn"
+                    disabled={locked || inCombat || busy || inDwelling || energyLackGather}
+                    onClick={() => act("gather", { locationId: loc.id })}
+                    title={
+                      inDwelling
+                        ? t("inDwellingTip")
+                        : energyLackGather
+                          ? `${t("energyInsufficientTip")} (${ENERGY_COST.gather})`
+                          : `-${ENERGY_COST.gather} ${t("energyCostSuffix")}`
+                    }
+                  >
+                    {t("btnGather")}
+                  </button>
+                  <button
+                    className="btn btn-danger"
+                    disabled={locked || inCombat || busy || inDwelling || energyLackHunt}
+                    onClick={() => act("hunt", { locationId: loc.id })}
+                    title={
+                      inDwelling
+                        ? t("inDwellingTip")
+                        : energyLackHunt
+                          ? `${t("energyInsufficientTip")} (${ENERGY_COST.hunt})`
+                          : `-${ENERGY_COST.hunt} ${t("energyCostSuffix")}`
+                    }
+                  >
+                    {t("btnHunt")}
+                  </button>
+                </div>
+              </div>
             </div>
-            <p className="text-sm text-faded mt-1">{locationDisplayDesc(loc, lang)}</p>
-            <div className="mt-2 flex gap-2">
-              <button
-                className="btn"
-                disabled={locked || inCombat || busy || inDwelling || energyLackGather}
-                onClick={() => act("gather", { locationId: loc.id })}
-                title={
-                  inDwelling
-                    ? t("inDwellingTip")
-                    : energyLackGather
-                      ? `${t("energyInsufficientTip")} (${ENERGY_COST.gather})`
-                      : `-${ENERGY_COST.gather} ${t("energyCostSuffix")}`
-                }
-              >
-                {t("btnGather")}
-              </button>
-              <button
-                className="btn btn-danger"
-                disabled={locked || inCombat || busy || inDwelling || energyLackHunt}
-                onClick={() => act("hunt", { locationId: loc.id })}
-                title={
-                  inDwelling
-                    ? t("inDwellingTip")
-                    : energyLackHunt
-                      ? `${t("energyInsufficientTip")} (${ENERGY_COST.hunt})`
-                      : `-${ENERGY_COST.hunt} ${t("energyCostSuffix")}`
-                }
-              >
-                {t("btnHunt")}
-              </button>
-            </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -291,25 +297,35 @@ function BagTab() {
     const xuantian = isXuantianArtifact(id);
     const statLine = itemStatLine(item, t);
     const nameSpan = (
-      <span className={`${itemNameColor(item, xuantian)}${statLine ? " cursor-help underline decoration-dotted decoration-faded/40 underline-offset-2" : ""}`}>
+      <span
+        className={`${itemNameColor(item, xuantian)}${statLine ? " cursor-help underline decoration-dotted decoration-faded/40 underline-offset-2" : ""}`}
+      >
         {itemDisplayName(item, lang)}
       </span>
     );
     return (
       <div
         key={id}
-        className={`flex items-center justify-between border rounded-sm p-2.5 ${xuantian ? "border-fuchsia-400/50" : "border-faded/20"}`}
+        className={`inventory-row flex items-center justify-between border rounded-sm p-2.5 ${xuantian ? "border-fuchsia-400/50" : "border-faded/20"}`}
       >
         <div className="min-w-0">
           <span className="font-bold">
             {statLine ? <Tooltip content={statLine}>{nameSpan}</Tooltip> : nameSpan}{" "}
             <span className="text-faded font-normal">×{n}</span>
-            <span className="chip ml-2 text-faded/80 border-faded/30">{kindLabel(item.kind, lang)}</span>
+            <span className="chip ml-2 text-faded/80 border-faded/30">
+              {kindLabel(item.kind, lang)}
+            </span>
             {item.element && (
               <span className={`chip ml-2 ${ELEMENT_COLOR[item.element]}`}>{item.element}</span>
             )}
-            {xuantian && <span className="chip ml-2 text-xuantian border-fuchsia-400/50">{t("xuantianTag")}</span>}
-            {equipped && <span className="chip ml-2 text-gold border-gold/50">{t("equippedTag")}</span>}
+            {xuantian && (
+              <span className="chip ml-2 text-xuantian border-fuchsia-400/50">
+                {t("xuantianTag")}
+              </span>
+            )}
+            {equipped && (
+              <span className="chip ml-2 text-gold border-gold/50">{t("equippedTag")}</span>
+            )}
             {item.kind === "manual" && item.teaches && (
               <span className="chip ml-2 text-azure border-azure/50">
                 {t("learnYearsTag").replace("{n}", String(learnYears(item.teaches)))}
@@ -394,7 +410,11 @@ function BagTab() {
             ownedCopiesOf(s, item.teaches) >= POUCH_MAX_COPIES ? (
               <span className="chip self-center text-faded/70">{t("manualAtCopyCap")}</span>
             ) : (
-              <button className="btn" disabled={busy} onClick={() => act("useItem", { itemId: id })}>
+              <button
+                className="btn"
+                disabled={busy}
+                onClick={() => act("useItem", { itemId: id })}
+              >
                 {t("btnDuplicateCard")}
               </button>
             )
@@ -434,7 +454,9 @@ function BagTab() {
     entries.some(([id]) => kinds.includes(itemById(id).kind)),
   );
   const sectionsToShow =
-    filter === "filterAll" ? availableSections : availableSections.filter(([key]) => key === filter);
+    filter === "filterAll"
+      ? availableSections
+      : availableSections.filter(([key]) => key === filter);
 
   return (
     <div className="space-y-2">
@@ -542,154 +564,177 @@ function TechTab() {
       </div>
 
       {techView === "pouch" && (
-      <div className="border border-gold/30 bg-gold/5 rounded-sm p-3">
-        <div className="flex items-baseline justify-between mb-1">
-          <span className="font-bold text-gold">{t("talismanPouchTitle")}</span>
-          <span className="text-xs font-mono text-faded">
-            {t("talismanPouchCountLine")
-              .replace("{n}", String(pouch.length))
-              .replace("{min}", String(pouchMin))}
-          </span>
-        </div>
-        <p className="text-xs text-faded mb-2">{t("talismanPouchDesc")}</p>
-        {inCombat && <p className="text-xs text-vermillion mb-2">{t("talismanPouchInCombatNote")}</p>}
-        {(() => {
-          // 基礎卡片(法器攻擊/法術攻擊,與生俱來)跟真正修習來的仙法分開列,兩者都能調整符寶袋張數
-          const baseCards = s.learned.filter((id) => techById(id).innate);
-          const studiedTechs = s.learned.filter((id) => !techById(id).innate);
-          const row = (id: string) => {
-            const tech = techById(id);
-            const count = pouch.filter((p) => p === id).length;
-            const owned = ownedCopiesOf(s, id);
-            const atMax = count >= owned;
-            const atMin = pouch.length <= pouchMin;
-            return (
-              <div key={id} className="flex items-center justify-between gap-2 text-sm">
-                <span className={ELEMENT_COLOR[tech.element]}>
-                  {techDisplayName(tech, lang)}
-                  <span className="text-faded ml-1 text-xs">
-                    ({tech.mpCost}
-                    {tech.soloOnly ? ` · ${t("talismanPouchSoloTag")}` : ""})
-                  </span>
-                  {!tech.innate && (
-                    <span className="chip ml-1.5 text-faded/80 border-faded/30">
-                      {t("talismanPouchOwnedTag").replace("{n}", String(owned))}
+        <div className="border border-gold/30 bg-gold/5 rounded-sm p-3">
+          <div className="flex items-baseline justify-between mb-1">
+            <span className="font-bold text-gold">{t("talismanPouchTitle")}</span>
+            <span className="text-xs font-mono text-faded">
+              {t("talismanPouchCountLine")
+                .replace("{n}", String(pouch.length))
+                .replace("{min}", String(pouchMin))}
+            </span>
+          </div>
+          <p className="text-xs text-faded mb-2">{t("talismanPouchDesc")}</p>
+          {inCombat && (
+            <p className="text-xs text-vermillion mb-2">{t("talismanPouchInCombatNote")}</p>
+          )}
+          {(() => {
+            // 基礎卡片(法器攻擊/法術攻擊,與生俱來)跟真正修習來的仙法分開列,兩者都能調整符寶袋張數
+            const baseCards = s.learned.filter((id) => techById(id).innate);
+            const studiedTechs = s.learned.filter((id) => !techById(id).innate);
+            const row = (id: string) => {
+              const tech = techById(id);
+              const count = pouch.filter((p) => p === id).length;
+              const owned = ownedCopiesOf(s, id);
+              const atMax = count >= owned;
+              const atMin = pouch.length <= pouchMin;
+              return (
+                <div key={id} className="pouch-card">
+                  <Image
+                    className="pouch-card-art"
+                    src={`/images/cards/${tech.id === "artifact_attack" ? "artifact" : CARD_ART[tech.element]}.webp`}
+                    alt=""
+                    width={64}
+                    height={64}
+                  />
+                  <span className={ELEMENT_COLOR[tech.element]}>
+                    {techDisplayName(tech, lang)}
+                    <span className="text-faded ml-1 text-xs">
+                      ({tech.mpCost}
+                      {tech.soloOnly ? ` · ${t("talismanPouchSoloTag")}` : ""})
                     </span>
-                  )}
-                </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    className="chip hover:text-gold px-2"
-                    disabled={busy || inCombat || count === 0 || atMin}
-                    onClick={() => act("pouchAdjust", { techId: id, delta: -1 })}
-                  >
-                    −
-                  </button>
-                  <span className="font-mono text-xs w-4 text-center">{count}</span>
-                  <button
-                    className="chip hover:text-gold px-2"
-                    disabled={busy || inCombat || atMax}
-                    title={
-                      atMax
-                        ? tech.innate
-                          ? t("talismanPouchMaxCopiesNote").replace("{n}", String(POUCH_MAX_COPIES))
-                          : t("talismanPouchOwnedCapNote")
-                              .replace("{n}", String(owned))
-                              .replace("{max}", String(POUCH_MAX_COPIES))
-                        : ""
-                    }
-                    onClick={() => act("pouchAdjust", { techId: id, delta: 1 })}
-                  >
-                    ＋
-                  </button>
+                    {!tech.innate && (
+                      <span className="chip ml-1.5 text-faded/80 border-faded/30">
+                        {t("talismanPouchOwnedTag").replace("{n}", String(owned))}
+                      </span>
+                    )}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      className="chip hover:text-gold px-2"
+                      disabled={busy || inCombat || count === 0 || atMin}
+                      onClick={() => act("pouchAdjust", { techId: id, delta: -1 })}
+                    >
+                      −
+                    </button>
+                    <span className="font-mono text-xs w-4 text-center">{count}</span>
+                    <button
+                      className="chip hover:text-gold px-2"
+                      disabled={busy || inCombat || atMax}
+                      title={
+                        atMax
+                          ? tech.innate
+                            ? t("talismanPouchMaxCopiesNote").replace(
+                                "{n}",
+                                String(POUCH_MAX_COPIES),
+                              )
+                            : t("talismanPouchOwnedCapNote")
+                                .replace("{n}", String(owned))
+                                .replace("{max}", String(POUCH_MAX_COPIES))
+                          : ""
+                      }
+                      onClick={() => act("pouchAdjust", { techId: id, delta: 1 })}
+                    >
+                      ＋
+                    </button>
+                  </div>
                 </div>
-              </div>
-            );
-          };
-          return (
-            <>
-              <p className="text-[10px] tracking-[0.2em] text-faded/60 uppercase mb-1">
-                {t("talismanPouchBaseCardsTitle")}
-              </p>
-              <div className="space-y-1.5 mb-3">{baseCards.map(row)}</div>
-              <p className="text-[10px] tracking-[0.2em] text-faded/60 uppercase mb-1">
-                {t("talismanPouchTechsTitle")}
-              </p>
-              <div className="space-y-1.5">
-                {studiedTechs.length === 0 ? (
-                  <p className="text-xs text-faded">{t("techNoneLearned")}</p>
-                ) : (
-                  studiedTechs.map(row)
+              );
+            };
+            return (
+              <>
+                <p className="text-[10px] tracking-[0.2em] text-faded/60 uppercase mb-1">
+                  {t("talismanPouchBaseCardsTitle")}
+                </p>
+                <div className="space-y-1.5 mb-3">{baseCards.map(row)}</div>
+                <p className="text-[10px] tracking-[0.2em] text-faded/60 uppercase mb-1">
+                  {t("talismanPouchTechsTitle")}
+                </p>
+                <div className="space-y-1.5">
+                  {studiedTechs.length === 0 ? (
+                    <p className="text-xs text-faded">{t("techNoneLearned")}</p>
+                  ) : (
+                    studiedTechs.map(row)
+                  )}
+                </div>
+                {studiedTechs.length > 0 && (
+                  <p className="text-[11px] text-faded/70 mt-2 leading-relaxed">
+                    {t("talismanPouchDupHint")}
+                  </p>
                 )}
-              </div>
-              {studiedTechs.length > 0 && (
-                <p className="text-[11px] text-faded/70 mt-2 leading-relaxed">{t("talismanPouchDupHint")}</p>
-              )}
-            </>
-          );
-        })()}
-      </div>
+              </>
+            );
+          })()}
+        </div>
       )}
 
       {techView === "cultivate" && (
-      <>
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-faded">{t("techCapNote")}</p>
-        <span className="chip text-fuchsia-400 border-fuchsia-400/50">
-          {itemDisplayName(itemById("zenglingzhu"), lang)} ×{zenglingzhu}
-        </span>
-      </div>
-      {s.learning && (
-        <div className="border border-azure/40 bg-azure/5 rounded-sm p-3">
-          <div className="flex items-baseline justify-between">
-            <span className="font-bold text-azure">
-              {t("techLearningLabel").replace("{name}", techDisplayName(techById(s.learning.techId), lang))}
-            </span>
-            <span className="text-xs font-mono text-faded">
-              {t("techLearningRemain").replace("{n}", String(s.learning.remain))}
+        <>
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-faded">{t("techCapNote")}</p>
+            <span className="chip text-fuchsia-400 border-fuchsia-400/50">
+              {itemDisplayName(itemById("zenglingzhu"), lang)} ×{zenglingzhu}
             </span>
           </div>
-        </div>
-      )}
-      {s.learned.filter((id) => !techById(id).innate).length === 0 && (
-        <p className="text-faded text-sm">{t("techNoneLearned")}</p>
-      )}
-      {s.learned
-        .filter((id) => !techById(id).innate)
-        .map((id) => {
-        const tech = techById(id);
-        const level = techLevelOf(s, id);
-        const maxed = level >= MAX_TECH_LEVEL;
-        return (
-          <div key={id} className="border border-faded/20 rounded-sm p-3">
-            <div className="flex items-baseline justify-between">
-              <span className="font-bold">
-                <span className={`mr-2 ${ELEMENT_COLOR[tech.element]}`}>【{elementLabel(tech.element, lang)}】</span>
-                {techDisplayName(tech, lang)}
-                <span className="chip ml-2 text-fuchsia-400 border-fuchsia-400/50">
-                  {t("techLevelTag").replace("{lv}", String(level)).replace("{max}", String(MAX_TECH_LEVEL))}
+          {s.learning && (
+            <div className="border border-azure/40 bg-azure/5 rounded-sm p-3">
+              <div className="flex items-baseline justify-between">
+                <span className="font-bold text-azure">
+                  {t("techLearningLabel").replace(
+                    "{name}",
+                    techDisplayName(techById(s.learning.techId), lang),
+                  )}
                 </span>
-              </span>
-              <span className="text-xs text-faded font-mono">
-                {t("techPowerLine")
-                  .replace("{power}", (tech.power * techPowerMult(level)).toFixed(1))
-                  .replace("{mp}", String(tech.mpCost))}
-              </span>
+                <span className="text-xs font-mono text-faded">
+                  {t("techLearningRemain").replace("{n}", String(s.learning.remain))}
+                </span>
+              </div>
             </div>
-            <p className="text-sm text-faded mt-1">{techDisplayDesc(tech, lang)}</p>
-            <button
-              className="btn mt-2"
-              disabled={busy || maxed || zenglingzhu <= 0}
-              title={maxed ? t("techMaxed") : zenglingzhu <= 0 ? t("techNeedBead") : ""}
-              onClick={() => act("upgradeTech", { techId: id })}
-            >
-              {maxed ? t("techMaxedBtn") : t("techUpgradeBtn").replace("{lv}", String(level + 1))}
-            </button>
-          </div>
-        );
-      })}
-      <p className="text-xs text-faded/60 mt-2">{t("techFooterNote")}</p>
-      </>
+          )}
+          {s.learned.filter((id) => !techById(id).innate).length === 0 && (
+            <p className="text-faded text-sm">{t("techNoneLearned")}</p>
+          )}
+          {s.learned
+            .filter((id) => !techById(id).innate)
+            .map((id) => {
+              const tech = techById(id);
+              const level = techLevelOf(s, id);
+              const maxed = level >= MAX_TECH_LEVEL;
+              return (
+                <div key={id} className="border border-faded/20 rounded-sm p-3">
+                  <div className="flex items-baseline justify-between">
+                    <span className="font-bold">
+                      <span className={`mr-2 ${ELEMENT_COLOR[tech.element]}`}>
+                        【{elementLabel(tech.element, lang)}】
+                      </span>
+                      {techDisplayName(tech, lang)}
+                      <span className="chip ml-2 text-fuchsia-400 border-fuchsia-400/50">
+                        {t("techLevelTag")
+                          .replace("{lv}", String(level))
+                          .replace("{max}", String(MAX_TECH_LEVEL))}
+                      </span>
+                    </span>
+                    <span className="text-xs text-faded font-mono">
+                      {t("techPowerLine")
+                        .replace("{power}", (tech.power * techPowerMult(level)).toFixed(1))
+                        .replace("{mp}", String(tech.mpCost))}
+                    </span>
+                  </div>
+                  <p className="text-sm text-faded mt-1">{techDisplayDesc(tech, lang)}</p>
+                  <button
+                    className="btn mt-2"
+                    disabled={busy || maxed || zenglingzhu <= 0}
+                    title={maxed ? t("techMaxed") : zenglingzhu <= 0 ? t("techNeedBead") : ""}
+                    onClick={() => act("upgradeTech", { techId: id })}
+                  >
+                    {maxed
+                      ? t("techMaxedBtn")
+                      : t("techUpgradeBtn").replace("{lv}", String(level + 1))}
+                  </button>
+                </div>
+              );
+            })}
+          <p className="text-xs text-faded/60 mt-2">{t("techFooterNote")}</p>
+        </>
       )}
     </div>
   );
@@ -719,7 +764,9 @@ function CraftTab() {
     RECIPES.some((rec) => kinds.includes(itemById(rec.result).kind)),
   );
   const sectionsToShow =
-    filter === "filterAll" ? availableSections : availableSections.filter(([key]) => key === filter);
+    filter === "filterAll"
+      ? availableSections
+      : availableSections.filter(([key]) => key === filter);
 
   const recipeRow = (rec: (typeof RECIPES)[number]) => {
     const result = itemById(rec.result);
@@ -775,20 +822,44 @@ function CraftTab() {
           })}
           <span className="text-faded">
             →{" "}
-            {result.atkBonus ? (lang === "en" ? `ATK+${result.atkBonus} ` : `攻+${result.atkBonus} `) : ""}
-            {result.defBonus ? (lang === "en" ? `DEF+${result.defBonus} ` : `防+${result.defBonus} `) : ""}
-            {result.speedBonus ? (lang === "en" ? `SPD+${result.speedBonus}` : `速+${result.speedBonus}`) : ""}
+            {result.atkBonus
+              ? lang === "en"
+                ? `ATK+${result.atkBonus} `
+                : `攻+${result.atkBonus} `
+              : ""}
+            {result.defBonus
+              ? lang === "en"
+                ? `DEF+${result.defBonus} `
+                : `防+${result.defBonus} `
+              : ""}
+            {result.speedBonus
+              ? lang === "en"
+                ? `SPD+${result.speedBonus}`
+                : `速+${result.speedBonus}`
+              : ""}
             {result.heal ? (lang === "en" ? `HP+${result.heal} ` : `氣血+${result.heal} `) : ""}
             {result.mp ? (lang === "en" ? `MP+${result.mp} ` : `法力+${result.mp} `) : ""}
-            {result.energy ? (lang === "en" ? `Energy+${result.energy} ` : `精力+${result.energy} `) : ""}
+            {result.energy
+              ? lang === "en"
+                ? `Energy+${result.energy} `
+                : `精力+${result.energy} `
+              : ""}
             {result.exp ? (lang === "en" ? `Exp+${result.exp} ` : `修為+${result.exp} `) : ""}
-            {result.life ? (lang === "en" ? `Lifespan+${result.life} ` : `壽元上限+${result.life} `) : ""}
+            {result.life
+              ? lang === "en"
+                ? `Lifespan+${result.life} `
+                : `壽元上限+${result.life} `
+              : ""}
             {result.lifePct
               ? lang === "en"
                 ? `Lifespan+${Math.round(result.lifePct * 100)}% `
                 : `壽元上限+${Math.round(result.lifePct * 100)}% `
               : ""}
-            {result.xianli ? (lang === "en" ? `Immortal Qi+${result.xianli}` : `仙靈力+${result.xianli}`) : ""}
+            {result.xianli
+              ? lang === "en"
+                ? `Immortal Qi+${result.xianli}`
+                : `仙靈力+${result.xianli}`
+              : ""}
           </span>
         </p>
         <button
@@ -968,7 +1039,12 @@ function BlackMarketSection() {
             setPurchaseResult({
               success: true,
               title: t("purchaseSuccessTitle"),
-              lines: [t("blackMarketDelivered").replace("{item}", itemDisplayName(itemById(itemId), lang))],
+              lines: [
+                t("blackMarketDelivered").replace(
+                  "{item}",
+                  itemDisplayName(itemById(itemId), lang),
+                ),
+              ],
             });
           } else if (r.status === "failed") {
             if (pollRef.current) clearInterval(pollRef.current);
@@ -1128,32 +1204,32 @@ function MarketTab() {
                       itemDisplayName(item, lang)
                     );
                     return (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between border border-faded/20 rounded-sm p-2.5"
-                    >
-                      <div className="min-w-0">
-                        <span className="font-bold">
-                          {nameNode}
-                          <span className="chip ml-2 text-faded/80 border-faded/30">
-                            {kindLabel(item.kind, lang)}
-                          </span>
-                          {item.element && (
-                            <span className={`chip ml-2 ${ELEMENT_COLOR[item.element]}`}>
-                              {elementLabel(item.element, lang)}
-                            </span>
-                          )}
-                        </span>
-                        <p className="text-xs text-faded">{itemDisplayDesc(item, lang)}</p>
-                      </div>
-                      <button
-                        className="btn shrink-0 ml-3"
-                        disabled={busy || s.stones < item.price}
-                        onClick={() => act("buy", { itemId: item.id })}
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between border border-faded/20 rounded-sm p-2.5"
                       >
-                        {formatStones(item.price)}
-                      </button>
-                    </div>
+                        <div className="min-w-0">
+                          <span className="font-bold">
+                            {nameNode}
+                            <span className="chip ml-2 text-faded/80 border-faded/30">
+                              {kindLabel(item.kind, lang)}
+                            </span>
+                            {item.element && (
+                              <span className={`chip ml-2 ${ELEMENT_COLOR[item.element]}`}>
+                                {elementLabel(item.element, lang)}
+                              </span>
+                            )}
+                          </span>
+                          <p className="text-xs text-faded">{itemDisplayDesc(item, lang)}</p>
+                        </div>
+                        <button
+                          className="btn shrink-0 ml-3"
+                          disabled={busy || s.stones < item.price}
+                          onClick={() => act("buy", { itemId: item.id })}
+                        >
+                          {formatStones(item.price)}
+                        </button>
+                      </div>
                     );
                   })}
                 </div>
@@ -1373,9 +1449,7 @@ function TradeTab() {
       </div>
 
       <div className="divider">{t("onSaleTitle")}</div>
-      {listings.length === 0 && (
-        <p className="text-sm text-faded">{t("noListings")}</p>
-      )}
+      {listings.length === 0 && <p className="text-sm text-faded">{t("noListings")}</p>}
       {listings.map((l) => {
         const item = itemById(l.item_id);
         if (!item) return null;
@@ -1398,7 +1472,9 @@ function TradeTab() {
               <span className="font-bold">
                 {statLine ? <Tooltip content={statLine}>{nameSpan}</Tooltip> : nameSpan}{" "}
                 <span className="text-faded font-normal">×{l.qty}</span>
-                {mine && <span className="chip ml-2 text-gold border-gold/50">{t("myListingTag")}</span>}
+                {mine && (
+                  <span className="chip ml-2 text-gold border-gold/50">{t("myListingTag")}</span>
+                )}
               </span>
               <p className="text-xs text-faded">
                 {t("listingSellerLine")
@@ -1461,7 +1537,9 @@ function DexTab() {
         <div className="flex items-baseline justify-between">
           <span className="font-bold">
             {mon.isLord && (
-              <span className="chip mr-2 text-fuchsia-400 border-fuchsia-400/50">{t("lordTag")}</span>
+              <span className="chip mr-2 text-fuchsia-400 border-fuchsia-400/50">
+                {t("lordTag")}
+              </span>
             )}
             {monsterDisplayName(mon, lang)}
             <span className={`chip ml-2 ${ELEMENT_COLOR[mon.element]}`}>
@@ -1585,7 +1663,9 @@ function WanlingTab() {
                     className={`border rounded-sm p-2.5 ${xuantian ? "border-fuchsia-400/40" : "border-faded/20"}`}
                   >
                     <span className="font-bold">
-                      <span className={itemNameColor(item, xuantian)}>{itemDisplayName(item, lang)}</span>
+                      <span className={itemNameColor(item, xuantian)}>
+                        {itemDisplayName(item, lang)}
+                      </span>
                       <span className="chip ml-2 text-faded/80 border-faded/30">
                         {kindLabel(item.kind, lang)}
                       </span>
@@ -1733,9 +1813,13 @@ function PlayerDetailCard({ profile, onClose }: { profile: PlayerProfile; onClos
               {it ? (
                 <span className="text-right">
                   <Tooltip
-                    content={[itemStatLine(it, t), itemDisplayDesc(it, lang)].filter(Boolean).join(" · ")}
+                    content={[itemStatLine(it, t), itemDisplayDesc(it, lang)]
+                      .filter(Boolean)
+                      .join(" · ")}
                   >
-                    <span className={`${nameCls} cursor-help underline decoration-dotted decoration-faded/40 underline-offset-2`}>
+                    <span
+                      className={`${nameCls} cursor-help underline decoration-dotted decoration-faded/40 underline-offset-2`}
+                    >
                       {itemDisplayName(it, lang)}
                     </span>
                   </Tooltip>
@@ -1865,7 +1949,9 @@ function RankTab() {
       return (
         <>
           <span className="text-jade font-mono">{t("expValue").replace("{n}", String(p.exp))}</span>
-          <span className="text-xs text-faded ml-2">{realmDisplayName(REALMS[p.realm_idx], lang)}</span>
+          <span className="text-xs text-faded ml-2">
+            {realmDisplayName(REALMS[p.realm_idx], lang)}
+          </span>
         </>
       );
     // 修仙榜
@@ -1890,7 +1976,9 @@ function RankTab() {
             key={b}
             onClick={() => setBoard(b)}
             className={`px-3 py-1 text-sm rounded-sm border transition-colors ${
-              board === b ? BOARD_STYLES[b].tabActive : "border-faded/30 text-faded hover:text-cream"
+              board === b
+                ? BOARD_STYLES[b].tabActive
+                : "border-faded/30 text-faded hover:text-cream"
             }`}
           >
             {label}
@@ -1927,7 +2015,11 @@ function RankTab() {
       {loading && <p className="text-sm text-faded">{t("boardUpdating")}</p>}
       {!loading && players.length === 0 && (
         <p className="text-sm text-faded">
-          {board === "futu" ? t("futuBoardEmpty") : board === "kill" ? t("killBoardEmpty") : t("boardEmpty")}
+          {board === "futu"
+            ? t("futuBoardEmpty")
+            : board === "kill"
+              ? t("killBoardEmpty")
+              : t("boardEmpty")}
         </p>
       )}
       {players.map((p, i) => {
@@ -1952,7 +2044,9 @@ function RankTab() {
                 </span>
                 {me && <span className={`text-xs ${style.youTag} ml-2`}>{t("youTag")}</span>}
                 {p.dead && (
-                  <span className="chip ml-2 text-vermillion border-vermillion/50">{t("deadTag")}</span>
+                  <span className="chip ml-2 text-vermillion border-vermillion/50">
+                    {t("deadTag")}
+                  </span>
                 )}
               </div>
             </div>
@@ -1968,7 +2062,10 @@ function RankTab() {
           <p className="text-xs text-faded mt-2 mb-2">{t("monsterDropListNote")}</p>
           <div className="space-y-1.5 max-h-96 overflow-y-auto pr-1">
             {MONSTERS.map((mon) => (
-              <div key={mon.id} className="text-xs border-t border-faded/10 pt-1.5 first:border-t-0 first:pt-0">
+              <div
+                key={mon.id}
+                className="text-xs border-t border-faded/10 pt-1.5 first:border-t-0 first:pt-0"
+              >
                 <span className="font-bold">{monsterDisplayName(mon, lang)}</span>
                 <span className="text-faded ml-2">
                   {mon.drops.length === 0
@@ -1976,7 +2073,10 @@ function RankTab() {
                     : mon.drops.map((d, i) => {
                         const item = itemById(d.id);
                         return (
-                          <span key={d.id} className={itemNameColor(item, isXuantianArtifact(d.id))}>
+                          <span
+                            key={d.id}
+                            className={itemNameColor(item, isXuantianArtifact(d.id))}
+                          >
                             {itemDisplayName(item, lang)}
                             {i < mon.drops.length - 1 ? "、" : ""}
                           </span>

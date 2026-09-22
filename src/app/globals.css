@@ -342,7 +342,11 @@ body::after {
   aspect-ratio: 1;
   border: 2px solid var(--hit-color, rgba(255, 221, 142, 0.85));
   border-radius: 50%;
-  background: radial-gradient(circle, var(--hit-color-soft, rgba(255, 210, 112, 0.5)), transparent 62%);
+  background: radial-gradient(
+    circle,
+    var(--hit-color-soft, rgba(255, 210, 112, 0.5)),
+    transparent 62%
+  );
   box-shadow: 0 0 50px 18px var(--hit-color-glow, rgba(238, 172, 67, 0.32));
   animation: battleHitFlash 0.5s ease-out both;
   pointer-events: none;
@@ -553,7 +557,8 @@ body::after {
   height: 172px;
   padding: 11px 12px 10px;
   text-align: left;
-  border: 1px solid;
+  border-width: 1px;
+  border-style: solid;
   border-radius: 3px;
   color: #ecdcb8;
   background:

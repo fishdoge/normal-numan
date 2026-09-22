@@ -14,11 +14,12 @@ import { formatStones } from "@/game/types";
 import { REALMS } from "@/game/data/realms";
 import { CHANGELOG } from "@/game/data/changelog";
 import { REVIVAL_PRICE_USD } from "@/game/data/blackMarket";
-import { currentEraYears, eraLabelText } from "@/game/data/eraTime";
 import { renderLootLine } from "./ColoredText";
 import { useT } from "@/i18n/useT";
 import { realmDisplayName } from "@/i18n/realmText";
 import AuthGate from "./AuthGate";
+import GameShell, { JourneyHero } from "./GameShell";
+import GameIcon from "./GameIcon";
 import CharCreate from "./CharCreate";
 import ActionTabs from "./ActionTabs";
 import SectPage from "./SectPage";
@@ -163,7 +164,7 @@ function DeathScreen() {
     .replace("{age}", String(maxLifeOf(s)))
     .replace("{realm}", realmDisplayName(REALMS[s.realmIdx], lang));
   return (
-    <main className="max-w-2xl mx-auto px-4 py-24 text-center">
+    <main className="death-screen max-w-2xl mx-auto px-4 py-24 text-center">
       <p className="font-mono text-xs tracking-[0.5em] text-faded mb-4">HERE LIES A CULTIVATOR</p>
       <h1 className="text-5xl font-black tracking-widest text-vermillion mb-6">
         {t("deathHeadline")}
@@ -246,36 +247,38 @@ function CultivationBar() {
         ? energyTip(ENERGY_COST.breakthrough)
         : t("breakChancePct").replace("{n}", String(Math.round(chance * 100)));
   return (
-    <div className={`panel deco-frame ${canBreak ? "border-gold/70" : ""}`}>
+    <div className={`panel cultivation-panel ${canBreak ? "border-gold/70" : ""}`}>
       <p className="panel-title mb-2">{t("cultivateTitle")}</p>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-faded/15 border border-faded/20 rounded-sm overflow-hidden">
-        <div className="bg-coal/90 p-3 flex flex-col items-center gap-1.5 text-center">
+      <div className="cultivation-actions">
+        <div className="cultivation-action">
           <button
             className="btn text-base w-full"
             disabled={busy || inCombat || inDwelling || energy < ENERGY_COST.cultivate}
             onClick={() => act("cultivate")}
             title={inDwelling ? t("inDwellingTip") : energyTip(ENERGY_COST.cultivate)}
           >
+            <GameIcon name="lotus" />
             {t("btnCultivate")}
           </button>
           <span className="text-[10px] text-faded/80 font-mono leading-snug">
             -{cost} {t("lifeCostSuffix")} · -{ENERGY_COST.cultivate} {t("energyCostSuffix")}
           </span>
         </div>
-        <div className="bg-coal/90 p-3 flex flex-col items-center gap-1.5 text-center">
+        <div className="cultivation-action">
           <button
             className="btn text-base w-full"
             disabled={busy || inCombat || inDwelling || s.hp >= hpMax || energy < ENERGY_COST.rest}
             onClick={() => act("rest")}
             title={inDwelling ? t("inDwellingTip") : energyTip(ENERGY_COST.rest)}
           >
+            <GameIcon name="moon" />
             {t("btnRest")}
           </button>
           <span className="text-[10px] text-faded/80 font-mono leading-snug">
             -{cost * 2} {t("lifeCostSuffix")} · -{ENERGY_COST.rest} {t("energyCostSuffix")}
           </span>
         </div>
-        <div className="bg-coal/90 p-3 flex flex-col items-center gap-1.5 text-center">
+        <div className="cultivation-action">
           <button
             className="btn text-base w-full border-fuchsia-400/50 text-fuchsia-300 hover:bg-fuchsia-400/15 hover:border-fuchsia-400"
             disabled={
@@ -288,6 +291,7 @@ function CultivationBar() {
                 : (energyTip(ENERGY_COST.wander) ?? t("wanderTooltip"))
             }
           >
+            <GameIcon name="explore" />
             {t("btnWander")}
           </button>
           <span className="text-[10px] text-faded/80 font-mono leading-snug">
@@ -295,7 +299,7 @@ function CultivationBar() {
             {t("energyCostSuffix")}
           </span>
         </div>
-        <div className="bg-coal/90 p-3 flex flex-col items-center gap-1.5 text-center">
+        <div className="cultivation-action">
           <button
             className={`btn text-base w-full ${canBreak && !inDwelling ? "border-gold text-gold animate-pulse" : ""}`}
             disabled={
@@ -304,6 +308,7 @@ function CultivationBar() {
             onClick={() => act("breakthrough")}
             title={inDwelling ? t("inDwellingTip") : breakTitle}
           >
+            <GameIcon name="spark" />
             {t("btnBreakthrough")}
             {canBreak && !inDwelling ? ` (${Math.round(chance * 100)}%)` : ""}
           </button>
@@ -311,6 +316,9 @@ function CultivationBar() {
             -{ENERGY_COST.breakthrough} {t("energyCostSuffix")}
           </span>
         </div>
+      </div>
+      <div className="cultivation-progress" aria-hidden="true">
+        <span style={{ width: `${Math.max(0, Math.min(100, (s.exp / expNeed) * 100))}%` }} />
       </div>
       <p className="text-xs text-faded font-mono mt-2 text-right">
         {t("cultivationSummaryLine")
@@ -336,8 +344,7 @@ export default function Game() {
   const closeBreak = useGame((x) => x.closeBreak);
   const closePurchaseResult = useGame((x) => x.closePurchaseResult);
   const mainView = useGame((x) => x.mainView);
-  const language = useGame((x) => x.language);
-  const setLanguage = useGame((x) => x.setLanguage);
+  const activeTab = useGame((x) => x.activeTab);
   const t = useT();
   const [auth, setAuth] = useState<"checking" | "anon" | "authed">("checking");
   const [userName, setUserName] = useState("");
@@ -383,14 +390,10 @@ export default function Game() {
 
   if (save.dead) return <DeathScreen />;
 
-  if (mainView === "sect" && !save.combat) return <SectPage />;
-
   const isXian = REALMS[save.realmIdx]?.stage >= 10;
 
   return (
-    <main
-      className={`${save.combat ? "combat-screen" : "max-w-6xl mx-auto px-4 py-6 relative"} ${isXian ? "xian-aura" : ""}`}
-    >
+    <div className={`${save.combat ? "combat-screen" : "game-root"} ${isXian ? "xian-aura" : ""}`}>
       {purchaseResult && <ResultModal modal={purchaseResult} onClose={closePurchaseResult} />}
       {!purchaseResult && breakResult && <ResultModal modal={breakResult} onClose={closeBreak} />}
       {!purchaseResult && !breakResult && loot && <ResultModal modal={loot} onClose={closeLoot} />}
@@ -399,73 +402,27 @@ export default function Game() {
       {save.combat ? (
         <CombatPanel />
       ) : (
-        <>
-          <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 mb-5">
-            <div>
-              <h1
-                className={`text-2xl font-black tracking-[0.35em] ${isXian ? "text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 via-amber-200 to-cyan-200" : ""}`}
-              >
-                {t("appTitle")}
-              </h1>
-              <p className="font-mono text-[10px] tracking-[0.4em] text-faded">
-                {isXian ? t("appSubtitleAscended") : t("appSubtitle")}
-              </p>
-              <p className="font-mono text-[10px] tracking-[0.2em] text-gold/70 mt-0.5">
-                {t("worldEraNow").replace("{era}", eraLabelText(currentEraYears()))}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-4 items-baseline">
-              <button
-                className="text-xs text-faded/60 hover:text-gold transition-colors border border-faded/30 rounded-sm px-1.5"
-                onClick={() => setLanguage(language === "zh" ? "en" : "zh")}
-                title={t("langToggleTooltip")}
-              >
-                {t("langToggle")}
-              </button>
-              <button
-                className="text-xs text-faded/60 hover:text-gold transition-colors"
-                onClick={() => setShowGuide(true)}
-              >
-                {t("navGuide")}
-              </button>
-              <button
-                className="text-xs text-faded/60 hover:text-gold transition-colors"
-                onClick={() => setShowChangelog(true)}
-              >
-                {t("navChangelog")}
-              </button>
-
-              <button
-                className="text-xs text-faded/60 hover:text-gold transition-colors"
-                onClick={async () => {
-                  await fetch("/api/auth/logout", { method: "POST" });
-                  location.reload();
-                }}
-              >
-                {t("navLogout")}
-              </button>
-            </div>
-          </header>
-
-          <div className="mb-4">
-            <CultivationBar />
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-[300px_minmax(0,1fr)] lg:grid-cols-[300px_minmax(0,1fr)_340px]">
-            <div className="space-y-4">
-              <StatusPanel />
-              <RealmProgressPanel />
-            </div>
-            <div className="space-y-4 md:col-start-2 min-w-0">
-              <CombatPanel />
-              <ActionTabs />
-            </div>
-            <div className="md:col-start-2 lg:col-start-3">
-              <LogChatPanel />
-            </div>
-          </div>
-        </>
+        <GameShell onGuide={() => setShowGuide(true)} onChangelog={() => setShowChangelog(true)}>
+          {mainView === "sect" ? (
+            <SectPage />
+          ) : (
+            <>
+              {activeTab === "explore" && <JourneyHero />}
+              <div className="journey-grid">
+                <div className="journey-primary" id="journey-actions">
+                  {activeTab === "explore" && <CultivationBar />}
+                  <ActionTabs />
+                </div>
+                <aside className="journey-aside" aria-label={t("statusTitle")}>
+                  <StatusPanel />
+                  <RealmProgressPanel />
+                  <LogChatPanel />
+                </aside>
+              </div>
+            </>
+          )}
+        </GameShell>
       )}
-    </main>
+    </div>
   );
 }

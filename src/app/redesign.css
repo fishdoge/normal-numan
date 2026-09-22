@@ -66,7 +66,7 @@ textarea {
 .panel-title {
   font-family: inherit;
   color: var(--ui-gold);
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 600;
   letter-spacing: 0.18em;
 }
@@ -81,7 +81,7 @@ textarea {
   border-radius: 5px;
   color: #dfdfcd;
   background: rgba(189, 171, 127, 0.04);
-  font-size: 12px;
+  font-size: 15px;
 }
 .btn:hover:not(:disabled) {
   background: #263a35;
@@ -117,7 +117,7 @@ textarea {
 .eyebrow {
   font-family: system-ui, sans-serif;
   color: var(--ui-gold);
-  font-size: 10px;
+  font-size: 13px;
   letter-spacing: 0.2em;
   line-height: 1.5;
 }
@@ -163,7 +163,7 @@ textarea {
 }
 .game-brand strong {
   display: block;
-  font-size: 19px;
+  font-size: 21px;
   letter-spacing: 0.13em;
   font-weight: 600;
   color: #e4dfcd;
@@ -172,7 +172,7 @@ textarea {
   display: block;
   margin-top: 5px;
   font-family: system-ui, sans-serif;
-  font-size: 7px;
+  font-size: 10px;
   letter-spacing: 0.2em;
   color: #899f9a;
 }
@@ -199,7 +199,7 @@ textarea {
 }
 .nav-group-label {
   margin: 15px 12px 12px;
-  font-size: 10px;
+  font-size: 13px;
   letter-spacing: 0.14em;
   color: #819595;
 }
@@ -212,7 +212,7 @@ textarea {
   padding: 10px 13px;
   text-align: left;
   color: #a4b5b1;
-  font-size: 12px;
+  font-size: 15px;
   letter-spacing: 0.03em;
   border: 1px solid transparent;
   border-radius: 6px;
@@ -256,7 +256,7 @@ textarea {
   gap: 10px;
   padding: 14px 10px;
   color: #91a3a0;
-  font-size: 11px;
+  font-size: 14px;
   width: 100%;
 }
 .sidebar-announcement span {
@@ -276,12 +276,12 @@ textarea {
 }
 .sidebar-player strong {
   display: block;
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 600;
 }
 .sidebar-player div > span {
   color: var(--ui-muted);
-  font-size: 10px;
+  font-size: 13px;
   display: block;
   margin-top: 4px;
 }
@@ -300,10 +300,11 @@ textarea {
   background: #0d191c;
 }
 .game-breadcrumb {
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 14px;
-  font-size: 12px;
+  font-size: 15px;
   color: var(--ui-muted);
 }
 .game-breadcrumb i {
@@ -311,10 +312,14 @@ textarea {
   color: #506765;
 }
 .game-breadcrumb strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: #d7dcd3;
   font-weight: 400;
 }
 .game-topbar-tools {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 9px;
@@ -327,7 +332,7 @@ textarea {
   padding-right: 17px;
   margin-right: 7px;
   border-right: 1px solid var(--ui-line);
-  font-size: 11px;
+  font-size: 14px;
 }
 .topbar-stones svg {
   width: 17px;
@@ -335,7 +340,7 @@ textarea {
 }
 .language-button {
   font:
-    11px system-ui,
+    14px system-ui,
     sans-serif;
 }
 .game-main {
@@ -349,7 +354,7 @@ textarea {
   justify-content: space-between;
   gap: 10px;
   color: #a2b1a9;
-  font-size: 10px;
+  font-size: 13px;
   letter-spacing: 0.06em;
   margin-bottom: 21px;
 }
@@ -395,14 +400,14 @@ textarea {
   color: #f1ead8;
 }
 .journey-hero-description {
-  font-size: 12px;
+  font-size: 15px;
   line-height: 1.9;
   color: #bdcdc4;
   max-width: 340px;
   margin-bottom: 22px;
 }
 .journey-hero .btn {
-  font-size: 12px;
+  font-size: 15px;
 }
 .journey-hero-seal {
   position: absolute;
@@ -412,7 +417,7 @@ textarea {
   border: 1px solid #d5b37880;
   background: #15252245;
   padding: 9px 6px;
-  font-size: 11px;
+  font-size: 14px;
   line-height: 1.7;
 }
 .journey-hero-foot {
@@ -426,7 +431,7 @@ textarea {
   color: #ccd5c8;
   background: linear-gradient(90deg, #0c191ba8, #0c191b24);
   border-top: 1px solid #c3d2bf1a;
-  font-size: 10px;
+  font-size: 13px;
 }
 .journey-hero-foot > span {
   display: flex;
@@ -486,7 +491,7 @@ textarea {
   flex-direction: column;
   border: 0;
   background: transparent;
-  font-size: 12px;
+  font-size: 15px;
   min-height: 64px;
   gap: 10px;
   padding: 3px;
@@ -507,7 +512,7 @@ textarea {
 }
 .cultivation-action > span {
   display: block;
-  font-size: 9px;
+  font-size: 12px;
   color: #96aaa0;
   line-height: 1.6;
   margin-top: 5px;
@@ -525,7 +530,7 @@ textarea {
   background: linear-gradient(90deg, #6b9988, #c6af7b);
 }
 .cultivation-panel > p:last-child {
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: 0.02em;
 }
 .section-heading {
@@ -538,7 +543,7 @@ textarea {
   border-bottom: 1px solid var(--ui-line);
 }
 .section-heading h2 {
-  font-size: 21px;
+  font-size: 23px;
   letter-spacing: 0.1em;
   font-weight: 600;
   margin-top: 6px;
@@ -585,7 +590,7 @@ textarea {
   position: absolute;
   left: 16px;
   top: 13px;
-  font-size: 9px;
+  font-size: 12px;
   color: #e0e6d7;
   letter-spacing: 0.14em;
   text-shadow: 0 1px 5px #000;
@@ -597,13 +602,13 @@ textarea {
   align-items: center;
 }
 .location-copy .font-bold {
-  font-size: 17px;
+  font-size: 19px;
   letter-spacing: 0.07em;
   font-weight: 600;
 }
 .location-state {
   color: #a0a7a0;
-  font-size: 8px;
+  font-size: 11px;
   white-space: nowrap;
 }
 .location-state.is-open {
@@ -619,7 +624,7 @@ textarea {
   margin-right: 4px;
 }
 .location-copy > p {
-  font-size: 10px;
+  font-size: 13px;
   line-height: 1.9;
   min-height: 39px;
   margin-top: 9px;
@@ -629,7 +634,7 @@ textarea {
 }
 .location-copy .btn {
   flex: 1;
-  font-size: 10px;
+  font-size: 13px;
   padding-inline: 5px;
   min-height: 33px;
 }
@@ -664,7 +669,7 @@ textarea {
   bottom: 15px;
   color: #c8b78e;
   font:
-    9px system-ui,
+    12px system-ui,
     sans-serif;
   letter-spacing: 0.22em;
 }
@@ -676,7 +681,7 @@ textarea {
   color: #e7d5ae;
   border: 1px solid #c6af7b80;
   padding: 5px;
-  font-size: 17px;
+  font-size: 19px;
 }
 .character-panel > .panel-title {
   display: none;
@@ -691,10 +696,10 @@ textarea {
   margin-top: 7px;
 }
 .character-panel > p {
-  font-size: 11px;
+  font-size: 14px;
 }
 .character-panel .text-xl {
-  font-size: 21px;
+  font-size: 23px;
   color: #efe4cd;
 }
 .character-details {
@@ -705,7 +710,7 @@ textarea {
 .character-details > summary {
   display: flex;
   justify-content: space-between;
-  font-size: 11px;
+  font-size: 14px;
   color: #b9c3b3;
   cursor: pointer;
   list-style: none;
@@ -726,15 +731,15 @@ textarea {
   padding: 10px;
 }
 .character-details > button span {
-  font-size: 11px;
+  font-size: 14px;
   color: #c3cdb9;
 }
 .character-details .grid {
-  font-size: 11px;
+  font-size: 14px;
   line-height: 1.9;
 }
 .character-panel > div:last-child .btn {
-  font-size: 11px;
+  font-size: 14px;
   background: #1b3330;
   border-color: #89bbaa30;
   color: #bcd7c6;
@@ -751,12 +756,12 @@ textarea {
 .chronicle-panel > div:first-child button {
   border: none;
   background: transparent;
-  font-size: 12px;
+  font-size: 15px;
   padding: 0 8px 0 0;
   margin-right: 10px;
 }
 .chronicle-panel .text-sm {
-  font-size: 11px;
+  font-size: 14px;
   line-height: 1.9;
 }
 .chronicle-panel .animate-floatUp {
@@ -772,7 +777,7 @@ textarea {
   border: 1px solid #94af9d22;
   border-radius: 6px;
   padding: 12px;
-  font-size: 12px;
+  font-size: 15px;
 }
 .pouch-card-art {
   width: 54px;
@@ -880,10 +885,10 @@ textarea {
   z-index: 1;
 }
 .auth-landscape .game-brand strong {
-  font-size: 23px;
+  font-size: 25px;
 }
 .auth-landscape .game-brand div > span {
-  font-size: 8px;
+  font-size: 11px;
 }
 .auth-story {
   margin-top: auto;
@@ -903,7 +908,7 @@ textarea {
 }
 .auth-story p {
   color: #bac9c0;
-  font-size: 13px;
+  font-size: 16px;
   line-height: 1.9;
 }
 .auth-story-line {
@@ -914,7 +919,7 @@ textarea {
   background: #bea36d;
 }
 .auth-landscape-note {
-  font-size: 10px;
+  font-size: 13px;
   letter-spacing: 0.3em;
   color: #819f9d;
 }
@@ -948,7 +953,7 @@ textarea {
 .auth-intro {
   margin-top: 12px;
   color: var(--ui-muted);
-  font-size: 12px;
+  font-size: 15px;
 }
 .auth-mode-switch {
   display: flex;
@@ -960,7 +965,7 @@ textarea {
   padding: 12px;
   border-bottom: 2px solid transparent;
   color: #8ca5a0;
-  font-size: 13px;
+  font-size: 16px;
 }
 .auth-mode-switch button.is-active {
   color: #dcc598;
@@ -974,7 +979,7 @@ textarea {
 .auth-form label {
   display: block;
   margin-bottom: 9px;
-  font-size: 11px;
+  font-size: 14px;
   letter-spacing: 0.05em;
   color: #a8b9b0;
 }
@@ -984,7 +989,7 @@ textarea {
   background: #16282b;
   border: 1px solid #9ab5a52d;
   border-radius: 5px;
-  font-size: 13px;
+  font-size: 16px;
 }
 .auth-form input::placeholder {
   color: #72928e;
@@ -992,7 +997,7 @@ textarea {
 .auth-submit {
   width: 100%;
   min-height: 47px;
-  font-size: 14px;
+  font-size: 17px;
   justify-content: space-between;
   margin-top: 6px;
 }
@@ -1002,7 +1007,7 @@ textarea {
   gap: 10px;
   margin-top: 30px;
   color: #9db2a7;
-  font-size: 10px;
+  font-size: 13px;
   line-height: 1.8;
 }
 .auth-footnote svg {
@@ -1011,12 +1016,12 @@ textarea {
 }
 .auth-lifetime-note {
   color: #809a92;
-  font-size: 9px;
+  font-size: 12px;
   line-height: 1.9;
   margin: 13px 0 0 26px;
 }
 .auth-error {
-  font-size: 12px;
+  font-size: 15px;
   color: #eea694;
 }
 .character-create {
@@ -1107,7 +1112,7 @@ textarea {
   top: 20px;
   color: #b8c4ac;
   font:
-    9px system-ui,
+    12px system-ui,
     sans-serif;
   letter-spacing: 0.18em;
 }
@@ -1200,7 +1205,7 @@ textarea {
   padding: 5px 0;
 }
 .battle-card {
-  height: 202px;
+  height: 236px;
   border-radius: 9px;
   padding: 13px 14px 12px;
   background:
@@ -1234,12 +1239,12 @@ textarea {
 }
 .battle-card-body strong {
   color: #ebe3c9;
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 600;
 }
 .battle-card-body > span {
   color: #b7c5b5;
-  font-size: 11px;
+  font-size: 14px;
 }
 .battle-card-bottom {
   color: #d0bc87;
@@ -1305,7 +1310,7 @@ textarea {
     padding-inline: 12px;
   }
   .game-brand strong {
-    font-size: 17px;
+    font-size: 19px;
   }
   .game-workspace {
     margin-left: 192px;
@@ -1334,7 +1339,7 @@ textarea {
     padding: 16px;
   }
   .cultivation-action .btn {
-    font-size: 11px;
+    font-size: 14px;
   }
   .location-grid {
     gap: 10px;
@@ -1376,7 +1381,7 @@ textarea {
     gap: 6px;
     padding: 5px;
     color: #90a9a2;
-    font-size: 10px;
+    font-size: 13px;
   }
   .game-bottom-nav button.is-active {
     color: #ddc58e;
@@ -1403,13 +1408,14 @@ textarea {
     padding-inline: 17px;
   }
   .game-topbar-tools {
+    flex-shrink: 0;
     gap: 2px;
   }
   .topbar-stones {
     padding-right: 7px;
     margin-right: 2px;
     max-width: 138px;
-    font-size: 10px;
+    font-size: 13px;
   }
   .topbar-stones span {
     overflow: hidden;
@@ -1418,7 +1424,7 @@ textarea {
   }
   .game-breadcrumb {
     gap: 7px;
-    font-size: 11px;
+    font-size: 14px;
   }
   .game-breadcrumb > span,
   .game-breadcrumb > i {
@@ -1431,12 +1437,12 @@ textarea {
     padding: 18px 16px 90px;
   }
   .world-caption {
-    font-size: 9px;
+    font-size: 12px;
     margin-bottom: 16px;
     flex-wrap: wrap;
   }
   .world-caption > span:last-child {
-    font-size: 8px;
+    font-size: 11px;
   }
   .journey-hero {
     min-height: 295px;
@@ -1454,25 +1460,25 @@ textarea {
   }
   .journey-hero-description {
     max-width: 235px;
-    font-size: 10px;
+    font-size: 13px;
     margin-bottom: 18px;
   }
   .journey-hero .btn {
     padding: 9px 15px;
-    font-size: 11px;
+    font-size: 14px;
   }
   .journey-hero-copy .eyebrow {
-    font-size: 9px;
+    font-size: 12px;
   }
   .journey-hero-seal {
     right: 17px;
     top: 23px;
-    font-size: 9px;
+    font-size: 12px;
   }
   .journey-hero-foot {
     padding: 12px 23px;
     gap: 21px;
-    font-size: 9px;
+    font-size: 12px;
   }
   .journey-poem {
     display: none !important;
@@ -1504,20 +1510,21 @@ textarea {
     margin: 0;
   }
   .cultivation-actions {
-    gap: 5px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
   .cultivation-action {
     padding: 9px 3px;
   }
   .cultivation-action .btn {
-    font-size: 10px;
+    font-size: 13px;
     min-height: 70px;
   }
   .cultivation-action > span {
-    font-size: 8px;
+    font-size: 11px;
   }
   .cultivation-panel > p:last-child {
-    font-size: 8px;
+    font-size: 11px;
   }
   .panel {
     border-radius: 8px;
@@ -1531,7 +1538,7 @@ textarea {
     margin-bottom: 17px;
   }
   .section-heading h2 {
-    font-size: 19px;
+    font-size: 21px;
   }
   .location-art {
     height: 107px;
@@ -1540,17 +1547,17 @@ textarea {
     padding: 2px 11px 13px;
   }
   .location-copy .font-bold {
-    font-size: 15px;
+    font-size: 18px;
   }
   .location-copy > p {
-    font-size: 9px;
+    font-size: 12px;
   }
   .location-copy > div:last-child {
     flex-direction: column;
     gap: 7px;
   }
   .location-state {
-    font-size: 8px;
+    font-size: 11px;
   }
   .location-copy .btn {
     min-height: 33px;
@@ -1559,7 +1566,7 @@ textarea {
     grid-template-columns: 44px minmax(0, 1fr) auto;
     padding: 9px;
     gap: 8px;
-    font-size: 11px;
+    font-size: 14px;
   }
   .pouch-card-art {
     width: 44px;
@@ -1587,7 +1594,7 @@ textarea {
     background-position: 70% 48%;
   }
   .auth-landscape .game-brand strong {
-    font-size: 19px;
+    font-size: 21px;
   }
   .auth-story {
     margin: 65px 0 0;
@@ -1598,7 +1605,7 @@ textarea {
     margin: 12px 0;
   }
   .auth-story p {
-    font-size: 11px;
+    font-size: 14px;
   }
   .auth-story-line,
   .auth-landscape-note {
@@ -1630,7 +1637,7 @@ textarea {
     font-size: 29px;
   }
   .character-create-hero p {
-    font-size: 11px;
+    font-size: 14px;
   }
   .sect-choice {
     min-height: 155px;
@@ -1642,7 +1649,7 @@ textarea {
     flex-wrap: wrap;
   }
   .sect-page > div:first-child h1 {
-    font-size: 23px;
+    font-size: 25px;
   }
   .battle-header {
     min-height: 58px;
@@ -1661,7 +1668,7 @@ textarea {
   .battle-scene-label {
     left: 16px;
     top: 16px;
-    font-size: 8px;
+    font-size: 11px;
     letter-spacing: 0.05em;
   }
   .battle-arena-copy {
@@ -1673,7 +1680,7 @@ textarea {
     font-size: 28px;
   }
   .battle-arena-copy p {
-    font-size: 10px;
+    font-size: 13px;
     max-width: 17ch;
   }
   .battle-sigil {
@@ -1696,7 +1703,7 @@ textarea {
     gap: 9px;
   }
   .battle-card {
-    height: 183px;
+    height: 215px;
     padding: 9px 8px;
     border-radius: 7px;
   }
@@ -1706,24 +1713,24 @@ textarea {
     height: 88px;
   }
   .battle-card-body strong {
-    font-size: 12px;
+    font-size: 15px;
   }
   .battle-card-body > span {
-    font-size: 10px;
+    font-size: 13px;
   }
   .battle-card-body {
     min-height: 48px;
   }
   .battle-card-top,
   .battle-card-bottom {
-    font-size: 9px;
+    font-size: 12px;
   }
   .battle-actions {
     padding: 10px 12px max(10px, env(safe-area-inset-bottom));
   }
   .battle-actions .btn {
     min-height: 42px;
-    font-size: 12px;
+    font-size: 15px;
   }
   .enemy-illustration {
     width: 210px;
@@ -1781,11 +1788,11 @@ textarea {
     height: 44px;
   }
   .battle-card {
-    height: 173px;
+    height: 215px;
     padding-inline: 6px;
   }
   .battle-card-body > span {
-    font-size: 9px;
+    font-size: 12px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1862,19 +1869,19 @@ body:has(.game-menu-dialog[open]) {
 }
 @media (max-width: 720px) {
   .location-copy > p {
-    font-size: 11px;
+    font-size: 14px;
     min-height: 62px;
   }
   .location-copy .btn {
-    font-size: 11px;
+    font-size: 14px;
   }
   .cultivation-action .btn {
-    font-size: 11px;
+    font-size: 14px;
   }
   .world-caption {
-    font-size: 10px;
+    font-size: 13px;
   }
   .journey-hero-description {
-    font-size: 11px;
+    font-size: 14px;
   }
 }

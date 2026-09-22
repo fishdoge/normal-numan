@@ -2004,7 +2004,7 @@ function RankTab() {
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && lookup(query)}
           placeholder={t("searchPlaceholder")}
-          className="flex-1 bg-smoke border border-faded/30 rounded-sm px-2 py-1.5 text-sm text-parchment"
+          className="min-w-0 flex-1 bg-smoke border border-faded/30 rounded-sm px-2 py-1.5 text-sm text-parchment"
         />
         <button className="btn" onClick={() => lookup(query)}>
           {t("btnSearch")}

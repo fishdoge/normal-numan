@@ -4,6 +4,13 @@ const config: Config = {
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
     extend: {
+      fontSize: {
+        xs: ["0.875rem", { lineHeight: "1.5" }],
+        sm: ["1rem", { lineHeight: "1.6" }],
+        base: ["1.125rem", { lineHeight: "1.6" }],
+        lg: ["1.25rem", { lineHeight: "1.5" }],
+        xl: ["1.375rem", { lineHeight: "1.4" }],
+      },
       colors: {
         ink: "#0c171a",
         coal: "#111f22",

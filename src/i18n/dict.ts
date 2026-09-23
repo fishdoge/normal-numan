@@ -8,6 +8,8 @@
 // 描述)、修仙入門錄(GuideModal)內文、更新公告(changelog.ts)各版逐條內容本身。
 export const DICT = {
   zh: {
+    uiMapSelect: "選擇一處秘境，踏上仙途",
+    uiSelectedPlace: "此行之地",
     uiNavigation: "仙途導覽",
     uiQuickNavigation: "常用功能",
     uiJourney: "我的仙途",
@@ -516,6 +518,8 @@ export const DICT = {
     footer: "閎旺科技 設計 & 開發",
   },
   en: {
+    uiMapSelect: "Choose a destination",
+    uiSelectedPlace: "Selected destination",
     uiNavigation: "Journey navigation",
     uiQuickNavigation: "Quick navigation",
     uiJourney: "My journey",

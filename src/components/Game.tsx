@@ -18,7 +18,7 @@ import { renderLootLine } from "./ColoredText";
 import { useT } from "@/i18n/useT";
 import { realmDisplayName } from "@/i18n/realmText";
 import AuthGate from "./AuthGate";
-import GameShell, { JourneyHero } from "./GameShell";
+import GameShell from "./GameShell";
 import GameIcon from "./GameIcon";
 import CharCreate from "./CharCreate";
 import ActionTabs from "./ActionTabs";
@@ -407,11 +407,10 @@ export default function Game() {
             <SectPage />
           ) : (
             <>
-              {activeTab === "explore" && <JourneyHero />}
               <div className="journey-grid">
                 <div className="journey-primary" id="journey-actions">
-                  {activeTab === "explore" && <CultivationBar />}
                   <ActionTabs />
+                  {activeTab === "explore" && <CultivationBar />}
                 </div>
                 <aside className="journey-aside" aria-label={t("statusTitle")}>
                   <StatusPanel />

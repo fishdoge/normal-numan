@@ -66,7 +66,6 @@ export default function ActionTabs() {
     <section className={`panel action-panel action-panel-${tab}`} aria-labelledby="action-heading">
       <header className="section-heading">
         <div>
-          <p className="eyebrow">{item.caption}</p>
           <h2 id="action-heading">{tt(item.label)}</h2>
         </div>
         <GameIcon name={item.icon} width={28} height={28} />
@@ -95,19 +94,24 @@ function ExploreTab() {
   const inDwelling = s.dwellingSlot != null;
   const [regionId, setRegionId] = useState("tiannan");
   const [continentId, setContinentId] = useState("all");
+  const [selectedLocationId, setSelectedLocationId] = useState("");
   const region = REGIONS.find((r) => r.id === regionId)!;
   const locs = LOCATIONS.filter((l) => l.region === regionId);
   // 大陸子分類(目前僅靈界三大陸使用)
   const regionContinents = CONTINENTS.filter((c) => locs.some((l) => l.continent === c.id));
   const visibleLocs =
     continentId === "all" ? locs : locs.filter((l) => l.continent === continentId);
+  const selectedLocation =
+    visibleLocs.find((loc) => loc.id === selectedLocationId) ??
+    visibleLocs.find((loc) => realm.stage >= loc.reqStage) ??
+    visibleLocs[0];
   const energy = s.energy ?? 0;
   const energyLackGather = energy < ENERGY_COST.gather;
   const energyLackHunt = energy < ENERGY_COST.hunt;
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap gap-1.5">
+    <div className="space-y-3 world-exploration">
+      <div className="flex flex-wrap gap-1.5 world-regions">
         {REGIONS.filter(
           (r) =>
             !r.hidden ||
@@ -196,18 +200,58 @@ function ExploreTab() {
           </button>
         </div>
       )}
-      <div className="location-grid">
-        {visibleLocs.map((loc, index) => {
+      <div className="world-map" role="group" aria-label={t("uiMapSelect")}>
+        <div className="world-map-title" aria-hidden="true">
+          <span>{regionDisplayName(region, lang)}</span>
+          <small>{t("uiMapSelect")}</small>
+        </div>
+        <svg
+          className="world-map-path"
+          viewBox="0 0 1000 380"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <path d="M80 180Q180 320 300 215T510 180T700 250T940 180" />
+        </svg>
+        <div className="world-map-nodes">
+          {visibleLocs.map((loc, index) => (
+            <button
+              key={loc.id}
+              className={`world-node ${selectedLocation?.id === loc.id ? "is-selected" : ""} ${realm.stage < loc.reqStage ? "is-locked" : ""}`}
+              aria-pressed={selectedLocation?.id === loc.id}
+              onClick={() => setSelectedLocationId(loc.id)}
+            >
+              <span className="world-node-seal">
+                <GameIcon name={index % 2 ? "sect" : "mountain"} />
+              </span>
+              <strong>{locationDisplayName(loc, lang)}</strong>
+              <small>
+                {realm.stage < loc.reqStage
+                  ? t("uiLocked")
+                  : selectedLocation?.id === loc.id
+                    ? t("uiSelectedPlace")
+                    : t("uiAvailable")}
+              </small>
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="world-destination" aria-live="polite">
+        {(selectedLocation ? [selectedLocation] : []).map((loc) => {
           const locked = realm.stage < loc.reqStage;
           return (
             <div
               key={loc.id}
               className={`location-card ${locked ? "is-locked" : ""}`}
-              data-scene={index % 2 === 0 ? "peaks" : "forest"}
+              data-scene={
+                loc.monsters.some((id) => MONSTERS.find((mon) => mon.id === id)?.element === "木")
+                  ? "forest"
+                  : "peaks"
+              }
             >
               <div className="location-art" aria-hidden="true">
                 <span>
-                  {String(index + 1).padStart(2, "0")} / {t("uiRegion")}
+                  <GameIcon name="explore" /> {t("uiRegion")}
                 </span>
               </div>
               <div className="location-copy">
@@ -218,6 +262,11 @@ function ExploreTab() {
                   </span>
                 </div>
                 <p className="text-sm text-faded mt-1">{locationDisplayDesc(loc, lang)}</p>
+                {locked && (
+                  <p className="text-sm text-gold">
+                    {t("exploreStageLocked").replace("{n}", String(loc.reqStage))}
+                  </p>
+                )}
                 <div className="mt-2 flex gap-2">
                   <button
                     className="btn"
@@ -231,7 +280,11 @@ function ExploreTab() {
                           : `-${ENERGY_COST.gather} ${t("energyCostSuffix")}`
                     }
                   >
+                    <GameIcon name="lotus" />
                     {t("btnGather")}
+                    <small>
+                      −{ENERGY_COST.gather} {t("statEnergy")}
+                    </small>
                   </button>
                   <button
                     className="btn btn-danger"
@@ -245,7 +298,11 @@ function ExploreTab() {
                           : `-${ENERGY_COST.hunt} ${t("energyCostSuffix")}`
                     }
                   >
+                    <GameIcon name="explore" />
                     {t("btnHunt")}
+                    <small>
+                      −{ENERGY_COST.hunt} {t("statEnergy")}
+                    </small>
                   </button>
                 </div>
               </div>

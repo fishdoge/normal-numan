@@ -10,16 +10,16 @@ import { useT } from "@/i18n/useT";
 import type { DictKey } from "@/i18n/dict";
 import GameIcon, { type GameIconName } from "./GameIcon";
 
-export const GAME_NAV: { tab: Tab; label: DictKey; icon: GameIconName; caption: string }[] = [
-  { tab: "explore", label: "tabExplore", icon: "explore", caption: "THE WORLD" },
-  { tab: "bag", label: "tabBag", icon: "bag", caption: "INVENTORY" },
-  { tab: "tech", label: "tabTech", icon: "tech", caption: "SPIRIT ARTS" },
-  { tab: "craft", label: "tabCraft", icon: "craft", caption: "ALCHEMY & FORGING" },
-  { tab: "market", label: "tabMarket", icon: "market", caption: "THE BAZAAR" },
-  { tab: "trade", label: "tabTrade", icon: "trade", caption: "TRADING HOUSE" },
-  { tab: "dex", label: "tabDex", icon: "dex", caption: "BESTIARY" },
-  { tab: "wanling", label: "tabWanling", icon: "wanling", caption: "ANCIENT RELICS" },
-  { tab: "rank", label: "tabRank", icon: "rank", caption: "IMMORTAL RANKINGS" },
+export const GAME_NAV: { tab: Tab; label: DictKey; icon: GameIconName }[] = [
+  { tab: "explore", label: "tabExplore", icon: "explore" },
+  { tab: "bag", label: "tabBag", icon: "bag" },
+  { tab: "tech", label: "tabTech", icon: "tech" },
+  { tab: "craft", label: "tabCraft", icon: "craft" },
+  { tab: "market", label: "tabMarket", icon: "market" },
+  { tab: "trade", label: "tabTrade", icon: "trade" },
+  { tab: "dex", label: "tabDex", icon: "dex" },
+  { tab: "wanling", label: "tabWanling", icon: "wanling" },
+  { tab: "rank", label: "tabRank", icon: "rank" },
 ];
 
 export function GameBrand() {
@@ -34,49 +34,6 @@ export function GameBrand() {
         <span>A MORTAL’S JOURNEY</span>
       </div>
     </div>
-  );
-}
-
-export function JourneyHero() {
-  const s = useGame((x) => x.save)!;
-  const lang = useGame((x) => x.language);
-  const t = useT();
-  const { realm } = statsOf(s);
-  return (
-    <section className="journey-hero" aria-labelledby="journey-title">
-      <div className="journey-hero-copy">
-        <p className="eyebrow">
-          <span className="status-dot" />
-          {t("uiWelcome").replace("{name}", s.name)}
-        </p>
-        <h1 id="journey-title">{t("uiHeroTitle")}</h1>
-        <p className="journey-hero-description">{t("uiHeroDescription")}</p>
-        <button
-          className="btn btn-primary"
-          onClick={() =>
-            document.getElementById("journey-actions")?.scrollIntoView({ block: "start" })
-          }
-        >
-          {t("uiExplore")}
-          <GameIcon name="arrow" />
-        </button>
-      </div>
-      <div className="journey-hero-seal" aria-hidden="true">
-        山<br />海<br />有<br />靈
-      </div>
-      <div className="journey-hero-foot">
-        <span>
-          <GameIcon name="moon" />
-          {realmDisplayName(realm, lang)}
-        </span>
-        <span>
-          {t("statDay")}
-          <strong>{s.day}</strong>
-          {t("yearsSuffix")}
-        </span>
-        <span className="journey-poem">{t("uiHeroFootnote")}</span>
-      </div>
-    </section>
   );
 }
 
@@ -100,12 +57,12 @@ export default function GameShell({
   const menu = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     window.scrollTo({ top: 0 });
-  }, []);
+  }, [tab, view]);
   const logout = async () => {
     const res = await fetch("/api/auth/logout", { method: "POST" });
     if (res.ok) location.reload();
   };
-  const current = GAME_NAV.find((item) => item.tab === tab)!;
+  const { realm, hpMax, mpMax } = statsOf(s);
   const navigate = (next: Tab) => {
     setTab(next);
     setView("game");
@@ -187,11 +144,6 @@ export default function GameShell({
       <a className="skip-link" href="#game-main">
         {t("uiSkip")}
       </a>
-      <aside className="game-sidebar">
-        <GameBrand />
-        {nav}
-        {sidebarFoot}
-      </aside>
       <dialog
         ref={menu}
         className="game-menu-dialog"
@@ -217,17 +169,49 @@ export default function GameShell({
       </dialog>
       <div className="game-workspace">
         <header className="game-topbar">
-          <div className="game-breadcrumb">
+          <div className="player-hud">
             <button
-              className="icon-button mobile-menu-trigger"
-              aria-label={t("uiOpenMenu")}
-              onClick={() => menu.current?.showModal()}
+              className="hud-portrait"
+              aria-label={t("statusTitle")}
+              onClick={() => {
+                setView("game");
+                requestAnimationFrame(() => {
+                  const panel = document.getElementById("character-sheet");
+                  panel?.scrollIntoView({ block: "start" });
+                  panel?.focus({ preventScroll: true });
+                });
+              }}
             >
-              <GameIcon name="menu" />
+              <Image src="/images/world/wandering-cultivator.webp" alt="" width={68} height={68} />
             </button>
-            <span>{t("uiJourney")}</span>
-            <i>/</i>
-            <strong>{view === "sect" ? t("sectHall") : t(current.label)}</strong>
+            <div className="hud-identity">
+              <strong>{s.name}</strong>
+              <span>{realmDisplayName(realm, lang)}</span>
+            </div>
+            <div className="hud-vitals">
+              {(
+                [
+                  { label: "statHp", value: s.hp, max: hpMax, tone: "health" },
+                  { label: "statMp", value: s.mp, max: mpMax, tone: "mana" },
+                ] as const
+              ).map((stat) => (
+                <div key={stat.tone} className={`hud-vital hud-${stat.tone}`}>
+                  <span>
+                    {t(stat.label)}{" "}
+                    <b>
+                      {stat.value}/{stat.max}
+                    </b>
+                  </span>
+                  <i aria-hidden="true">
+                    <i
+                      style={{
+                        width: `${Math.max(0, Math.min(100, (stat.value / stat.max) * 100))}%`,
+                      }}
+                    />
+                  </i>
+                </div>
+              ))}
+            </div>
           </div>
           <div className="game-topbar-tools">
             <span className="topbar-stones">
@@ -257,25 +241,6 @@ export default function GameShell({
             >
               <GameIcon name="logout" />
             </button>
-            {view === "game" && (
-              <button
-                className="mobile-character-link"
-                title={t("statusTitle")}
-                aria-label={t("statusTitle")}
-                onClick={() => {
-                  const panel = document.getElementById("character-sheet");
-                  panel?.scrollIntoView({ block: "start" });
-                  panel?.focus({ preventScroll: true });
-                }}
-              >
-                <Image
-                  src="/images/world/wandering-cultivator.webp"
-                  alt=""
-                  width={32}
-                  height={32}
-                />
-              </button>
-            )}
           </div>
         </header>
         <main className="game-main" id="game-main" tabIndex={-1}>
@@ -289,20 +254,37 @@ export default function GameShell({
           {children}
         </main>
       </div>
-      <nav className="game-bottom-nav" aria-label={t("uiQuickNavigation")}>
-        {GAME_NAV.slice(0, 3).map((item) => (
+      <nav className="game-bottom-nav world-dock" aria-label={t("uiQuickNavigation")}>
+        {GAME_NAV.map((item, index) => (
           <button
             key={item.tab}
-            className={tab === item.tab && view === "game" ? "is-active" : ""}
+            className={`${index > 2 ? "dock-secondary" : ""} ${tab === item.tab && view === "game" ? "is-active" : ""}`}
             aria-current={tab === item.tab && view === "game" ? "page" : undefined}
             onClick={() => navigate(item.tab)}
           >
-            <GameIcon name={item.icon} />
+            <span className="dock-seal">
+              <GameIcon name={item.icon} />
+            </span>
             <span>{t(item.label)}</span>
           </button>
         ))}
+        <button
+          className={`dock-secondary ${view === "sect" ? "is-active" : ""}`}
+          aria-current={view === "sect" ? "page" : undefined}
+          onClick={() => {
+            setView("sect");
+            window.scrollTo({ top: 0 });
+          }}
+        >
+          <span className="dock-seal">
+            <GameIcon name="sect" />
+          </span>
+          <span>{t("sectHall")}</span>
+        </button>
         <button onClick={() => menu.current?.showModal()}>
-          <GameIcon name="menu" />
+          <span className="dock-seal">
+            <GameIcon name="menu" />
+          </span>
           <span>{t("uiMore")}</span>
         </button>
       </nav>

@@ -2,11 +2,13 @@
 
 // 「無」屬性:少數仙法(如元磁神光)本身無五行歸屬,不參與五行相剋,亦不計入 ELEMENTS(該陣列供
 // 異星盤集滿/蠻荒異界解鎖等明確以五行為基準的邏輯使用,見 ELEMENTS_WITH_NONE 供仙法分類 UI 專用)。
-export type Element = "金" | "木" | "水" | "火" | "土" | "無";
+// 「煞」屬性(3.19 版新增):唯灰仙界怪物/符寶專屬,天生不進 COUNTERS 表,跟「無」一樣不參與五行
+// 相剋(elementMult 找不到對應項就回傳中性 1 倍,不需要另外改判定邏輯)。
+export type Element = "金" | "木" | "水" | "火" | "土" | "無" | "煞";
 export const ELEMENTS: Element[] = ["金", "木", "水", "火", "土"];
-export const ELEMENTS_WITH_NONE: Element[] = [...ELEMENTS, "無"];
+export const ELEMENTS_WITH_NONE: Element[] = [...ELEMENTS, "無", "煞"];
 
-// 五行相剋:金克木 木克土 土克水 水克火 火克金;「無」不參與相剋,故用 Partial(查無對應即視為無剋制加成)
+// 五行相剋:金克木 木克土 土克水 水克火 火克金;「無」「煞」不參與相剋,故用 Partial(查無對應即視為無剋制加成)
 export const COUNTERS: Partial<Record<Element, Element>> = {
   金: "木",
   木: "土",
@@ -22,6 +24,7 @@ export const ELEMENT_COLOR: Record<Element, string> = {
   火: "text-fire",
   土: "text-earth",
   無: "text-faded",
+  煞: "text-red-600",
 };
 
 // 符寶卡片邊框色(3.9 版新增):符寶手牌照 Figma 設計稿改為依屬性上色邊框,取代原本一律灰色的邊框,
@@ -33,6 +36,7 @@ export const ELEMENT_BORDER_COLOR: Record<Element, string> = {
   火: "border-fire/50",
   土: "border-earth/50",
   無: "border-faded/30",
+  煞: "border-red-600/50",
 };
 
 // 卡面視覺標記對應的邊框樣式(3.12 版新增):legendary 走專用的 .spell-card-legendary 動畫樣式
@@ -211,6 +215,11 @@ export interface ItemDef {
   cleanse?: boolean; // 清除自身當前所有負面狀態效果
   enemyWeaken?: boolean; // 對敵方附加「虛弱」狀態(攻擊輸出下降,具體倍率與持續回合由引擎統一控制)
   forceStatus?: "burn" | "poison" | "freeze"; // 對敵方必定附加指定狀態,不受一般命中機率限制
+  // 地圖道具(3.19 版新增):kind === "special" 且有這個欄位時,使用後直接消耗道具、開啟一場
+  // 對應這隻怪物 id 的一次性秘境戰鬥(見 engine.ts useItem),獎勵沿用該怪物自己的 drops[] 掉落表。
+  mapEncounter?: string;
+  // 滅煞丹專屬(3.19 版新增):服下後立即將玩家的煞氣(SaveData.shaqi)歸零。
+  cureShaqi?: boolean;
 }
 
 export interface Technique {
@@ -263,6 +272,12 @@ export interface Technique {
   selfCleanse?: boolean;
   // 吸血:打出後依這次造成的傷害的此比例回復氣血(不超過氣血上限)。
   lifeStealPct?: number;
+  // 效果說明(3.19 版新增):desc 只放背景故事/flavor text,機制效果的白話說明另外放這裡,
+  // 兩者在 UI 上分開顯示,不再混成一段——沒有特殊機制的仙法(純粹比威力)留空即可。
+  effect?: string;
+  // 煞屬性符寶專屬(3.19 版新增,element:"煞" 才有意義):不受煞氣造成的全域傷害懲罰影響,
+  // 反而依玩家目前煞氣(0~10000)額外提升傷害,比例 = (shaqi/10000) * shaqiScalePct。
+  shaqiScalePct?: number;
 }
 
 export interface Recipe {
@@ -299,6 +314,8 @@ export interface Monster {
   drops: { id: string; chance: number }[];
   desc: string;
   isLord?: boolean; // 地域王(妖獸領主),極稀有
+  // 灰仙界專屬(3.19 版新增):完全無視五行相剋,不論玩家用什麼屬性攻擊都吃 1 倍傷害(見 elementMult)。
+  ignoresCounters?: boolean;
 }
 
 export interface Region {

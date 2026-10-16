@@ -35,6 +35,7 @@ export const ELEMENT_LABEL_EN: Record<Element, string> = {
   火: "Fire",
   土: "Earth",
   無: "None",
+  煞: "Malice",
 };
 
 export function kindLabel(kind: ItemKind | string, lang: Language): string {

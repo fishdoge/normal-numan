@@ -49,3 +49,10 @@ export function techDisplayDesc(t: { id: string; desc: string }, lang: Language)
   if (lang !== "en") return t.desc;
   return TECH_TEXT_EN[t.id]?.desc ?? t.desc;
 }
+
+// 效果說明(3.19 版新增,desc/effect 分離):目前只有中文有 effect 文案,英文尚未翻譯,
+// 沒有對應翻譯時寧可不顯示效果行,也不要中英混雜。
+export function techDisplayEffect(t: { id: string; effect?: string }, lang: Language): string | undefined {
+  if (lang !== "en") return t.effect;
+  return undefined;
+}

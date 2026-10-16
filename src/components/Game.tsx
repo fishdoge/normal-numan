@@ -22,6 +22,7 @@ import AuthGate from "./AuthGate";
 import CharCreate from "./CharCreate";
 import ActionTabs from "./ActionTabs";
 import SectPage from "./SectPage";
+import TongtianPage from "./TongtianPage";
 import LogChatPanel from "./LogChatPanel";
 import GuideModal from "./GuideModal";
 import { StatusPanel, CombatPanel, RealmProgressPanel } from "./panels";
@@ -384,12 +385,15 @@ export default function Game() {
   if (save.dead) return <DeathScreen />;
 
   if (mainView === "sect" && !save.combat) return <SectPage />;
+  if (mainView === "tongtian" && !save.combat) return <TongtianPage />;
 
   const isXian = REALMS[save.realmIdx]?.stage >= 10;
+  // 灰仙(3.19 版新增):煞氣累積滿 10000 時,傷害完全歸零,畫面同步變灰黑色以資警示
+  const isAshen = (save.shaqi ?? 0) >= 10000;
 
   return (
     <main
-      className={`${save.combat ? "combat-screen" : "max-w-6xl mx-auto px-4 py-6 relative"} ${isXian ? "xian-aura" : ""}`}
+      className={`${save.combat ? "combat-screen" : "max-w-6xl mx-auto px-4 py-6 relative"} ${isXian ? "xian-aura" : ""} ${isAshen ? "ashen-immortal" : ""}`}
     >
       {purchaseResult && <ResultModal modal={purchaseResult} onClose={closePurchaseResult} />}
       {!purchaseResult && breakResult && <ResultModal modal={breakResult} onClose={closeBreak} />}

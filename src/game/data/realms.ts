@@ -11,7 +11,7 @@ const MAJORS = [
   { name: "化神期", exp: 4500, hp: 4200, mp: 2200, atk: 500, brk: 0.55, life: 2000 },
   { name: "煉虛期", exp: 15000, hp: 13000, mp: 6800, atk: 1600, brk: 0.5, life: 6000 },
   { name: "合體期", exp: 52000, hp: 40000, mp: 21000, atk: 5000, brk: 0.45, life: 15000 },
-  { name: "大乘期", exp: 180000, hp: 120000, mp: 63000, atk: 16000, brk: 0.4, life: 40000 },
+  { name: "大乘期", exp: 180000, hp: 120000, mp: 63000, atk: 12000, brk: 0.4, life: 40000 },
 ];
 
 // 前/中/後期 修為與屬性倍率
@@ -58,7 +58,7 @@ REALMS.push(
     expNeed: 600000,
     hpMax: 380000,
     mpMax: nextMp(true),
-    atk: 50000,
+    atk: 20000,
     breakChance: 0.3,
     lifespan: 100000,
   },
@@ -80,7 +80,7 @@ REALMS.push(
     expNeed: 9999999999,
     hpMax: 1200000,
     mpMax: nextMp(true),
-    atk: 80000,
+    atk: 50000,
     breakChance: 0,
     lifespan: 99999999, // 金仙超脫,以金魂丹自真仙突破而成
   },
@@ -91,7 +91,7 @@ REALMS.push(
     expNeed: 9999999999,
     hpMax: 2000000,
     mpMax: nextMp(true),
-    atk: 150000,
+    atk: 120000,
     breakChance: 0,
     lifespan: 99999999, // 太乙超脫,集齊蠻荒異界四大地域王的太乙精魂於浮屠塔太乙殿突破而成
   },

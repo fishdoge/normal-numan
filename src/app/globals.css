@@ -154,6 +154,11 @@ body::after {
   }
 }
 
+/* 灰仙(3.19 版新增):煞氣累積滿 10000 時,傷害完全歸零,整個畫面套上灰黑濾鏡以資警示 */
+.ashen-immortal {
+  filter: grayscale(0.9) brightness(0.85) contrast(1.05);
+}
+
 /* 全螢幕符寶戰鬥：沿用主站的墨、金、朱色，插畫區先以五行法陣佔位。 */
 .combat-screen {
   position: fixed;
@@ -256,7 +261,7 @@ body::after {
   width: 35%;
   max-width: 380px;
 }
-.battle-arena-copy .chip {
+.battle-arena-copy > .chip {
   margin: 0 7px 14px 0;
   font-size: 10px;
   letter-spacing: 0.1em;
@@ -288,7 +293,7 @@ body::after {
 }
 .battle-sigil-ring {
   position: absolute;
-  width: min(34vw, 290px);
+  width: min(26vw, 220px);
   aspect-ratio: 1;
   border: 1px solid rgba(201, 162, 39, 0.27);
   border-radius: 50%;
@@ -313,7 +318,7 @@ body::after {
 }
 .battle-sigil-glyph {
   color: rgba(226, 188, 111, 0.84);
-  font-size: clamp(80px, 10vw, 150px);
+  font-size: clamp(58px, 7.2vw, 108px);
   font-weight: 200;
   line-height: 1;
   text-shadow: 0 0 55px rgba(210, 149, 53, 0.3);
@@ -369,16 +374,12 @@ body::after {
   animation: dmgBurstPop 0.5s ease-out both;
   pointer-events: none;
 }
-.battle-enemy-footer {
-  position: absolute;
-  inset: auto 4% 16px;
-  z-index: 2;
-  display: flex;
-  align-items: end;
-  gap: 26px;
-}
 .battle-enemy-health {
-  width: min(500px, 57%);
+  width: 100%;
+  margin-top: 18px;
+}
+.battle-arena-copy .battle-status-line {
+  margin-top: 8px;
 }
 .battle-bar-label {
   display: flex;
@@ -756,7 +757,7 @@ body::after {
   width: fit-content;
   cursor: pointer;
   color: #afcbb5;
-  font-size: 11px;
+  font-size: 15px;
   letter-spacing: 0.1em;
 }
 .battle-tactics summary span {
@@ -768,20 +769,22 @@ body::after {
 }
 .battle-rules p {
   max-width: 100ch;
-  margin-top: 7px;
+  margin-top: 8px;
   color: #b8a789;
-  font-size: 11px;
-  line-height: 1.5;
+  font-size: 14px;
+  line-height: 1.6;
 }
 .battle-tactic-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
+  gap: 10px;
+  margin-top: 12px;
 }
 .battle-tactic-list button {
   display: flex;
-  gap: 12px;
+  gap: 14px;
+  font-size: 14px;
+  padding: 10px 16px;
 }
 .battle-log {
   min-height: 21px;
@@ -811,7 +814,7 @@ body::after {
 .battle-log summary > span {
   flex: 0 0 auto;
   color: #997c4a;
-  font-size: 10px;
+  font-size: 13px;
   letter-spacing: 0.14em;
 }
 .battle-log summary > p {
@@ -819,22 +822,22 @@ body::after {
   text-overflow: ellipsis;
   white-space: nowrap;
   color: #a8987a;
-  font-size: 11px;
+  font-size: 13px;
 }
 .battle-log ol {
-  max-height: 220px;
+  max-height: 280px;
   overflow-y: auto;
   margin-top: 8px;
-  padding: 7px 12px;
+  padding: 9px 14px;
   border: 1px solid rgba(201, 162, 39, 0.2);
   background: rgba(13, 11, 8, 0.9);
 }
 .battle-log li {
-  padding: 5px 0;
+  padding: 6px 0;
   border-bottom: 1px solid rgba(201, 162, 39, 0.1);
   color: #b8a789;
-  font-size: 11px;
-  line-height: 1.5;
+  font-size: 14px;
+  line-height: 1.6;
 }
 .battle-log li:last-child {
   border-bottom: 0;
@@ -952,47 +955,46 @@ body::after {
     gap: 11px;
   }
   .battle-arena {
-    min-height: 245px;
+    min-height: 210px;
     flex: none;
   }
   .battle-arena-copy {
-    top: 17px;
+    top: 12px;
     left: 16px;
     width: calc(100% - 32px);
   }
-  .battle-arena-copy .chip {
-    margin-bottom: 7px;
+  .battle-arena-copy > .chip {
+    margin-bottom: 4px;
   }
   .battle-arena-copy h2 {
-    font-size: 26px;
+    font-size: 20px;
     max-width: 70%;
   }
   .battle-arena-copy p {
-    margin-top: 5px;
+    margin-top: 4px;
     max-width: 48%;
     font-size: 10px;
+    line-height: 1.4;
   }
   .battle-sigil {
-    top: 35px;
+    top: 22px;
     left: 45%;
     width: 50%;
     height: 56%;
   }
   .battle-sigil-ring {
-    width: 150px;
+    width: 88px;
   }
   .battle-sigil-glyph {
-    font-size: 80px;
+    font-size: 44px;
   }
-  .battle-enemy-footer {
-    inset: auto 16px 13px;
-    display: block;
-  }
-  .battle-enemy-health {
-    width: 100%;
-  }
-  .battle-status-line {
+  .battle-arena-copy .battle-enemy-health {
+    max-width: 50%;
     margin-top: 6px;
+  }
+  .battle-arena-copy .battle-status-line {
+    max-width: 50%;
+    margin-top: 4px;
   }
   .battle-player {
     grid-template-columns: 1fr;
@@ -1018,34 +1020,34 @@ body::after {
   }
   .battle-hand {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 7px;
+    gap: 6px;
   }
   .battle-card {
-    height: 166px;
-    padding: 8px 7px;
+    height: 142px;
+    padding: 6px 6px;
   }
   .battle-card-art {
-    top: 19px;
-    width: 76px;
-    height: 76px;
+    top: 15px;
+    width: 62px;
+    height: 62px;
   }
   .battle-card-body {
-    min-height: 47px;
-    gap: 3px;
+    min-height: 40px;
+    gap: 2px;
   }
   .battle-card-body strong {
-    font-size: 12px;
+    font-size: 11px;
   }
   .battle-card-body > span {
-    font-size: 9px;
+    font-size: 8px;
   }
   .battle-card-top,
   .battle-card-bottom {
-    font-size: 9px;
+    font-size: 8px;
   }
   .battle-card-bottom {
-    margin-top: 6px;
-    padding-top: 5px;
+    margin-top: 5px;
+    padding-top: 4px;
   }
   .battle-actions {
     display: block;

@@ -9,7 +9,9 @@ import {
   maxLifeOf,
   energyMaxOf,
   XIANLI_MULT,
+  XIANLI_MULT_CAP,
   sectDamageMultOfStages,
+  monsterHpOf,
 } from "@/game/store";
 import { REALMS } from "@/game/data/realms";
 import { SECTS } from "@/game/data/sects";
@@ -360,7 +362,7 @@ export function StatusPanel() {
               <span className={`text-right font-bold ${XIANLI_COLOR}`}>
                 {t("xianliValue")
                   .replace("{n}", String(s.xianli))
-                  .replace("{mult}", (1 + s.xianli * XIANLI_MULT).toFixed(1))}
+                  .replace("{mult}", Math.min(XIANLI_MULT_CAP, 1 + s.xianli * XIANLI_MULT).toFixed(1))}
               </span>
             </>
           )}
@@ -657,7 +659,7 @@ export function CombatPanel() {
   const usable = (combat.hand ?? s.learned).map((id, i) => ({ tech: techById(id), slot: i }));
   const isLord = combat.isLord || mon.isLord;
   const isTianjieTrial = !!combat.tianjieTrial;
-  const hpMaxMon = combat.bossHpMax ?? mon.hp; // 浮屠塔動態 BOSS 用其實際上限
+  const hpMaxMon = combat.bossHpMax ?? monsterHpOf(mon); // 浮屠塔動態 BOSS 用其實際上限;一般怪物套用 4.0 版戰鬥平衡性修正倍率,跟伺服器端初始化 combat.monsterHp 的算法保持一致
   const monName = monsterDisplayName(mon, lang);
   const displayName = combat.futuFloor ? `${monName} · 第 ${combat.futuFloor} 層` : monName;
   const battleLocation = LOCATIONS.find((loc) => loc.id === combat.locationId);

@@ -14,8 +14,10 @@ import {
   techPowerMult,
   MAX_TECH_LEVEL,
   XIANLI_MULT,
+  XIANLI_MULT_CAP,
   breakChanceOf,
   SECT_STAGE_BONUS,
+  SECT_MULT_CAP,
   sectDamageMultOfStages,
   energyMaxOf,
   ENERGY_COST,
@@ -28,6 +30,10 @@ import {
   effectivePouch,
   pouchMinFor,
   ownedCopiesOf,
+  MONSTER_HP_BALANCE_MULT,
+  MONSTER_ATK_BALANCE_MULT,
+  monsterHpOf,
+  monsterAtkOf,
 } from "./engine";
 
 export type { SaveData, Modal, DamageEvent };
@@ -40,8 +46,10 @@ export {
   techPowerMult,
   MAX_TECH_LEVEL,
   XIANLI_MULT,
+  XIANLI_MULT_CAP,
   breakChanceOf,
   SECT_STAGE_BONUS,
+  SECT_MULT_CAP,
   sectDamageMultOfStages,
   energyMaxOf,
   ENERGY_COST,
@@ -53,6 +61,10 @@ export {
   POUCH_MAX_COPIES,
   effectivePouch,
   pouchMinFor,
+  MONSTER_HP_BALANCE_MULT,
+  MONSTER_ATK_BALANCE_MULT,
+  monsterHpOf,
+  monsterAtkOf,
   ownedCopiesOf,
 };
 

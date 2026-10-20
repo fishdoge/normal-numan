@@ -169,6 +169,17 @@ export const techPowerMult = (level: number) => 1 + (level - 1) * 0.3;
 
 // 仙靈力:每一點 = 攻擊 ×0.2 倍(真仙專屬,紫色)
 export const XIANLI_MULT = 0.2;
+// 戰鬥平衡性修正(4.0 版):仙靈力原本無上限,刷得越多攻擊力乘數越大、沒有盡頭——
+// 真仙境案例實測過 60 點仙靈力疊加其餘加成後可達對手氣血 ×2,458,見「戰鬥膨脹診斷卷」。
+// 封頂在 ×5(等效 20 點仙靈力),超過的部分不再繼續放大攻擊力,但仍可持續累積(為未來其他用途保留)。
+export const XIANLI_MULT_CAP = 5;
+
+// 戰鬥平衡性修正(4.0 版):符寶連攜原本是「每多打一張同屬性符寶,全部同屬性符寶各自多吃一次加成」,
+// 總傷害隨張數呈平方成長(3 卡已達單卡的 104%~286%、4 卡 159%~436%,見「戰鬥膨脹診斷卷」03 節)。
+// 以下兩個常數把「用來計算加成的張數」封頂,讓連攜仍然值得打(2 張內持續有感),但不再無止盡疊乘:
+// 同屬性加成(synergyPct)最多疊 2 張;批次張數加成(comboSizePct)最多疊 2 張(即最多 +1 張的額度)。
+export const SYNERGY_STACK_CAP = 2;
+export const COMBO_SIZE_STACK_CAP = 2;
 
 export const maxLifeOf = (s: Pick<SaveData, "realmIdx" | "lifeBonus">) =>
   REALMS[s.realmIdx].lifespan + s.lifeBonus;
@@ -229,9 +240,9 @@ export function statsOf(s: SaveData) {
   const sumDef = gear.reduce((a, g) => a + (g?.defBonus ?? 0), 0);
   const sumSpeed = gear.reduce((a, g) => a + (g?.speedBonus ?? 0), 0);
   const baseAtk = realm.atk + (sect?.bonus.atk ?? 0) + sumAtk + (s.boonAtk ?? 0);
-  // 仙靈力:一點 = 攻擊 ×0.2 倍(真仙專屬,紫色)
+  // 仙靈力:一點 = 攻擊 ×0.2 倍(真仙專屬,紫色),4.0 版封頂 ×XIANLI_MULT_CAP(見該常數說明)
   const xianli = s.xianli ?? 0;
-  const atk = Math.floor(baseAtk * (1 + xianli * XIANLI_MULT));
+  const atk = Math.floor(baseAtk * Math.min(XIANLI_MULT_CAP, 1 + xianli * XIANLI_MULT));
   const def = sumDef + (s.boonDef ?? 0);
   const hpMax = realm.hpMax + (sect?.bonus.hp ?? 0) + (s.boonHp ?? 0);
   const mpMax = realm.mpMax + (sect?.bonus.mp ?? 0);
@@ -277,17 +288,34 @@ export const SECT_STAGE_BONUS: Record<number, number> = {
   12: 1.2, // 太乙境
 };
 
-// 依宗門成員的境界 stage 清單,算出戰鬥傷害倍率:1 + Σ(每人對應加成)
+// 戰鬥平衡性修正(4.0 版):宗門聲勢原本純加總、無上限,宗門越養越大、全宗門一起無止盡變強——
+// 實測日誌已出現 ×2.32~×3.30,見「戰鬥膨脹診斷卷」。封頂在 ×2,宗門仍會隨境界更高的同門持續成長,
+// 只是到頂之後不再繼續疊加,避免跟仙靈力一樣變成沒有盡頭的乘數。
+export const SECT_MULT_CAP = 2;
+
+// 依宗門成員的境界 stage 清單,算出戰鬥傷害倍率:1 + Σ(每人對應加成),封頂 SECT_MULT_CAP
 export function sectDamageMultOfStages(stages: (number | null | undefined)[]): number {
   let mult = 1;
   for (const stage of stages) {
     if (stage != null && SECT_STAGE_BONUS[stage]) mult += SECT_STAGE_BONUS[stage];
   }
-  return mult;
+  return Math.min(SECT_MULT_CAP, mult);
 }
 
 const rand = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
 const monsterById = (id: string): Monster => MONSTERS.find((m) => m.id === id)!;
+
+// 戰鬥平衡性修正(4.0 版):怪物氣血的校準基準原本看起來是「單卡出牌」,但符寶化之後合併出牌
+// (2~4 張連攜)才是常態玩法——單卡只需 2~4 刀的怪,碰上 3 卡連攜常常直接一刀到兩刀帶走
+// (見「戰鬥膨脹診斷卷」04 節實測:2,998 場戰鬥、100% 勝率、平均 1.33 回合解決)。
+// 把怪物氣血整體上修,改用「典型 2~3 卡連攜」當新的校準基準(對應選項 D);同時小幅上修怪物攻擊力,
+// 讓戰鬥重新有一點「打不贏就會受傷」的風險,不再是零風險的數值輾壓(對應選項 E)。
+// 這兩個乘數統一套用在「戰鬥開場建立 CombatState」與「怪物出手」兩類地方,不直接改 world.ts 的
+// 原始資料(資料檔案保留設計者原意的相對倍率,實際戰鬥數值由這裡統一換算,方便之後整體再調)。
+export const MONSTER_HP_BALANCE_MULT = 2.5;
+export const MONSTER_ATK_BALANCE_MULT = 1.5;
+export const monsterHpOf = (mon: Pick<Monster, "hp">) => Math.floor(mon.hp * MONSTER_HP_BALANCE_MULT);
+export const monsterAtkOf = (mon: Pick<Monster, "atk">) => Math.floor(mon.atk * MONSTER_ATK_BALANCE_MULT);
 
 // 秘境可給予的裝備 / 秘笈池
 const EQUIP_KINDS = ["artifact", "robe", "amulet", "talisman", "pet"];
@@ -851,7 +879,7 @@ function monsterTurn(s: SaveData): { lines: string[]; defeat?: Modal } {
     log(s, line);
     return { lines: [line] };
   }
-  const monAtkBase = s.combat.bossAtk ?? mon.atk;
+  const monAtkBase = s.combat.bossAtk ?? monsterAtkOf(mon);
   const monAtk = Math.floor(monAtkBase * atkMultFromStatus(s.combat.monsterStatus));
   const { def, speed } = statsOf(s);
   const monSpeed = Math.floor(monAtk * 1.2);
@@ -899,7 +927,7 @@ function monsterTurn(s: SaveData): { lines: string[]; defeat?: Modal } {
 function postPlayerTurn(s: SaveData): { loot?: Modal } {
   if (!s.combat) return {};
   const mon = monsterById(s.combat.monsterId);
-  const monMaxHp = s.combat.bossHpMax ?? mon.hp;
+  const monMaxHp = s.combat.bossHpMax ?? monsterHpOf(mon);
 
   const monTick = tickDot(s.combat.monsterStatus, monMaxHp);
   s.combat.monsterStatus = monTick.list;
@@ -1336,7 +1364,7 @@ function applyActionInner(
         const boss = monsterById("jinxian");
         s.combat = {
           monsterId: boss.id,
-          monsterHp: boss.hp,
+          monsterHp: monsterHpOf(boss),
           locationId: "__wander__",
           isLord: true,
           ...startingCombatHand(s),
@@ -1441,7 +1469,7 @@ function applyActionInner(
         const tianjie = monsterById("tianjie_shenling");
         s.combat = {
           monsterId: tianjie.id,
-          monsterHp: tianjie.hp,
+          monsterHp: monsterHpOf(tianjie),
           locationId: "__tianjie__",
           isLord: true,
           tianjieTrial: true,
@@ -1536,7 +1564,7 @@ function applyActionInner(
         const mon = monsterById(mid);
         s.combat = {
           monsterId: mid,
-          monsterHp: mon.hp,
+          monsterHp: monsterHpOf(mon),
           locationId: loc.id,
           ...startingCombatHand(s),
           monsterStatus: [],
@@ -1590,7 +1618,7 @@ function applyActionInner(
         const lord = monsterById(lordId);
         s.combat = {
           monsterId: lord.id,
-          monsterHp: lord.hp,
+          monsterHp: monsterHpOf(lord),
           locationId: loc.id,
           isLord: true,
           ...startingCombatHand(s),
@@ -1609,7 +1637,7 @@ function applyActionInner(
       const mon = monsterById(mid);
       s.combat = {
         monsterId: mid,
-        monsterHp: mon.hp,
+        monsterHp: monsterHpOf(mon),
         locationId: loc.id,
         isLord: mon.isLord,
         ...startingCombatHand(s),
@@ -1693,10 +1721,11 @@ function applyActionInner(
       for (const t of techs) {
         const level = techLevelOf(s, t.id);
         let p = t.power * techPowerMult(level);
-        if (t.synergyPct) p *= 1 + t.synergyPct * (elementCounts.get(effEl(t)) ?? 1);
+        if (t.synergyPct) p *= 1 + t.synergyPct * Math.min(SYNERGY_STACK_CAP, elementCounts.get(effEl(t)) ?? 1);
         // 進階連攜(3.13 版新增):批次張數越多疊得越高;批次含越多「不同」元素疊得越高——兩者
         // 鼓勵的出牌習慣正好相反(前者鼓勵同名堆疊,後者鼓勵混搭),各自看符寶本身掛哪一種
-        if (t.comboSizePct) p *= 1 + t.comboSizePct * (techs.length - 1);
+        // (4.0 版:張數加成封頂 COMBO_SIZE_STACK_CAP,理由見該常數說明)
+        if (t.comboSizePct) p *= 1 + t.comboSizePct * Math.min(COMBO_SIZE_STACK_CAP, techs.length - 1);
         if (t.crossElementPct) p *= 1 + t.crossElementPct * (distinctElementCount - 1);
         if (buff && buff.element === effEl(t)) p *= 1 + buff.pct;
         // 雙/三屬性符寶(3.14 版新增):相剋倍率取所有屬性中最高者,天生百搭、不怕撞上被剋的屬性
@@ -1993,8 +2022,8 @@ function applyActionInner(
       const floor = s.futuFloor + 1; // 挑戰下一層(從第 1 層起)
       const hpMult = Math.pow(1.5, floor - 1); // 每層氣血 ×1.5
       const atkMult = Math.pow(1.2, floor - 1); // 每層攻擊 ×1.2
-      const bossHp = Math.floor(base.hp * hpMult);
-      const bossAtk = Math.floor(base.atk * atkMult);
+      const bossHp = Math.floor(base.hp * hpMult * MONSTER_HP_BALANCE_MULT);
+      const bossAtk = Math.floor(base.atk * atkMult * MONSTER_ATK_BALANCE_MULT);
       s.combat = {
         monsterId: base.id,
         monsterHp: bossHp,

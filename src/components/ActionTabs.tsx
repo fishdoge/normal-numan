@@ -17,6 +17,8 @@ import {
   pouchMinFor,
   POUCH_MAX_COPIES,
   ownedCopiesOf,
+  monsterHpOf,
+  monsterAtkOf,
 } from "@/game/store";
 import { LOCATIONS, MONSTERS, RECIPES, REGIONS } from "@/game/data/world";
 import { ITEMS, itemById, isXuantianArtifact } from "@/game/data/items";
@@ -1605,8 +1607,8 @@ function DexTab() {
           </span>
           <span className="text-xs font-mono text-faded">
             {t("monsterStatLine")
-              .replace("{hp}", String(mon.hp))
-              .replace("{atk}", String(mon.atk))
+              .replace("{hp}", String(monsterHpOf(mon)))
+              .replace("{atk}", String(monsterAtkOf(mon)))
               .replace("{kills}", String(kills))}
           </span>
         </div>

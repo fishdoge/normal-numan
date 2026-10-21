@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { CARD_ART } from "@/game/data/cardArt";
 import { useEffect, useRef, useCallback, useState, type CSSProperties } from "react";
 import {
   useGame,
@@ -43,6 +42,17 @@ import { locationDisplayName } from "@/i18n/worldText";
 import { elementLabel, equipSlotLabel } from "@/i18n/labelText";
 import { MONSTER_TEXT_EN } from "@/i18n/monsterText";
 import StoneAmount from "./StoneAmount";
+import { sceneOfLocation } from "@/game/data/sceneArt";
+import { CardFlight, CardFlights } from "./fx";
+
+const CARD_ART: Record<Element, string> = {
+  金: "metal",
+  木: "wood",
+  水: "water",
+  火: "fire",
+  土: "earth",
+  無: "neutral",
+};
 
 // 太乙精魂對應的地域王 id(供英文翻譯查詢用,中文沿用既有 label)
 const TAIYI_SOUL_LORD_ID: Record<string, string> = {
@@ -171,7 +181,6 @@ export function StatusPanel() {
   const sect = SECTS.find((x) => x.id === s.sectId);
   const expNeed = REALMS[s.realmIdx].expNeed;
   const isXian = realm.stage >= 10;
-  const act = useGame((x) => x.act);
   const setMainView = useGame((x) => x.setMainView);
   const t = useT();
   const lang = useGame((x) => x.language);
@@ -210,39 +219,6 @@ export function StatusPanel() {
     ming: s.equippedMing,
   };
 
-  // 聚靈回力:按住即持續回力,鬆手停止
-  const holdingRef = useRef(false);
-  const loopingRef = useRef(false);
-  const runHold = useCallback(async () => {
-    if (loopingRef.current) return;
-    loopingRef.current = true;
-    try {
-      while (holdingRef.current) {
-        const st = useGame.getState().save;
-        const cur = st ? statsOf(st) : null;
-        if (!st || st.combat || st.dead || st.mp >= (cur?.mpMax ?? 0)) break;
-        await act("restoreMp");
-        await new Promise((r) => setTimeout(r, 90));
-      }
-    } finally {
-      loopingRef.current = false;
-    }
-  }, [act]);
-  const startHold = useCallback(() => {
-    if (holdingRef.current) return;
-    holdingRef.current = true;
-    runHold();
-  }, [runHold]);
-  const stopHold = useCallback(() => {
-    holdingRef.current = false;
-  }, []);
-  useEffect(
-    () => () => {
-      holdingRef.current = false;
-    },
-    [],
-  );
-
   const Bar = ({ v, max, cls }: { v: number; max: number; cls: string }) => (
     <div className="stat-bar">
       <div
@@ -253,19 +229,7 @@ export function StatusPanel() {
   );
 
   return (
-    <div className="panel character-panel" id="character-sheet" tabIndex={-1}>
-      <div className="character-portrait">
-        <Image
-          src="/images/world/wandering-cultivator.webp"
-          alt=""
-          fill
-          sizes="(max-width: 720px) 100vw, 280px"
-        />
-        <span className="character-portrait-label">CULTIVATOR</span>
-        <span className="character-portrait-seal" aria-hidden="true">
-          道
-        </span>
-      </div>
+    <div className="panel deco-frame flex-1">
       <p className="panel-title">{t("statusTitle")}</p>
       <div className="flex items-baseline justify-between mb-1 gap-2">
         <span className={`text-xl font-bold ${nameColorOf(realm.stage)}`}>{s.name}</span>
@@ -319,171 +283,153 @@ export function StatusPanel() {
         </div>
       </div>
 
-      <div className="flex justify-between gap-2 text-xs mt-3">
+      <button
+        onClick={() => setMainView("sect")}
+        title={t("sectHallTooltip")}
+        className="w-full mt-2 mb-1 flex items-center justify-between gap-2 rounded-sm border-2 border-fuchsia-400/50 bg-gradient-to-r from-fuchsia-400/15 via-gold/10 to-fuchsia-400/15 px-3 py-1.5 transition-colors hover:border-fuchsia-400 hover:from-fuchsia-400/25 hover:to-fuchsia-400/25"
+      >
+        <span className="min-w-0 text-left">
+          <span className="block text-base font-bold text-fuchsia-300">
+            {sect ? sectDisplayName(sect, lang) : t("statLoose")} {t("sectHall")}
+          </span>
+          {sect && (
+            <span className="block text-xs text-cream/80 mt-0.5">
+              {t("combatDamage")} ×{sectMult.toFixed(2)} · {t("sectHallDetail")}
+            </span>
+          )}
+        </span>
+        <span className="shrink-0 text-lg text-fuchsia-300">▸</span>
+      </button>
+
+      <div className="divider">◆</div>
+
+      {/* 4.2 版:屬性與裝備改為兩組並排(標籤、數值、標籤、數值),縮短道籍面板高度,讓主畫面一屏看完 */}
+      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-2 gap-y-1 text-[13px]">
         <span className="text-faded">{t("statLife")}</span>
         <span
-          className={maxLifeOf(s) - s.age <= maxLifeOf(s) * 0.2 ? "text-vermillion" : "text-cream"}
+          className={`col-span-3 text-right ${maxLifeOf(s) - s.age <= maxLifeOf(s) * 0.2 ? "text-vermillion" : ""}`}
         >
           {s.age}/{maxLifeOf(s)}
           {t("yearsSuffix")}
         </span>
-      </div>
-      <details className="character-details">
-        <summary>
-          {t("uiCharacterDetails")}
-          <span aria-hidden="true">＋</span>
-        </summary>
-        <button
-          onClick={() => setMainView("sect")}
-          title={t("sectHallTooltip")}
-          className="w-full mt-3 mb-1 flex items-center justify-between gap-2 rounded-sm border-2 border-fuchsia-400/50 bg-gradient-to-r from-fuchsia-400/15 via-gold/10 to-fuchsia-400/15 px-3 py-2.5 transition-colors hover:border-fuchsia-400 hover:from-fuchsia-400/25 hover:to-fuchsia-400/25"
-        >
-          <span className="min-w-0 text-left">
-            <span className="block text-base font-bold text-fuchsia-300">
-              {sect ? sectDisplayName(sect, lang) : t("statLoose")} {t("sectHall")}
-            </span>
-            {sect && (
-              <span className="block text-xs text-cream/80 mt-0.5">
-                {t("combatDamage")} ×{sectMult.toFixed(2)} · {t("sectHallDetail")}
-              </span>
-            )}
-          </span>
-          <span className="shrink-0 text-lg text-fuchsia-300">▸</span>
-        </button>
-
-        <div className="divider">◆</div>
-
-        <div className="grid grid-cols-2 gap-y-1 text-sm">
-          <span className="text-faded">{t("statDay")}</span>
-          <span className="text-right">{t("statDayValue").replace("{n}", String(s.day))}</span>
-          {s.xianli > 0 && (
-            <>
-              <span className="text-faded">{t("statXianli")}</span>
-              <span className={`text-right font-bold ${XIANLI_COLOR}`}>
-                {t("xianliValue")
-                  .replace("{n}", String(s.xianli))
-                  .replace("{mult}", Math.min(XIANLI_MULT_CAP, 1 + s.xianli * XIANLI_MULT).toFixed(1))}
-              </span>
-            </>
-          )}
-          {baseAtk !== atk ? (
-            <>
-              <span className="text-faded">{t("statBaseAtk")}</span>
-              <span className="text-right text-faded">{baseAtk}</span>
-              <span className="text-faded">{t("statAtkBoosted")}</span>
-              <span className={`text-right font-bold ${XIANLI_COLOR}`}>{atk}</span>
-            </>
-          ) : (
-            <>
-              <span className="text-faded">{t("statAtk")}</span>
-              <span className="text-right">{atk}</span>
-            </>
-          )}
-          <span className="text-faded">{t("statDef")}</span>
-          <span className="text-right">{def}</span>
-          <span className="text-faded">{t("statSpeed")}</span>
-          <span className="text-right">{speed}</span>
-          {s.boonHp + s.boonAtk + s.boonDef + s.boonSpeed > 0 && (
-            <>
-              <span className="text-fuchsia-300">{t("statBoon")}</span>
-              <span className="text-right text-fuchsia-300 text-xs">
-                {[
-                  s.boonHp && (lang === "en" ? `HP+${s.boonHp}` : `血+${s.boonHp}`),
-                  s.boonAtk && (lang === "en" ? `ATK+${s.boonAtk}` : `攻+${s.boonAtk}`),
-                  s.boonDef && (lang === "en" ? `DEF+${s.boonDef}` : `防+${s.boonDef}`),
-                  s.boonSpeed && (lang === "en" ? `SPD+${s.boonSpeed}` : `速+${s.boonSpeed}`),
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-              </span>
-            </>
-          )}
-          <span className="text-faded">{t("statStones")}</span>
-          <span className="text-right text-gold">
-            <StoneAmount n={s.stones} />
-          </span>
-          {(s.pouchStones ?? 0) > 0 && (
-            <>
-              <span className="text-fuchsia-300/80">{t("pouchTitle")}</span>
-              <span className="text-right text-fuchsia-300">
-                <StoneAmount n={s.pouchStones ?? 0} />
-              </span>
-            </>
-          )}
-        </div>
-
-        <div className="divider">{t("statEquip")}</div>
-        <div className="grid grid-cols-2 gap-y-1 text-sm">
-          {EQUIP_SLOTS.map(({ slot, label }) => {
-            const id = equipMap[slot];
-            const it = id ? itemById(id) : null;
-            const xuantian = id ? isXuantianArtifact(id) : false;
-            const valueCls = `text-right ${xuantian ? "text-xuantian" : it ? (slot === "pet" ? "text-fuchsia-300" : "text-cream") : "text-faded/50"}`;
-            const nameCls = xuantian
-              ? "text-xuantian"
-              : slot === "pet"
-                ? "text-fuchsia-300"
-                : it && isXianItem(it)
-                  ? XIAN_ITEM_COLOR
-                  : "text-cream";
-            return (
-              <div key={slot} className="contents">
-                <span className="text-faded">{equipSlotLabel(slot, label, lang)}</span>
-                {it ? (
-                  <span className="text-right">
-                    <Tooltip
-                      align="right"
-                      content={[itemStatLine(it, t), itemDisplayDesc(it, lang)]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    >
-                      <span
-                        className={`${nameCls} cursor-help underline decoration-dotted decoration-faded/40 underline-offset-2`}
-                      >
-                        {itemDisplayName(it, lang)}
-                      </span>
-                    </Tooltip>
-                  </span>
-                ) : (
-                  <span className={valueCls}>—</span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {s.learning && (
+        <span className="text-faded">{t("statDay")}</span>
+        <span className="text-right">{t("statDayValue").replace("{n}", String(s.day))}</span>
+        {s.xianli > 0 && (
           <>
-            <div className="divider">◆</div>
-            <div className="text-sm">
-              <div className="flex items-baseline justify-between">
-                <span className="text-azure font-bold">{t("learningLabel")}</span>
-                <span className="text-xs font-mono text-faded">
-                  {t("learningRemain").replace("{n}", String(s.learning.remain))}
-                </span>
-              </div>
-              <p className="text-cream mt-0.5">
-                {techDisplayName(techById(s.learning.techId), lang)}
-              </p>
-            </div>
+            <span className="text-faded">{t("statXianli")}</span>
+            <span className={`text-right font-bold ${XIANLI_COLOR}`}>
+              {t("xianliValue")
+                .replace("{n}", String(s.xianli))
+                .replace(
+                  "{mult}",
+                  Math.min(XIANLI_MULT_CAP, 1 + s.xianli * XIANLI_MULT).toFixed(1),
+                )}
+            </span>
           </>
         )}
-      </details>
-      <div className="mt-3">
-        <button
-          className="btn w-full select-none touch-none"
-          onPointerDown={(e) => {
-            e.preventDefault();
-            startHold();
-          }}
-          onPointerUp={stopHold}
-          onPointerLeave={stopHold}
-          onPointerCancel={stopHold}
-          disabled={!!s.combat || s.mp >= mpMax}
-        >
-          {t("btnGatherMp")}
-        </button>
+        {baseAtk !== atk ? (
+          <>
+            <span className="text-faded">{t("statBaseAtk")}</span>
+            <span className="text-right text-faded">{baseAtk}</span>
+            <span className="text-faded">{t("statAtkBoosted")}</span>
+            <span className={`text-right font-bold ${XIANLI_COLOR}`}>{atk}</span>
+          </>
+        ) : (
+          <>
+            <span className="text-faded">{t("statAtk")}</span>
+            <span className="text-right">{atk}</span>
+          </>
+        )}
+        <span className="text-faded">{t("statDef")}</span>
+        <span className="text-right">{def}</span>
+        <span className="text-faded">{t("statSpeed")}</span>
+        <span className="text-right">{speed}</span>
+        {s.boonHp + s.boonAtk + s.boonDef + s.boonSpeed > 0 && (
+          <>
+            <span className="text-fuchsia-300">{t("statBoon")}</span>
+            <span className="text-right text-fuchsia-300 text-xs">
+              {[
+                s.boonHp && (lang === "en" ? `HP+${s.boonHp}` : `血+${s.boonHp}`),
+                s.boonAtk && (lang === "en" ? `ATK+${s.boonAtk}` : `攻+${s.boonAtk}`),
+                s.boonDef && (lang === "en" ? `DEF+${s.boonDef}` : `防+${s.boonDef}`),
+                s.boonSpeed && (lang === "en" ? `SPD+${s.boonSpeed}` : `速+${s.boonSpeed}`),
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            </span>
+          </>
+        )}
+        <span className="text-faded">{t("statStones")}</span>
+        <span className="text-right text-gold">
+          <StoneAmount n={s.stones} />
+        </span>
+        {(s.pouchStones ?? 0) > 0 && (
+          <>
+            <span className="text-fuchsia-300/80">{t("pouchTitle")}</span>
+            <span className="text-right text-fuchsia-300">
+              <StoneAmount n={s.pouchStones ?? 0} />
+            </span>
+          </>
+        )}
       </div>
+
+      <div className="divider">{t("statEquip")}</div>
+      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-2 gap-y-1 text-[13px]">
+        {EQUIP_SLOTS.map(({ slot, label }) => {
+          const id = equipMap[slot];
+          const it = id ? itemById(id) : null;
+          const xuantian = id ? isXuantianArtifact(id) : false;
+          const valueCls = `text-right ${xuantian ? "text-xuantian" : it ? (slot === "pet" ? "text-fuchsia-300" : "text-cream") : "text-faded/50"}`;
+          const nameCls = xuantian
+            ? "text-xuantian"
+            : slot === "pet"
+              ? "text-fuchsia-300"
+              : it && isXianItem(it)
+                ? XIAN_ITEM_COLOR
+                : "text-cream";
+          return (
+            <div key={slot} className="contents">
+              <span className="text-faded">{equipSlotLabel(slot, label, lang)}</span>
+              {it ? (
+                <span className="text-right min-w-0 truncate" title={itemDisplayName(it, lang)}>
+                  <Tooltip
+                    content={[itemStatLine(it, t), itemDisplayDesc(it, lang)]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  >
+                    <span
+                      className={`${nameCls} cursor-help underline decoration-dotted decoration-faded/40 underline-offset-2`}
+                    >
+                      {itemDisplayName(it, lang)}
+                    </span>
+                  </Tooltip>
+                </span>
+              ) : (
+                <span className={valueCls}>—</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {s.learning && (
+        <>
+          <div className="divider">◆</div>
+          <div className="text-sm">
+            <div className="flex items-baseline justify-between">
+              <span className="text-azure font-bold">{t("learningLabel")}</span>
+              <span className="text-xs font-mono text-faded">
+                {t("learningRemain").replace("{n}", String(s.learning.remain))}
+              </span>
+            </div>
+            <p className="text-cream mt-0.5">
+              {techDisplayName(techById(s.learning.techId), lang)}
+            </p>
+          </div>
+        </>
+      )}
+
+      {/* 4.2 版:「聚靈回力」移除——每場戰鬥開打、每回合與戰鬥結束法力都會自動回滿,已無需手動回力 */}
     </div>
   );
 }
@@ -641,12 +587,24 @@ export function CombatPanel() {
   // 同一個 class 不會自動重播,靠 key 換掉整個節點才會)。
   const monsterHitEvents = useGame((x) => x.damageEvents).filter((e) => e.target === "monster");
   const lastMonsterHitId = monsterHitEvents[monsterHitEvents.length - 1]?.id;
+  // 4.1 版出牌飛行特效:記下每張手牌與妖獸法陣的位置,出牌時讓符寶分身從手牌飛向妖獸
+  const cardRefs = useRef(new Map<number, HTMLButtonElement>());
+  const sigilRef = useRef<HTMLDivElement>(null);
+  const [flights, setFlights] = useState<CardFlight[]>([]);
+  const endFlight = useCallback(
+    (id: string) => setFlights((fs) => fs.filter((f) => f.id !== id)),
+    [],
+  );
 
   if (!combat) {
+    // 4.2 版:平常無戰事時只佔一行;新手(尚未斬殺任何妖獸)改顯示下一步該做什麼
+    const newbie = Object.keys(s.kills ?? {}).length === 0;
     return (
-      <div className="panel deco-frame">
-        <p className="panel-title">{t("combatTitle")}</p>
-        <p className="text-sm text-faded">{t("combatIdle")}</p>
+      <div className="panel deco-frame !py-2.5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <p className="panel-title mb-0 shrink-0">{t("combatTitle")}</p>
+        <p className={`text-sm ${newbie ? "text-gold" : "text-faded"}`}>
+          {newbie ? t("combatIdleNewbie") : t("combatIdleShort")}
+        </p>
       </div>
     );
   }
@@ -663,6 +621,7 @@ export function CombatPanel() {
   const monName = monsterDisplayName(mon, lang);
   const displayName = combat.futuFloor ? `${monName} · 第 ${combat.futuFloor} 層` : monName;
   const battleLocation = LOCATIONS.find((loc) => loc.id === combat.locationId);
+  const scene = sceneOfLocation(combat.locationId);
   const { hpMax, mpMax } = statsOf(s);
   const elementGlyph: Record<string, string> = { 金: "金", 木: "木", 水: "水", 火: "火", 土: "土" };
   const STATUS_ICON: Record<string, string> = {
@@ -726,6 +685,26 @@ export function CombatPanel() {
   };
   const playSelected = () => {
     if (selectedTechIds.length === 0) return;
+    const sigil = sigilRef.current?.getBoundingClientRect();
+    if (sigil) {
+      const stamp = Date.now();
+      const launched: CardFlight[] = [];
+      validSelectedSlots.forEach((slot, i) => {
+        const el = cardRefs.current.get(slot);
+        const tech = usable.find((u) => u.slot === slot)?.tech;
+        if (!el || !tech) return;
+        const r = el.getBoundingClientRect();
+        launched.push({
+          id: `${stamp}-${slot}`,
+          from: { x: r.left, y: r.top, w: r.width, h: r.height },
+          to: { x: sigil.left + sigil.width / 2, y: sigil.top + sigil.height / 2 },
+          art: `/images/cards/${tech.id === "artifact_attack" ? "artifact" : CARD_ART[tech.element]}.webp`,
+          color: ELEMENT_HEX[tech.element] ?? ELEMENT_HEX["無"],
+          delay: i * 0.07,
+        });
+      });
+      setFlights((fs) => [...fs, ...launched]);
+    }
     setCastEffect((current) => ({
       id: (current?.id ?? 0) + 1,
       slots: validSelectedSlots,
@@ -736,14 +715,12 @@ export function CombatPanel() {
 
   return (
     <section
-      className={`battle-view ${isTianjieTrial ? "battle-trial" : isLord ? "battle-lord" : ""}`}
+      className={`battle-view ${isTianjieTrial ? "battle-trial" : isLord ? "battle-lord" : mon.elite ? "battle-elite" : ""}`}
       aria-label={t("combatTitle")}
     >
       <header className="battle-header">
         <div className="battle-brand">
-          <span className="battle-brand-mark" aria-hidden="true">
-            ◈
-          </span>
+          <span className="battle-brand-mark">✦</span>
           <div>
             <p className="battle-eyebrow">{t("appTitle")}</p>
             <h1>
@@ -753,7 +730,9 @@ export function CombatPanel() {
                   ? t("combatFutu")
                   : isLord
                     ? t("combatLordArrives")
-                    : t("combatFierce")}
+                    : mon.elite
+                      ? t("combatEliteArrives")
+                      : t("combatFierce")}
             </h1>
           </div>
         </div>
@@ -768,15 +747,17 @@ export function CombatPanel() {
       </header>
 
       <div className="battle-content">
-        <div className="battle-arena deco-frame">
-          <span className="battle-scene-label">
-            {t("uiBattleTag")}
-            {lang !== "en" && (
-              <>
-                <span aria-hidden="true"> / </span> SPIRIT ENCOUNTER
-              </>
-            )}
-          </span>
+        <div
+          className="battle-arena deco-frame"
+          style={
+            {
+              "--scene": `url(${scene.src})`,
+              "--scene-focus": scene.focus,
+              "--scene-tint": scene.tint,
+            } as CSSProperties
+          }
+        >
+          <span className="battle-scene" aria-hidden="true" />
           <div className="battle-arena-copy">
             <span className={`chip ${ELEMENT_COLOR[mon.element]}`}>
               {lang === "en" ? elementLabel(mon.element, lang) : `${mon.element}屬性`}
@@ -787,28 +768,19 @@ export function CombatPanel() {
               <span className="chip text-fuchsia-400 border-fuchsia-400/60">
                 {combat.futuFloor ? t("combatIllusionChip") : t("combatLordChip")}
               </span>
+            ) : mon.elite ? (
+              <span className="chip text-orange-300 border-orange-400/70">{t("combatEliteChip")}</span>
             ) : null}
             <h2>{displayName}</h2>
             <p>{monsterDisplayDesc(mon, lang)}</p>
           </div>
-          <div className="battle-sigil" aria-hidden="true">
+          <div className="battle-sigil" aria-hidden="true" ref={sigilRef}>
             <span className="battle-sigil-ring" />
             <span
               key={lastMonsterHitId ?? "idle"}
               className={`battle-sigil-glyph${lastMonsterHitId ? " battle-sigil-glyph-shake" : ""}`}
             >
-              {mon.id === "qinglang" ? (
-                <Image
-                  src="/images/world/azure-wolf.webp"
-                  alt=""
-                  width={760}
-                  height={507}
-                  className="enemy-illustration"
-                  priority
-                />
-              ) : (
-                (elementGlyph[mon.element] ?? "妖")
-              )}
+              {elementGlyph[mon.element] ?? "妖"}
             </span>
             {castEffect && <span key={castEffect.id} className="battle-cast-flash" />}
             <HitImpact side="monster" />
@@ -960,6 +932,10 @@ export function CombatPanel() {
             return (
               <button
                 key={`${tech.id}-${slot}`}
+                ref={(el) => {
+                  if (el) cardRefs.current.set(slot, el);
+                  else cardRefs.current.delete(slot);
+                }}
                 type="button"
                 className={`battle-card ${spellCardBorderClass(tech)} ${selected ? "battle-card-selected" : ""} ${castEffect?.handKey === handKey && castEffect.slots.includes(slot) ? "battle-card-casting" : ""}`}
                 disabled={busy || (!selected && s.mp < tech.mpCost)}
@@ -1076,6 +1052,7 @@ export function CombatPanel() {
           </button>
         </div>
       </footer>
+      <CardFlights flights={flights} onDone={endFlight} />
     </section>
   );
 }

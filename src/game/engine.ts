@@ -4,10 +4,20 @@ import { REALMS } from "./data/realms";
 import { SECTS } from "./data/sects";
 import { techById } from "./data/techniques";
 import { itemById, ITEMS, XUANTIAN_ARTIFACT_IDS } from "./data/items";
-import { LOCATIONS, MONSTERS, RECIPES, REGIONS } from "./data/world";
+import { LOCATIONS, MONSTERS, RECIPES, REGIONS, ELITE_SPAWNS, ELITE_SPAWN_CHANCE } from "./data/world";
 import { MISSIONS } from "./data/missions";
 import { dwellingLevelOf } from "./data/sectTiers";
 import { currentEraYears } from "./data/eraTime";
+import {
+  TengfuPlacement,
+  tengfuById,
+  tengfuBonusOf,
+  canPlaceTengfu,
+  TENGFU_DROPS,
+  TENGFU_DROP_CHANCE,
+  TENGFU_DROP_CHANCE_LORD,
+  TENGFU_DROP_CHANCE_ELITE,
+} from "./data/tengfu";
 
 // 狀態效果(2.21 版新增,仙法卡牌化的一部分;3.1 版新增 weaken;3.14 版新增 evade):掛在既有五行系統上,
 // 火→燒傷、木→中毒、水→冰封,不獨立發明新屬性池;weaken(虛弱)不對應五行,僅由戰術卡的「衰運針」附加;
@@ -107,12 +117,17 @@ export interface SaveData {
   oracleOffered: boolean; // 雲遊四海機緣觸發的「天算術」黑市機會是否待處理(購買或婉拒前持續為 true)
   pouchStones: number; // 存於乾坤袋中的靈石(1.24 版新增,黑眼貔貅掉落);與 stones 分開計算,戰敗遺失/被盜皆不受影響
   energyDoubled?: boolean; // 是否已使用【煉神術】(九龍獄馬良極稀有掉落,終身限用一次,令精力上限永久翻倍)
+  // 滕符陣(4.2 版新增):tengfuBag 為尚未安裝的滕符(id → 張數),tengfuGrid 為已安裝在 6 寬 × 5 高符陣上的位置
+  tengfuBag: Record<string, number>;
+  tengfuGrid: TengfuPlacement[];
 }
 
 export interface Modal {
   title: string;
   lines: string[];
   success?: boolean;
+  // 4.1 版新增:擊殺妖獸的結構化戰利品,供前端播放掉落動畫(lines 仍是給玩家讀的完整文字)
+  rewards?: { exp?: number; stones?: number; items?: string[]; tengfu?: string[] };
 }
 
 // 戰鬥浮動傷害數字(3.5 版新增):每次 applyAction 呼叫過程中(含巢狀呼叫,如 postPlayerTurn 觸發
@@ -189,11 +204,14 @@ export const maxLifeOf = (s: Pick<SaveData, "realmIdx" | "lifeBonus">) =>
 const ENERGY_BASE = 300;
 const ENERGY_PER_STAGE = 50;
 export const energyMaxOf = (
-  s: Pick<SaveData, "realmIdx" | "energyPotionStacks" | "energyDoubled">,
+  s: Pick<SaveData, "realmIdx" | "energyPotionStacks" | "energyDoubled"> & {
+    tengfuGrid?: TengfuPlacement[];
+  },
 ) => {
   const base = ENERGY_BASE + ENERGY_PER_STAGE * (REALMS[s.realmIdx].stage - 1);
   const withPotions = Math.floor(base * (1 + 0.1 * (s.energyPotionStacks ?? 0)));
-  return s.energyDoubled ? withPotions * 2 : withPotions;
+  // 滕符陣的精力加成為固定點數,加在煉神術翻倍之後
+  return (s.energyDoubled ? withPotions * 2 : withPotions) + tengfuBonusOf(s.tengfuGrid).energy;
 };
 
 // 各項行動消耗的精力(戰鬥中每回合的攻擊/施法/遁走不額外收費,已含在啟動獵殺的那次消耗裡)
@@ -242,10 +260,14 @@ export function statsOf(s: SaveData) {
   const baseAtk = realm.atk + (sect?.bonus.atk ?? 0) + sumAtk + (s.boonAtk ?? 0);
   // 仙靈力:一點 = 攻擊 ×0.2 倍(真仙專屬,紫色),4.0 版封頂 ×XIANLI_MULT_CAP(見該常數說明)
   const xianli = s.xianli ?? 0;
-  const atk = Math.floor(baseAtk * Math.min(XIANLI_MULT_CAP, 1 + xianli * XIANLI_MULT));
-  const def = sumDef + (s.boonDef ?? 0);
-  const hpMax = realm.hpMax + (sect?.bonus.hp ?? 0) + (s.boonHp ?? 0);
-  const mpMax = realm.mpMax + (sect?.bonus.mp ?? 0);
+  // 滕符陣(4.2 版):攻擊/氣血/法力為百分比加成;防禦以境界攻擊力的百分比換算成護體值
+  const tf = tengfuBonusOf(s.tengfuGrid);
+  const atk = Math.floor(
+    baseAtk * Math.min(XIANLI_MULT_CAP, 1 + xianli * XIANLI_MULT) * (1 + tf.atk),
+  );
+  const def = sumDef + (s.boonDef ?? 0) + Math.floor(realm.atk * tf.def);
+  const hpMax = Math.floor((realm.hpMax + (sect?.bonus.hp ?? 0) + (s.boonHp ?? 0)) * (1 + tf.hp));
+  const mpMax = Math.floor((realm.mpMax + (sect?.bonus.mp ?? 0)) * (1 + tf.mp));
   const speed = realm.atk + Math.floor(sumSpeed) + realm.stage * 5 + (s.boonSpeed ?? 0);
   const stoneMult = pet?.stoneMult ?? 1;
   const breakBonus = ming?.breakBonus ?? 0;
@@ -262,6 +284,7 @@ export function statsOf(s: SaveData) {
     stoneMult,
     breakBonus,
     weaponEl: weapon?.element ?? talisman?.element,
+    tengfu: tf,
   };
 }
 
@@ -314,8 +337,66 @@ const monsterById = (id: string): Monster => MONSTERS.find((m) => m.id === id)!;
 // 原始資料(資料檔案保留設計者原意的相對倍率,實際戰鬥數值由這裡統一換算,方便之後整體再調)。
 export const MONSTER_HP_BALANCE_MULT = 2.5;
 export const MONSTER_ATK_BALANCE_MULT = 1.5;
-export const monsterHpOf = (mon: Pick<Monster, "hp">) => Math.floor(mon.hp * MONSTER_HP_BALANCE_MULT);
-export const monsterAtkOf = (mon: Pick<Monster, "atk">) => Math.floor(mon.atk * MONSTER_ATK_BALANCE_MULT);
+// 4.2 版:一般妖獸氣血再 ×1.35(地域王/BOSS 不變)——卡牌連攜下一般妖獸仍常被兩三刀帶走,略為拉長戰鬥
+export const MONSTER_HP_NORMAL_MULT = 1.35;
+// 4.2 版試玩回饋:練氣期(天南 1~2 階)攻擊力太低,一般妖獸再 ×1.35 後形成「練氣中期之牆」
+// (實測 10 場敗 5 場、平均 16 回合)。天南的一般妖獸改為 ×0.7(不加 35%、再減 30%),築基以後照舊 ×1.35。
+export const MONSTER_HP_EARLY_MULT = 0.7;
+export const EARLY_REGION = "tiannan";
+const EARLY_MONSTER_IDS = new Set(
+  LOCATIONS.filter((l) => l.region === EARLY_REGION).flatMap((l) => l.monsters),
+);
+export const isEarlyMonster = (id: string) => EARLY_MONSTER_IDS.has(id);
+// 4.2 版:煉虛~大乘(出沒秘境最低需求 6~8 階)的一般妖獸再 ×1.35——模擬顯示這段幾乎一兩回合就結束、
+// 妖獸來不及出手。以「出沒秘境的最低需求境界」歸類,同時出沒於低階秘境的妖獸(如魔化同時在 5 階魔淵)不受影響。
+export const MONSTER_HP_LATE_MULT = 1.35;
+export const LATE_STAGE_RANGE = [6, 8] as const;
+const minStageOfMonster = new Map<string, number>();
+for (const l of LOCATIONS) {
+  const ids = [...l.monsters, ...(ELITE_SPAWNS[l.id] ? [ELITE_SPAWNS[l.id]] : [])];
+  for (const id of ids) minStageOfMonster.set(id, Math.min(minStageOfMonster.get(id) ?? 99, l.reqStage));
+}
+// 4.2 版:合體期(出沒最低 7 階)一般妖獸氣血再 ×2、大乘期(8 階)再 ×2.5,疊在上方各倍率之後
+export const MONSTER_HP_STAGE_EXTRA: Record<number, number> = { 7: 2, 8: 2.5 };
+export const monsterMinStage = (id: string) => minStageOfMonster.get(id);
+
+// 4.2 版:中後期妖獸修為下修——原始資料從結丹起「一隻就給一整個小境界的修為」(化神、合體甚至一隻超過需求),
+// 多角色模擬從練氣到渡劫只要約 100 次行動。依妖獸出沒秘境的最低需求境界打折:結丹~合體(3~7 階)×0.25、
+// 大乘(8 階)×0.15;地域王與菁英等 BOSS 不打折。
+export const MONSTER_EXP_STAGE_MULT: Record<number, number> = { 3: 0.25, 4: 0.25, 5: 0.25, 6: 0.25, 7: 0.25, 8: 0.15 };
+export const monsterExpOf = (mon: Pick<Monster, "id" | "exp" | "isLord" | "elite">) =>
+  mon.isLord || mon.elite
+    ? mon.exp
+    : Math.floor(mon.exp * (MONSTER_EXP_STAGE_MULT[minStageOfMonster.get(mon.id) ?? 0] ?? 1));
+const LATE_MONSTER_IDS = new Set(
+  [...minStageOfMonster].filter(([, st]) => st >= LATE_STAGE_RANGE[0] && st <= LATE_STAGE_RANGE[1]).map(([id]) => id),
+);
+export const isLateMonster = (id: string) => LATE_MONSTER_IDS.has(id);
+export const monsterHpOf = (mon: Pick<Monster, "id" | "hp" | "isLord">) =>
+  Math.floor(
+    mon.hp *
+      MONSTER_HP_BALANCE_MULT *
+      (mon.isLord
+        ? 1
+        : EARLY_MONSTER_IDS.has(mon.id)
+          ? MONSTER_HP_EARLY_MULT
+          : MONSTER_HP_NORMAL_MULT *
+            (LATE_MONSTER_IDS.has(mon.id) ? MONSTER_HP_LATE_MULT : 1) *
+            (MONSTER_HP_STAGE_EXTRA[minStageOfMonster.get(mon.id) ?? 0] ?? 1)),
+  );
+
+// 4.2 版:秘境開放「越一階挑戰」——可進入需求境界比自身高一階的秘境;但仙域(需求 10 階)仍須真正飛昇
+export const LOCATION_STAGE_LEEWAY = 1;
+export const XIAN_STAGE = 10;
+export const canEnterStage = (playerStage: number, reqStage: number) =>
+  reqStage >= XIAN_STAGE ? playerStage >= reqStage : playerStage + LOCATION_STAGE_LEEWAY >= reqStage;
+// 4.2 版:前期妖獸攻擊力只有 2~3,×1.5 後仍幾乎打不痛(加上玩家閃避上限 35%,常常整場零傷害)。
+// 低攻擊妖獸改為至少「原始攻擊 + MONSTER_ATK_EARLY_FLOOR」;原始攻擊約 8 以上時 ×1.5 已更高,中後期不受影響。
+export const MONSTER_ATK_EARLY_FLOOR = 4;
+// 新手護體:realmIdx 小於此值(練氣期前/中/後)時,突破失敗只散去一半修為、不折損壽元
+export const NOVICE_GUARD_REALMS = 3;
+export const monsterAtkOf = (mon: Pick<Monster, "atk">) =>
+  Math.max(Math.floor(mon.atk * MONSTER_ATK_BALANCE_MULT), mon.atk + MONSTER_ATK_EARLY_FLOOR);
 
 // 秘境可給予的裝備 / 秘笈池
 const EQUIP_KINDS = ["artifact", "robe", "amulet", "talisman", "pet"];
@@ -330,8 +411,21 @@ function elementMult(attacker: Element | undefined, defender: Element): number {
 }
 
 // 蠻荒異界四大地域王的專屬異能(monster id 對照見 world.ts)
-const MONSTER_DODGE_CHANCE: Record<string, number> = { lord_tianhu: 0.3 }; // 天狐:三成機率避過玩家攻擊
-const MONSTER_TRIPLE_ATK_CHANCE: Record<string, number> = { lord_zhenlong: 0.2 }; // 真龍:兩成機率反擊 ×3
+const MONSTER_DODGE_CHANCE: Record<string, number> = {
+  lord_tianhu: 0.3, // 天狐:三成機率避過玩家攻擊
+  // 4.2 版大乘期菁英
+  elite_yujiang: 0.25,
+  elite_baidu: 0.25,
+  elite_longwei: 0.2,
+};
+const MONSTER_TRIPLE_ATK_CHANCE: Record<string, number> = {
+  lord_zhenlong: 0.2, // 真龍:兩成機率反擊 ×3
+  // 4.2 版大乘期菁英
+  elite_leizun: 0.2,
+  elite_zhanzun: 0.2,
+  elite_mojun: 0.2,
+  elite_luzhu: 0.15,
+};
 const SPELL_SEALED_MONSTERS = new Set(["lord_pixiu"]); // 黑眼貔貅:封鎖玩家法術,無法施展仙法
 
 // ═══ 符寶袋(2.21 版仙法卡牌化 → 3.1 持有制手牌 → 3.4 版全面改為符寶袋抽棄牌,見
@@ -343,6 +437,23 @@ const SPELL_SEALED_MONSTERS = new Set(["lord_pixiu"]); // 黑眼貔貅:封鎖玩
 export const HAND_SIZE = 6;
 export const POUCH_MIN = 10;
 export const POUCH_MAX_COPIES = 5; // 單一仙法最多可放入符寶袋的張數,避免十張同名符寶的退化陣容
+// 4.2 版:基礎卡片(法器攻擊/法術攻擊)在符寶袋中各至少 BASIC_CARD_MIN 張,開局即有 6 張必選牌,
+// 避免整袋只塞高倍率仙法、每回合都抽到頂級連攜的極端組合,讓抽牌節奏更平衡。
+export const BASIC_CARD_MIN = 3;
+export const BASIC_CARDS = ["artifact_attack", "spell_attack"] as const;
+export const isBasicCard = (id: string) => (BASIC_CARDS as readonly string[]).includes(id);
+// 補足基礎卡片到最低張數(不足才補,超過的不動)
+export function withBasicMinimum(pouch: string[]): string[] {
+  const out = [...pouch];
+  for (const id of BASIC_CARDS) {
+    let n = out.filter((x) => x === id).length;
+    while (n < BASIC_CARD_MIN) {
+      out.push(id);
+      n += 1;
+    }
+  }
+  return out;
+}
 
 function shuffled<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -406,7 +517,7 @@ export function defaultPouch(s: Pick<SaveData, "learned" | "techCopies">): strin
 // 過擁有份數,不會強制砍掉玩家已經存在的設定。
 export function effectivePouch(s: Pick<SaveData, "learned" | "pouch" | "techCopies">): string[] {
   const raw = (s.pouch ?? []).filter((id) => s.learned.includes(id));
-  return raw.length > 0 ? raw : defaultPouch(s);
+  return withBasicMinimum(raw.length > 0 ? raw : defaultPouch(s));
 }
 
 // 符寶袋最低張數需求:正常是 POUCH_MIN,但已學仙法/擁有份數太少(依 ownedCopiesOf 加總仍湊不滿)
@@ -634,6 +745,8 @@ export function newSave(name: string, sectId: string): SaveData {
     energyPotionStacks: 0,
     bornEra: currentEraYears(),
     oracleOffered: false,
+    tengfuBag: {},
+    tengfuGrid: [],
     pouchStones: 0,
   };
   const { hpMax, mpMax } = statsOf(s);
@@ -1024,27 +1137,41 @@ function winCombat(s: SaveData): Modal {
   const windfall = Math.random() < 0.1;
   if (windfall) stones *= 2;
   const dropNames: string[] = [];
+  const dropIds: string[] = [];
   for (const d of mon.drops) {
     if (Math.random() < d.chance) {
       give(s, d.id);
       dropNames.push(itemById(d.id).name);
+      dropIds.push(d.id);
     }
   }
-  s.exp += mon.exp;
+  const expGain = monsterExpOf(mon);
+  s.exp += expGain;
   s.stones += stones;
   s.kills[mon.id] = (s.kills[mon.id] ?? 0) + 1;
   const isLord = mon.isLord;
+  // 滕符掉落(4.2 版):依戰鬥所在秘境的滕符池判定,地域王機率較高
+  const tengfuPool = TENGFU_DROPS[s.combat!.locationId] ?? [];
+  const tengfuIds: string[] = [];
+  const tfChance = isLord ? TENGFU_DROP_CHANCE_LORD : mon.elite ? TENGFU_DROP_CHANCE_ELITE : TENGFU_DROP_CHANCE;
+  if (tengfuPool.length && Math.random() < tfChance) {
+    const id = tengfuPool[rand(0, tengfuPool.length - 1)];
+    s.tengfuBag[id] = (s.tengfuBag[id] ?? 0) + 1;
+    tengfuIds.push(id);
+    dropNames.push(`滕符·${tengfuById(id)!.name}`);
+  }
   s.combat = null;
   log(
     s,
-    `${isLord ? "歷經苦戰,你竟斬殺了地域之王 " : "你擊殺了 "}${mon.name}!獲得修為 ${mon.exp}、靈石 ${stones}${windfall ? "(靈石橫財,雙倍!)" : ""}${dropNames.length ? ",拾得:" + dropNames.join("、") : ""}。`,
+    `${isLord ? "歷經苦戰,你竟斬殺了地域之王 " : mon.elite ? "一番惡戰,你終於斬落菁英 " : "你擊殺了 "}${mon.name}!獲得修為 ${expGain}、靈石 ${stones}${windfall ? "(靈石橫財,雙倍!)" : ""}${dropNames.length ? ",拾得:" + dropNames.join("、") : ""}。`,
   );
   return {
-    title: isLord ? "地 域 王 授 首" : "戰 利 品",
+    title: isLord ? "地 域 王 授 首" : mon.elite ? "菁 英 伏 誅" : "戰 利 品",
     success: true,
+    rewards: { exp: expGain, stones, items: dropIds, tengfu: tengfuIds },
     lines: [
-      `${isLord ? "斬殺地域王" : "擊殺"}【${mon.name}】`,
-      ...(mon.exp > 0 ? [`修為 +${mon.exp}`] : []),
+      `${isLord ? "斬殺地域王" : mon.elite ? "斬落菁英" : "擊殺"}【${mon.name}】`,
+      ...(expGain > 0 ? [`修為 +${expGain}`] : []),
       `靈石 +${stones}${windfall ? "(靈石橫財,雙倍!)" : ""}`,
       ...(dropNames.length
         ? [`拾得:${dropNames.join("、")}`]
@@ -1162,27 +1289,10 @@ function exploreSecretRealm(s: SaveData): ActionResult {
 }
 
 // ═══ 主入口 ═══
-export function applyAction(
-  s: SaveData,
-  type: string,
-  payload: Record<string, unknown> = {},
-): ActionResult {
-  pendingDamageEvents = [];
-  const result = applyActionInner(s, type, payload);
-  // 統一收尾:氣血 / 法力 不得超過各自上限(也不得為負)
-  const { hpMax, mpMax } = statsOf(result.save);
-  result.save.hp = Math.max(0, Math.min(hpMax, result.save.hp));
-  result.save.mp = Math.max(0, Math.min(mpMax, result.save.mp));
-  if (pendingDamageEvents.length > 0) result.damageEvents = pendingDamageEvents;
-  return result;
-}
-
-function applyActionInner(
-  s: SaveData,
-  type: string,
-  payload: Record<string, unknown> = {},
-): ActionResult {
-  // 向後相容:補齊舊存檔缺少的欄位
+// 向後相容(4.2 版抽出為獨立函式):補齊舊存檔缺少的欄位、遷移舊格式。每次行動前執行,
+// /api/save 讀檔時也會先跑一次——線上存檔可能來自更舊的版本(例如 2.x 沒有符寶袋/手牌/滕符陣),
+// 讀檔當下就補齊,前端第一次渲染看到的就是完整格式,不必等玩家做出第一個行動。
+export function normalizeSave(s: SaveData): void {
   // 3.8 版:法器攻擊/法術攻擊改為與生俱來的基礎卡片,新角色由 newSave() 直接寫入 learned,
   // 舊存檔沒有這兩項,补上以免完全沒有基礎攻擊手段可用(原本恆常可用的法器攻擊已移除)
   if (!s.learned.includes("artifact_attack")) s.learned = ["artifact_attack", ...s.learned];
@@ -1219,6 +1329,10 @@ function applyActionInner(
   // 恆紀年:舊存檔沒有創建當下的紀年快照,以「現在」回填(僅為顯示用,不影響任何遊戲數值)
   if (typeof s.bornEra !== "number") s.bornEra = currentEraYears();
   if (typeof s.oracleOffered !== "boolean") s.oracleOffered = false;
+  if (!s.tengfuBag || typeof s.tengfuBag !== "object") s.tengfuBag = {};
+  // 4.2 版:舊存檔的符寶袋若基礎卡片不足 BASIC_CARD_MIN 張,自動補足
+  if (s.pouch && s.pouch.length > 0) s.pouch = withBasicMinimum(s.pouch);
+  if (!Array.isArray(s.tengfuGrid)) s.tengfuGrid = [];
   // 3.16 版:符寶袋回溯修正,只執行一次(見 trimPouchToOwnership 註解)
   if (!s.pouchTrimmed) {
     trimPouchToOwnership(s);
@@ -1235,6 +1349,29 @@ function applyActionInner(
     s.combat.monsterStatus = s.combat.monsterStatus ?? [];
     s.combat.playerStatus = s.combat.playerStatus ?? [];
   }
+}
+
+export function applyAction(
+  s: SaveData,
+  type: string,
+  payload: Record<string, unknown> = {},
+): ActionResult {
+  pendingDamageEvents = [];
+  const result = applyActionInner(s, type, payload);
+  // 統一收尾:氣血 / 法力 不得超過各自上限(也不得為負)
+  const { hpMax, mpMax } = statsOf(result.save);
+  result.save.hp = Math.max(0, Math.min(hpMax, result.save.hp));
+  result.save.mp = Math.max(0, Math.min(mpMax, result.save.mp));
+  if (pendingDamageEvents.length > 0) result.damageEvents = pendingDamageEvents;
+  return result;
+}
+
+function applyActionInner(
+  s: SaveData,
+  type: string,
+  payload: Record<string, unknown> = {},
+): ActionResult {
+  normalizeSave(s);
 
   if (s.dead && type !== "reset") return { save: s, error: "你已道隕,唯有轉世重修。" };
 
@@ -1261,7 +1398,7 @@ function applyActionInner(
     case "cultivate": {
       if (s.combat) return { save: s, error: "激戰之中,無法打坐。" };
       s.energy -= energyCost;
-      const { realm, sect, mpMax } = statsOf(s);
+      const { realm, sect, mpMax, hpMax } = statsOf(s);
       const cost = cultCostOf(s);
       const cap = maxLifeOf(s);
       // 打坐消耗壽元;壽元耗盡即道隕
@@ -1285,8 +1422,13 @@ function applyActionInner(
       const gain = Math.max(1, Math.floor(base * (1 + (sect?.bonus.exp ?? 0) / 100)));
       s.exp += gain;
       s.mp = Math.min(mpMax, s.mp + Math.floor(mpMax * 0.25));
+      // 4.2 版:調息併入打坐——打坐同時運轉周天療傷,氣血回滿(原「調息」行動保留於引擎供相容,介面已移除)
+      const healed = hpMax - s.hp;
+      s.hp = hpMax;
       s.cultToday += 1;
-      const lines = [`你盤膝打坐,吐納靈氣,修為 +${gain}(耗壽元 ${cost} 年,現 ${s.age}/${cap})。`];
+      const lines = [
+        `你盤膝打坐,吐納靈氣,修為 +${gain}${healed > 0 ? `,周天運轉間傷勢盡復(氣血 +${healed})` : ""}(耗壽元 ${cost} 年,現 ${s.age}/${cap})。`,
+      ];
       // 修習仙法推進(以打坐年月推進)
       if (s.learning) {
         s.learning.remain -= cost;
@@ -1530,6 +1672,17 @@ function applyActionInner(
         return { save: s, breakResult };
       }
       // 失敗:修為直接歸零,道基折損最大壽元 15%
+      // 4.2 版新手護體:練氣期(前三次小境界突破)失敗只散去一半修為、不折損壽元,避免新手一失手就被勸退
+      if (s.realmIdx < NOVICE_GUARD_REALMS) {
+        const lostHalf = Math.ceil(s.exp / 2);
+        s.exp -= lostHalf;
+        const lines = [
+          `靈氣暴走,經脈一震!所幸根基尚淺、師門護體符護住心脈——修為散去一半(損失 ${lostHalf}),壽元無損。`,
+          "新手護體僅限練氣期,築基之後突破失敗將修為盡散、折損壽元,務必謹慎。",
+        ];
+        log(s, ...lines);
+        return { save: s, breakResult: { success: false, title: "突 破 失 敗", lines } };
+      }
       const lost = s.exp;
       const lifeCut = Math.floor(maxLifeOf(s) * 0.15);
       s.exp = 0;
@@ -1554,7 +1707,7 @@ function applyActionInner(
       const loc = LOCATIONS.find((l) => l.id === payload.locationId);
       if (!loc) return { save: s, error: "無此秘境" };
       const { realm } = statsOf(s);
-      if (realm.stage < loc.reqStage) {
+      if (!canEnterStage(realm.stage, loc.reqStage)) {
         log(s, `${loc.name} 兇險異常,以你現在的境界踏入必死無疑。`);
         return { save: s };
       }
@@ -1604,7 +1757,7 @@ function applyActionInner(
       const loc = LOCATIONS.find((l) => l.id === payload.locationId);
       if (!loc) return { save: s, error: "無此秘境" };
       const { realm } = statsOf(s);
-      if (realm.stage < loc.reqStage) {
+      if (!canEnterStage(realm.stage, loc.reqStage)) {
         log(s, `${loc.name} 兇險異常,以你現在的境界踏入必死無疑。`);
         return { save: s };
       }
@@ -1631,6 +1784,22 @@ function applyActionInner(
           s,
           `⚠ 天地驟然一暗——${loc.name} 的地域之王【${lord.name}】現身了!(${lord.element}屬性)絕世凶威,撲面而來!`,
         );
+        return { save: s };
+      }
+      // 4.2 版:大乘期秘境的菁英小 BOSS
+      const eliteId = ELITE_SPAWNS[loc.id];
+      if (eliteId && Math.random() < ELITE_SPAWN_CHANCE) {
+        const elite = monsterById(eliteId);
+        s.combat = {
+          monsterId: elite.id,
+          monsterHp: monsterHpOf(elite),
+          locationId: loc.id,
+          ...startingCombatHand(s),
+          monsterStatus: [],
+          playerStatus: [],
+        };
+        if (!s.seen.includes(elite.id)) s.seen.push(elite.id);
+        log(s, `⚔ 一股兇煞之氣撲面而來——${loc.name} 的菁英【${elite.name}】擋住了去路!(${elite.element}屬性)`);
         return { save: s };
       }
       const mid = loc.monsters[rand(0, loc.monsters.length - 1)];
@@ -1706,6 +1875,7 @@ function applyActionInner(
       const effEl = (t: Technique) => (t.id === "artifact_attack" ? weaponEl : t.element) ?? t.element;
       // 雙/三屬性符寶(3.14 版新增):除主屬性外,extraElements 列出的屬性一併視為這張符寶的屬性
       const elemsOf = (t: Technique): Element[] => [effEl(t), ...(t.extraElements ?? [])];
+      const tengfuEl = tengfuBonusOf(s.tengfuGrid);
 
       // 同批次同元素張數(含自己),供 synergyPct 使用;不同元素種類數(不分張數),供 crossElementPct 使用。
       // 雙/三屬性符寶每個屬性都各自計入一次,讓其他符寶的同屬疊加/混屬加成也把它算進去。
@@ -1728,6 +1898,9 @@ function applyActionInner(
         if (t.comboSizePct) p *= 1 + t.comboSizePct * Math.min(COMBO_SIZE_STACK_CAP, techs.length - 1);
         if (t.crossElementPct) p *= 1 + t.crossElementPct * (distinctElementCount - 1);
         if (buff && buff.element === effEl(t)) p *= 1 + buff.pct;
+        // 滕符陣屬性加成(4.2 版):多屬性符寶取加成最高的屬性,再加上全屬性加成
+        const tfEl = Math.max(...elemsOf(t).map((el) => tengfuEl.el[el] ?? 0)) + tengfuEl.allEl;
+        if (tfEl > 0) p *= 1 + tfEl;
         // 雙/三屬性符寶(3.14 版新增):相剋倍率取所有屬性中最高者,天生百搭、不怕撞上被剋的屬性
         const mult = Math.max(...elemsOf(t).map((el) => elementMult(el, mon.element)));
         if (Math.abs(mult - 1) > Math.abs(bestElementMult - 1)) bestElementMult = mult;
@@ -2553,6 +2726,43 @@ function applyActionInner(
       };
     }
 
+    // 滕符陣(4.2 版):安裝 / 移動 / 卸下。payload.from = "bag" 從未安裝區放入,或傳 index 移動已安裝的滕符
+    case "tengfuPlace": {
+      if (s.combat) return { save: s, error: "戰鬥中無法調整滕符陣" };
+      const r = Number(payload.r);
+      const c = Number(payload.c);
+      const moveIndex = payload.index === undefined ? -1 : Number(payload.index);
+      const id = moveIndex >= 0 ? s.tengfuGrid[moveIndex]?.id : String(payload.id ?? "");
+      const def = id ? tengfuById(id) : undefined;
+      if (!def) return { save: s, error: "並無此滕符" };
+      if (moveIndex < 0 && (s.tengfuBag[def.id] ?? 0) <= 0) return { save: s, error: "並無此滕符" };
+      if (!Number.isInteger(r) || !Number.isInteger(c) || !canPlaceTengfu(s.tengfuGrid, def, r, c, moveIndex)) {
+        return { save: s, error: "此處放不下這張滕符" };
+      }
+      if (moveIndex >= 0) {
+        s.tengfuGrid[moveIndex] = { id: def.id, r, c };
+      } else {
+        s.tengfuBag[def.id] -= 1;
+        if (s.tengfuBag[def.id] <= 0) delete s.tengfuBag[def.id];
+        s.tengfuGrid.push({ id: def.id, r, c });
+        log(s, `你將【${def.name}】安入滕符陣,符光一閃,與周身氣機相連。`);
+      }
+      return { save: s };
+    }
+    case "tengfuRemove": {
+      if (s.combat) return { save: s, error: "戰鬥中無法調整滕符陣" };
+      const index = Number(payload.index);
+      const placed = s.tengfuGrid[index];
+      if (!placed) return { save: s, error: "並無此滕符" };
+      s.tengfuGrid.splice(index, 1);
+      s.tengfuBag[placed.id] = (s.tengfuBag[placed.id] ?? 0) + 1;
+      // 卸下氣血/法力滕符後,現值不可超過新上限
+      const { hpMax, mpMax } = statsOf(s);
+      s.hp = Math.min(s.hp, hpMax);
+      s.mp = Math.min(s.mp, mpMax);
+      s.energy = Math.min(s.energy ?? 0, energyMaxOf(s));
+      return { save: s };
+    }
     case "equip": {
       const item = itemById(String(payload.itemId ?? ""));
       if (!item || (s.inventory[item.id] ?? 0) <= 0) return { save: s, error: "並無此物" };
@@ -2677,6 +2887,9 @@ function applyActionInner(
       } else {
         const idx = pouch.indexOf(techId);
         if (idx === -1) return { save: s, error: "符寶袋中並無此符寶" };
+        if (isBasicCard(techId) && pouch.filter((id) => id === techId).length <= BASIC_CARD_MIN) {
+          return { save: s, error: `【${techById(techId).name}】為基礎卡片,符寶袋中至少需保留 ${BASIC_CARD_MIN} 張` };
+        }
         const minReq = pouchMinFor(s);
         if (pouch.length <= minReq) {
           return { save: s, error: `符寶袋至少需保留 ${minReq} 張符寶` };

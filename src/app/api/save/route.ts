@@ -5,6 +5,7 @@ import {
   applyEnergyRegen,
   ENERGY_REGEN_PER_TICK,
   dwellingEnergyBonusOf,
+  normalizeSave,
   SaveData,
 } from "@/game/engine";
 
@@ -39,6 +40,14 @@ export async function GET(req: NextRequest) {
   );
   let ageGained = 0;
   const save = row.data;
+  // 4.2 版:讀檔當下先補齊舊格式(線上可能有 2.x 存檔),有變動就一併寫回——
+  // 不寫回的話,舊格式戰鬥中的存檔每次讀檔都會重新抽一手牌,跟之後行動時伺服器抽的牌對不上
+  let migrated = false;
+  if (save && Array.isArray(save.learned)) {
+    const before = JSON.stringify(save);
+    normalizeSave(save);
+    migrated = JSON.stringify(save) !== before;
+  }
 
   // 精力回復:平時每 5 分鐘真實時間 2 點,離線期間也照算,只推進已兌現的整數分鐘。
   // 停泊宗門仙境閉關潛修時額外加成:基礎 +2,宗門每提升一階再 +1(依宗門目前等級)。
@@ -58,7 +67,7 @@ export async function GET(req: NextRequest) {
   const energyMinutesConsumed = energyTicks * 5;
   if (energyPoints > 0 && save) applyEnergyRegen(save, energyPoints);
 
-  if ((hours > 0 || energyPoints > 0) && save && !save.dead) {
+  if ((hours > 0 || energyPoints > 0 || migrated) && save && !save.dead) {
     ageGained = hours;
     if (hours > 0) applyRealTimeAging(save, hours);
     await sql`

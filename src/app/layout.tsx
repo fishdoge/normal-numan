@@ -11,8 +11,6 @@ import "@fontsource/noto-serif-tc/900.css";
 import "@fontsource/jetbrains-mono/400.css";
 import "@fontsource/jetbrains-mono/500.css";
 import "./globals.css";
-import "./redesign.css";
-import "./game-world.css";
 import Footer from "@/components/Footer";
 
 const SITE_URL = "https://www.immortality.website";

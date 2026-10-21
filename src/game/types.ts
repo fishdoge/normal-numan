@@ -299,6 +299,7 @@ export interface Monster {
   drops: { id: string; chance: number }[];
   desc: string;
   isLord?: boolean; // 地域王(妖獸領主),極稀有
+  elite?: boolean; // 4.2 版:菁英小 BOSS,只在大乘期(8 階)秘境機率現身,見 world.ts 的 ELITE_SPAWNS
 }
 
 export interface Region {

@@ -1,39 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <defs>
-    <radialGradient id="bg" cx="50%" cy="42%" r="75%">
-      <stop offset="0%" stop-color="#211d18"/>
-      <stop offset="55%" stop-color="#161310"/>
-      <stop offset="100%" stop-color="#0d0b08"/>
-    </radialGradient>
-    <linearGradient id="gold" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#ecdcb8"/>
-      <stop offset="45%" stop-color="#d8b84a"/>
-      <stop offset="100%" stop-color="#c9a227"/>
-    </linearGradient>
-    <radialGradient id="glow" cx="50%" cy="46%" r="42%">
-      <stop offset="0%" stop-color="#c9a227" stop-opacity="0.55"/>
-      <stop offset="100%" stop-color="#c9a227" stop-opacity="0"/>
-    </radialGradient>
-  </defs>
-
-  <!-- 底:玄鐵印璽 -->
-  <rect x="4" y="4" width="56" height="56" rx="15" fill="url(#bg)"/>
-  <rect x="5.25" y="5.25" width="53.5" height="53.5" rx="13.75" fill="none" stroke="url(#gold)" stroke-width="2.2"/>
-
-  <!-- 靈光暈染 -->
-  <circle cx="32" cy="30" r="24" fill="url(#glow)"/>
-
-  <!-- 四角印紋(呼應站內 deco-frame 花紋) -->
-  <g stroke="#c9a227" stroke-width="2" stroke-linecap="round" opacity="0.85">
-    <path d="M12 16 V12 H16"/>
-    <path d="M48 12 H52 V16"/>
-    <path d="M52 48 V52 H48"/>
-    <path d="M16 52 H12 V48"/>
+  <!-- 凡人修仙傳 標誌:由凡入仙
+       自下而上:兩道斷爻(凡軀,未成)→ 一道完整的陽爻(道成)→ 頂上一點(飛昇)。
+       越往上越亮,象徵修為一路攀升。純幾何、單一金色,16px 仍清楚可辨。 -->
+  <rect width="64" height="64" rx="14" fill="#14110d"/>
+  <g stroke="#d9b45a" stroke-width="5" stroke-linecap="round">
+    <path d="M17 47 H28 M36 47 H47" opacity="0.55"/>
+    <path d="M17 36 H28 M36 36 H47" opacity="0.8"/>
+    <path d="M17 25 H47"/>
   </g>
-
-  <!-- 仙:改用黑體粗重字重(而非細筆畫的襯線體),小尺寸下筆畫更均勻、不易糊成歪斜;
-       字色改實心金,避免漸層在字形包圍盒上分布不均、造成視覺重心偏移 -->
-  <text x="32" y="34" text-anchor="middle" dominant-baseline="central"
-        font-family="'Noto Sans TC','PingFang TC','Microsoft JhengHei','Heiti TC',sans-serif"
-        font-size="35" font-weight="900" fill="#e8c65a">仙</text>
+  <circle cx="32" cy="14" r="3.6" fill="#f2d27a"/>
 </svg>

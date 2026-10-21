@@ -34,6 +34,11 @@ import {
   MONSTER_ATK_BALANCE_MULT,
   monsterHpOf,
   monsterAtkOf,
+  NOVICE_GUARD_REALMS,
+  BASIC_CARD_MIN,
+  canEnterStage,
+  MONSTER_HP_NORMAL_MULT,
+  monsterExpOf,
 } from "./engine";
 
 export type { SaveData, Modal, DamageEvent };
@@ -65,12 +70,17 @@ export {
   MONSTER_ATK_BALANCE_MULT,
   monsterHpOf,
   monsterAtkOf,
+  NOVICE_GUARD_REALMS,
+  BASIC_CARD_MIN,
+  canEnterStage,
+  MONSTER_HP_NORMAL_MULT,
+  monsterExpOf,
   ownedCopiesOf,
 };
 
 // 行動頁籤(ActionTabs)目前分頁,提到 store 讓其他面板(如道籍)也能切換頁籤
 export type Tab =
-  | "explore"
+  | "tengfu"
   | "bag"
   | "tech"
   | "craft"
@@ -107,6 +117,11 @@ interface ClientState {
   // 戰鬥浮動傷害數字(3.5 版新增):每次 act() 回傳的 damageEvents 附上前端自產的唯一 id 後累積於此,
   // CombatPanel 依 id 渲染浮動數字動畫,動畫結束呼叫 consumeDamageEvent 移除,避免重複觸發。
   damageEvents: (DamageEvent & { id: string })[];
+  // 大陸遊歷的選擇(4.2 版):放在 store,戰鬥畫面切換回來後地圖仍停在原本的區域與秘境
+  explore: { region: string; continent: string; selected: string | null; autoPicked: boolean };
+  setExplore: (
+    patch: Partial<{ region: string; continent: string; selected: string | null; autoPicked: boolean }>,
+  ) => void;
 
   act: (type: string, payload?: Record<string, unknown>) => Promise<void>;
   consumeDamageEvent: (id: string) => void;
@@ -128,11 +143,13 @@ export const useGame = create<ClientState>()((set, get) => ({
   breakResult: null,
   purchaseResult: null,
   busy: false,
-  activeTab: "explore",
+  activeTab: "tengfu",
   mainView: "game",
   revivalUsed: false,
   language: getInitialLanguage(),
   damageEvents: [],
+  explore: { region: "tiannan", continent: "all", selected: null, autoPicked: false },
+  setExplore: (patch) => set((st) => ({ explore: { ...st.explore, ...patch } })),
 
   setSave: (save) => set({ save }),
   consumeDamageEvent: (id) =>

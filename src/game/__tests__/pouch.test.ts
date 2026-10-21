@@ -9,7 +9,10 @@ import {
   effectivePouch,
   pouchMinFor,
   POUCH_MAX_COPIES,
+  BASIC_CARD_MIN,
+  withBasicMinimum,
 } from "../engine";
+import { SECTS } from "../data/sects";
 
 describe("ownedCopiesOf", () => {
   it("基礎卡片(法器攻擊/法術攻擊)恆常視為擁有上限份數", () => {
@@ -149,5 +152,28 @@ describe("useItem 複製符寶(3.15 版):重新參悟已學會的仙法", () => 
     const r = applyAction(s, "useItem", { itemId: "m_leidun" });
     expect(r.save.inventory["m_leidun"]).toBe(1);
     expect(ownedCopiesOf(r.save, "leidun")).toBe(POUCH_MAX_COPIES);
+  });
+});
+
+describe("基礎卡片最低張數(4.2 版):法器攻擊/法術攻擊各至少 3 張", () => {
+  it("新角色符寶袋中兩張基礎卡片各至少 3 張", () => {
+    const s = newSave("測試員", SECTS[0].id);
+    const pouch = effectivePouch(s);
+    expect(pouch.filter((id) => id === "artifact_attack").length).toBeGreaterThanOrEqual(BASIC_CARD_MIN);
+    expect(pouch.filter((id) => id === "spell_attack").length).toBeGreaterThanOrEqual(BASIC_CARD_MIN);
+  });
+  it("基礎卡片剩 3 張時不可再減少", () => {
+    const s = newSave("測試員", SECTS[0].id);
+    s.pouch = withBasicMinimum([s.learned[2], s.learned[2], s.learned[3], s.learned[3]]);
+    const r = applyAction(s, "pouchAdjust", { techId: "spell_attack", delta: -1 });
+    expect(r.error).toBeTruthy();
+    expect(r.save.pouch!.filter((id) => id === "spell_attack").length).toBe(BASIC_CARD_MIN);
+  });
+  it("舊存檔符寶袋不足 3 張基礎卡片時,開戰用的有效符寶袋會自動補足", () => {
+    const s = newSave("測試員", SECTS[0].id);
+    s.pouch = ["artifact_attack", s.learned[2], s.learned[3]];
+    const pouch = effectivePouch(s);
+    expect(pouch.filter((id) => id === "artifact_attack").length).toBe(BASIC_CARD_MIN);
+    expect(pouch.filter((id) => id === "spell_attack").length).toBe(BASIC_CARD_MIN);
   });
 });

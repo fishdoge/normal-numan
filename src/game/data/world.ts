@@ -150,6 +150,17 @@ export const MONSTERS: Monster[] = [
   { id: "lord_zhenlong", name: "真龍", element: "木", isLord: true, hp: 119497474, atk: 46760, exp: 0, stones: [300000000, 600000000], drops: [{ id: "manhuang_lingsui", chance: 0.12 }, { id: "zengyuandan", chance: 0.06 }, { id: "jinhundan", chance: 0.03 }, { id: "thantian_lu", chance: 0.0375 }, { id: "poshou_jinhow", chance: 0.5 },{id:"panlongtaoshu",chance:0.3}, { id: "xiantian_qi", chance: 0.125 }, { id: "zenglingzhu", chance: 0.5 }, { id: "tianxiandan", chance: 0.09 }, { id: "taiyi_jinghun_zhenlong", chance: 0.12 }, { id: "xuantian_canpian", chance: 0.35 }], desc: "真龍領地之主,龍血偶爾狂暴,兩成機率一擊爆發三倍攻擊之力。" },
   { id: "lord_baxia", name: "霸下", element: "土", isLord: true, hp: 1333333333, atk: 12222, exp: 0, stones: [400000000, 800000000], drops: [{ id: "manhuang_lingsui", chance: 0.12 }, { id: "zengyuandan", chance: 0.06 },{id:"nimetanti",chance:0.8}, { id: "thantian_lu", chance: 0.045 }, { id: "xiantian_qi", chance: 0.15 },{id:"panlongtaoshu",chance:0.3}, { id: "zenglingzhu", chance: 0.5 }, { id: "tianxiandan", chance: 0.1 }, { id: "taiyi_jinghun_baxia", chance: 0.12 }, { id: "xuantian_canpian", chance: 0.35 }], desc: "霸下領地之主,龍生九子之一,以馱負洪荒著稱——氣血堅韌至極,乃尋常妖獸的四十倍。" },
   { id: "lord_pixiu", name: "黑眼貔貅", element: "金", isLord: true, hp: 10862066, atk: 12414, exp: 0, stones: [300000000, 600000000], drops: [{ id: "qiankun_dai", chance: 0.08 }, { id: "manhuang_lingsui", chance: 0.12 }, { id: "zengyuandan", chance: 0.06 }, { id: "xiantian_qi", chance: 0.2 }, { id: "thantian_lu", chance: 0.0375 }, { id: "poshou_jinhow", chance: 0.5 },{id:"panlongtaoshu",chance:0.3}, { id: "zenglingzhu", chance: 0.5 }, { id: "tianxiandan", chance: 0.09 }, { id: "taiyi_jinghun_pixiu", chance: 0.12 }, { id: "xuantian_canpian", chance: 0.35 }], desc: "貔貅領地之主,雙目幽黑,戰時可封鎖敵人法力波動,令其法術盡數失效,唯有以法器相搏。" },
+  // ═══ 4.2 版:大乘期菁英小 BOSS ═══
+  // 每處 8 階靈界秘境各一隻,獵殺時 12% 機率取代一般妖獸現身(地域王判定之後)。原始數值約為該地最強一般妖獸的
+  // 氣血 ×2.2、攻擊 ×7.7(大乘期玩家氣血極厚,攻擊要夠高才打得痛),修為/靈石 ×4;各有一項特技(閃避或三倍重擊,見 engine.ts 的 MONSTER_DODGE_CHANCE /
+  // MONSTER_TRIPLE_ATK_CHANCE)。氣血同樣套用 8 階妖獸的所有倍率。
+  { id: "elite_leizun", name: "紫霄雷尊 · 渡劫殘魂", element: "金", elite: true, hp: 100000, atk: 14076, exp: 1960000, stones: [48000, 96000], drops: [{ id: "zenglingzhu", chance: 0.3 }], desc: "飛昇台上渡劫失敗的修士殘魂,怨念與天雷相融,化作紫霄雷尊——雷劫重擊兩成機率三倍傷害。" },
+  { id: "elite_yujiang", name: "穿雲羽將 · 天霄", element: "金", elite: true, hp: 82000, atk: 11426, exp: 1320000, stones: [38000, 76000], drops: [{ id: "zenglingzhu", chance: 0.3 }], desc: "飛靈族天霄城最年輕的羽將,身法如雲中電光,四分之一的攻擊都會被他閃過。" },
+  { id: "elite_zhanzun", name: "裂角戰尊 · 蠻獄", element: "金", elite: true, hp: 92600, atk: 12530, exp: 1520000, stones: [44000, 88000], drops: [{ id: "zenglingzhu", chance: 0.3 }], desc: "角蚩族蠻獄的鬥場之王,斷角猶在、凶性不減,兩成機率一擊三倍。" },
+  { id: "elite_baidu", name: "無面擺渡人 · 冥河", element: "水", elite: true, hp: 86200, atk: 11813, exp: 1400000, stones: [40000, 80000], drops: [{ id: "zenglingzhu", chance: 0.3 }], desc: "冥河上沒有臉的擺渡人,只渡亡魂,不渡生人——身形飄忽,四分之一的攻擊穿身而過。" },
+  { id: "elite_mojun", name: "赤瞳魔君 · 血獄", element: "無", elite: true, hp: 100000, atk: 13634, exp: 1680000, stones: [48000, 96000], drops: [{ id: "zenglingzhu", chance: 0.3 }], desc: "地血族血獄深處的魔君,雙瞳赤紅如血池,嗜殺成性,兩成機率三倍血爪。" },
+  { id: "elite_longwei", name: "孽鱗龍衛 · 九龍獄", element: "木", elite: true, hp: 110300, atk: 15070, exp: 1920000, stones: [58000, 116000], drops: [{ id: "zenglingzhu", chance: 0.35 }], desc: "九龍獄中墮落的龍族守衛,逆鱗倒生,鱗甲滑不留手,兩成攻擊被鱗片偏開。" },
+  { id: "elite_luzhu", name: "焚元爐主 · 天鼎宮", element: "金", elite: true, hp: 165700, atk: 14738, exp: 2000000, stones: [64000, 128000], drops: [{ id: "zenglingzhu", chance: 0.4 }], desc: "天鼎宮古鼎的爐主,以修士元神為薪柴,鼎火一沸便是一成五機率的三倍焚元。" },
 ];
 
 
@@ -448,3 +459,15 @@ export const RECIPES: Recipe[] = [
   { id: "r_manhuang_zhenyuandan", result: "manhuang_zhenyuandan", name: "混沌真元丹", stones: 8000000, desc: "蠻荒靈髓合煉的真元奇丹,法力如潮水般瞬間湧回。", lifeCost: 500, reqStage: 10, materials: [{ id: "manhuang_lingsui", n: 3 }, { id: "manhuang_yungu", n: 2 }] },
   { id: "r_taiyi_huiqidan", result: "taiyi_huiqidan", name: "太乙回氣丹", stones: 5000000, desc: "金源聖蓮與蠻荒靈髓合煉的回氣奇丹,一息之間精力充盈。", lifeCost: 300, reqStage: 10, materials: [{ id: "jinyuan_shenglian", n: 1 }, { id: "manhuang_lingsui", n: 1 }, { id: "taiyi_jingjin", n: 1 }] },
 ];
+
+// 4.2 版:大乘期(8 階)靈界秘境的菁英小 BOSS 出沒表(秘境 id → 菁英妖獸 id)
+export const ELITE_SPAWNS: Record<string, string> = {
+  feishengtai: "elite_leizun",
+  tianxiaocheng: "elite_yujiang",
+  jiaomanyu: "elite_zhanzun",
+  minghezhidi: "elite_baidu",
+  dixue_xueyu: "elite_mojun",
+  jiulongyu: "elite_longwei",
+  tiandinggong: "elite_luzhu",
+};
+export const ELITE_SPAWN_CHANCE = 0.12;

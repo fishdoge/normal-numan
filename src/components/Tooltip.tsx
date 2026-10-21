@@ -6,18 +6,16 @@ export default function Tooltip({
   content,
   children,
   block,
-  align = "left",
 }: {
   content: string;
   children: React.ReactNode;
   block?: boolean; // true:外層改用 block 排版(包住整個道具區塊時用),預設 inline-block(包住單一行內元素時用)
-  align?: "left" | "right";
 }) {
   return (
     <span className={`relative group/tooltip ${block ? "block" : "inline-block"}`}>
       {children}
       <span
-        className={`pointer-events-none absolute ${align === "right" ? "right-0" : "left-0"} top-full z-50 mt-1 hidden w-max max-w-[min(20rem,calc(100vw-3rem))] whitespace-normal rounded-sm border border-gold/40 bg-ink px-2.5 py-1.5 text-xs leading-relaxed text-cream shadow-lg group-hover/tooltip:block`}
+        className="pointer-events-none absolute left-0 top-full z-50 mt-1 hidden w-max max-w-xs whitespace-normal rounded-sm border border-gold/40 bg-ink px-2.5 py-1.5 text-xs leading-relaxed text-cream shadow-lg group-hover/tooltip:block"
       >
         {content}
       </span>

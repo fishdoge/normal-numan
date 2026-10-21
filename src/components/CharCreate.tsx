@@ -49,8 +49,8 @@ export default function CharCreate({ name }: { name?: string }) {
   }, []);
 
   return (
-    <main className="character-create">
-      <header className="character-create-hero">
+    <main className="max-w-3xl mx-auto px-4 py-12">
+      <header className="text-center mb-10">
         <p className="font-mono text-xs tracking-[0.5em] text-gold/70 mb-3">
           A MORTAL&apos;S JOURNEY
         </p>
@@ -84,8 +84,7 @@ export default function CharCreate({ name }: { name?: string }) {
                 key={sect.id}
                 disabled={full}
                 onClick={() => !full && setSectId(sect.id)}
-                aria-pressed={active}
-                className={`sect-choice text-left border rounded-sm p-3 transition-colors ${
+                className={`text-left border rounded-sm p-3 transition-colors ${
                   full
                     ? "border-faded/15 opacity-50 cursor-not-allowed"
                     : active
@@ -100,31 +99,13 @@ export default function CharCreate({ name }: { name?: string }) {
                     {lang !== "en" && "行"}
                   </span>
                 </div>
-                <p className="text-sm text-faded mt-1 leading-relaxed">
-                  {sectDisplayDesc(sect, lang)}
-                </p>
+                <p className="text-sm text-faded mt-1 leading-relaxed">{sectDisplayDesc(sect, lang)}</p>
                 <p className="text-xs mt-2 text-cream/80">
                   {t("charStartTech")}:{techDisplayName(tech, lang)} ·{" "}
-                  {sect.bonus.exp
-                    ? lang === "en"
-                      ? `Cultivation Rate +${sect.bonus.exp}% `
-                      : `修煉效率 +${sect.bonus.exp}%`
-                    : ""}
-                  {sect.bonus.atk
-                    ? lang === "en"
-                      ? `ATK +${sect.bonus.atk} `
-                      : `攻擊 +${sect.bonus.atk}`
-                    : ""}
-                  {sect.bonus.hp
-                    ? lang === "en"
-                      ? `HP +${sect.bonus.hp} `
-                      : `氣血 +${sect.bonus.hp} `
-                    : ""}
-                  {sect.bonus.mp
-                    ? lang === "en"
-                      ? `MP +${sect.bonus.mp}`
-                      : `法力 +${sect.bonus.mp}`
-                    : ""}
+                  {sect.bonus.exp ? (lang === "en" ? `Cultivation Rate +${sect.bonus.exp}% ` : `修煉效率 +${sect.bonus.exp}%`) : ""}
+                  {sect.bonus.atk ? (lang === "en" ? `ATK +${sect.bonus.atk} ` : `攻擊 +${sect.bonus.atk}`) : ""}
+                  {sect.bonus.hp ? (lang === "en" ? `HP +${sect.bonus.hp} ` : `氣血 +${sect.bonus.hp} `) : ""}
+                  {sect.bonus.mp ? (lang === "en" ? `MP +${sect.bonus.mp}` : `法力 +${sect.bonus.mp}`) : ""}
                 </p>
                 {sum && (
                   <p className={`text-xs mt-1.5 ${full ? "text-vermillion" : "text-faded/70"}`}>
@@ -139,9 +120,10 @@ export default function CharCreate({ name }: { name?: string }) {
         </div>
       </section>
 
-      <div className="text-center">
+      {/* 4.2 版:按鈕固定在畫面底部,選完門派不必往下捲也看得到;選定後亮起 */}
+      <div className="sticky bottom-0 z-10 -mx-4 px-4 py-4 text-center bg-gradient-to-t from-ink via-ink/95 to-transparent">
         <button
-          className="btn text-lg px-10 py-3"
+          className={`btn text-lg px-10 py-3 ${sectId ? "border-gold text-gold shadow-[0_0_24px_rgba(201,162,39,0.35)]" : ""}`}
           disabled={!sectId || busy}
           onClick={() => sectId && act("start", { sectId })}
         >

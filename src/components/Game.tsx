@@ -8,24 +8,26 @@ import {
   cultCostOf,
   breakChanceOf,
   ENERGY_COST,
+  NOVICE_GUARD_REALMS,
   Modal,
 } from "@/game/store";
 import { formatStones } from "@/game/types";
 import { REALMS } from "@/game/data/realms";
 import { CHANGELOG } from "@/game/data/changelog";
 import { REVIVAL_PRICE_USD } from "@/game/data/blackMarket";
+import { currentEraYears, eraLabelText } from "@/game/data/eraTime";
 import { renderLootLine } from "./ColoredText";
 import { useT } from "@/i18n/useT";
 import { realmDisplayName } from "@/i18n/realmText";
 import AuthGate from "./AuthGate";
-import GameShell from "./GameShell";
-import GameIcon from "./GameIcon";
 import CharCreate from "./CharCreate";
 import ActionTabs from "./ActionTabs";
+import ExploreStrip from "./ExploreStrip";
 import SectPage from "./SectPage";
 import LogChatPanel from "./LogChatPanel";
 import GuideModal from "./GuideModal";
 import { StatusPanel, CombatPanel, RealmProgressPanel } from "./panels";
+import { ActionFx, ActionFxKind, BreakFailFx, BreakthroughCelebration, GainFloat, LootBurst } from "./fx";
 
 // 更新公告:逐版列出 version/ 目錄的重點內容(精簡為玩家視角)——條列內容(entry.title/highlights)本身仍為中文,尚未翻譯
 function ChangelogModal({ onClose }: { onClose: () => void }) {
@@ -164,7 +166,7 @@ function DeathScreen() {
     .replace("{age}", String(maxLifeOf(s)))
     .replace("{realm}", realmDisplayName(REALMS[s.realmIdx], lang));
   return (
-    <main className="death-screen max-w-2xl mx-auto px-4 py-24 text-center">
+    <main className="max-w-2xl mx-auto px-4 py-24 text-center">
       <p className="font-mono text-xs tracking-[0.5em] text-faded mb-4">HERE LIES A CULTIVATOR</p>
       <h1 className="text-5xl font-black tracking-widest text-vermillion mb-6">
         {t("deathHeadline")}
@@ -221,12 +223,18 @@ function ResultModal({ modal, onClose }: { modal: Modal; onClose: () => void }) 
 }
 
 // 修煉欄:置頂、醒目
-function CultivationBar() {
+function CultivationBar({
+  exploreOpen,
+  onToggleExplore,
+}: {
+  exploreOpen: boolean;
+  onToggleExplore: () => void;
+}) {
   const s = useGame((x) => x.save)!;
   const act = useGame((x) => x.act);
   const busy = useGame((x) => x.busy);
   const t = useT();
-  const { realm, hpMax } = statsOf(s);
+  const { realm } = statsOf(s);
   const inCombat = !!s.combat;
   const inDwelling = s.dwellingSlot != null;
   const expNeed = realm.expNeed;
@@ -239,6 +247,52 @@ function CultivationBar() {
   const energy = s.energy ?? 0;
   const energyTip = (need: number) =>
     energy < need ? `${t("energyInsufficientTip")} (${need})` : undefined;
+  // 4.1 版:按下打坐 / 調息 / 雲遊 / 突破立刻播放特效(不等伺服器回應),回應後再浮出實際增長的數值
+  const [fx, setFx] = useState<{ id: number; kind: ActionFxKind } | null>(null);
+  const [gain, setGain] = useState<{
+    id: number;
+    kind: ActionFxKind;
+    text: string;
+    tone: string;
+  } | null>(null);
+  const [traveling, setTraveling] = useState(false);
+  const clearFx = useCallback(() => setFx(null), []);
+  const run = async (kind: ActionFxKind, type: string) => {
+    const id = Date.now();
+    setFx({ id, kind });
+    if (kind === "wander") {
+      setTraveling(true);
+      await new Promise((r) => window.setTimeout(r, 900));
+      setTraveling(false);
+    }
+    const before = useGame.getState().save;
+    await act(type);
+    const after = useGame.getState().save;
+    if (!before || !after) return;
+    if (kind === "cultivate" && after.exp > before.exp) {
+      const healed = after.hp - before.hp;
+      const text = [
+        t("fxGainExp").replace("{n}", String(after.exp - before.exp)),
+        ...(healed > 0 ? [t("fxGainHp").replace("{n}", String(healed))] : []),
+      ].join(" · ");
+      setGain({ id, kind, text, tone: "text-jade" });
+    } else if (kind === "rest" && after.hp > before.hp) {
+      setGain({
+        id,
+        kind,
+        text: t("fxGainHp").replace("{n}", String(after.hp - before.hp)),
+        tone: "text-azure",
+      });
+    }
+  };
+  const fxFor = (kind: ActionFxKind) => (
+    <>
+      {fx?.kind === kind && <ActionFx key={`fx-${fx.id}`} kind={kind} onDone={clearFx} />}
+      {gain?.kind === kind && (
+        <GainFloat key={`gain-${gain.id}`} text={gain.text} tone={gain.tone} onDone={() => setGain(null)} />
+      )}
+    </>
+  );
   const breakTitle = !expReady
     ? t("breakNeedExp").replace("{n}", String(expNeed))
     : needsZhenxian && !hasZhenxian
@@ -246,86 +300,82 @@ function CultivationBar() {
       : energy < ENERGY_COST.breakthrough
         ? energyTip(ENERGY_COST.breakthrough)
         : t("breakChancePct").replace("{n}", String(Math.round(chance * 100)));
+  const costLine = "text-[10px] text-faded/80 font-mono leading-tight";
   return (
-    <div className={`panel cultivation-panel ${canBreak ? "border-gold/70" : ""}`}>
-      <p className="panel-title mb-2">{t("cultivateTitle")}</p>
-      <div className="cultivation-actions">
-        <div className="cultivation-action">
+    <div className={`panel deco-frame !py-3 ${canBreak ? "border-gold/70" : ""}`}>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 mb-2">
+        <p className="panel-title mb-0">{t("cultivateTitle")}</p>
+        <p className="text-xs text-faded font-mono">
+          {t(s.realmIdx < NOVICE_GUARD_REALMS ? "cultivationSummaryNovice" : "cultivationSummaryLine")
+            .replace("{exp}", String(s.exp))
+            .replace("{need}", String(expNeed))
+            .replace("{chance}", String(Math.round(chance * 100)))}
+        </p>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-faded/15 border border-faded/20 rounded-sm">
+        <div className="fx-cell bg-coal/90 px-2 py-2 flex flex-col items-center gap-1 text-center">
           <button
-            className="btn text-base w-full"
-            disabled={busy || inCombat || inDwelling || energy < ENERGY_COST.cultivate}
-            onClick={() => act("cultivate")}
-            title={inDwelling ? t("inDwellingTip") : energyTip(ENERGY_COST.cultivate)}
+            className="btn w-full py-1.5"
+            disabled={busy || traveling || inCombat || inDwelling || energy < ENERGY_COST.cultivate}
+            onClick={() => run("cultivate", "cultivate")}
+            title={inDwelling ? t("inDwellingTip") : (energyTip(ENERGY_COST.cultivate) ?? t("cultivateHealTip"))}
           >
-            <GameIcon name="lotus" />
             {t("btnCultivate")}
           </button>
-          <span className="text-[10px] text-faded/80 font-mono leading-snug">
-            -{cost} {t("lifeCostSuffix")} · -{ENERGY_COST.cultivate} {t("energyCostSuffix")}
+          <span className={costLine}>
+            -{cost} {t("lifeCostSuffix")} · -{ENERGY_COST.cultivate} {t("energyCostSuffix")} · {t("cultivateHealNote")}
           </span>
+          {fxFor("cultivate")}
         </div>
-        <div className="cultivation-action">
+        <div className="fx-cell bg-coal/90 px-2 py-2 flex flex-col items-center gap-1 text-center">
           <button
-            className="btn text-base w-full"
-            disabled={busy || inCombat || inDwelling || s.hp >= hpMax || energy < ENERGY_COST.rest}
-            onClick={() => act("rest")}
-            title={inDwelling ? t("inDwellingTip") : energyTip(ENERGY_COST.rest)}
+            className={`btn w-full py-1.5 ${exploreOpen ? "border-gold text-gold bg-gold/10" : ""}`}
+            onClick={onToggleExplore}
+            aria-expanded={exploreOpen}
           >
-            <GameIcon name="moon" />
-            {t("btnRest")}
+            {t("exploreTitle")} {exploreOpen ? "▴" : "▾"}
           </button>
-          <span className="text-[10px] text-faded/80 font-mono leading-snug">
-            -{cost * 2} {t("lifeCostSuffix")} · -{ENERGY_COST.rest} {t("energyCostSuffix")}
-          </span>
+          <span className={costLine}>{exploreOpen ? t("exploreCollapse") : t("exploreExpand")}</span>
         </div>
-        <div className="cultivation-action">
+        <div className="fx-cell bg-coal/90 px-2 py-2 flex flex-col items-center gap-1 text-center">
           <button
-            className="btn text-base w-full border-fuchsia-400/50 text-fuchsia-300 hover:bg-fuchsia-400/15 hover:border-fuchsia-400"
+            className="btn w-full py-1.5 border-fuchsia-400/50 text-fuchsia-300 hover:bg-fuchsia-400/15 hover:border-fuchsia-400"
             disabled={
-              busy || inCombat || inDwelling || s.stones < 100000000 || energy < ENERGY_COST.wander
+              busy || traveling || inCombat || inDwelling || s.stones < 100000000 || energy < ENERGY_COST.wander
             }
-            onClick={() => act("wander")}
+            onClick={() => run("wander", "wander")}
             title={
               inDwelling
                 ? t("inDwellingTip")
                 : (energyTip(ENERGY_COST.wander) ?? t("wanderTooltip"))
             }
           >
-            <GameIcon name="explore" />
             {t("btnWander")}
           </button>
-          <span className="text-[10px] text-faded/80 font-mono leading-snug">
+          <span className={costLine}>
             -5000 {t("lifeCostSuffix")} · {formatStones(100000000)} · -{ENERGY_COST.wander}{" "}
             {t("energyCostSuffix")}
           </span>
+          {fxFor("wander")}
         </div>
-        <div className="cultivation-action">
+        <div className="fx-cell bg-coal/90 px-2 py-2 flex flex-col items-center gap-1 text-center">
           <button
-            className={`btn text-base w-full ${canBreak && !inDwelling ? "border-gold text-gold animate-pulse" : ""}`}
+            className={`btn w-full py-1.5 ${canBreak && !inDwelling ? "border-gold text-gold animate-pulse" : ""}`}
             disabled={
-              busy || inCombat || inDwelling || !canBreak || energy < ENERGY_COST.breakthrough
+              busy || traveling || inCombat || inDwelling || !canBreak || energy < ENERGY_COST.breakthrough
             }
-            onClick={() => act("breakthrough")}
+            onClick={() => run("break", "breakthrough")}
             title={inDwelling ? t("inDwellingTip") : breakTitle}
           >
-            <GameIcon name="spark" />
             {t("btnBreakthrough")}
             {canBreak && !inDwelling ? ` (${Math.round(chance * 100)}%)` : ""}
           </button>
-          <span className="text-[10px] text-faded/80 font-mono leading-snug">
+          <span className={costLine}>
             -{ENERGY_COST.breakthrough} {t("energyCostSuffix")}
           </span>
+          {fxFor("break")}
         </div>
       </div>
-      <div className="cultivation-progress" aria-hidden="true">
-        <span style={{ width: `${Math.max(0, Math.min(100, (s.exp / expNeed) * 100))}%` }} />
-      </div>
-      <p className="text-xs text-faded font-mono mt-2 text-right">
-        {t("cultivationSummaryLine")
-          .replace("{exp}", String(s.exp))
-          .replace("{need}", String(expNeed))
-          .replace("{chance}", String(Math.round(chance * 100)))}
-      </p>
       {needsZhenxian && !hasZhenxian && (
         <p className="text-xs text-fuchsia-300 mt-2">{t("zhenxianNote")}</p>
       )}
@@ -344,12 +394,65 @@ export default function Game() {
   const closeBreak = useGame((x) => x.closeBreak);
   const closePurchaseResult = useGame((x) => x.closePurchaseResult);
   const mainView = useGame((x) => x.mainView);
-  const activeTab = useGame((x) => x.activeTab);
+  const language = useGame((x) => x.language);
+  const setLanguage = useGame((x) => x.setLanguage);
   const t = useT();
   const [auth, setAuth] = useState<"checking" | "anon" | "authed">("checking");
   const [userName, setUserName] = useState("");
   const [showChangelog, setShowChangelog] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
+  // 4.2 版:大陸遊歷地圖預設收起,由修煉欄的「大陸遊歷」按鈕展開,讓道籍/符陣/見聞錄一進來就在同一個畫面內
+  const [exploreOpen, setExploreOpen] = useState(false);
+  // 新手(尚未斬殺任何妖獸)進入遊戲時地圖預設展開,直接看到下一步
+  const exploreAutoOpened = useRef(false);
+  useEffect(() => {
+    if (exploreAutoOpened.current || !save?.started) return;
+    exploreAutoOpened.current = true;
+    if (Object.keys(save.kills ?? {}).length === 0) setExploreOpen(true);
+  }, [save]);
+  // 4.1 版:境界提升(突破 / 飛昇 / 丹藥連越數境皆適用)就播放「天降鴻運」慶典,播完才顯示結果彈窗
+  const [celebration, setCelebration] = useState<{
+    id: number;
+    realmName: string;
+    major: boolean;
+    xian: boolean;
+  } | null>(null);
+  const prevRealmRef = useRef<number | null>(null);
+  const realmIdx = save?.started && !save.dead ? save.realmIdx : null;
+  useEffect(() => {
+    const prev = prevRealmRef.current;
+    prevRealmRef.current = realmIdx;
+    if (prev == null || realmIdx == null || realmIdx <= prev) return;
+    const from = REALMS[prev];
+    const to = REALMS[realmIdx];
+    if (!to) return;
+    setCelebration({
+      id: Date.now(),
+      realmName: realmDisplayName(to, language),
+      major: !from || to.stage > from.stage,
+      xian: to.stage >= 10,
+    });
+  }, [realmIdx, language]);
+  // 慶典結束:成功的突破/飛昇結果文字已在慶典中呈現,一併關掉同內容的彈窗,不必再按一次「知曉」
+  const endCelebration = useCallback(() => {
+    setCelebration(null);
+    const st = useGame.getState();
+    if (st.breakResult?.success) st.closeBreak();
+    if (st.loot?.success && st.loot.title === "白 日 飛 昇") st.closeLoot();
+  }, []);
+  const celebrationLines = breakResult?.success
+    ? breakResult.lines
+    : loot?.success && loot.title === "白 日 飛 昇"
+      ? loot.lines
+      : [];
+  // 突破失敗:先播一段靈氣暴走的失敗演出,再顯示明細彈窗
+  const [failShownFor, setFailShownFor] = useState<Modal | null>(null);
+  const failNeedsFx = !!breakResult && breakResult.success === false && failShownFor !== breakResult;
+  const endFailFx = useCallback(() => setFailShownFor(useGame.getState().breakResult), []);
+  // 斬妖戰利品:帶有 rewards 的戰利品彈窗先播一段噴發動畫,再顯示文字明細
+  const [burstShownFor, setBurstShownFor] = useState<Modal | null>(null);
+  const lootNeedsBurst = !!loot?.rewards && burstShownFor !== loot;
+  const endLootBurst = useCallback(() => setBurstShownFor(useGame.getState().loot), []);
 
   const loadSave = useCallback(async () => {
     try {
@@ -390,38 +493,129 @@ export default function Game() {
 
   if (save.dead) return <DeathScreen />;
 
+  if (mainView === "sect" && !save.combat) return <SectPage />;
+
   const isXian = REALMS[save.realmIdx]?.stage >= 10;
 
   return (
-    <div className={`${save.combat ? "combat-screen" : "game-root"} ${isXian ? "xian-aura" : ""}`}>
-      {purchaseResult && <ResultModal modal={purchaseResult} onClose={closePurchaseResult} />}
-      {!purchaseResult && breakResult && <ResultModal modal={breakResult} onClose={closeBreak} />}
-      {!purchaseResult && !breakResult && loot && <ResultModal modal={loot} onClose={closeLoot} />}
+    <main
+      className={`${save.combat ? "combat-screen" : "max-w-6xl mx-auto px-4 py-6 relative"} ${isXian ? "xian-aura" : ""}`}
+    >
+      {celebration && (
+        <BreakthroughCelebration
+          key={celebration.id}
+          realmName={celebration.realmName}
+          major={celebration.major}
+          xian={celebration.xian}
+          lines={celebrationLines}
+          onDone={endCelebration}
+        />
+      )}
+      {!celebration && purchaseResult && (
+        <ResultModal modal={purchaseResult} onClose={closePurchaseResult} />
+      )}
+      {!celebration && !purchaseResult && breakResult && failNeedsFx && <BreakFailFx onDone={endFailFx} />}
+      {!celebration && !purchaseResult && breakResult && !failNeedsFx && (
+        <ResultModal modal={breakResult} onClose={closeBreak} />
+      )}
+      {!celebration && !purchaseResult && !breakResult && loot && lootNeedsBurst && (
+        <LootBurst
+          rewards={loot.rewards!}
+          lord={loot.title.includes("地 域 王") || loot.title.includes("菁 英")}
+          lang={language}
+          onDone={endLootBurst}
+        />
+      )}
+      {!celebration && !purchaseResult && !breakResult && loot && !lootNeedsBurst && (
+        <ResultModal modal={loot} onClose={closeLoot} />
+      )}
       {showChangelog && <ChangelogModal onClose={() => setShowChangelog(false)} />}
       {showGuide && <GuideModal onClose={() => setShowGuide(false)} />}
       {save.combat ? (
         <CombatPanel />
       ) : (
-        <GameShell onGuide={() => setShowGuide(true)} onChangelog={() => setShowChangelog(true)}>
-          {mainView === "sect" ? (
-            <SectPage />
-          ) : (
-            <>
-              <div className="journey-grid">
-                <div className="journey-primary" id="journey-actions">
-                  <ActionTabs />
-                  {activeTab === "explore" && <CultivationBar />}
-                </div>
-                <aside className="journey-aside" aria-label={t("statusTitle")}>
-                  <StatusPanel />
-                  <RealmProgressPanel />
-                  <LogChatPanel />
-                </aside>
-              </div>
-            </>
+        <>
+          <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 mb-5">
+            <div>
+              <h1
+                className={`text-2xl font-black tracking-[0.35em] ${isXian ? "text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 via-amber-200 to-cyan-200" : ""}`}
+              >
+                {t("appTitle")}
+              </h1>
+              <p className="font-mono text-[10px] tracking-[0.4em] text-faded">
+                {isXian ? t("appSubtitleAscended") : t("appSubtitle")}
+              </p>
+              <p className="font-mono text-[10px] tracking-[0.2em] text-gold/70 mt-0.5">
+                {t("worldEraNow").replace("{era}", eraLabelText(currentEraYears()))}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-4 items-baseline">
+              <button
+                className="text-xs text-faded/60 hover:text-gold transition-colors border border-faded/30 rounded-sm px-1.5"
+                onClick={() => setLanguage(language === "zh" ? "en" : "zh")}
+                title={t("langToggleTooltip")}
+              >
+                {t("langToggle")}
+              </button>
+              <button
+                className="text-xs text-faded/60 hover:text-gold transition-colors"
+                onClick={() => setShowGuide(true)}
+              >
+                {t("navGuide")}
+              </button>
+              <button
+                className="text-xs text-faded/60 hover:text-gold transition-colors"
+                onClick={() => setShowChangelog(true)}
+              >
+                {t("navChangelog")}
+              </button>
+
+              <button
+                className="text-xs text-faded/60 hover:text-gold transition-colors"
+                onClick={async () => {
+                  await fetch("/api/auth/logout", { method: "POST" });
+                  location.reload();
+                }}
+              >
+                {t("navLogout")}
+              </button>
+            </div>
+          </header>
+
+          <div className="mb-4">
+            <CultivationBar exploreOpen={exploreOpen} onToggleExplore={() => setExploreOpen((v) => !v)} />
+          </div>
+          {exploreOpen && (
+            <div className="mb-4">
+              <ExploreStrip />
+            </div>
           )}
-        </GameShell>
+
+          {/* 4.2 版:道籍 / 戰況+行動頁籤 / 見聞錄三欄等高——列高由左欄(道籍)決定,中、右兩欄以絕對定位
+              填滿同一高度,內容超出時各自在面板內捲動,不會把整列撐高 */}
+          <div className="game-columns grid gap-4 md:grid-cols-[300px_minmax(0,1fr)] lg:grid-cols-[300px_minmax(0,1fr)_340px]">
+            <div className="game-col-left flex flex-col gap-4 md:min-h-[38rem]">
+              <StatusPanel />
+              <RealmProgressPanel />
+            </div>
+            <div className="game-col-mid relative md:col-start-2 min-w-0 h-[44rem] md:h-auto">
+              <div className="flex flex-col gap-4 h-full md:absolute md:inset-0">
+                <div className="shrink-0">
+                  <CombatPanel />
+                </div>
+                <div className="flex-1 min-h-0">
+                  <ActionTabs />
+                </div>
+              </div>
+            </div>
+            <div className="game-col-right relative md:col-start-2 lg:col-start-3 h-[22rem] lg:h-auto">
+              <div className="h-full lg:absolute lg:inset-0">
+                <LogChatPanel />
+              </div>
+            </div>
+          </div>
+        </>
       )}
-    </div>
+    </main>
   );
 }

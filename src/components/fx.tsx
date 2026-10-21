@@ -7,6 +7,7 @@ import { itemById, isXuantianArtifact } from "@/game/data/items";
 import { isXianItem } from "@/game/types";
 import { itemDisplayName } from "@/i18n/itemText";
 import { tengfuById } from "@/game/data/tengfu";
+import { TengfuCard } from "./TengfuPanel";
 import { useT } from "@/i18n/useT";
 import type { Language } from "@/i18n/dict";
 
@@ -235,11 +236,13 @@ type LootVisual = "stone" | "exp" | "jade" | "talisman";
 export function LootBurst({
   rewards,
   lord,
+  title,
   lang,
   onDone,
 }: {
   rewards: Rewards;
   lord: boolean;
+  title?: string; // 指定標題(如菁英「菁 英 伏 誅」);未指定則依 lord 顯示預設標題
   lang: Language;
   onDone: () => void;
 }) {
@@ -248,7 +251,7 @@ export function LootBurst({
     const tm = window.setTimeout(onDone, lord ? 2300 : 1800);
     return () => window.clearTimeout(tm);
   }, [lord, onDone]);
-  const tokens: { key: string; label: string; sub: string; cls: string; visual: LootVisual }[] = [];
+  const tokens: { key: string; label: string; sub: string; cls: string; visual: LootVisual; tfId?: string }[] = [];
   if (rewards.stones)
     tokens.push({
       key: "stones",
@@ -261,7 +264,15 @@ export function LootBurst({
     tokens.push({ key: "exp", label: "", sub: `${t("fxExp")} +${rewards.exp}`, cls: "fx-loot-exp", visual: "exp" });
   (rewards.tengfu ?? []).forEach((id, i) => {
     const def = tengfuById(id);
-    if (def) tokens.push({ key: `tf-${id}-${i}`, label: def.name[0], sub: def.name, cls: "fx-loot-tf", visual: "talisman" });
+    if (def)
+      tokens.push({
+        key: `tf-${id}-${i}`,
+        label: def.name[0],
+        sub: def.name,
+        cls: `fx-loot-tf fx-loot-tf-t${def.tier}`,
+        visual: "talisman",
+        tfId: id,
+      });
   });
   (rewards.items ?? []).forEach((id, i) => {
     const item = itemById(id);
@@ -296,7 +307,7 @@ export function LootBurst({
           }
         />
       ))}
-      <p className="fx-loot-title">{lord ? t("fxLootLord") : t("fxLootTitle")}</p>
+      <p className="fx-loot-title">{title ?? (lord ? t("fxLootLord") : t("fxLootTitle"))}</p>
       <div className="fx-loot-row">
         {tokens.map((tok, i) => (
           <span
@@ -317,8 +328,10 @@ export function LootBurst({
                 src={tok.visual === "stone" ? "/images/icons/spirit-stone.webp" : "/images/icons/cultivation.webp"}
                 alt=""
               />
-            ) : tok.visual === "talisman" ? (
-              <span className="fx-loot-talisman">{tok.label}</span>
+            ) : tok.visual === "talisman" && tok.tfId ? (
+              <span className="fx-loot-tfwrap">
+                <TengfuCard def={tengfuById(tok.tfId)!} className="tf-loot-card" />
+              </span>
             ) : (
               <span className="fx-loot-jade">{tok.label}</span>
             )}

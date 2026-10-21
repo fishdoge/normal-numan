@@ -522,6 +522,7 @@ export default function Game() {
         <LootBurst
           rewards={loot.rewards!}
           lord={loot.title.includes("地 域 王") || loot.title.includes("菁 英")}
+          title={loot.title.includes("菁 英") ? loot.title : undefined}
           lang={language}
           onDone={endLootBurst}
         />

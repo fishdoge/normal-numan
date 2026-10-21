@@ -53,6 +53,8 @@ const TONE: Record<TengfuStat, string> = {
 };
 const TIER_LABEL = ["", "一品", "二品", "三品", "四品", "五品", "六品"];
 
+export const tengfuToneOf = (d: TengfuDef) => TONE[primaryStat(d)];
+
 const primaryStat = (d: TengfuDef) =>
   (Object.entries(d.stats) as [TengfuStat, number][]).sort((a, b) => b[1] - a[1])[0][0];
 
@@ -272,12 +274,31 @@ export default function TengfuPanel() {
 }
 
 // 符紙正面:大字符頭 + 名稱(依形狀自動直書或橫書)
-function TengfuFace({ def }: { def: TengfuDef }) {
-  const vertical = def.h > def.w;
+// 4.2 版滕符外觀:四種材質依品階遞進(銅符 / 金符 / 玄金符 / 仙符,見 globals.css 的 .tf-tier-*)。
+// 直立符「敕令 / 印章 / 直書名稱」由上而下;橫長符改為橫排;1×1 只留靈石與印章。
+export function TengfuFace({ def }: { def: TengfuDef }) {
+  const mini = def.h * def.w === 1;
+  const horizontal = !mini && def.w > def.h;
+  const vertical = !mini && def.h > def.w;
   return (
-    <span className={`tf-face ${vertical ? "tf-face-v" : ""}`}>
-      <span className="tf-glyph">{def.name[0]}</span>
-      {def.h * def.w > 1 && <span className="tf-name">{def.name}</span>}
+    <span className={`tf-face ${vertical ? "tf-face-v" : ""} ${horizontal ? "tf-face-h" : ""} ${mini ? "tf-face-mini" : ""}`}>
+      <span className="tf-corners" aria-hidden="true" />
+      <span className="tf-spark" aria-hidden="true" />
+      <span className="tf-gem" />
+      {!mini && !horizontal && def.h * def.w >= 4 && <span className="tf-chi">敕令</span>}
+      <span className="tf-glyph">
+        <span>{def.name[0]}</span>
+      </span>
+      {!mini && <span className="tf-name">{def.name}</span>}
+    </span>
+  );
+}
+
+// 獨立的滕符卡(掉落動畫、預覽用),外觀與符陣上的完全相同
+export function TengfuCard({ def, className = "", style }: { def: TengfuDef; className?: string; style?: CSSProperties }) {
+  return (
+    <span className={`tf-piece tf-card tf-tone-${tengfuToneOf(def)} tf-tier-${def.tier} ${className}`} style={style}>
+      <TengfuFace def={def} />
     </span>
   );
 }

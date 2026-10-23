@@ -1782,7 +1782,7 @@ function applyActionInner(
         if (!s.lordsSeen.includes(lord.id)) s.lordsSeen.push(lord.id);
         log(
           s,
-          `⚠ 天地驟然一暗——${loc.name} 的地域之王【${lord.name}】現身了!(${lord.element}屬性)絕世凶威,撲面而來!`,
+          `天地驟然一暗——${loc.name} 的地域之王【${lord.name}】現身了!(${lord.element}屬性)絕世凶威,撲面而來!`,
         );
         return { save: s };
       }
@@ -1799,7 +1799,7 @@ function applyActionInner(
           playerStatus: [],
         };
         if (!s.seen.includes(elite.id)) s.seen.push(elite.id);
-        log(s, `⚔ 一股兇煞之氣撲面而來——${loc.name} 的菁英【${elite.name}】擋住了去路!(${elite.element}屬性)`);
+        log(s, `一股兇煞之氣撲面而來——${loc.name} 的菁英【${elite.name}】擋住了去路!(${elite.element}屬性)`);
         return { save: s };
       }
       const mid = loc.monsters[rand(0, loc.monsters.length - 1)];
@@ -1818,7 +1818,7 @@ function applyActionInner(
       log(
         s,
         mon.isLord
-          ? `⚠ 你踏入 ${loc.name},仙威如淵——【${mon.name}】(${mon.element}屬性)橫亙眼前!`
+          ? `你踏入 ${loc.name},仙威如淵——【${mon.name}】(${mon.element}屬性)橫亙眼前!`
           : `你主動深入 ${loc.name} 尋妖,遭遇了 ${mon.name}(${mon.element}屬性)!`,
       );
       return { save: s };
@@ -2213,7 +2213,7 @@ function applyActionInner(
       if (!s.lordsSeen.includes(base.id)) s.lordsSeen.push(base.id);
       log(
         s,
-        `⚠ 你踏上浮屠塔第 ${floor} 層——幻象太歲天尊自虛空凝形!(氣血 ${bossHp}、攻擊 ${bossAtk})`,
+        `你踏上浮屠塔第 ${floor} 層——幻象太歲天尊自虛空凝形!(氣血 ${bossHp}、攻擊 ${bossAtk})`,
       );
       return { save: s };
     }

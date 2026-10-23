@@ -286,7 +286,7 @@ export function StatusPanel() {
       <button
         onClick={() => setMainView("sect")}
         title={t("sectHallTooltip")}
-        className="w-full mt-2 mb-1 flex items-center justify-between gap-2 rounded-sm border-2 border-fuchsia-400/50 bg-gradient-to-r from-fuchsia-400/15 via-gold/10 to-fuchsia-400/15 px-3 py-1.5 transition-colors hover:border-fuchsia-400 hover:from-fuchsia-400/25 hover:to-fuchsia-400/25"
+        className="w-full mt-2 mb-1 flex items-center justify-between gap-2 rounded-lg border border-jade/35 bg-jade/5 px-3 py-2 transition-colors hover:border-jade hover:bg-jade/10"
       >
         <span className="min-w-0 text-left">
           <span className="block text-base font-bold text-fuchsia-300">

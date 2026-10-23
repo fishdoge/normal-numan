@@ -8,9 +8,11 @@ import "@fontsource/noto-serif-tc/400.css";
 import "@fontsource/noto-serif-tc/600.css";
 import "@fontsource/noto-serif-tc/700.css";
 import "@fontsource/noto-serif-tc/900.css";
-import "@fontsource/jetbrains-mono/400.css";
-import "@fontsource/jetbrains-mono/500.css";
+import "@fontsource/noto-sans-tc/400.css";
+import "@fontsource/noto-sans-tc/500.css";
+import "@fontsource/noto-sans-tc/700.css";
 import "./globals.css";
+import "./night.css";
 import Footer from "@/components/Footer";
 
 const SITE_URL = "https://www.immortality.website";

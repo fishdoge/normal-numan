@@ -360,7 +360,7 @@ function CultivationBar({
         </div>
         <div className="fx-cell bg-coal/90 px-2 py-2 flex flex-col items-center gap-1 text-center">
           <button
-            className={`btn w-full py-1.5 ${canBreak && !inDwelling ? "border-gold text-gold animate-pulse" : ""}`}
+            className={`btn w-full py-1.5 ${canBreak && !inDwelling ? "btn-primary" : ""}`}
             disabled={
               busy || traveling || inCombat || inDwelling || !canBreak || energy < ENERGY_COST.breakthrough
             }
@@ -499,7 +499,7 @@ export default function Game() {
 
   return (
     <main
-      className={`${save.combat ? "combat-screen" : "max-w-6xl mx-auto px-4 py-6 relative"} ${isXian ? "xian-aura" : ""}`}
+      className={`${save.combat ? "combat-screen" : "max-w-[1600px] mx-auto px-4 lg:px-8 pb-8 relative"} ${isXian ? "xian-aura" : ""}`}
     >
       {celebration && (
         <BreakthroughCelebration
@@ -536,43 +536,30 @@ export default function Game() {
         <CombatPanel />
       ) : (
         <>
-          <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 mb-5">
-            <div>
-              <h1
-                className={`text-2xl font-black tracking-[0.35em] ${isXian ? "text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 via-amber-200 to-cyan-200" : ""}`}
-              >
-                {t("appTitle")}
-              </h1>
-              <p className="font-mono text-[10px] tracking-[0.4em] text-faded">
-                {isXian ? t("appSubtitleAscended") : t("appSubtitle")}
-              </p>
-              <p className="font-mono text-[10px] tracking-[0.2em] text-gold/70 mt-0.5">
-                {t("worldEraNow").replace("{era}", eraLabelText(currentEraYears()))}
-              </p>
+          {/* 5.0 版:遊戲 HUD 頁首——標題、目前境界與修為進度、選單,捲動時固定在頂端 */}
+          <header className="hud">
+            <div className="hud-brand">
+              <h1>{t("appTitle")}</h1>
+              <p>{t("worldEraNow").replace("{era}", eraLabelText(currentEraYears()))}</p>
             </div>
-            <div className="flex flex-wrap gap-4 items-baseline">
-              <button
-                className="text-xs text-faded/60 hover:text-gold transition-colors border border-faded/30 rounded-sm px-1.5"
-                onClick={() => setLanguage(language === "zh" ? "en" : "zh")}
-                title={t("langToggleTooltip")}
-              >
+            <div className="hud-realm">
+              <span className={`hud-realm-name ${isXian ? "text-fuchsia-300" : ""}`}>
+                {realmDisplayName(REALMS[save.realmIdx], language)}
+              </span>
+              <span className="hud-exp" aria-hidden="true">
+                <span style={{ width: `${Math.min(100, (save.exp / REALMS[save.realmIdx].expNeed) * 100)}%` }} />
+              </span>
+              <span className="hud-exp-num">
+                {save.exp}/{REALMS[save.realmIdx].expNeed}
+              </span>
+            </div>
+            <nav className="hud-nav">
+              <button onClick={() => setLanguage(language === "zh" ? "en" : "zh")} title={t("langToggleTooltip")}>
                 {t("langToggle")}
               </button>
+              <button onClick={() => setShowGuide(true)}>{t("navGuide")}</button>
+              <button onClick={() => setShowChangelog(true)}>{t("navChangelog")}</button>
               <button
-                className="text-xs text-faded/60 hover:text-gold transition-colors"
-                onClick={() => setShowGuide(true)}
-              >
-                {t("navGuide")}
-              </button>
-              <button
-                className="text-xs text-faded/60 hover:text-gold transition-colors"
-                onClick={() => setShowChangelog(true)}
-              >
-                {t("navChangelog")}
-              </button>
-
-              <button
-                className="text-xs text-faded/60 hover:text-gold transition-colors"
                 onClick={async () => {
                   await fetch("/api/auth/logout", { method: "POST" });
                   location.reload();
@@ -580,7 +567,7 @@ export default function Game() {
               >
                 {t("navLogout")}
               </button>
-            </div>
+            </nav>
           </header>
 
           <div className="mb-4">
@@ -594,7 +581,7 @@ export default function Game() {
 
           {/* 4.2 版:道籍 / 戰況+行動頁籤 / 見聞錄三欄等高——列高由左欄(道籍)決定,中、右兩欄以絕對定位
               填滿同一高度,內容超出時各自在面板內捲動,不會把整列撐高 */}
-          <div className="game-columns grid gap-4 md:grid-cols-[300px_minmax(0,1fr)] lg:grid-cols-[300px_minmax(0,1fr)_340px]">
+          <div className="game-columns grid gap-4 md:grid-cols-[300px_minmax(0,1fr)] lg:grid-cols-[300px_minmax(0,1fr)_340px] 2xl:grid-cols-[340px_minmax(0,1fr)_400px]">
             <div className="game-col-left flex flex-col gap-4 md:min-h-[38rem]">
               <StatusPanel />
               <RealmProgressPanel />

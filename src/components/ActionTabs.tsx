@@ -69,17 +69,15 @@ export default function ActionTabs() {
   ];
   return (
     <div className="panel flex flex-col min-h-0 h-full">
-      {/* 按鈕依文字自然寬度換行(非橫向捲動),寬度足夠時排成兩排 */}
-      <div className="flex flex-wrap gap-1.5 mb-4 border-b border-faded/20 pb-2 shrink-0">
+      {/* 5.0 版:分段式頁籤,選中者玉青底 */}
+      <div className="seg-tabs shrink-0" role="tablist">
         {tabs.map(([t, label]) => (
           <button
             key={t}
+            role="tab"
+            aria-selected={tab === t}
             onClick={() => setTab(t)}
-            className={`shrink-0 whitespace-nowrap px-2.5 py-0.5 text-sm rounded-sm border transition-colors ${
-              tab === t
-                ? "bg-gold/15 text-gold border-gold/40"
-                : "border-faded/25 text-faded hover:text-cream hover:border-faded/50"
-            }`}
+            className={`seg-tab ${tab === t ? "seg-tab-on" : ""}`}
           >
             {label}
           </button>

@@ -233,7 +233,7 @@ export const DICT = {
     blueprintTag: "圖譜配方",
     craftFailChanceTag: "有 {n}% 機率煉製失敗",
     blueprintLocked: "需先取得對應圖譜研讀",
-    craftBtnLocked: "🔒 未參透圖譜",
+    craftBtnLocked: "未參透圖譜",
     craftBtn: "煉製",
 
     // 黑市
@@ -315,7 +315,7 @@ export const DICT = {
     wanlingNote: "混沌萬靈榜,錄盡天地萬物,共 {n} 種,真仙以上方能查閱全貌。",
 
     // 排行榜與玩家詳情卡
-    profileClose: "關閉 ✕",
+    profileClose: "關閉",
     profileRealm: "境界",
     profileSect: "門派",
     profileExp: "修為",
@@ -428,7 +428,7 @@ export const DICT = {
 
     // Game.tsx 雜項
     changelogTitle: "更 新 公 告",
-    btnClose: "關閉 ✕",
+    btnClose: "關閉",
     versionLabel: "版本 {v}",
     prayFailGeneric: "祈禱失敗,請稍後再試",
     revivalDoneTitle: "死 而 復 生",
@@ -483,11 +483,11 @@ export const DICT = {
 
     combatMonHp: "妖獸氣血",
     combatFierce: "激 戰",
-    combatLordArrives: "⚠ 王 者 降 臨",
-    combatFutu: "⚠ 浮 屠 塔",
+    combatLordArrives: "王 者 降 臨",
+    combatFutu: "浮 屠 塔",
     combatIllusionChip: "幻象",
     combatLordChip: "地域王",
-    combatTianjieArrives: "⚠ 天 劫 降 臨",
+    combatTianjieArrives: "天 劫 降 臨",
     combatTianjieChip: "天劫",
     btnEndTurn: "施法結束",
     btnPlayCards: "出牌",
@@ -798,7 +798,7 @@ export const DICT = {
     blueprintTag: "Blueprint Recipe",
     craftFailChanceTag: "{n}% chance to fail",
     blueprintLocked: "Study the corresponding blueprint first",
-    craftBtnLocked: "🔒 Blueprint Not Studied",
+    craftBtnLocked: "Blueprint Not Studied",
     craftBtn: "Forge",
 
     // 黑市
@@ -888,7 +888,7 @@ export const DICT = {
       "The Codex of Myriad Things records all of creation — {n} entries in total, fully viewable only by True Immortals and above.",
 
     // 排行榜與玩家詳情卡
-    profileClose: "Close ✕",
+    profileClose: "Close",
     profileRealm: "Realm",
     profileSect: "Sect",
     profileExp: "Exp",
@@ -1003,7 +1003,7 @@ export const DICT = {
 
     // Game.tsx 雜項
     changelogTitle: "Changelog",
-    btnClose: "Close ✕",
+    btnClose: "Close",
     versionLabel: "v{v}",
     prayFailGeneric: "Prayer failed, please try again later",
     revivalDoneTitle: "Back From the Dead",
@@ -1065,11 +1065,11 @@ export const DICT = {
 
     combatMonHp: "Monster HP",
     combatFierce: "Battle",
-    combatLordArrives: "⚠ A Lord Appears",
-    combatFutu: "⚠ The Pagoda",
+    combatLordArrives: "A Lord Appears",
+    combatFutu: "The Pagoda",
     combatIllusionChip: "Illusion",
     combatLordChip: "Regional Lord",
-    combatTianjieArrives: "⚠ Heavenly Tribulation",
+    combatTianjieArrives: "Heavenly Tribulation",
     combatTianjieChip: "Tribulation",
     btnEndTurn: "End Turn",
     btnPlayCards: "Play",

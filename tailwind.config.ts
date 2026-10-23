@@ -4,33 +4,35 @@ const config: Config = {
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
     extend: {
+      // 5.0 版「夜色仙境」:深夜墨藍底、半透明深色玻璃面板、玉青互動色、淡金只用於標題與稀有物。
+      // 沿用原本的語意色名(ink/coal/gold…),只換色值,元件上數百處的顏色 class 一起換裝。
       colors: {
-        ink: "#0d0b08",
-        coal: "#161310",
-        smoke: "#211d18",
-        parchment: "#ecdcb8",
-        cream: "#d8c69a",
-        faded: "#9a8a68",
-        vermillion: "#c03a2b",
-        cinnabar: "#e05a3a",
-        jade: "#4d9970",
-        gold: "#c9a227",
-        azure: "#4a7fa5",
-        // 五行(3.12 版校正:金屬性原本是近乎灰白的 #d9d2c0,不夠像「金色」,改為明確的金色)
-        metal: "#d4af37",
-        wood: "#5aa860",
-        water: "#5a8fd0",
-        fire: "#e0603a",
-        earth: "#b08040",
-        // 3.12 版新增:預留給未來稀有/特殊主題符寶的卡面色,目前尚無實際符寶使用
-        electric: "#f5d442", // 超稀有「電」屬性符寶的閃電金色外框
-        curse: "#5c1f3d", // 預留給未來詛咒類符寶
+        ink: "#070B11",
+        coal: "#0E151E",
+        smoke: "#18222F",
+        parchment: "#E8EEF2",
+        cream: "#C9D3DB",
+        faded: "#8F9DAA",
+        vermillion: "#E0604F",
+        cinnabar: "#F07C6C",
+        jade: "#7FD1C0",
+        gold: "#E6C680",
+        azure: "#6FA8DC",
+        // 五行
+        metal: "#E6C680",
+        wood: "#7FCB8A",
+        water: "#6FA8DC",
+        fire: "#F07C6C",
+        earth: "#C99A62",
+        electric: "#F5D442",
+        curse: "#8F6AA8",
       },
       fontFamily: {
-        // 1.6 版:改用 @fontsource 自架(見 src/app/layout.tsx),直接引用字型家族名稱,
-        // 不再需要 next/font 的 CSS 變數轉接。
-        serif: ["Noto Serif TC", "serif"],
-        mono: ["JetBrains Mono", "monospace"],
+        // 內文改用思源黑體(好讀),標題用思源宋體;數字開啟等寬數字
+        sans: ["Noto Sans TC", "system-ui", "sans-serif"],
+        serif: ["Noto Sans TC", "system-ui", "sans-serif"],
+        display: ["Noto Serif TC", "serif"],
+        mono: ["Noto Sans TC", "system-ui", "sans-serif"],
       },
       keyframes: {
         floatUp: {

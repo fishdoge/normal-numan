@@ -1,0 +1,568 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   5.0 版「夜色仙境」視覺:暗色沉浸式仙俠遊戲介面
+   - 底:全幅月夜山水大圖 + 墨藍遮罩,畫面像是站在山巔看出去
+   - 面板:半透明深色玻璃(背景模糊)、圓角、玉青細框,不加角花與紋飾
+   - 文字:內文思源黑體 15px 起跳、高對比冷白;標題思源宋體
+   - 色彩:玉青 #7FD1C0 = 可互動 / 進度;淡金 #E6C680 = 標題、境界、稀有物;紅 #F07C6C 只用於氣血與警示
+   本檔載入於 globals.css 之後,同名選擇器在此覆寫舊版暖棕金色;版面結構沿用 globals.css。
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --bg: #070b11;
+  --glass: rgba(11, 17, 25, 0.72);
+  --glass-2: rgba(17, 25, 36, 0.78);
+  --glass-3: rgba(24, 34, 47, 0.85);
+  --line: rgba(150, 205, 196, 0.16);
+  --line-2: rgba(150, 205, 196, 0.3);
+  --text: #e8eef2;
+  --text-2: #c9d3db;
+  --muted: #8f9dab;
+  --jade: #7fd1c0;
+  --jade-deep: #3f9b8a;
+  --gold: #e6c680;
+  --red: #f07c6c;
+  --blue: #6fa8dc;
+  --radius: 12px;
+}
+
+/* ─── 底:月夜山水 + 墨藍遮罩 ─── */
+html {
+  background: var(--bg);
+}
+body {
+  background: transparent !important;
+  color: var(--text);
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+}
+body::before {
+  z-index: -2;
+  opacity: 1;
+  mix-blend-mode: normal;
+  background: url("/images/world/moonlit-mountains.webp") center 30% / cover no-repeat;
+}
+body::after {
+  z-index: -1;
+  background:
+    linear-gradient(180deg, rgba(7, 11, 17, 0.35) 0%, rgba(7, 11, 17, 0.72) 38%, rgba(7, 11, 17, 0.9) 100%);
+}
+::selection {
+  background: rgba(127, 209, 192, 0.3);
+}
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(150, 205, 196, 0.22);
+  border-radius: 8px;
+}
+h1,
+h2,
+.font-display {
+  font-family: "Noto Serif TC", serif;
+}
+.font-mono {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+input,
+textarea,
+select {
+  border-radius: 8px !important;
+  background-color: rgba(7, 11, 17, 0.6) !important;
+  border-color: var(--line-2) !important;
+  color: var(--text) !important;
+}
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--jade) !important;
+}
+
+/* ─── HUD 頁首 ─── */
+.hud {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 24px;
+  margin: 0 -8px 20px;
+  padding: 14px 20px;
+  background: rgba(7, 11, 17, 0.7);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--line);
+  border-top: 0;
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+.hud-brand h1 {
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  color: var(--gold);
+  line-height: 1.1;
+}
+.hud-brand p {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.hud-realm {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-self: center;
+  width: min(520px, 100%);
+}
+.hud-realm-name {
+  flex: none;
+  font-family: "Noto Serif TC", serif;
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--text);
+}
+.hud-exp {
+  flex: 1;
+  height: 6px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+.hud-exp > span {
+  display: block;
+  height: 100%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--jade-deep), var(--jade));
+  transition: width 0.6s ease;
+}
+.hud-exp-num {
+  flex: none;
+  font-size: 13px;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+.hud-nav {
+  display: flex;
+  gap: 4px;
+}
+.hud-nav button {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-2);
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+.hud-nav button:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+@media (max-width: 900px) {
+  .hud {
+    position: relative;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    text-align: center;
+  }
+  .hud-nav {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}
+
+/* ─── 面板:深色玻璃 ─── */
+.panel {
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  color: var(--text);
+}
+.deco-frame::before,
+.deco-frame::after {
+  display: none;
+}
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: "Noto Serif TC", serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: none;
+  color: var(--gold);
+}
+.panel-title::before {
+  content: "";
+  width: 3px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--jade);
+}
+
+/* ─── 按鈕 ─── */
+.btn {
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font-size: 14px;
+  letter-spacing: 0.05em;
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    color 0.2s;
+}
+.btn:hover {
+  background: rgba(127, 209, 192, 0.1);
+  border-color: var(--jade);
+}
+.btn-danger {
+  border-color: rgba(240, 124, 108, 0.45);
+  color: var(--red);
+}
+.btn-danger:hover {
+  background: rgba(240, 124, 108, 0.12);
+  border-color: var(--red);
+}
+/* 主要行動(可突破時):玉青實心 */
+.btn-primary,
+.btn-primary:hover {
+  background: var(--jade);
+  border-color: var(--jade);
+  color: #062019;
+  font-weight: 700;
+}
+.chip {
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  color: var(--text-2);
+}
+.stat-bar {
+  height: 6px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+}
+.stat-bar > div {
+  border-radius: 6px;
+}
+.divider {
+  color: var(--muted);
+  letter-spacing: 0.3em;
+}
+.divider::before,
+.divider::after {
+  background: var(--line);
+  background-image: none;
+}
+
+/* ─── 分段式頁籤 ─── */
+.seg-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 14px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--line);
+}
+.seg-tab {
+  padding: 6px 12px;
+  border-radius: 7px;
+  font-size: 14px;
+  color: var(--text-2);
+  white-space: nowrap;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+.seg-tab:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+.seg-tab-on,
+.seg-tab-on:hover {
+  background: rgba(127, 209, 192, 0.16);
+  color: var(--jade);
+  box-shadow: inset 0 0 0 1px rgba(127, 209, 192, 0.45);
+}
+
+/* 修煉欄的格線底色(原為暖棕)改為玻璃 */
+.fx-cell {
+  background: rgba(7, 11, 17, 0.35) !important;
+}
+
+/* ─── 大陸遊歷地圖:插畫原色呈現,不再壓暗模糊 ─── */
+.region-map {
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--bg);
+}
+.region-map::before {
+  filter: none !important;
+  opacity: 0.9 !important;
+}
+.region-map::after {
+  background: linear-gradient(180deg, rgba(7, 11, 17, 0.55) 0%, transparent 35%, transparent 70%, rgba(7, 11, 17, 0.6) 100%);
+}
+.region-map-title > span {
+  color: var(--text);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+.region-map-title small,
+.region-map-hint {
+  color: var(--text-2);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+}
+.region-map-route path {
+  stroke: rgba(232, 238, 242, 0.55);
+  filter: none;
+}
+.region-marker-seal {
+  border: 1.5px solid var(--text-2);
+  background: rgba(7, 11, 17, 0.75);
+  color: var(--text);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+.region-marker-name {
+  color: var(--text);
+  text-shadow: 0 1px 4px #000;
+}
+.region-marker:hover .region-marker-seal {
+  border-color: var(--jade);
+}
+.region-marker.is-on .region-marker-seal {
+  background: var(--jade);
+  border-color: var(--jade);
+  color: #062019;
+  box-shadow: 0 0 0 4px rgba(127, 209, 192, 0.25);
+}
+.region-marker.is-challenge .region-marker-seal {
+  border-color: var(--gold);
+  color: var(--gold);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+.region-marker.is-challenge .region-marker-name::after {
+  content: " · 越階";
+  color: var(--gold);
+}
+.region-detail {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(7, 11, 17, 0.5);
+}
+.region-detail-art {
+  filter: none !important;
+  border-radius: 8px;
+}
+.explore-drop {
+  border-radius: 6px;
+}
+
+/* ─── 滕符陣底盤 ─── */
+.tf-board {
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--line);
+}
+.tf-cell {
+  border-radius: 4px;
+  border-color: rgba(150, 205, 196, 0.12);
+  background: rgba(255, 255, 255, 0.02);
+}
+.tf-bag-item,
+.tf-codex-row {
+  border-radius: 8px;
+  border-color: var(--line);
+  background: rgba(255, 255, 255, 0.03);
+}
+.tf-bag-item:hover,
+.tf-bag-item-on {
+  border-color: var(--jade);
+  background: rgba(127, 209, 192, 0.08);
+}
+
+/* ═══ 戰鬥畫面:深藍夜戰 ═══ */
+.combat-screen {
+  background: transparent;
+}
+.battle-view {
+  color: var(--text);
+  background: transparent;
+}
+.battle-header {
+  border-bottom: 1px solid var(--line);
+  background: rgba(7, 11, 17, 0.75);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+.battle-brand-mark,
+.battle-brand h1 {
+  color: var(--gold);
+}
+.battle-header-meta,
+.battle-eyebrow,
+.battle-status-line,
+.battle-player-status,
+.battle-hand-heading p,
+.battle-section-number,
+.battle-hand-count,
+.battle-bar-label,
+.battle-rules p,
+.battle-log li,
+.battle-card-body > span,
+.battle-card-top > span:last-child,
+.battle-rules summary,
+.battle-log summary > p,
+.battle-log summary::after,
+.battle-selection {
+  color: var(--muted);
+}
+.battle-header-rule {
+  background: var(--line-2);
+}
+.battle-arena {
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--bg);
+}
+.battle-scene {
+  filter: none;
+  opacity: 1;
+}
+.battle-scene::after {
+  background:
+    linear-gradient(90deg, rgba(7, 11, 17, 0.88) 0%, rgba(7, 11, 17, 0.5) 42%, rgba(7, 11, 17, 0.05) 100%),
+    linear-gradient(0deg, rgba(7, 11, 17, 0.7) 0%, transparent 45%);
+}
+.battle-arena-copy h2,
+.battle-player-name strong,
+.battle-hand-heading h2,
+.battle-bar-label strong,
+.battle-card-body strong,
+.battle-selection strong,
+.battle-tactics summary span,
+.battle-log summary > span {
+  color: var(--text);
+}
+.battle-arena-copy p {
+  color: var(--text-2);
+}
+.battle-sigil-ring,
+.battle-sigil-ring::after {
+  border-color: rgba(232, 238, 242, 0.25);
+}
+.battle-sigil-glyph {
+  color: rgba(232, 238, 242, 0.85);
+}
+.battle-meter {
+  height: 8px;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+.battle-meter-enemy,
+.battle-meter-hp {
+  background: linear-gradient(90deg, #b8473a, var(--red));
+}
+.battle-meter-mp {
+  background: linear-gradient(90deg, #3f78b0, var(--blue));
+}
+.battle-player {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+.battle-player-symbol {
+  border-color: var(--jade);
+  color: var(--jade);
+}
+.battle-empty-hand {
+  border: 1px dashed var(--line-2);
+  border-radius: 10px;
+  color: var(--muted);
+}
+.battle-card {
+  border: 1px solid var(--line-2) !important;
+  border-radius: 12px;
+  color: var(--text);
+  background: linear-gradient(180deg, rgba(24, 34, 47, 0.95), rgba(11, 17, 25, 0.95));
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+.battle-card:hover:not(:disabled) {
+  background: linear-gradient(180deg, rgba(30, 44, 60, 0.95), rgba(14, 22, 32, 0.95));
+  border-color: var(--jade) !important;
+}
+.battle-card-selected {
+  border-color: var(--jade) !important;
+  box-shadow:
+    0 0 0 2px var(--jade),
+    0 10px 24px rgba(0, 0, 0, 0.45);
+}
+.battle-card-bottom {
+  color: var(--blue);
+  border-top: 1px solid var(--line);
+}
+.battle-tactics,
+.battle-log {
+  border-color: var(--line) !important;
+}
+.battle-log ol {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(7, 11, 17, 0.92);
+}
+.battle-log li {
+  border-bottom: 1px solid rgba(150, 205, 196, 0.08);
+}
+.battle-actions {
+  border-top: 1px solid var(--line) !important;
+  background: rgba(7, 11, 17, 0.85) !important;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+.battle-actions .btn {
+  border-radius: 8px;
+}
+.battle-play {
+  border: 1px solid var(--jade) !important;
+  border-radius: 8px !important;
+  background: var(--jade) !important;
+  color: #062019 !important;
+  font-weight: 700;
+}
+.battle-play:hover:not(:disabled) {
+  background: #9adfd0 !important;
+}
+.battle-elite .battle-arena {
+  border-color: rgba(230, 198, 128, 0.6);
+}
+
+/* 選中狀態統一為玉青(原為金色底) */
+.bg-gold\/15.text-gold,
+.bg-gold\/10.text-gold {
+  background: rgba(127, 209, 192, 0.14) !important;
+  border-color: rgba(127, 209, 192, 0.55) !important;
+  color: var(--jade) !important;
+}
+@media (max-width: 640px) {
+  .region-map-hint {
+    display: none;
+  }
+}

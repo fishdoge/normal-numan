@@ -170,7 +170,7 @@ export default function ExploreStrip() {
                 className={chip(regionId === r.id, r.color === "fuchsia", rLocked)}
               >
                 {regionDisplayName(r, lang)}
-                {rLocked && " 🔒"}
+                {rLocked && "・未啟"}
               </button>
             );
           })}
@@ -228,7 +228,7 @@ export default function ExploreStrip() {
             <span className="region-marker-seal">{m.id === FUTU ? "塔" : NUMERALS[i] ?? i + 1}</span>
             <span className="region-marker-name">
               {m.name}
-              {m.locked && " 🔒"}
+              {m.locked && "・未啟"}
             </span>
           </button>
         ))}

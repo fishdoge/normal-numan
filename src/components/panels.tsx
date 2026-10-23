@@ -35,7 +35,7 @@ import type { DictKey } from "@/i18n/dict";
 import { itemDisplayName, itemDisplayDesc, itemStatLine } from "@/i18n/itemText";
 import Tooltip from "./Tooltip";
 import { monsterDisplayName, monsterDisplayDesc } from "@/i18n/monsterText";
-import { techDisplayName, techDisplayDesc } from "@/i18n/techText";
+import { techDisplayName, techDisplayDesc, techDisplayEffect } from "@/i18n/techText";
 import { realmDisplayName } from "@/i18n/realmText";
 import { sectDisplayName } from "@/i18n/sectText";
 import { locationDisplayName } from "@/i18n/worldText";
@@ -52,6 +52,7 @@ const CARD_ART: Record<Element, string> = {
   火: "fire",
   土: "earth",
   無: "neutral",
+  煞: "neutral", // 3.19 版新增:尚無專屬卡面美術,暫沿用「無」屬性的中性圖,靠邊框/配色(紅黑)區分
 };
 
 // 太乙精魂對應的地域王 id(供英文翻譯查詢用,中文沿用既有 label)
@@ -91,8 +92,9 @@ export function RealmProgressPanel() {
 
   const showManhuang = !s.manhuangUnlocked && realm.stage >= 10;
   const showTaiyi = s.futuFloor >= 20 && realm.stage < 12;
+  const showHuixian = !s.huixianUnlocked && realm.stage >= 10;
 
-  if (!showManhuang && !showTaiyi) return null;
+  if (!showManhuang && !showTaiyi && !showHuixian) return null;
 
   return (
     <>
@@ -126,6 +128,49 @@ export function RealmProgressPanel() {
             onClick={() => act("unlockManhuang")}
           >
             {t("manhuangBtn")}
+          </button>
+        </div>
+      )}
+      {showHuixian && (
+        <div className="panel deco-frame border-fuchsia-400/40">
+          <div className="flex items-baseline justify-between">
+            <span className="font-bold text-fuchsia-300">{t("huixianTitle")}</span>
+            <span className="text-xs font-mono text-fuchsia-300/80">
+              {ELEMENTS.filter((el) => (s.inventory[XINGPAN_ID_OF[el]] ?? 0) >= 1).length +
+                ((s.inventory["huizhi_pojiepan"] ?? 0) >= 1 ? 1 : 0)}
+              /6
+            </span>
+          </div>
+          <p className="text-sm text-faded mt-1">{t("huixianDesc")}</p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {ELEMENTS.map((el) => {
+              const has = (s.inventory[XINGPAN_ID_OF[el]] ?? 0) >= 1;
+              return (
+                <span
+                  key={el}
+                  className={`chip ${has ? ELEMENT_COLOR[el] : "text-faded/40 border-faded/20"}`}
+                >
+                  {elementLabel(el, lang)}
+                </span>
+              );
+            })}
+            <span
+              className={`chip ${(s.inventory["huizhi_pojiepan"] ?? 0) >= 1 ? "text-red-500 border-red-500/50" : "text-faded/40 border-faded/20"}`}
+            >
+              {itemById("huizhi_pojiepan").name}
+            </span>
+          </div>
+          <button
+            className="btn mt-2 w-full border-fuchsia-400/60 text-fuchsia-300 hover:bg-fuchsia-400/15"
+            disabled={
+              inCombat ||
+              busy ||
+              ELEMENTS.some((el) => (s.inventory[XINGPAN_ID_OF[el]] ?? 0) < 1) ||
+              (s.inventory["huizhi_pojiepan"] ?? 0) < 1
+            }
+            onClick={() => act("unlockHuixian")}
+          >
+            {t("huixianBtn")}
           </button>
         </div>
       )}
@@ -301,6 +346,19 @@ export function StatusPanel() {
         <span className="shrink-0 text-lg text-fuchsia-300">▸</span>
       </button>
 
+      {isXian && s.tongtianUnlocked && (
+        <button
+          onClick={() => setMainView("tongtian")}
+          title={t("tongtianTooltip")}
+          className="w-full mt-2 mb-1 flex items-center justify-between gap-2 rounded-lg border border-cinnabar/40 bg-cinnabar/5 px-3 py-2 transition-colors hover:border-cinnabar hover:bg-cinnabar/10"
+        >
+          <span className="min-w-0 text-left">
+            <span className="block text-base font-bold text-cinnabar">{t("tongtianHall")}</span>
+          </span>
+          <span className="shrink-0 text-lg text-cinnabar">▸</span>
+        </button>
+      )}
+
       <div className="divider">◆</div>
 
       {/* 4.2 版:屬性與裝備改為兩組並排(標籤、數值、標籤、數值),縮短道籍面板高度,讓主畫面一屏看完 */}
@@ -324,6 +382,16 @@ export function StatusPanel() {
                   "{mult}",
                   Math.min(XIANLI_MULT_CAP, 1 + s.xianli * XIANLI_MULT).toFixed(1),
                 )}
+            </span>
+          </>
+        )}
+        {isXian && (s.shaqi ?? 0) > 0 && (
+          <>
+            <span className="text-faded">{t("statShaqi")}</span>
+            <span className={`col-span-3 text-right font-bold ${(s.shaqi ?? 0) >= 10000 ? "text-red-600" : "text-vermillion"}`}>
+              {t("shaqiValue")
+                .replace("{n}", String(s.shaqi))
+                .replace("{pct}", (((s.shaqi ?? 0) / 100)).toFixed(1))}
             </span>
           </>
         )}
@@ -442,6 +510,7 @@ const ELEMENT_HEX: Record<Element, string> = {
   火: "#e0603a",
   土: "#b08040",
   無: "#eeac43",
+  煞: "#8c1c1c",
 };
 function hexToRgba(hex: string, alpha: number): string {
   const n = parseInt(hex.slice(1), 16);
@@ -622,6 +691,9 @@ export function CombatPanel() {
   const displayName = combat.futuFloor ? `${monName} · 第 ${combat.futuFloor} 層` : monName;
   const battleLocation = LOCATIONS.find((loc) => loc.id === combat.locationId);
   const scene = sceneOfLocation(combat.locationId);
+  // 戰鬥見聞錄(獨立於全局見聞錄 s.log):只顯示 combat.battleLog——本場戰鬥開打後才產生的訊息,
+  // 讓玩家戰鬥中檢視戰況時不會被戰前的打坐/探索紀錄洗掉。
+  const battleLog = combat.battleLog ?? [];
   const { hpMax, mpMax } = statsOf(s);
   const elementGlyph: Record<string, string> = { 金: "金", 木: "木", 水: "水", 火: "火", 土: "土" };
   const STATUS_ICON: Record<string, string> = {
@@ -941,7 +1013,7 @@ export function CombatPanel() {
                 disabled={busy || (!selected && s.mp < tech.mpCost)}
                 onClick={() => toggleSlot(slot)}
                 aria-pressed={selected}
-                title={techDisplayDesc(tech, lang)}
+                title={[techDisplayDesc(tech, lang), techDisplayEffect(tech, lang)].filter(Boolean).join(" ")}
               >
                 <span className="battle-card-top">
                   <span className={ELEMENT_COLOR[tech.element]}>
@@ -958,7 +1030,7 @@ export function CombatPanel() {
                 />
                 <span className="battle-card-body">
                   <strong>{techDisplayName(tech, lang)}</strong>
-                  <span>{buffNote || techDisplayDesc(tech, lang)}</span>
+                  <span>{buffNote || techDisplayEffect(tech, lang) || techDisplayDesc(tech, lang)}</span>
                 </span>
                 <span className="battle-card-bottom">
                   <span>
@@ -970,6 +1042,7 @@ export function CombatPanel() {
             );
           })}
         </div>
+
 
         {tacticEntries.length > 0 && (
           <details className="battle-tactics">
@@ -1000,13 +1073,13 @@ export function CombatPanel() {
           <p>{t("counterNote")}</p>
           <p>{isTianjieTrial ? t("combatTianjieNote") : t("combatHandNote")}</p>
         </details>
-        <details className="battle-log">
+        <details className="battle-log" open>
           <summary>
             <span>{t("logTitle")}</span>
-            <p aria-live="polite">{s.log.at(-1) ?? t("logEmptyMsg")}</p>
+            <p aria-live="polite">{battleLog.at(-1) ?? t("logEmptyMsg")}</p>
           </summary>
           <ol>
-            {s.log.map((line, index) => (
+            {battleLog.map((line, index) => (
               <li key={index}>{line}</li>
             ))}
           </ol>

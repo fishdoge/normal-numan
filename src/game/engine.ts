@@ -53,6 +53,9 @@ export interface CombatState {
   // active、供下一整個玩家回合的傷害計算套用,那個回合結束時 active 歸零(見 postPlayerTurn)。
   pendingChargeBuffPct?: number;
   activeChargeBuffPct?: number;
+  // 戰鬥見聞錄(獨立於 s.log 的全局見聞錄):只收錄本場戰鬥開打後產生的訊息,開戰時從空陣列開始,
+  // 讓戰鬥中的見聞錄面板只顯示本場戰況,不與戰前的打坐/探索紀錄混在一起——見 log()。
+  battleLog?: string[];
 }
 
 export interface Learning {
@@ -83,6 +86,15 @@ export interface SaveData {
   jinyuanUnlocked: boolean; // 金源仙域是否已由探索秘境解鎖
   manhuangUnlocked: boolean; // 蠻荒異界是否已集滿五色異星盤解鎖
   futuFloor: number; // 浮屠塔已通關的最高層數(幻象太歲天尊)
+  // 3.19 版新增:真魔界(尋找洗煞池)、灰仙界(集滿五色異星盤+灰質破界盤)、通天閣(PvP)三處解鎖旗標,
+  // 寫法比照 jinyuanUnlocked/manhuangUnlocked。
+  zhenmoUnlocked?: boolean;
+  huixianUnlocked?: boolean;
+  tongtianUnlocked?: boolean;
+  // 煞氣(3.19 版新增):真仙以上(realm.stage>=10)才會累積/生效的持久負面狀態,0~10000,只增不減
+  // 靠擊殺(見 winCombat)、只減不增靠真實時間(見 applyShaqiDecay)與滅煞丹/洗煞池歸零。
+  // 每點 -0.01% 傷害,滿 10000 時傷害完全歸零、觸發灰仙灰階視覺。
+  shaqi?: number;
   kills: Record<string, number>;
   seen: string[];
   lordsSeen: string[]; // 已遭遇的地域王(妖獸領主)
@@ -92,7 +104,7 @@ export interface SaveData {
   lifeBonus: number;
   day: number;
   cultToday: number;
-  xianli: number; // 仙靈力(真仙專屬,攻擊倍數單位,每點 +0.2 倍)
+  xianli: number; // 仙靈力(真仙專屬,攻擊倍數單位,每點 +0.02% 額外傷害)
   techLevels: Record<string, number>; // 仙法等級(1~7),增靈珠強化
   pouch?: string[]; // 符寶袋(3.4 版新增):玩家自選的符寶清單,可重複(同名仙法可放入多張);
   // 未設定(新角色/舊存檔)時由 effectivePouch() 退回預設組合,不需要遷移欄位
@@ -182,11 +194,10 @@ export const techLevelOf = (s: Pick<SaveData, "techLevels">, techId: string) =>
   s.techLevels?.[techId] ?? 1;
 export const techPowerMult = (level: number) => 1 + (level - 1) * 0.3;
 
-// 仙靈力:每一點 = 攻擊 ×0.2 倍(真仙專屬,紫色)
-export const XIANLI_MULT = 0.2;
-// 戰鬥平衡性修正(4.0 版):仙靈力原本無上限,刷得越多攻擊力乘數越大、沒有盡頭——
-// 真仙境案例實測過 60 點仙靈力疊加其餘加成後可達對手氣血 ×2,458,見「戰鬥膨脹診斷卷」。
-// 封頂在 ×5(等效 20 點仙靈力),超過的部分不再繼續放大攻擊力,但仍可持續累積(為未來其他用途保留)。
+// 仙靈力:每一點 = 攻擊 ×0.02 倍,即 2% 額外傷害(真仙專屬,紫色)——3.19 版由 ×0.2 下修
+export const XIANLI_MULT = 0.02;
+// 戰鬥平衡性修正(4.0 版):仙靈力原本無上限,刷得越多攻擊力乘數越大、沒有盡頭。封頂在 ×5;
+// 5.0 版合併 3.19 的 ×0.02 後,需累積 200 點仙靈力才會碰到上限,此封頂只作為最後的安全網。
 export const XIANLI_MULT_CAP = 5;
 
 // 戰鬥平衡性修正(4.0 版):符寶連攜原本是「每多打一張同屬性符寶,全部同屬性符寶各自多吃一次加成」,
@@ -301,14 +312,14 @@ export function breakChanceOf(s: SaveData): number {
 // 宗門集體戰力:境界 stage → 每人每次疊加的戰鬥傷害加成比例(未列出的境界不貢獻)。
 // 同一份表由 /api/action(算真正套用的倍率)與前端(算顯示用的目前加成)共用,避免兩邊算法各寫一份而兜不起來。
 export const SECT_STAGE_BONUS: Record<number, number> = {
-  4: 0.05, // 元嬰
-  5: 0.07, // 化神
-  6: 0.09, // 煉虛
-  7: 0.11, // 合體
-  8: 0.15, // 大乘
-  10: 0.4, // 真仙
-  11: 0.6, // 金仙
-  12: 1.2, // 太乙境
+  4: 0.03, // 元嬰
+  5: 0.04, // 化神
+  6: 0.05, // 煉虛
+  7: 0.06, // 合體
+  8: 0.08, // 大乘
+  10: 0.12, // 真仙
+  11: 0.16, // 金仙
+  12: 0.25, // 太乙境
 };
 
 // 戰鬥平衡性修正(4.0 版):宗門聲勢原本純加總、無上限,宗門越養越大、全宗門一起無止盡變強——
@@ -390,6 +401,18 @@ export const LOCATION_STAGE_LEEWAY = 1;
 export const XIAN_STAGE = 10;
 export const canEnterStage = (playerStage: number, reqStage: number) =>
   reqStage >= XIAN_STAGE ? playerStage >= reqStage : playerStage + LOCATION_STAGE_LEEWAY >= reqStage;
+// 5.0 版:隱藏區域(金源仙域、蠻荒異界、真魔界、灰仙界)須先解鎖才能進入。舊版只在前端隱藏按鈕,
+// 伺服器端並未檢查,手動送出請求即可直闖;合併 3.19 新增兩個高獎勵區域後補上這道檢查。
+const REGION_UNLOCK_FLAG: Record<string, keyof SaveData> = {
+  jinyuan: "jinyuanUnlocked",
+  manhuang: "manhuangUnlocked",
+  zhenmo: "zhenmoUnlocked",
+  huixian: "huixianUnlocked",
+};
+export const regionUnlocked = (s: SaveData, regionId: string) => {
+  const flag = REGION_UNLOCK_FLAG[regionId];
+  return !flag || !!s[flag];
+};
 // 4.2 版:前期妖獸攻擊力只有 2~3,×1.5 後仍幾乎打不痛(加上玩家閃避上限 35%,常常整場零傷害)。
 // 低攻擊妖獸改為至少「原始攻擊 + MONSTER_ATK_EARLY_FLOOR」;原始攻擊約 8 以上時 ×1.5 已更高,中後期不受影響。
 export const MONSTER_ATK_EARLY_FLOOR = 4;
@@ -403,8 +426,14 @@ const EQUIP_KINDS = ["artifact", "robe", "amulet", "talisman", "pet"];
 const ITEMS_EQUIP = ITEMS.filter((i) => EQUIP_KINDS.includes(i.kind));
 const ITEMS_MANUAL = ITEMS.filter((i) => i.kind === "manual" && i.teaches);
 
-function elementMult(attacker: Element | undefined, defender: Element): number {
-  if (!attacker) return 1;
+// ignoresDefenderCounters(3.19 版新增,灰仙界怪物專屬):被攻擊方完全無視五行相剋,不論攻擊方
+// 用什麼屬性都吃中性 1 倍傷害。匯出供 pvpEngine.ts 共用同一份相剋判定,避免兩邊各寫一份不同步。
+export function elementMult(
+  attacker: Element | undefined,
+  defender: Element,
+  ignoresDefenderCounters?: boolean,
+): number {
+  if (!attacker || ignoresDefenderCounters) return 1;
   if (COUNTERS[attacker] === defender) return 1.5;
   if (COUNTERS[defender] === attacker) return 0.75;
   return 1;
@@ -574,21 +603,22 @@ function removeOneFromHand(hand: string[], id: string): string[] {
 
 // 狀態效果掛在既有五行系統上,不獨立發明新屬性池:火→燒傷(持續傷害)、木→中毒(持續傷害+攻擊力打折)、
 // 水→冰封(跳過一回合)。金/土先不掛狀態,留待驗證過這三種好不好玩後再擴充(見設計文件的收斂建議)。
-const STATUS_BY_ELEMENT: Partial<Record<Element, StatusEffect["kind"]>> = {
+// 匯出供 pvpEngine.ts 共用同一套狀態效果邏輯(通天閣 PvP 比照挑戰怪物,同樣支援燒傷/中毒/冰封/虛弱/縹緲)。
+export const STATUS_BY_ELEMENT: Partial<Record<Element, StatusEffect["kind"]>> = {
   火: "burn",
   木: "poison",
   水: "freeze",
 };
-const STATUS_LABEL: Record<StatusEffect["kind"], string> = {
+export const STATUS_LABEL: Record<StatusEffect["kind"], string> = {
   burn: "燒傷",
   poison: "中毒",
   freeze: "冰封",
   weaken: "虛弱",
   evade: "縹緲",
 };
-const STATUS_PROC_CHANCE = 0.3; // 對應屬性的招式命中時,額外機率附加狀態
-const STATUS_DURATION = 3; // 燒傷/中毒持續回合數
-const FREEZE_DURATION = 2; // 冰封持續回合數(較短,避免控制鏈過強)
+export const STATUS_PROC_CHANCE = 0.3; // 對應屬性的招式命中時,額外機率附加狀態
+export const STATUS_DURATION = 3; // 燒傷/中毒持續回合數
+export const FREEZE_DURATION = 2; // 冰封持續回合數(較短,避免控制鏈過強)
 const BURN_TICK_PCT = 0.04; // 燒傷:每回合造成目標氣血上限 4% 的持續傷害
 const POISON_TICK_PCT = 0.025; // 中毒:每回合造成目標氣血上限 2.5% 的持續傷害
 const POISON_WEAKEN_MULT = 0.8; // 中毒:攻擊輸出打八折(法器攻擊與仙法皆適用)
@@ -596,12 +626,12 @@ const POISON_WEAKEN_MULT = 0.8; // 中毒:攻擊輸出打八折(法器攻擊與�
 const WEAKEN_MULT = 0.7;
 const WEAKEN_DURATION = 2;
 
-function hasStatus(list: StatusEffect[] | undefined, kind: StatusEffect["kind"]): boolean {
+export function hasStatus(list: StatusEffect[] | undefined, kind: StatusEffect["kind"]): boolean {
   return !!list?.some((e) => e.kind === kind && e.turns > 0);
 }
 
 // 疊加/刷新狀態效果:同名狀態取剩餘回合數較大者,不疊加傷害倍率——避免同屬性連續命中無限堆疊爆炸
-function applyStatus(
+export function applyStatus(
   list: StatusEffect[] | undefined,
   kind: StatusEffect["kind"],
   turns: number,
@@ -614,14 +644,14 @@ function applyStatus(
 }
 
 // 扣減指定狀態一回合(用於冰封在跳過回合當下的消耗),歸零即移除
-function decrementStatus(list: StatusEffect[] | undefined, kind: StatusEffect["kind"]): StatusEffect[] {
+export function decrementStatus(list: StatusEffect[] | undefined, kind: StatusEffect["kind"]): StatusEffect[] {
   return (list ?? [])
     .map((e) => (e.kind === kind ? { ...e, turns: e.turns - 1 } : e))
     .filter((e) => e.turns > 0);
 }
 
 // 中毒/虛弱狀態下攻擊輸出打折(不論法器攻擊或仙法皆適用,雙方通用);兩者同時存在時效果相乘
-function atkMultFromStatus(list: StatusEffect[] | undefined): number {
+export function atkMultFromStatus(list: StatusEffect[] | undefined): number {
   let mult = 1;
   if (hasStatus(list, "poison")) mult *= POISON_WEAKEN_MULT;
   if (hasStatus(list, "weaken")) mult *= WEAKEN_MULT;
@@ -630,7 +660,7 @@ function atkMultFromStatus(list: StatusEffect[] | undefined): number {
 
 // 結算燒傷/中毒的持續傷害(冰封不在此處理,由跳過回合的邏輯各自扣減),回傳傷害總和與新的狀態清單;
 // 虛弱沒有持續傷害,但仍與燒傷/中毒一併在此扣減剩餘回合數,歸零即移除
-function tickDot(
+export function tickDot(
   list: StatusEffect[] | undefined,
   maxHp: number,
 ): { list: StatusEffect[]; dmg: number; labels: string[]; events: { element: Element; dmg: number }[] } {
@@ -667,6 +697,7 @@ function absorbShield(s: SaveData, dmg: number): { dmg: number; absorbed: number
 
 function log(s: SaveData, ...msgs: string[]) {
   s.log = [...s.log, ...msgs].slice(-MAX_LOG);
+  if (s.combat) s.combat.battleLog = [...(s.combat.battleLog ?? []), ...msgs].slice(-MAX_LOG);
 }
 
 export function give(s: SaveData, id: string, n = 1) {
@@ -721,6 +752,10 @@ export function newSave(name: string, sectId: string): SaveData {
     unlockedRecipes: [],
     jinyuanUnlocked: false,
     manhuangUnlocked: false,
+    zhenmoUnlocked: false,
+    huixianUnlocked: false,
+    tongtianUnlocked: false,
+    shaqi: 0,
     futuFloor: 0,
     kills: {},
     seen: [],
@@ -832,6 +867,14 @@ export function applyRealTimeAging(s: SaveData, hours: number) {
     return;
   }
   log(s, `光陰荏苒,${hours} 年悄然流逝(現壽元 ${s.age}/${cap})。`);
+}
+
+// 煞氣隨真實時間緩慢消退(3.19 版新增):搭 applyRealTimeAging 同一個 hours 值,不需要另外的
+// DB 時間戳欄位。每小時 -50,下限 0;未累積過煞氣(0)時直接跳過,避免每次行動都寫入無意義的 0。
+const SHAQI_DECAY_PER_HOUR = 50;
+export function applyShaqiDecay(s: SaveData, hours: number) {
+  if (hours <= 0 || !(s.shaqi && s.shaqi > 0)) return;
+  s.shaqi = Math.max(0, s.shaqi - hours * SHAQI_DECAY_PER_HOUR);
 }
 
 // 宗門仙境:停泊中的位置每小時真實時間緩慢增長修為,由 /api/action 依各位置目前等級結算。
@@ -1084,7 +1127,7 @@ function postPlayerTurn(s: SaveData): { loot?: Modal } {
 
 function winCombat(s: SaveData): Modal {
   const mon = monsterById(s.combat!.monsterId);
-  const { stoneMult, mpMax } = statsOf(s);
+  const { stoneMult, mpMax, realm } = statsOf(s);
   // 戰鬥結束(獲勝)法力回滿,跟戰敗遁走一致,置於所有分支之前確保無論哪種勝利收尾都套用到
   s.mp = mpMax;
 
@@ -1149,6 +1192,8 @@ function winCombat(s: SaveData): Modal {
   s.exp += expGain;
   s.stones += stones;
   s.kills[mon.id] = (s.kills[mon.id] ?? 0) + 1;
+  // 煞氣累積(3.19 版新增):真仙以上每擊殺一隻怪物 +1,上限 10000
+  if (realm.stage >= 10) s.shaqi = Math.min(10000, (s.shaqi ?? 0) + 1);
   const isLord = mon.isLord;
   // 滕符掉落(4.2 版):依戰鬥所在秘境的滕符池判定,地域王機率較高
   const tengfuPool = TENGFU_DROPS[s.combat!.locationId] ?? [];
@@ -1232,6 +1277,18 @@ function exploreSecretRealm(s: SaveData): ActionResult {
     );
     log(s, "你於秘境深處尋得通往【金源仙域】的仙門,新地圖解鎖!");
     return { save: s, loot: { title: "秘 境 · 金 源 仙 門", success: true, lines } };
+  }
+
+  // 8% 解鎖真魔界(3.19 版新增,僅真仙,且尚未解鎖;獨立骰,不影響下方既有機率序列)
+  if (realm.stage >= 10 && !s.zhenmoUnlocked && Math.random() < 0.08) {
+    s.zhenmoUnlocked = true;
+    const zhenmoLines = [
+      "雲遊途中,你踏入一處與世隔絕的上古【秘境】——",
+      "秘境盡頭,一道漆黑魔門轟然洞開——【真魔界】的入口自此為你顯現!",
+      "遊歷探索的地圖上,真魔界已然解鎖。相傳深處藏有可滌淨煞氣的洗煞池。",
+    ];
+    log(s, "你於秘境深處尋得通往【真魔界】的魔門,新地圖解鎖!");
+    return { save: s, loot: { title: "秘 境 · 真 魔 之 門", success: true, lines: zhenmoLines } };
   }
 
   // 5% 得靈寵(依境界給對應等級靈寵)
@@ -1333,6 +1390,11 @@ export function normalizeSave(s: SaveData): void {
   // 4.2 版:舊存檔的符寶袋若基礎卡片不足 BASIC_CARD_MIN 張,自動補足
   if (s.pouch && s.pouch.length > 0) s.pouch = withBasicMinimum(s.pouch);
   if (!Array.isArray(s.tengfuGrid)) s.tengfuGrid = [];
+  // 3.19 版:舊存檔沒有這幾個新欄位,補上預設值
+  if (typeof s.zhenmoUnlocked !== "boolean") s.zhenmoUnlocked = false;
+  if (typeof s.huixianUnlocked !== "boolean") s.huixianUnlocked = false;
+  if (typeof s.tongtianUnlocked !== "boolean") s.tongtianUnlocked = false;
+  if (typeof s.shaqi !== "number") s.shaqi = 0;
   // 3.16 版:符寶袋回溯修正,只執行一次(見 trimPouchToOwnership 註解)
   if (!s.pouchTrimmed) {
     trimPouchToOwnership(s);
@@ -1706,6 +1768,7 @@ function applyActionInner(
       if (s.combat) return { save: s, error: "激戰之中!" };
       const loc = LOCATIONS.find((l) => l.id === payload.locationId);
       if (!loc) return { save: s, error: "無此秘境" };
+      if (!regionUnlocked(s, loc.region)) return { save: s, error: "此地尚未開啟" };
       const { realm } = statsOf(s);
       if (!canEnterStage(realm.stage, loc.reqStage)) {
         log(s, `${loc.name} 兇險異常,以你現在的境界踏入必死無疑。`);
@@ -1726,6 +1789,15 @@ function applyActionInner(
         if (!s.seen.includes(mid)) s.seen.push(mid);
         log(s, `你在 ${loc.name} 採集時,${mon.name} 突然襲來!`);
         return { save: s };
+      }
+      // 洗煞池(3.19 版新增):真魔界採集時,一定機率不掉材料、改觸發洗煞池,將煞氣直接歸零
+      if (loc.region === "zhenmo" && (s.shaqi ?? 0) > 0 && Math.random() < 0.08) {
+        s.shaqi = 0;
+        log(s, `你在 ${loc.name} 採集時,腳下靈光一閃——竟是一池上古【洗煞池】!煞氣瞬間滌淨無存。`);
+        return {
+          save: s,
+          loot: { title: "洗 煞 池", success: true, lines: [`於【${loc.name}】意外尋得洗煞池`, "煞氣已完全清空。"] },
+        };
       }
       const pool = [...loc.materials, ...loc.herbs];
       if (pool.length === 0) {
@@ -1756,6 +1828,7 @@ function applyActionInner(
       if (s.combat) return { save: s, error: "激戰之中!" };
       const loc = LOCATIONS.find((l) => l.id === payload.locationId);
       if (!loc) return { save: s, error: "無此秘境" };
+      if (!regionUnlocked(s, loc.region)) return { save: s, error: "此地尚未開啟" };
       const { realm } = statsOf(s);
       if (!canEnterStage(realm.stage, loc.reqStage)) {
         log(s, `${loc.name} 兇險異常,以你現在的境界踏入必死無疑。`);
@@ -1888,6 +1961,10 @@ function applyActionInner(
       // 那樣會讓「整批全被剋制、沒有任何一張克制或中性」的情況因為 max(1, 0.75)=1 而被吃掉,導致
       // 「屬性被剋,威力受阻」的提示永遠不會出現(3.15 版修正,寫傷害事件的 advantage 標示時發現)。
       let bestElementMult = 1;
+      // 煞氣傷害懲罰(3.19 版新增):真仙以上才會累積 shaqi(其餘角色恆為 0,以下恆為 1 倍,無影響)。
+      // 每點 -0.01% 傷害,滿 10000 時 0 倍;煞屬性符寶反其道而行,見下方逐張判斷。
+      const shaqi = s.shaqi ?? 0;
+      const shaqiDmgMult = Math.max(0, 1 - shaqi / 10000);
       for (const t of techs) {
         const level = techLevelOf(s, t.id);
         let p = t.power * techPowerMult(level);
@@ -1902,11 +1979,14 @@ function applyActionInner(
         const tfEl = Math.max(...elemsOf(t).map((el) => tengfuEl.el[el] ?? 0)) + tengfuEl.allEl;
         if (tfEl > 0) p *= 1 + tfEl;
         // 雙/三屬性符寶(3.14 版新增):相剋倍率取所有屬性中最高者,天生百搭、不怕撞上被剋的屬性
-        const mult = Math.max(...elemsOf(t).map((el) => elementMult(el, mon.element)));
+        const mult = Math.max(...elemsOf(t).map((el) => elementMult(el, mon.element, mon.ignoresCounters)));
         if (Math.abs(mult - 1) > Math.abs(bestElementMult - 1)) bestElementMult = mult;
         p *= mult;
         // 蓄力連攜(3.14 版新增):上一回合若蓄力過,這整回合的傷害額外提升 activeChargeBuffPct
         if (s.combat.activeChargeBuffPct) p *= 1 + s.combat.activeChargeBuffPct;
+        // 煞屬性符寶(3.19 版新增):不受煞氣傷害懲罰,反而依煞氣額外提升傷害;其餘符寶正常吃懲罰
+        if (t.element === "煞" && t.shaqiScalePct) p *= 1 + (shaqi / 10000) * t.shaqiScalePct;
+        else p *= shaqiDmgMult;
         rawPower += p;
       }
       // 延續加成用掉即消耗,不論這次批次是否真的命中同元素都算用過一次機會
@@ -2062,7 +2142,7 @@ function applyActionInner(
       }
       const mon = monsterById(s.combat.monsterId);
       const { atk } = statsOf(s);
-      const mult = elementMult(tech.element, mon.element);
+      const mult = elementMult(tech.element, mon.element, mon.ignoresCounters);
       const level = techLevelOf(s, techId);
       const lvlMult = techPowerMult(level);
       const sectMult = Number(payload.sectDamageMult ?? 1);
@@ -2075,9 +2155,14 @@ function applyActionInner(
         log(s, `你施展【${tech.name}】,${mon.name} 身形一晃,竟憑空避過這一擊!`);
       } else {
         const weaken = atkMultFromStatus(s.combat.playerStatus);
+        const shaqi = s.shaqi ?? 0;
+        const shaqiMult =
+          tech.element === "煞" && tech.shaqiScalePct
+            ? 1 + (shaqi / 10000) * tech.shaqiScalePct
+            : Math.max(0, 1 - shaqi / 10000);
         const dmg = Math.max(
           1,
-          Math.floor(atk * tech.power * lvlMult * mult * sectMult * weaken * (0.9 + Math.random() * 0.2)),
+          Math.floor(atk * tech.power * lvlMult * mult * sectMult * weaken * shaqiMult * (0.9 + Math.random() * 0.2)),
         );
         let statusNote = "";
         const statusKind = STATUS_BY_ELEMENT[tech.element];
@@ -2193,7 +2278,8 @@ function applyActionInner(
       }
       const base = monsterById("huanxiang_taisui");
       const floor = s.futuFloor + 1; // 挑戰下一層(從第 1 層起)
-      const hpMult = Math.pow(1.5, floor - 1); // 每層氣血 ×1.5
+      // 5.0 版合併:每層氣血 ×1.4(沿用 3.19)、每層攻擊 ×1.2(沿用 4.2),再乘上全域的怪物平衡乘數
+      const hpMult = Math.pow(1.4, floor - 1); // 每層氣血 ×1.4
       const atkMult = Math.pow(1.2, floor - 1); // 每層攻擊 ×1.2
       const bossHp = Math.floor(base.hp * hpMult * MONSTER_HP_BALANCE_MULT);
       const bossAtk = Math.floor(base.atk * atkMult * MONSTER_ATK_BALANCE_MULT);
@@ -2239,6 +2325,33 @@ function applyActionInner(
           lines: [
             "五色異星盤共鳴,虛空裂開一道巨門——",
             "蠻荒異界自此對你敞開,天狐、真龍、霸下、貔貅四大領地静候踏足。",
+          ],
+        },
+      };
+    }
+
+    // 灰仙界(3.19 版新增):再集滿一輪五色異星盤 + 極稀有的灰質破界盤,寫法比照 unlockManhuang
+    case "unlockHuixian": {
+      if (s.huixianUnlocked) {
+        log(s, "灰仙界之門早已為你敞開,無需再度開啟。");
+        return { save: s };
+      }
+      const disks = ["xingpan_jin", "xingpan_mu", "xingpan_shui", "xingpan_huo", "xingpan_tu", "huizhi_pojiepan"];
+      if (!disks.every((id) => (s.inventory[id] ?? 0) >= 1)) {
+        log(s, "五色異星盤與灰質破界盤尚未集滿,無法開啟灰仙界之門。");
+        return { save: s };
+      }
+      disks.forEach((id) => take(s, id));
+      s.huixianUnlocked = true;
+      log(s, "五色異星盤與灰質破界盤同時懸空、轟然共鳴——灰仙界之門訇然洞開,死寂之氣撲面而來!");
+      return {
+        save: s,
+        breakResult: {
+          success: true,
+          title: "灰 仙 界 · 門 開",
+          lines: [
+            "五色異星盤與灰質破界盤共鳴,虛空裂開一道死寂巨門——",
+            "灰仙界自此對你敞開,煞氣瀰漫,妖獸不分五行,非常強大。",
           ],
         },
       };
@@ -2495,6 +2608,41 @@ function applyActionInner(
         };
       }
 
+      // 一次性秘境地圖道具(3.19 版新增,廣寒界/鯤鵬遺骸):使用後直接消耗道具、開啟對應一次性
+      // 秘境戰鬥,獎勵沿用該怪物自己的 drops[] 掉落表(見 winCombat 的一般擊殺分支),不需要另外
+      // 寫一套特判邏輯。
+      if (item.kind === "special" && item.mapEncounter) {
+        if (s.combat) return { save: s, error: "激戰之中,無法使用。" };
+        if (realm.stage < 10) return { save: s, error: "此物玄奧非常,唯真仙以上方能啟用。" };
+        const boss = monsterById(item.mapEncounter);
+        take(s, itemId);
+        s.combat = {
+          monsterId: boss.id,
+          // 5.0 版合併:與其他戰鬥一致套用 4.0 版妖獸氣血倍率(前端血條上限也以 monsterHpOf 計算)
+          monsterHp: monsterHpOf(boss),
+          locationId: `__map_${itemId}__`,
+          isLord: true,
+          ...startingCombatHand(s),
+          monsterStatus: [],
+          playerStatus: [],
+        };
+        log(s, `你動用【${item.name}】,眼前景象驟然扭曲——${boss.name}(${boss.element}屬性)已然現身!`);
+        return { save: s };
+      }
+
+      // 通天令(3.19 版新增):使用即消耗,永久解鎖通天閣進場資格
+      if (item.kind === "special" && itemId === "tongtian_ling") {
+        if (s.tongtianUnlocked) {
+          log(s, "通天閣之門早已為你敞開,無需再度使用通天令。");
+          return { save: s };
+        }
+        if (realm.stage < 10) return { save: s, error: "此物玄奧非常,唯真仙以上方能啟用。" };
+        take(s, itemId);
+        s.tongtianUnlocked = true;
+        log(s, "你動用【通天令】,一道天光自天際垂落——通天閣之門自此為你敞開!");
+        return { save: s };
+      }
+
       // 乾坤袋:隨身法寶,不消耗、不需「使用」,持有即可於儲物袋存取靈石
       if (item.kind === "special" && itemId === "qiankun_dai") {
         log(s, "【乾坤袋】乃隨身法寶,無需服用——持有即可於儲物袋中存入、取出靈石。");
@@ -2533,6 +2681,10 @@ function applyActionInner(
         const gain = Math.floor(maxLifeOf(s) * item.lifePct);
         s.lifeBonus += gain;
         effects.push(`壽元上限 +${gain} 年(${Math.round(item.lifePct * 100)}%)`);
+      }
+      if (item.cureShaqi) {
+        s.shaqi = 0;
+        effects.push("清除全部煞氣");
       }
       log(s, `你服下 ${item.name},${effects.join(",")}。`);
       return { save: s };

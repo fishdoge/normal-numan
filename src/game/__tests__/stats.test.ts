@@ -22,11 +22,11 @@ describe("statsOf", () => {
     expect(atk).toBe(baseAtk); // 仙靈力為 0,乘數應為 1,atk 應等於 baseAtk
   });
 
-  it("仙靈力每點 +20% 攻擊力,且直接乘在 baseAtk 上(含裝備/宗門加成)", () => {
+  it("仙靈力每點 +2% 攻擊力(3.19 版由 +20% 下修),且直接乘在 baseAtk 上(含裝備/宗門加成)", () => {
     const s = newSave("t", "julian");
-    s.xianli = 10;
+    s.xianli = 100;
     const { atk, baseAtk } = statsOf(s);
-    expect(atk).toBe(Math.floor(baseAtk * (1 + 10 * 0.2)));
+    expect(atk).toBe(Math.floor(baseAtk * (1 + 100 * 0.02)));
     expect(atk).toBe(baseAtk * 3);
   });
 

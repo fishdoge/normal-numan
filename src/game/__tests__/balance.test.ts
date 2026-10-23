@@ -38,14 +38,14 @@ afterEach(() => {
 describe("仙靈力攻擊力乘數封頂(XIANLI_MULT_CAP)", () => {
   it("封頂前,乘數隨仙靈力線性成長", () => {
     const s = newSave("測試員", "huadao");
-    s.xianli = 5; // 1 + 5*0.2 = 2.0,未達封頂
+    s.xianli = 50; // 5.0 版(沿用 3.19):1 + 50*0.02 = 2.0,未達封頂
     expect(statsOf(s).atk).toBe(Math.floor(statsOf({ ...s, xianli: 0 }).atk * 2));
   });
 
   it("封頂後,無論仙靈力刷多高,攻擊力乘數都不會超過 XIANLI_MULT_CAP", () => {
     const base = newSave("測試員", "huadao");
     const atk0 = statsOf({ ...base, xianli: 0 }).atk;
-    const s30 = { ...base, xianli: 30 }; // 1+30*0.2=7.0,未封頂前會到 ×7
+    const s30 = { ...base, xianli: 300 }; // 1+300*0.02=7.0,未封頂前會到 ×7
     const s9999 = { ...base, xianli: 9999 }; // 無論刷多高
     expect(statsOf(s30).atk).toBe(Math.floor(atk0 * XIANLI_MULT_CAP));
     expect(statsOf(s9999).atk).toBe(Math.floor(atk0 * XIANLI_MULT_CAP));

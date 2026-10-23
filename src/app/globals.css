@@ -154,6 +154,11 @@ body::after {
   }
 }
 
+/* 灰仙(3.19 版新增):煞氣累積滿 10000 時,傷害完全歸零,整個畫面套上灰黑濾鏡以資警示 */
+.ashen-immortal {
+  filter: grayscale(0.9) brightness(0.85) contrast(1.05);
+}
+
 /* 全螢幕符寶戰鬥：沿用主站的墨、金、朱色，插畫區先以五行法陣佔位。 */
 .combat-screen {
   position: fixed;
@@ -760,7 +765,7 @@ body::after {
   width: fit-content;
   cursor: pointer;
   color: #afcbb5;
-  font-size: 11px;
+  font-size: 15px;
   letter-spacing: 0.1em;
 }
 .battle-tactics summary span {
@@ -772,20 +777,22 @@ body::after {
 }
 .battle-rules p {
   max-width: 100ch;
-  margin-top: 7px;
+  margin-top: 8px;
   color: #b8a789;
-  font-size: 11px;
-  line-height: 1.5;
+  font-size: 14px;
+  line-height: 1.6;
 }
 .battle-tactic-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
+  gap: 10px;
+  margin-top: 12px;
 }
 .battle-tactic-list button {
   display: flex;
-  gap: 12px;
+  gap: 14px;
+  font-size: 14px;
+  padding: 10px 16px;
 }
 .battle-log {
   min-height: 21px;
@@ -815,7 +822,7 @@ body::after {
 .battle-log summary > span {
   flex: 0 0 auto;
   color: #997c4a;
-  font-size: 10px;
+  font-size: 13px;
   letter-spacing: 0.14em;
 }
 .battle-log summary > p {
@@ -823,22 +830,22 @@ body::after {
   text-overflow: ellipsis;
   white-space: nowrap;
   color: #a8987a;
-  font-size: 11px;
+  font-size: 13px;
 }
 .battle-log ol {
-  max-height: 220px;
+  max-height: 280px;
   overflow-y: auto;
   margin-top: 8px;
-  padding: 7px 12px;
+  padding: 9px 14px;
   border: 1px solid rgba(201, 162, 39, 0.2);
   background: rgba(13, 11, 8, 0.9);
 }
 .battle-log li {
-  padding: 5px 0;
+  padding: 6px 0;
   border-bottom: 1px solid rgba(201, 162, 39, 0.1);
   color: #b8a789;
-  font-size: 11px;
-  line-height: 1.5;
+  font-size: 14px;
+  line-height: 1.6;
 }
 .battle-log li:last-child {
   border-bottom: 0;

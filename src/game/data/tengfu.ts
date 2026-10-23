@@ -8,7 +8,8 @@ import type { Element } from "../types";
 export const TENGFU_ROWS = 5;
 export const TENGFU_COLS = 6;
 
-export type TengfuStat = "atk" | "def" | "hp" | "mp" | "energy" | "allEl" | Element;
+// 滕符只加成五行與「無」屬性;3.19 版的「煞」屬性符寶另有煞氣加成機制,不吃滕符屬性加成
+export type TengfuStat = "atk" | "def" | "hp" | "mp" | "energy" | "allEl" | Exclude<Element, "煞">;
 
 export interface TengfuDef {
   id: string;
@@ -90,6 +91,9 @@ export const TENGFU: TengfuDef[] = [
   { id: "tf_zhenlong", name: "真龍符", h: 3, w: 2, tier: 6, stats: { atk: 0.6, hp: 0.5 }, desc: "真龍一片逆鱗化成的仙符,威壓蠻荒。" },
   { id: "tf_baxia", name: "霸下符", h: 2, w: 3, tier: 6, stats: { def: 0.6, hp: 0.5 }, desc: "霸下負碑之力,堅不可摧。" },
   { id: "tf_pixiu", name: "貔貅符", h: 2, w: 2, tier: 6, stats: { energy: 0.6, mp: 0.5 }, desc: "黑眼貔貅吞納萬物的靈性所凝。" },
+  // 5.0 版合併 3.19 新區域:真魔界、灰仙界各一張六品滕符
+  { id: "tf_zhenmo", name: "真魔血符", h: 3, w: 1, tier: 6, stats: { atk: 1 }, desc: "真魔界魔血凝成的長符,殺意凜然,持符者出手更狠。" },
+  { id: "tf_huixian", name: "灰仙寂滅符", h: 2, w: 2, tier: 6, stats: { def: 0.5, hp: 0.5 }, desc: "灰仙死域中拾得的殘符,萬物褪色,唯此符仍守著一縷生機。" },
   { id: "tf_hundun", name: "混沌五行符", h: 1, w: 1, tier: 6, stats: { allEl: 1 }, desc: "五色異星盤共鳴時偶然凝出的一點混沌,方寸之中五行俱全。" },
 ];
 
@@ -129,6 +133,8 @@ export const TENGFU_DROPS: Record<string, string[]> = {
   manhuang_zhenlong: ["tf_zhenlong", "tf_hundun"],
   manhuang_baxia: ["tf_baxia", "tf_hundun"],
   manhuang_pixiu: ["tf_pixiu", "tf_hundun"],
+  zhenmo_yuan: ["tf_zhenmo", "tf_hundun"],
+  huixian_jie: ["tf_huixian", "tf_hundun"],
 };
 export const TENGFU_DROP_CHANCE = 0.05; // 一般妖獸
 export const TENGFU_DROP_CHANCE_LORD = 0.3; // 地域王
@@ -186,7 +192,7 @@ export function tengfuBonusOf(grid: TengfuPlacement[] | undefined): TengfuBonus 
     mp: 0,
     energy: 0,
     allEl: 0,
-    el: { 金: 0, 木: 0, 水: 0, 火: 0, 土: 0, 無: 0 },
+    el: { 金: 0, 木: 0, 水: 0, 火: 0, 土: 0, 無: 0, 煞: 0 },
   };
   for (const p of grid ?? []) {
     const def = tengfuById(p.id);

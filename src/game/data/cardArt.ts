@@ -7,4 +7,5 @@ export const CARD_ART: Record<Element, string> = {
   火: "fire",
   土: "earth",
   無: "neutral",
+  煞: "neutral",
 };

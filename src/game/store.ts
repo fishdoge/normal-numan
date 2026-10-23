@@ -91,7 +91,7 @@ export type Tab =
   | "rank";
 
 // 主畫面切換:遊戲主頁 / 宗門獨立頁面(1.8 版新增,宗門改為全螢幕切換,不再是行動頁籤之一)
-export type MainView = "game" | "sect";
+export type MainView = "game" | "sect" | "tongtian";
 
 // 秒殺收尾延遲(見 act() 內註解):讓致命一擊的浮動傷害數字/打擊特效有時間播出,才套用戰鬥結束的
 // 存檔與戰利品彈窗。刻意抓短一點——夠讓玩家看清這一下傷害就好,不需要等滿整段數字動畫。
@@ -167,7 +167,12 @@ export const useGame = create<ClientState>()((set, get) => ({
   },
   pushLog: (msg) => {
     const s = get().save;
-    if (s) set({ save: { ...s, log: [...s.log, msg].slice(-60) } });
+    if (!s) return;
+    const log = [...s.log, msg].slice(-60);
+    const combat = s.combat
+      ? { ...s.combat, battleLog: [...(s.combat.battleLog ?? []), msg].slice(-60) }
+      : s.combat;
+    set({ save: { ...s, log, combat } });
   },
 
   act: async (type, payload = {}) => {
@@ -209,9 +214,16 @@ export const useGame = create<ClientState>()((set, get) => ({
       if (j.loot) set({ loot: j.loot });
       if (j.breakResult) set({ breakResult: j.breakResult });
       if (j.error && j.save) {
-        // 錯誤訊息進見聞錄
+        // 錯誤訊息進見聞錄(戰鬥中同時進戰鬥見聞錄,見 CombatState.battleLog)
         const s = get().save;
-        if (s) set({ save: { ...s, log: [...s.log, `【${j.error}】`].slice(-60) } });
+        if (s) {
+          const msg = `【${j.error}】`;
+          const log = [...s.log, msg].slice(-60);
+          const combat = s.combat
+            ? { ...s.combat, battleLog: [...(s.combat.battleLog ?? []), msg].slice(-60) }
+            : s.combat;
+          set({ save: { ...s, log, combat } });
+        }
       }
     } catch {
       get().pushLog(DICT[get().language].actionNetErr);

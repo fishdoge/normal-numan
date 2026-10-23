@@ -82,7 +82,9 @@ export default function ExploreStrip() {
     (r) =>
       !r.hidden ||
       (r.id === "jinyuan" && s.jinyuanUnlocked) ||
-      (r.id === "manhuang" && s.manhuangUnlocked),
+      (r.id === "manhuang" && s.manhuangUnlocked) ||
+      (r.id === "zhenmo" && s.zhenmoUnlocked) ||
+      (r.id === "huixian" && s.huixianUnlocked),
   );
   // 第一次打開地圖時,直接停在目前能進入的最高區域(而不是永遠從天南開始)
   useEffect(() => {

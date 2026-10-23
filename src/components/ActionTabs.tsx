@@ -38,7 +38,7 @@ import { useT } from "@/i18n/useT";
 import type { DictKey } from "@/i18n/dict";
 import { itemDisplayName, itemDisplayDesc, itemStatLine } from "@/i18n/itemText";
 import { monsterDisplayName, monsterDisplayDesc } from "@/i18n/monsterText";
-import { techDisplayName, techDisplayDesc } from "@/i18n/techText";
+import { techDisplayName, techDisplayDesc, techDisplayEffect } from "@/i18n/techText";
 import { recipeDisplayDesc } from "@/i18n/worldText";
 import { realmDisplayName } from "@/i18n/realmText";
 import { sectDisplayName } from "@/i18n/sectText";
@@ -208,9 +208,29 @@ function BagTab() {
               {t("btnUseLianshen")}
             </button>
           )}
+          {item.kind === "special" && item.mapEncounter && (
+            <button
+              className="btn border-fuchsia-400/60 text-fuchsia-300"
+              disabled={busy || !!s.combat}
+              title={s.combat ? t("talismanPouchInCombatNote") : ""}
+              onClick={() => act("useItem", { itemId: id })}
+            >
+              {t("btnEnterMapDungeon")}
+            </button>
+          )}
+          {item.kind === "special" && id === "tongtian_ling" && (
+            <button
+              className="btn border-fuchsia-400/60 text-fuchsia-300"
+              disabled={busy}
+              onClick={() => act("useItem", { itemId: id })}
+            >
+              {t("btnOpenTongtian")}
+            </button>
+          )}
           {item.kind === "special" &&
             !item.xianli &&
-            !["jinhundan", "xiantian_zaohuadan", "zenglingzhu", "lianshenshu"].includes(id) && (
+            !item.mapEncounter &&
+            !["jinhundan", "xiantian_zaohuadan", "zenglingzhu", "lianshenshu", "tongtian_ling"].includes(id) && (
               <span className="chip text-fuchsia-400 border-fuchsia-400/50 self-center">
                 {t("autoOnCondition")}
               </span>
@@ -530,6 +550,12 @@ function TechTab() {
               </span>
             </div>
             <p className="text-sm text-faded mt-1">{techDisplayDesc(tech, lang)}</p>
+            {techDisplayEffect(tech, lang) && (
+              <p className="text-xs text-gold mt-1">
+                <span className="text-faded/70">{t("techEffectLabel")}:</span>{" "}
+                {techDisplayEffect(tech, lang)}
+              </p>
+            )}
             <button
               className="btn mt-2"
               disabled={busy || maxed || zenglingzhu <= 0}

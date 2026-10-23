@@ -1,0 +1,111 @@
+{
+ "started": true,
+ "name": "三一九道友",
+ "sectId": "huangfeng",
+ "realmIdx": 25,
+ "exp": 0,
+ "hp": 500000,
+ "mp": 415,
+ "stones": 123456789,
+ "inventory": {
+  "huanglongdan": 2,
+  "liaoshangdan": 1,
+  "guanghanjie": 1,
+  "tianxiandan": 3
+ },
+ "learned": [
+  "artifact_attack",
+  "spell_attack",
+  "mujian",
+  "tengbian",
+  "shaqi_yidao"
+ ],
+ "pouch": [
+  "artifact_attack",
+  "artifact_attack",
+  "artifact_attack",
+  "spell_attack",
+  "spell_attack",
+  "spell_attack",
+  "mujian",
+  "mujian",
+  "mujian",
+  "tengbian"
+ ],
+ "techCopies": {
+  "mujian": 2
+ },
+ "learning": null,
+ "equippedWeapon": null,
+ "equippedArmor": null,
+ "equippedRobe": null,
+ "equippedAmulet": null,
+ "equippedTalisman": null,
+ "equippedPet": null,
+ "equippedMing": null,
+ "unlockedRecipes": [],
+ "jinyuanUnlocked": true,
+ "manhuangUnlocked": false,
+ "zhenmoUnlocked": true,
+ "huixianUnlocked": true,
+ "tongtianUnlocked": true,
+ "shaqi": 4200,
+ "futuFloor": 0,
+ "kills": {},
+ "seen": [
+  "hx_yanmo_shahou"
+ ],
+ "lordsSeen": [],
+ "missionId": null,
+ "missionBase": 0,
+ "age": 16,
+ "lifeBonus": 0,
+ "day": 1,
+ "cultToday": 0,
+ "xianli": 25,
+ "techLevels": {},
+ "boonHp": 0,
+ "boonAtk": 0,
+ "boonDef": 0,
+ "boonSpeed": 0,
+ "dead": false,
+ "log": [
+  "三一九道友 拜入 黃楓谷,自此踏上修仙之路。",
+  "長老傳授入門仙法:青木劍訣、疾風藤鞭。",
+  "身上僅有 20 枚下品靈石與幾瓶丹藥,前路漫漫,道阻且長。",
+  "你主動深入 灰仙死域 尋妖,遭遇了 炎魔煞猴(火屬性)!"
+ ],
+ "combat": {
+  "monsterId": "hx_yanmo_shahou",
+  "monsterHp": 2650000,
+  "locationId": "huixian_jie",
+  "hand": [
+   "tengbian",
+   "spell_attack",
+   "artifact_attack",
+   "spell_attack",
+   "mujian",
+   "artifact_attack"
+  ],
+  "deck": [
+   "mujian",
+   "mujian",
+   "spell_attack",
+   "artifact_attack"
+  ],
+  "discard": [],
+  "monsterStatus": [],
+  "playerStatus": [],
+  "battleLog": [
+   "你主動深入 灰仙死域 尋妖,遭遇了 炎魔煞猴(火屬性)!"
+  ]
+ },
+ "dwellingSlot": null,
+ "energy": 295,
+ "energyPotionStacks": 0,
+ "bornEra": 7087,
+ "oracleOffered": false,
+ "pouchStones": 0,
+ "boonReset": true,
+ "pouchTrimmed": true
+}

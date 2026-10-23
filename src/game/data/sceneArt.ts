@@ -11,6 +11,8 @@ const REGION_ART: Record<string, string> = {
   beihan: "beihan",
   jinyuan: "jinyuan",
   manhuang: "manhuang",
+  zhenmo: "zhenmo", // 5.0 版合併 3.19:真魔界
+  huixian: "huixian", // 5.0 版合併 3.19:灰仙界
 };
 const CONTINENT_ART: Record<string, string> = {
   fengyuan: "lingjie-fengyuan",
@@ -22,6 +24,9 @@ const SPECIAL_ART: Record<string, string> = {
   __wander__: "/images/world/moonlit-mountains.webp",
   __tianjie__: "/images/world/regions/lingjie-leiming.webp",
   __futu__: "/images/world/regions/jinyuan.webp",
+  // 3.19 版一次性秘境地圖道具(locationId 為 __map_{道具 id}__)
+  __map_guanghanjie__: "/images/world/regions/guanghan.webp",
+  __map_kunpeng_yihai__: "/images/world/regions/kunpeng.webp",
 };
 const FALLBACK_ART = "/images/world/spirit-forest.webp";
 
@@ -35,6 +40,7 @@ const ELEMENT_TINT: Record<Element, string> = {
   火: "rgba(224, 96, 58, 0.34)",
   土: "rgba(176, 128, 64, 0.30)",
   無: "rgba(238, 172, 67, 0.18)",
+  煞: "rgba(120, 104, 128, 0.36)",
 };
 function tintOf(monsterIds: string[]): string {
   const count = new Map<Element, number>();

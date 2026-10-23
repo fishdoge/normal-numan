@@ -5,6 +5,7 @@ import {
   applyRealTimeAging,
   applyDwellingExp,
   applyEnergyRegen,
+  applyShaqiDecay,
   newSave,
   sectDamageMultOfStages,
   ENERGY_REGEN_PER_TICK,
@@ -93,6 +94,7 @@ export async function POST(req: NextRequest) {
     Math.floor((Date.now() - new Date(row.last_life_at).getTime()) / 3600000),
   );
   if (hours > 0) applyRealTimeAging(save, hours);
+  applyShaqiDecay(save, hours);
 
   // 精力回復:平時每 5 分鐘真實時間 2 點,只推進「已兌現成點數」的整數分鐘,餘數留到下次結算。
   // 停泊宗門仙境閉關潛修時額外加成:基礎 +2,宗門每提升一階再 +1(依宗門目前等級)。

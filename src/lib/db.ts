@@ -107,6 +107,22 @@ export function ensureSchema() {
         created_at TIMESTAMPTZ DEFAULT now(),
         updated_at TIMESTAMPTZ DEFAULT now()
       )`;
+      // 通天閣(3.19 版新增):以短間隔輪詢做出「體感即時」的真仙 PvP,沒有常駐 WebSocket 連線
+      // ——上線名單靠心跳時間戳判斷,對戰狀態存 pvp_matches.state,伺服器權威計算 15 秒回合倒數。
+      await sql`CREATE TABLE IF NOT EXISTS pvp_presence (
+        user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        last_heartbeat_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )`;
+      await sql`CREATE TABLE IF NOT EXISTS pvp_matches (
+        id SERIAL PRIMARY KEY,
+        challenger_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        opponent_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        status TEXT NOT NULL DEFAULT 'active',
+        round_deadline TIMESTAMPTZ NOT NULL DEFAULT (now() + interval '20 seconds'),
+        state JSONB NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT now(),
+        updated_at TIMESTAMPTZ DEFAULT now()
+      )`;
     })();
   }
   return ready;

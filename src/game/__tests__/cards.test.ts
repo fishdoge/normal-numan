@@ -1,4 +1,4 @@
-// 符寶全表資料健檢:掃描 TECHNIQUES 裡全部 79 張符寶,檢查基本欄位是否自洽。這類測試抓不到「這張
+// 符寶全表資料健檢:掃描 TECHNIQUES 裡全部符寶,檢查基本欄位是否自洽。這類測試抓不到「這張
 // 卡在戰鬥裡實際好不好用」,但能便宜地抓到打錯數字、element 打錯字、reqStage 超出範圍這類資料輸入
 // 錯誤——新增符寶時這份測試會立刻告訴你哪裡漏填或填錯,而不必等到實際玩到那張卡才發現。
 import { describe, it, expect } from "vitest";
@@ -8,8 +8,8 @@ import { MAX_TECH_LEVEL, learnYears, techPowerMult } from "../engine";
 import { ITEMS } from "../data/items";
 
 describe("符寶全表健檢", () => {
-  it("總數為 79 張(card.md 記載的 3.14 版基準)", () => {
-    expect(TECHNIQUES.length).toBe(79);
+  it("總數為 106 張(3.14 版基準 79 張 + 3.19 版新增 27 張,5.0 版合併後)", () => {
+    expect(TECHNIQUES.length).toBe(106);
   });
 
   it("id 不重複", () => {

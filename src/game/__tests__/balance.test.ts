@@ -12,7 +12,6 @@ import {
   monsterAtkOf,
   MONSTER_HP_BALANCE_MULT,
   MONSTER_ATK_BALANCE_MULT,
-  MONSTER_ATK_EARLY_FLOOR,
   NOVICE_GUARD_REALMS,
   MONSTER_HP_NORMAL_MULT,
   MONSTER_HP_EARLY_MULT,
@@ -108,12 +107,8 @@ describe("怪物氣血/攻擊力的戰鬥平衡性倍率(MONSTER_HP_BALANCE_MULT
     );
     const lord = MONSTERS.find((m) => m.isLord)!;
     expect(monsterHpOf(lord)).toBe(Math.floor(lord.hp * MONSTER_HP_BALANCE_MULT));
-    // 4.2 版:低攻擊妖獸另有保底(原始攻擊 + MONSTER_ATK_EARLY_FLOOR),取兩者較高
-    expect(monsterAtkOf(mon)).toBe(
-      Math.max(Math.floor(mon.atk * MONSTER_ATK_BALANCE_MULT), mon.atk + MONSTER_ATK_EARLY_FLOOR),
-    );
-    const strong = MONSTERS.find((m) => m.atk >= 20)!;
-    expect(monsterAtkOf(strong)).toBe(Math.floor(strong.atk * MONSTER_ATK_BALANCE_MULT));
+    // 5.0 版:妖獸攻擊改依階層校準,詳見 monsterDamage.test.ts
+    expect(monsterAtkOf(mon)).toBeGreaterThan(0);
   });
 
   it("開戰時 combat.monsterHp 套用的是平衡性倍率後的數字,不是 world.ts 的原始值", () => {

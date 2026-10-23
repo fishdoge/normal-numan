@@ -55,7 +55,7 @@ describe("數值:3.19 的削弱 + 4.0 的封頂同時生效", () => {
     expect(MONSTERS.find((m) => m.id === "lord_pixiu")!.atk).toBe(8690);
   });
 
-  it("浮屠塔:每層氣血 ×1.4、攻擊 ×1.2,再乘上 4.0 的全域乘數", () => {
+  it("浮屠塔:每層氣血 ×1.4、攻擊 ×1.2(氣血乘 4.0 全域倍率,攻擊以 5.0 校準後的金源一般妖獸基準為第 1 層)", () => {
     const base = MONSTERS.find((m) => m.id === "huanxiang_taisui")!;
     for (const floor of [1, 5, 12]) {
       const s = newXian();
@@ -63,7 +63,7 @@ describe("數值:3.19 的削弱 + 4.0 的封頂同時生效", () => {
       s.futuFloor = floor - 1;
       const r = E.applyAction(s, "challengeFutu").save;
       expect(r.combat!.bossHpMax).toBe(Math.floor(base.hp * Math.pow(1.4, floor - 1) * E.MONSTER_HP_BALANCE_MULT));
-      expect(r.combat!.bossAtk).toBe(Math.floor(base.atk * Math.pow(1.2, floor - 1) * E.MONSTER_ATK_BALANCE_MULT));
+      expect(r.combat!.bossAtk).toBe(Math.floor(E.tierBaseAtkOf("x-jinyuan") * Math.pow(1.2, floor - 1)));
     }
   });
 });

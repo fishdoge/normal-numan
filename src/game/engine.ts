@@ -269,7 +269,7 @@ export function statsOf(s: SaveData) {
   const sumDef = gear.reduce((a, g) => a + (g?.defBonus ?? 0), 0);
   const sumSpeed = gear.reduce((a, g) => a + (g?.speedBonus ?? 0), 0);
   const baseAtk = realm.atk + (sect?.bonus.atk ?? 0) + sumAtk + (s.boonAtk ?? 0);
-  // 仙靈力:一點 = 攻擊 ×0.2 倍(真仙專屬,紫色),4.0 版封頂 ×XIANLI_MULT_CAP(見該常數說明)
+  // 仙靈力:一點 = 攻擊 ×0.02 倍(真仙專屬,紫色;3.19 版由 ×0.2 下修),4.0 版封頂 ×XIANLI_MULT_CAP
   const xianli = s.xianli ?? 0;
   // 滕符陣(4.2 版):攻擊/氣血/法力為百分比加成;防禦以境界攻擊力的百分比換算成護體值
   const tf = tengfuBonusOf(s.tengfuGrid);
@@ -413,13 +413,114 @@ export const regionUnlocked = (s: SaveData, regionId: string) => {
   const flag = REGION_UNLOCK_FLAG[regionId];
   return !flag || !!s[flag];
 };
-// 4.2 版:前期妖獸攻擊力只有 2~3,×1.5 後仍幾乎打不痛(加上玩家閃避上限 35%,常常整場零傷害)。
-// 低攻擊妖獸改為至少「原始攻擊 + MONSTER_ATK_EARLY_FLOOR」;原始攻擊約 8 以上時 ×1.5 已更高,中後期不受影響。
-export const MONSTER_ATK_EARLY_FLOOR = 4;
 // 新手護體:realmIdx 小於此值(練氣期前/中/後)時,突破失敗只散去一半修為、不折損壽元
 export const NOVICE_GUARD_REALMS = 3;
-export const monsterAtkOf = (mon: Pick<Monster, "atk">) =>
-  Math.max(Math.floor(mon.atk * MONSTER_ATK_BALANCE_MULT), mon.atk + MONSTER_ATK_EARLY_FLOOR);
+// ═══ 5.0 版:妖獸攻擊依「參考玩家」校準,並改為比例減傷 ═══
+// 舊制傷害是「妖獸攻擊 − 玩家防禦」,但裝備防禦遠高於同階妖獸攻擊(例如元嬰坊市裝備防禦 818,元嬰妖獸
+// 攻擊只有 36~58),從築基起只要穿上坊市裝備,幾乎所有妖獸都只打 1 點;裸裝時結丹~大乘一擊也只有 1~5% 氣血。
+//
+// 新制(公式也寫在修仙入門錄裡):
+//   妖獸傷害 = 妖獸攻擊 × 隨機 0.8~1.2 × K ÷ (K + 玩家防禦),最低 1
+//     K = 該妖獸所屬階層的「參考防禦」(該階層玩家的典型防禦):防禦等於 K 時傷害減半,再高也只會遞減。
+//   妖獸攻擊 = 目標比例 × 參考氣血 × 2 × 階內相對強度 × 身分倍率
+//     參考氣血 = 該境界中期的氣血上限(仙域以真仙境計);×2 抵銷參考防禦減掉的一半
+//     目標比例 = 參考玩家(參考氣血、參考防禦)被一般妖獸打一下掉的氣血比例,約 5~9%,即 11~20 下倒地
+//     階內相對強度 = 該妖獸原始攻擊 ÷ 同階一般妖獸原始攻擊的中位數,夾在 0.75~1.3,保留設計上的強弱差異
+//     身分倍率 = 一般 1、菁英 1.8、地域王 2.2
+export interface AtkTier {
+  refHp: number;
+  refDef: number;
+  target: number;
+}
+const midHpOf = (stage: number) => {
+  const xs = REALMS.filter((r) => r.stage === stage);
+  return xs[Math.min(1, xs.length - 1)].hpMax;
+};
+export const ATK_TIERS: Record<string, AtkTier> = {
+  "1": { refHp: midHpOf(1), refDef: 10, target: 0.05 }, // 練氣:新手期稍輕
+  "2": { refHp: midHpOf(2), refDef: 25, target: 0.065 },
+  "3": { refHp: midHpOf(3), refDef: 60, target: 0.065 },
+  "4": { refHp: midHpOf(4), refDef: 600, target: 0.065 },
+  "5": { refHp: midHpOf(5), refDef: 900, target: 0.065 },
+  "6": { refHp: midHpOf(6), refDef: 6000, target: 0.065 },
+  "7": { refHp: midHpOf(7), refDef: 15000, target: 0.065 },
+  "8": { refHp: midHpOf(8), refDef: 17000, target: 0.065 },
+  "9": { refHp: midHpOf(9), refDef: 18000, target: 0.065 }, // 天劫試煉
+  "x-beihan": { refHp: midHpOf(10), refDef: 20000, target: 0.06 },
+  "x-jinyuan": { refHp: midHpOf(10), refDef: 20000, target: 0.07 },
+  "x-manhuang": { refHp: midHpOf(10), refDef: 45000, target: 0.08 },
+  "x-zhenmo": { refHp: midHpOf(10), refDef: 45000, target: 0.08 },
+  "x-huixian": { refHp: midHpOf(10), refDef: 60000, target: 0.09 }, // 灰仙界:非常強大
+};
+export const ATK_ROLE_MULT = { normal: 1, elite: 1.8, lord: 2.2 } as const;
+export const ATK_REL_RANGE = [0.75, 1.3] as const;
+const XIAN_TIER_ORDER: Record<string, number> = { beihan: 1, jinyuan: 2, manhuang: 3, zhenmo: 3, huixian: 4 };
+const tierRank = (key: string) => (key.startsWith("x-") ? 100 + (XIAN_TIER_ORDER[key.slice(2)] ?? 9) : Number(key));
+const tierOfLocation = (l: { reqStage: number; region: string }) =>
+  l.reqStage < XIAN_STAGE ? String(l.reqStage) : `x-${l.region}`;
+// 每隻妖獸歸屬的階層:出沒的秘境中最低的那一階;地域王依所屬秘境/區域;菁英依現身秘境;
+// 不在任何秘境的特殊妖獸另外指定(天劫試煉、雲遊大 BOSS、浮屠塔、一次性秘境)
+const MONSTER_TIER = new Map<string, string>();
+const setTier = (id: string | undefined, key: string) => {
+  if (!id) return;
+  const cur = MONSTER_TIER.get(id);
+  if (!cur || tierRank(key) < tierRank(cur)) MONSTER_TIER.set(id, key);
+};
+for (const l of LOCATIONS) {
+  const key = tierOfLocation(l);
+  for (const id of l.monsters) setTier(id, key);
+  setTier(l.lordId, key);
+  setTier(ELITE_SPAWNS[l.id], key);
+}
+for (const r of REGIONS) {
+  const locs = LOCATIONS.filter((l) => l.region === r.id);
+  if (!r.lordId || locs.length === 0) continue;
+  setTier(r.lordId, locs.map(tierOfLocation).sort((a, b) => tierRank(a) - tierRank(b))[0]);
+}
+for (const [id, key] of [
+  ["tianjie_shenling", "9"],
+  ["jinxian", "x-beihan"],
+  ["huanxiang_taisui", "x-jinyuan"],
+  ["boss_guanghan", "x-jinyuan"],
+  ["boss_kunpeng", "x-jinyuan"],
+] as const)
+  MONSTER_TIER.set(id, key);
+// 各階一般妖獸原始攻擊的中位數(計算「階內相對強度」用)
+const TIER_MEDIAN_ATK = new Map<string, number>();
+{
+  const byTier = new Map<string, number[]>();
+  for (const m of MONSTERS) {
+    const key = MONSTER_TIER.get(m.id);
+    if (!key || m.isLord || m.elite) continue;
+    byTier.set(key, [...(byTier.get(key) ?? []), m.atk]);
+  }
+  for (const [key, xs] of byTier) {
+    const sorted = [...xs].sort((a, b) => a - b);
+    TIER_MEDIAN_ATK.set(key, sorted[Math.floor(sorted.length / 2)]);
+  }
+}
+export const monsterTierOf = (id: string) => MONSTER_TIER.get(id);
+export const monsterAtkOf = (mon: Pick<Monster, "id" | "atk" | "isLord" | "elite">) => {
+  const key = MONSTER_TIER.get(mon.id);
+  // 未歸屬任何階層的妖獸(理論上不存在,保險用)沿用 4.0 版的攻擊倍率
+  if (!key) return Math.floor(mon.atk * MONSTER_ATK_BALANCE_MULT);
+  const t = ATK_TIERS[key];
+  const role = mon.isLord ? ATK_ROLE_MULT.lord : mon.elite ? ATK_ROLE_MULT.elite : ATK_ROLE_MULT.normal;
+  const median = TIER_MEDIAN_ATK.get(key) ?? mon.atk;
+  const rel =
+    mon.isLord || mon.elite ? 1 : Math.min(ATK_REL_RANGE[1], Math.max(ATK_REL_RANGE[0], mon.atk / Math.max(1, median)));
+  return Math.max(1, Math.round(t.target * t.refHp * 2 * rel * role));
+};
+// 某階一般妖獸的基準攻擊(相對強度 1、身分倍率 1)
+export const tierBaseAtkOf = (key: string) => {
+  const t = ATK_TIERS[key];
+  return Math.round(t.target * t.refHp * 2);
+};
+// 比例減傷的 K 值:該妖獸所屬階層的參考防禦
+export const monsterRefDefOf = (mon: Pick<Monster, "id">) => ATK_TIERS[MONSTER_TIER.get(mon.id) ?? ""]?.refDef ?? 1000;
+// 妖獸對玩家的傷害(不含閃避、三倍重擊、護盾):攻擊 × K ÷ (K + 防禦),最低 1
+export const monsterDamageAfterDef = (rawAtk: number, def: number, refDef: number) =>
+  Math.max(1, Math.floor((rawAtk * refDef) / (refDef + Math.max(0, def))));
 
 // 秘境可給予的裝備 / 秘笈池
 const EQUIP_KINDS = ["artifact", "robe", "amulet", "talisman", "pet"];
@@ -871,7 +972,7 @@ export function applyRealTimeAging(s: SaveData, hours: number) {
 
 // 煞氣隨真實時間緩慢消退(3.19 版新增):搭 applyRealTimeAging 同一個 hours 值,不需要另外的
 // DB 時間戳欄位。每小時 -50,下限 0;未累積過煞氣(0)時直接跳過,避免每次行動都寫入無意義的 0。
-const SHAQI_DECAY_PER_HOUR = 50;
+export const SHAQI_DECAY_PER_HOUR = 50;
 export function applyShaqiDecay(s: SaveData, hours: number) {
   if (hours <= 0 || !(s.shaqi && s.shaqi > 0)) return;
   s.shaqi = Math.max(0, s.shaqi - hours * SHAQI_DECAY_PER_HOUR);
@@ -1045,7 +1146,8 @@ function monsterTurn(s: SaveData): { lines: string[]; defeat?: Modal } {
     log(s, ...lines);
     return { lines };
   }
-  let dmg = Math.max(1, rand(Math.floor(monAtk * 0.8), Math.floor(monAtk * 1.2)) - def);
+  // 5.0 版:比例減傷(見 monsterAtkOf 上方說明),取代舊制的「攻擊 − 防禦」
+  let dmg = monsterDamageAfterDef(rand(Math.floor(monAtk * 0.8), Math.floor(monAtk * 1.2)), def, monsterRefDefOf(mon));
   const enraged = Math.random() < (MONSTER_TRIPLE_ATK_CHANCE[mon.id] ?? 0);
   if (enraged) dmg *= 3;
   let statusNote = "";
@@ -2282,7 +2384,9 @@ function applyActionInner(
       const hpMult = Math.pow(1.4, floor - 1); // 每層氣血 ×1.4
       const atkMult = Math.pow(1.2, floor - 1); // 每層攻擊 ×1.2
       const bossHp = Math.floor(base.hp * hpMult * MONSTER_HP_BALANCE_MULT);
-      const bossAtk = Math.floor(base.atk * atkMult * MONSTER_ATK_BALANCE_MULT);
+      // 5.0 版:第 1 層以金源仙域一般妖獸的基準攻擊起算,之後每層 ×1.2(以地域王攻擊起算時只能爬 7~10 層,
+      // 太乙境需要登上第 20 層,門檻過高)
+      const bossAtk = Math.floor(tierBaseAtkOf("x-jinyuan") * atkMult);
       s.combat = {
         monsterId: base.id,
         monsterHp: bossHp,

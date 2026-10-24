@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { usePlaytimeTracking } from "./ActivityTracker";
 import {
   useGame,
   statsOf,
@@ -400,6 +402,8 @@ export default function Game() {
   const t = useT();
   const [auth, setAuth] = useState<"checking" | "anon" | "authed">("checking");
   const [userName, setUserName] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
+  usePlaytimeTracking(auth === "authed" && !!save?.started && !save.dead);
   const [showChangelog, setShowChangelog] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
   // 4.2 版:大陸遊歷地圖預設收起,由修煉欄的「大陸遊歷」按鈕展開,讓道籍/符陣/見聞錄一進來就在同一個畫面內
@@ -465,6 +469,7 @@ export default function Game() {
       const j = await res.json();
       setSave(j.save ?? null);
       if (j.name) setUserName(j.name);
+      setIsAdmin(j.isAdmin === true);
       useGame.getState().setRevivalUsed(!!j.revivalUsed);
       // 離線期間流逝的壽元(lifeGained)已由伺服器寫入 save.log,無需前端重複提示
       if (j.save && j.credited) {
@@ -557,7 +562,15 @@ export default function Game() {
                 {save.exp}/{REALMS[save.realmIdx].expNeed}
               </span>
             </div>
-            <nav className="hud-nav">
+            <nav className="hud-nav" aria-label="遊戲導覽">
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  className="hud-admin-link"
+                >
+                  數據後臺
+                </Link>
+              )}
               <button onClick={() => setLanguage(language === "zh" ? "en" : "zh")} title={t("langToggleTooltip")}>
                 {t("langToggle")}
               </button>

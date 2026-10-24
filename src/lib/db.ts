@@ -15,6 +15,7 @@ export function ensureSchema() {
         pass_hash TEXT NOT NULL,
         created_at TIMESTAMPTZ DEFAULT now()
       )`;
+      await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT false`;
       await sql`CREATE TABLE IF NOT EXISTS sessions (
         token TEXT PRIMARY KEY,
         user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -31,6 +32,14 @@ export function ensureSchema() {
       await sql`ALTER TABLE saves ADD COLUMN IF NOT EXISTS dwelling_since TIMESTAMPTZ`;
       // 精力系統:每 5 分鐘真實時間回復 1 點,算法同 last_life_at(只推進已消耗的整數份,餘數留到下次結算)
       await sql`ALTER TABLE saves ADD COLUMN IF NOT EXISTS last_energy_at TIMESTAMPTZ DEFAULT now()`;
+      // 帳號層級的有效遊玩時間,不隨轉世刪除。時間一律由伺服器計算。
+      await sql`CREATE TABLE IF NOT EXISTS player_activity (
+        user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        play_seconds BIGINT NOT NULL DEFAULT 0 CHECK (play_seconds >= 0),
+        tracking_started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        last_heartbeat_at TIMESTAMPTZ,
+        last_seen_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )`;
       await sql`CREATE TABLE IF NOT EXISTS listings (
         id SERIAL PRIMARY KEY,
         seller_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -132,7 +141,14 @@ export async function userFromToken(token: string | undefined) {
   if (!token) return null;
   await ensureSchema();
   const rows = await sql`
-    SELECT u.id, u.username, u.name FROM sessions s
+    SELECT u.id, u.username, u.name, u.is_admin FROM sessions s
     JOIN users u ON u.id = s.user_id WHERE s.token = ${token}`;
-  return (rows[0] as { id: number; username: string; name: string } | undefined) ?? null;
+  return (rows[0] as SessionUser | undefined) ?? null;
+}
+
+export interface SessionUser {
+  id: number;
+  username: string;
+  name: string;
+  is_admin: boolean;
 }

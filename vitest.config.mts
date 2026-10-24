@@ -1,11 +1,12 @@
 import { defineConfig } from "vitest/config";
+import { fileURLToPath } from "node:url";
 
-// 遊戲引擎的單元/整合測試設定。只測 src/game 底下的純規則邏輯(見 src/game/__tests__),
-// 不涉及 React 元件或資料庫——那些需要瀏覽器/連線環境,不適合塞進這套快速回歸測試。
+// 規則、資料轉換與 API 權限測試。資料庫相依項目使用 mock,不連線正式資料庫。
 export default defineConfig({
+  resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
   test: {
     environment: "node",
-    include: ["src/game/__tests__/**/*.test.ts"],
+    include: ["src/game/__tests__/**/*.test.ts", "src/lib/__tests__/**/*.test.ts"],
     pool: "forks", // 每個測試檔案各自的 process:全域 Math.random 覆寫(見 testUtils.ts)不會互相污染
   },
 });

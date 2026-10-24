@@ -31,7 +31,14 @@ export async function GET(req: NextRequest) {
 
   const rows =
     await sql`SELECT data, last_life_at, last_energy_at FROM saves WHERE user_id = ${user.id}`;
-  if (!rows.length) return NextResponse.json({ ok: true, save: null, name: user.name, revivalUsed });
+  if (!rows.length)
+    return NextResponse.json({
+      ok: true,
+      save: null,
+      name: user.name,
+      revivalUsed,
+      isAdmin: user.is_admin,
+    });
 
   const row = rows[0] as { data: SaveData; last_life_at: string; last_energy_at: string };
   const hours = Math.max(
@@ -81,6 +88,7 @@ export async function GET(req: NextRequest) {
     ok: true,
     save,
     name: user.name,
+    isAdmin: user.is_admin,
     revivalUsed,
     // 語意變更(1.6 版):此為離線期間流逝的壽元年數,非額外贈與的壽元
     lifeGained: ageGained,

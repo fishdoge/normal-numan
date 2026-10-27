@@ -759,7 +759,7 @@ export function atkMultFromStatus(list: StatusEffect[] | undefined): number {
   return mult;
 }
 
-// 結算燒傷/中毒的持續傷害(冰封不在此處理,由跳過回合的邏輯各自扣減),回傳傷害總和與新的狀態清單;
+// 結算燒傷/中毒的持續傷害(冰封在回合跳過時扣減,縹緲在抵擋攻擊時消耗),回傳傷害總和與新的狀態清單;
 // 虛弱沒有持續傷害,但仍與燒傷/中毒一併在此扣減剩餘回合數,歸零即移除
 export function tickDot(
   list: StatusEffect[] | undefined,
@@ -782,7 +782,9 @@ export function tickDot(
       events.push({ element: "木", dmg: d });
     }
   }
-  const next = arr.map((e) => (e.kind === "freeze" ? e : { ...e, turns: e.turns - 1 })).filter((e) => e.turns > 0);
+  const next = arr
+    .map((e) => (e.kind === "freeze" || e.kind === "evade" ? e : { ...e, turns: e.turns - 1 }))
+    .filter((e) => e.turns > 0);
   return { list: next, dmg, labels, events };
 }
 
@@ -1118,7 +1120,7 @@ function handlePlayerDefeat(s: SaveData, causeLine: string): Modal {
 
 // 回傳戰敗彈窗(defeat 有值時代表這回合被打到氣血歸零,呼叫端應以此彈窗取代靜默記錄)。
 // 冰封判定放在最前面:不論攻擊/施法/遁走失敗召來的這一回合,只要怪物身上仍有冰封,一律直接跳過其攻擊。
-function monsterTurn(s: SaveData): { lines: string[]; defeat?: Modal } {
+function monsterTurn(s: SaveData, attackMult: number): { lines: string[]; defeat?: Modal } {
   if (!s.combat) return { lines: [] };
   const mon = monsterById(s.combat.monsterId);
   if (hasStatus(s.combat.monsterStatus, "freeze")) {
@@ -1137,7 +1139,7 @@ function monsterTurn(s: SaveData): { lines: string[]; defeat?: Modal } {
     return { lines: [line] };
   }
   const monAtkBase = s.combat.bossAtk ?? monsterAtkOf(mon);
-  const monAtk = Math.floor(monAtkBase * atkMultFromStatus(s.combat.monsterStatus));
+  const monAtk = Math.floor(monAtkBase * attackMult);
   const { def, speed } = statsOf(s);
   const monSpeed = Math.floor(monAtk * 1.2);
   const dodge = Math.min(0.35, Math.max(0.05, (speed / (speed + monSpeed)) * 0.5));
@@ -1184,9 +1186,13 @@ function monsterTurn(s: SaveData): { lines: string[]; defeat?: Modal } {
 // 3.4 版起手牌為符寶袋抽棄牌制:回合結束時手中剩牌一併棄置、重新抽 HAND_SIZE 張(見 redrawHand())。
 function postPlayerTurn(s: SaveData): { loot?: Modal } {
   if (!s.combat) return {};
+  // 本回合既有的冰封統一在此扣減一次;反擊新附加的冰封留到下一回合,避免立即少一回合。
+  s.combat.playerStatus = decrementStatus(s.combat.playerStatus, "freeze");
   const mon = monsterById(s.combat.monsterId);
   const monMaxHp = s.combat.bossHpMax ?? monsterHpOf(mon);
 
+  // 先保留本回合的減攻倍率,讓最後一回合的中毒/虛弱在 DOT 扣減回合後仍影響本次反擊。
+  const monAttackMult = atkMultFromStatus(s.combat.monsterStatus);
   const monTick = tickDot(s.combat.monsterStatus, monMaxHp);
   s.combat.monsterStatus = monTick.list;
   if (monTick.dmg > 0) {
@@ -1196,7 +1202,7 @@ function postPlayerTurn(s: SaveData): { loot?: Modal } {
     if (s.combat.monsterHp <= 0) return { loot: winCombat(s) };
   }
 
-  const turn = monsterTurn(s);
+  const turn = monsterTurn(s, monAttackMult);
   if (turn.defeat) return { loot: turn.defeat };
   if (!s.combat) return {}; // 防禦性檢查:理論上戰敗已由上一行攔截
 
@@ -2006,19 +2012,11 @@ function applyActionInner(
     // 不需要玩家再按一次施法結束。
     case "castBatch": {
       if (!s.combat) return { save: s, error: "並無戰鬥" };
-      if (SPELL_SEALED_MONSTERS.has(s.combat.monsterId)) {
-        return { save: s, error: "黑眼貔貅雙目幽光暴閃,將你的法力波動盡數封鎖,此戰唯有以法器相搏!" };
-      }
       const techIds = Array.isArray(payload.techIds) ? payload.techIds.map(String) : [];
       if (techIds.length === 0) return { save: s, error: "尚未選取任何符寶" };
-
-      // 冰封:動彈不得,這一整批出牌落空,不耗法力,但仍照樣結算本回合
-      if (hasStatus(s.combat.playerStatus, "freeze")) {
-        s.combat.playerStatus = decrementStatus(s.combat.playerStatus, "freeze");
-        log(s, "你深陷冰封,動彈不得,這一擊落空!");
-        const { loot } = postPlayerTurn(s);
-        if (loot) return { save: s, loot };
-        return { save: s };
+      // 封法只攔仙法;法器仍須通過下方的手牌、單獨出牌與法力檢查。
+      if (SPELL_SEALED_MONSTERS.has(s.combat.monsterId) && techIds.some((id) => id !== "artifact_attack")) {
+        return { save: s, error: "黑眼貔貅雙目幽光暴閃,將你的法力波動盡數封鎖,此戰唯有以法器相搏!" };
       }
 
       // 逐張核銷手牌:必須真的持有(允許同名重複,但不得超過手牌實際張數)
@@ -2035,6 +2033,14 @@ function applyActionInner(
       // 法器攻擊只能單獨出牌,不能跟其他符寶合併打出(包含跟另一張法器攻擊一起選)
       if (techs.length > 1 && techs.some((t) => t.soloOnly)) {
         return { save: s, error: "法器攻擊只能單獨出牌,無法與其他符寶一起打出。" };
+      }
+      // 清心是冰封的解控例外,整批仍須持有有效手牌且付得起總法力。
+      const doesCleanse = techs.some((t) => t.selfCleanse);
+      if (hasStatus(s.combat.playerStatus, "freeze") && !doesCleanse) {
+        log(s, "你深陷冰封,動彈不得,這一擊落空!");
+        const { loot } = postPlayerTurn(s);
+        if (loot) return { save: s, loot };
+        return { save: s };
       }
       const totalCost = techs.reduce((sum, t) => sum + t.mpCost, 0);
       if (s.mp < totalCost) {
@@ -2132,7 +2138,6 @@ function applyActionInner(
         s.combat.playerStatus = applyStatus(s.combat.playerStatus, "evade", 1);
       }
       // 清心符寶(3.14 版新增):立即清除玩家身上所有負面狀態(燒傷/中毒/冰封/虛弱),不影響 evade
-      const doesCleanse = techs.some((t) => t.selfCleanse);
       if (doesCleanse) {
         s.combat.playerStatus = (s.combat.playerStatus ?? []).filter((e) => e.kind === "evade");
       }
@@ -2218,10 +2223,10 @@ function applyActionInner(
 
     case "cast": {
       if (!s.combat) return { save: s, error: "並無戰鬥" };
-      if (SPELL_SEALED_MONSTERS.has(s.combat.monsterId)) {
+      const techId = String(payload.techId ?? "");
+      if (SPELL_SEALED_MONSTERS.has(s.combat.monsterId) && techId !== "artifact_attack") {
         return { save: s, error: "黑眼貔貅雙目幽光暴閃,將你的法力波動盡數封鎖,此戰唯有以法器相搏!" };
       }
-      const techId = String(payload.techId ?? "");
       if (!s.learned.includes(techId)) return { save: s, error: "未習得此仙法" };
       // 仙法卡牌化:僅本回合手牌內的仙法可施展,不在手牌中一律拒絕(前端只會顯示手牌內的按鈕,此為後端防線)
       if (!(s.combat.hand ?? []).includes(techId)) {
@@ -2229,9 +2234,8 @@ function applyActionInner(
       }
       const tech = techById(techId);
 
-      // 冰封:動彈不得,這一擊直接落空,不耗法力,但仍照樣結算本回合(怪物出手、雙方 DOT、重抽手牌)
-      if (hasStatus(s.combat.playerStatus, "freeze")) {
-        s.combat.playerStatus = decrementStatus(s.combat.playerStatus, "freeze");
+      // 清心可在冰封中施展;其餘出牌跳過整回合,由共用收尾扣減冰封。
+      if (hasStatus(s.combat.playerStatus, "freeze") && !tech.selfCleanse) {
         log(s, "你深陷冰封,動彈不得,這一擊落空!");
         const { loot } = postPlayerTurn(s);
         if (loot) return { save: s, loot };
@@ -2248,15 +2252,19 @@ function applyActionInner(
       const level = techLevelOf(s, techId);
       const lvlMult = techPowerMult(level);
       const sectMult = Number(payload.sectDamageMult ?? 1);
+      const weaken = atkMultFromStatus(s.combat.playerStatus);
       s.mp -= tech.mpCost;
       // 打出這張手牌:不論接下來是否被閃避,這張符寶都算「已出手」,從手中移掉這一張(手牌可能有
       // 同名重複符寶,只移掉這張)、送入棄牌堆,回合結束才會整批補回新的一手
       s.combat.hand = removeOneFromHand(s.combat.hand ?? [], techId);
       s.combat.discard = [...(s.combat.discard ?? []), techId];
+      if (tech.selfCleanse) {
+        s.combat.playerStatus = (s.combat.playerStatus ?? []).filter((e) => e.kind === "evade");
+        log(s, `【${tech.name}】清除自身負面狀態。`);
+      }
       if (Math.random() < (MONSTER_DODGE_CHANCE[mon.id] ?? 0)) {
         log(s, `你施展【${tech.name}】,${mon.name} 身形一晃,竟憑空避過這一擊!`);
       } else {
-        const weaken = atkMultFromStatus(s.combat.playerStatus);
         const shaqi = s.shaqi ?? 0;
         const shaqiMult =
           tech.element === "煞" && tech.shaqiScalePct
@@ -2322,9 +2330,8 @@ function applyActionInner(
       }
       const mon = monsterById(s.combat.monsterId);
 
-      // 冰封:動彈不得,連戰術卡都取用不了,但仍照樣結算本回合
-      if (hasStatus(s.combat.playerStatus, "freeze")) {
-        s.combat.playerStatus = decrementStatus(s.combat.playerStatus, "freeze");
+      // 淨化戰術卡可解冰封;其餘戰術卡仍跳過整回合,由共用收尾扣減冰封。
+      if (hasStatus(s.combat.playerStatus, "freeze") && !item.cleanse) {
         log(s, "你深陷冰封,動彈不得,取不出這張戰術卡!");
         const { loot } = postPlayerTurn(s);
         if (loot) return { save: s, loot };
@@ -2340,8 +2347,8 @@ function applyActionInner(
         lines.push(`凝聚護盾 ${gain} 點,將優先抵擋接下來受到的傷害。`);
       }
       if (item.cleanse) {
-        const had = (s.combat.playerStatus ?? []).length > 0;
-        s.combat.playerStatus = [];
+        const had = (s.combat.playerStatus ?? []).some((e) => e.kind !== "evade" && e.turns > 0);
+        s.combat.playerStatus = (s.combat.playerStatus ?? []).filter((e) => e.kind === "evade");
         lines.push(had ? "自身負面狀態盡數清除!" : "你身上並無負面狀態,此符暫無用武之地。");
       }
       if (item.enemyWeaken) {

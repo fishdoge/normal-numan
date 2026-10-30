@@ -99,6 +99,47 @@ export const TENGFU: TengfuDef[] = [
 
 export const tengfuById = (id: string) => TENGFU.find((t) => t.id === id);
 
+// 5.0 版:滕符實物插畫(Figma「滕符」畫框匯出,public/images/tengfu/<id>.webp)
+// 有專屬插畫的滕符直接用自己的 id
+const TENGFU_ART_OWN = [
+  "tf_qingmu", "tf_ruijin", "tf_hanshui", "tf_huodan", "tf_juqi", "tf_huanyang", "tf_jingang", "tf_qingshen", "tf_leizhu",
+  "tf_xuesha", "tf_houtu", "tf_kugu",
+  "tf_xingchen", "tf_chaoxi", "tf_zhenhai", "tf_xunhai", "tf_luoxing", "tf_dimai",
+  "tf_foguang", "tf_xuanmen", "tf_moyan", "tf_tianlei",
+  "tf_yecha", "tf_wuchong", "tf_hundun",
+];
+// 尚無專屬插畫:暫時借用同形狀(或可正方形裁切)、屬性相近的圖,補畫後從這裡移到上面
+const TENGFU_ART_BORROW: Record<string, string> = {
+  tf_canfu: "tf_hundun",
+  tf_jiuyou: "tf_luoxing",
+  tf_longwen: "tf_zhenhai",
+  tf_huangsha: "tf_houtu",
+  tf_tianyuan: "tf_ruijin",
+  tf_feisheng: "tf_qingshen",
+  tf_fengyuan: "tf_xunhai",
+  tf_muling: "tf_qingmu",
+  tf_feiling: "tf_chaoxi",
+  tf_jiaochi: "tf_zhenhai",
+  tf_minghe: "tf_wuchong",
+  tf_xueyu: "tf_xuesha",
+  tf_jiulong: "tf_xuanmen",
+  tf_tianding: "tf_zhenhai",
+  tf_xuanbing: "tf_hanshui",
+  tf_beihan: "tf_yecha",
+  tf_jinyuan: "tf_tianlei",
+  tf_jindi: "tf_zhenhai",
+  tf_tianhu: "tf_moyan",
+  tf_zhenlong: "tf_kugu",
+  tf_baxia: "tf_zhenhai",
+  tf_pixiu: "tf_juqi",
+  tf_zhenmo: "tf_dimai",
+  tf_huixian: "tf_xingchen",
+};
+export const tengfuArtOf = (id: string) => {
+  const key = TENGFU_ART_OWN.includes(id) ? id : TENGFU_ART_BORROW[id];
+  return key ? `/images/tengfu/${key}.webp` : undefined;
+};
+
 // 各秘境可掉落的滕符(擊殺該秘境妖獸後判定;地域王機率更高)
 export const TENGFU_DROPS: Record<string, string[]> = {
   caiyaoshan: ["tf_qingmu", "tf_juqi", "tf_huanyang"],

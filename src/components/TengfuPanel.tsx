@@ -13,6 +13,7 @@ import {
   TengfuStat,
   canPlaceTengfu,
   tengfuBonusOf,
+  tengfuArtOf,
   tengfuById,
   tengfuLocationsOf,
   tengfuStatValues,
@@ -54,6 +55,10 @@ const TONE: Record<TengfuStat, string> = {
 const TIER_LABEL = ["", "一品", "二品", "三品", "四品", "五品", "六品"];
 
 export const tengfuToneOf = (d: TengfuDef) => TONE[primaryStat(d)];
+
+// 符陣上與掉落卡共用的外框 class;有插畫的滕符改用 tf-piece-art(去掉符紙金框)
+const pieceClass = (d: TengfuDef) =>
+  `tf-piece tf-tone-${tengfuToneOf(d)} tf-tier-${d.tier} ${tengfuArtOf(d.id) ? "tf-piece-art" : ""}`;
 
 const primaryStat = (d: TengfuDef) =>
   (Object.entries(d.stats) as [TengfuStat, number][]).sort((a, b) => b[1] - a[1])[0][0];
@@ -172,7 +177,7 @@ export default function TengfuPanel() {
                     onDragStart={(e) => dragStart(e, { from: "grid", index })}
                     onDragEnd={() => setPick(null)}
                     onClick={() => setPick(picked ? null : { from: "grid", index })}
-                    className={`tf-piece tf-tone-${TONE[primaryStat(def)]} tf-tier-${def.tier} ${picked ? "tf-piece-picked" : ""}`}
+                    className={`${pieceClass(def)} ${picked ? "tf-piece-picked" : ""}`}
                     style={{ gridRow: `${p.r + 1} / span ${def.h}`, gridColumn: `${p.c + 1} / span ${def.w}` }}
                     title={`${def.name}\n${Object.entries(tengfuStatValues(def))
                       .map(([k, v]) => statText(k as TengfuStat, v as number))
@@ -277,6 +282,9 @@ export default function TengfuPanel() {
 // 4.2 版滕符外觀:四種材質依品階遞進(銅符 / 金符 / 玄金符 / 仙符,見 globals.css 的 .tf-tier-*)。
 // 直立符「敕令 / 印章 / 直書名稱」由上而下;橫長符改為橫排;1×1 只留靈石與印章。
 export function TengfuFace({ def }: { def: TengfuDef }) {
+  const art = tengfuArtOf(def.id);
+  // eslint-disable-next-line @next/next/no-img-element
+  if (art) return <img className="tf-art" src={art} alt={def.name} draggable={false} />;
   const mini = def.h * def.w === 1;
   const horizontal = !mini && def.w > def.h;
   const vertical = !mini && def.h > def.w;
@@ -297,7 +305,7 @@ export function TengfuFace({ def }: { def: TengfuDef }) {
 // 獨立的滕符卡(掉落動畫、預覽用),外觀與符陣上的完全相同
 export function TengfuCard({ def, className = "", style }: { def: TengfuDef; className?: string; style?: CSSProperties }) {
   return (
-    <span className={`tf-piece tf-card tf-tone-${tengfuToneOf(def)} tf-tier-${def.tier} ${className}`} style={style}>
+    <span className={`${pieceClass(def)} tf-card ${className}`} style={style}>
       <TengfuFace def={def} />
     </span>
   );

@@ -1,13 +1,16 @@
-// 5.0 版妖獸傷害:依階層校準的攻擊 + 比例減傷(攻擊 × K ÷ (K + 防禦))。
-// 舊制「攻擊 − 防禦」讓築基以後穿上坊市裝備的玩家幾乎只會被打 1 點,這份測試釘死新制的行為。
+// 5.1 版妖獸傷害:依階層校準的攻擊 + 減法(攻擊 − 防禦 × 防禦係數),並有保底。
+// 4.0 的純減法讓築基以後穿上坊市裝備的玩家幾乎只會被打 1 點,5.0 的比例減傷則讓裸裝與頂裝的受傷差到近百倍,
+// 這份測試釘死新制的行為。
 import { describe, it, expect } from "vitest";
 import {
   ATK_TIERS,
   ATK_ROLE_MULT,
+  MONSTER_MIN_DMG_FRAC,
   monsterAtkOf,
   monsterTierOf,
-  monsterRefDefOf,
+  monsterDefCoefOf,
   monsterDamageAfterDef,
+  tierBaseAtkOf,
 } from "../engine";
 import { LOCATIONS, MONSTERS, REGIONS, ELITE_SPAWNS } from "../data/world";
 
@@ -38,48 +41,72 @@ describe("校準:參考玩家被一般妖獸打一下,掉的氣血約等於目�
     if (mons.length === 0) continue;
     it(`階層 ${key}:目標 ${(t.target * 100).toFixed(1)}%`, () => {
       for (const m of mons) {
-        const pct = monsterDamageAfterDef(monsterAtkOf(m), t.refDef, monsterRefDefOf(m)) / t.refHp;
-        // 階內相對強度夾在 0.75~1.3,所以每隻落在目標的 0.75~1.3 倍之間
-        expect(pct, m.id).toBeGreaterThanOrEqual(t.target * 0.75 - 0.002);
-        expect(pct, m.id).toBeLessThanOrEqual(t.target * 1.3 + 0.002);
+        const pct = monsterDamageAfterDef(monsterAtkOf(m), t.refDef, monsterDefCoefOf(m)) / t.refHp;
+        // 階內相對強度夾在 0.75~1.3,所以每隻落在目標的 0.75~1.3 倍之間(前期數字小,容許 1 點取整誤差)
+        const tol = 0.002 + 1 / t.refHp;
+        expect(pct, m.id).toBeGreaterThanOrEqual(t.target * 0.75 - tol);
+        expect(pct, m.id).toBeLessThanOrEqual(t.target * 1.3 + tol);
       }
     });
   }
 });
 
-describe("比例減傷", () => {
-  it("防禦等於 K 時傷害減半;沒有防禦時是全額", () => {
-    expect(monsterDamageAfterDef(1000, 0, 500)).toBe(1000);
-    expect(monsterDamageAfterDef(1000, 500, 500)).toBe(500);
+describe("減法 + 防禦係數", () => {
+  it("沒有防禦時是全額;防禦每多一點,傷害就少「防禦係數」點", () => {
+    expect(monsterDamageAfterDef(1000, 0, 0.5)).toBe(1000);
+    expect(monsterDamageAfterDef(1000, 600, 0.5)).toBe(700);
+    expect(monsterDamageAfterDef(1000, 601, 0.5)).toBe(699);
   });
 
-  it("防禦越高傷害越低,但遠高於妖獸攻擊時也不會被壓到 1", () => {
-    // 舊制:元嬰妖獸攻擊約 50,玩家坊市裝備防禦 818 → 只打 1 點
-    const mon = normalsOf("4")[0];
-    const atk = monsterAtkOf(mon);
-    const k = monsterRefDefOf(mon);
-    const d818 = monsterDamageAfterDef(atk, 818, k);
-    const d1600 = monsterDamageAfterDef(atk, 1600, k);
-    expect(d818).toBeGreaterThan(1);
-    expect(d1600).toBeLessThan(d818);
-    expect(d1600).toBeGreaterThan(1);
+  it("防禦再高也有保底,不會被壓到 1", () => {
+    expect(monsterDamageAfterDef(1000, 1e9, 0.5)).toBe(Math.floor(1000 * MONSTER_MIN_DMG_FRAC));
+    expect(monsterDamageAfterDef(3, 1e9, 0.5)).toBe(1);
   });
 
-  it("高階玩家回到低階秘境,妖獸幾乎打不痛(防禦遠高於該階參考防禦)", () => {
+  it("每一階:裸裝約兩倍目標、參考防禦剛好目標、參考防禦兩倍以上落到保底", () => {
+    for (const [key, t] of Object.entries(ATK_TIERS)) {
+      const mon = normalsOf(key)[0];
+      if (!mon) continue;
+      const atk = tierBaseAtkOf(key);
+      const coef = monsterDefCoefOf(mon);
+      const pct = (def: number) => monsterDamageAfterDef(atk, def, coef) / t.refHp;
+      expect(pct(0), key).toBeCloseTo(t.target * 2, 2);
+      expect(pct(t.refDef), key).toBeCloseTo(t.target, 2);
+      expect(pct(t.refDef * 2), key).toBeCloseTo(t.target * 2 * MONSTER_MIN_DMG_FRAC, 2);
+      expect(pct(t.refDef * 100), key).toBeCloseTo(t.target * 2 * MONSTER_MIN_DMG_FRAC, 2);
+    }
+  });
+
+  it("舊制的問題不再發生:元嬰坊市裝備防禦 818 時,一般妖獸仍打掉約目標比例", () => {
+    const t = ATK_TIERS["4"];
+    for (const m of normalsOf("4")) {
+      const pct = monsterDamageAfterDef(monsterAtkOf(m), 818, monsterDefCoefOf(m)) / t.refHp;
+      expect(pct, m.id).toBeGreaterThan(0.04);
+    }
+  });
+
+  it("高階玩家回到低階秘境只吃保底:約為目標比例的 30%", () => {
     const t = ATK_TIERS["2"];
     const mon = normalsOf("2")[0];
-    const dmg = monsterDamageAfterDef(monsterAtkOf(mon), 16600, monsterRefDefOf(mon));
-    expect(dmg / t.refHp).toBeLessThan(0.01);
+    const dmg = monsterDamageAfterDef(monsterAtkOf(mon), 16600, monsterDefCoefOf(mon));
+    expect(dmg).toBe(Math.max(1, Math.floor(monsterAtkOf(mon) * MONSTER_MIN_DMG_FRAC)));
+    expect(dmg / t.refHp).toBeLessThan(t.target * 1.3 * 2 * MONSTER_MIN_DMG_FRAC + 0.01);
   });
 });
 
 describe("身分倍率", () => {
-  it("菁英 ×1.8、地域王 ×2.2,以該階一般妖獸的基準計算", () => {
+  it("菁英 ×1.8、地域王 ×2.2:參考玩家受到的傷害是一般妖獸的同樣倍數", () => {
     const elite = MONSTERS.find((m) => m.elite)!;
     const lord = MONSTERS.find((m) => m.isLord && monsterTierOf(m.id) === "3")!;
-    const te = ATK_TIERS[monsterTierOf(elite.id)!];
-    const tl = ATK_TIERS[monsterTierOf(lord.id)!];
-    expect(monsterAtkOf(elite)).toBe(Math.round(te.target * te.refHp * 2 * ATK_ROLE_MULT.elite));
-    expect(monsterAtkOf(lord)).toBe(Math.round(tl.target * tl.refHp * 2 * ATK_ROLE_MULT.lord));
+    for (const [mon, role] of [
+      [elite, ATK_ROLE_MULT.elite],
+      [lord, ATK_ROLE_MULT.lord],
+    ] as const) {
+      const key = monsterTierOf(mon.id)!;
+      const t = ATK_TIERS[key];
+      expect(monsterAtkOf(mon)).toBe(Math.round(t.target * t.refHp * (1 + role)));
+      const dmg = monsterDamageAfterDef(monsterAtkOf(mon), t.refDef, monsterDefCoefOf(mon));
+      expect(dmg / t.refHp).toBeCloseTo(t.target * role, 2);
+    }
   });
 });

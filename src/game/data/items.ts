@@ -33,10 +33,10 @@ export const ITEMS: ItemDef[] = [
 
   // ── 金源仙域 / 蠻荒異界回復類丹藥主材(1.24 版新增) ──
   { id: "jinyuan_shenglian", name: "金源聖蓮", kind: "material", desc: "金源仙域深處綻放的聖蓮,蘊藏磅礴生機,乃煉製迴天丹藥的絕佳藥引。", element: "木", price: 3000 },
-  { id: "manhuang_lingsui", name: "蠻荒靈髓", kind: "material", desc: "蠻荒異界妖獸體內凝結的靈髓,法力氣息醇厚,乃煉製回復法力丹藥的珍稀藥引。", element: "水", price: 3500 },
+  { id: "manhuang_lingsui", name: "蠻荒靈髓", kind: "material", desc: "蠻荒異界妖獸體內凝結的靈髓,法力氣息醇厚。", effect: "煉丹材料:混沌真元丹、太乙回氣丹", element: "水", price: 3500 },
 
   // ── 真魔界特產材料(3.19 版新增,妖獸掉落/採集皆可取得,乃調配滅煞丹的關鍵藥引) ──
-  { id: "zhenmo_jingxue", name: "真魔精血", kind: "material", desc: "真魔界妖獸體內凝聚的精血,煞氣淬煉,乃調配滅煞丹不可或缺的藥引。", price: 5000 },
+  { id: "zhenmo_jingxue", name: "真魔精血", kind: "material", desc: "真魔界妖獸體內凝聚的精血,浸透煞氣。", effect: "煉丹材料:滅煞丹", price: 5000 },
 
   // ── 靈界三大陸特產材料(2.14 版新增:風元/雷鳴/血天,各有採集與妖獸掉落兩種來源) ──
   { id: "fengyuanjing", name: "風元晶", kind: "material", desc: "風元大陸元氣凝結而成的晶石,風靈之氣充盈,煉器上品。", element: "木", price: 4200 },
@@ -68,67 +68,67 @@ export const ITEMS: ItemDef[] = [
   { id: "jiulong_suoshi", name: "九龍鎖石", kind: "material", desc: "九龍獄鎖柱基座崩落的石塊,隱有龍屬威壓封印其中。", price: 21500 },
   { id: "longyu_yinhuo", name: "龍獄陰火", kind: "material", desc: "九龍獄深處終年不熄的陰火,凝而不散,冷冽刺骨。", price: 21800 },
   { id: "tianding_linghuo", name: "天鼎靈火", kind: "material", desc: "天鼎宮九鼎爐心外溢的靈火,溫潤而不灼人。", element: "金", price: 26500 },
-  { id: "jiuding_xiangyun", name: "九鼎祥雲", kind: "herb", desc: "天鼎宮九鼎交輝所化的祥雲,吸納後精力為之一振,唯獵殺天鼎守衛/執事方能得之。", price: 26800, dropOnly: true },
+  { id: "jiuding_xiangyun", name: "九鼎祥雲", kind: "herb", desc: "天鼎宮九鼎交輝所化的祥雲,隱隱透著清氣。", effect: "煉丹材料:血天回氣丹;天鼎守衛、天鼎執事掉落", price: 26800, dropOnly: true },
 
   // ── 仙草 ──
   { id: "huanglongcao", name: "黃龍草", kind: "herb", desc: "常見靈草,煉製黃龍丹主藥。", price: 6, exp: 8 },
-  { id: "zhuguo", name: "朱果", kind: "herb", desc: "百年一熟的靈果,服之可增修為。", price: 13, exp: 26 },
-  { id: "tianlingguo", name: "地靈果", kind: "herb", desc: "傳說中的靈果,凡人服之可開靈根,修士服之修為大進。", price: 36, exp: 48 },
-  { id: "zijinhua", name: "紫金花", kind: "herb", desc: "生於絕壁的奇花,可入丹,微量回復法力。", price: 7, mp: 50 },
+  { id: "zhuguo", name: "朱果", kind: "herb", desc: "百年一熟的靈果。", price: 13, exp: 26 },
+  { id: "tianlingguo", name: "地靈果", kind: "herb", desc: "傳說中的靈果,凡人食之可開靈根。", price: 36, exp: 48 },
+  { id: "zijinhua", name: "紫金花", kind: "herb", desc: "生於絕壁的奇花,可入丹。", price: 7, mp: 50 },
   { id: "xuelingzhi", name: "血靈芝", kind: "herb", desc: "赤紅如血的靈芝,生機盎然,可直接服用療傷。", price: 9, heal: 29 },
   { id: "qiannianlingru", name: "千年靈乳", kind: "herb", desc: "石鐘乳萬載凝成,一滴便可洗髓伐骨。", price: 180, exp: 400 },
   { id: "ziyuanhua", name: "紫猿花", kind: "herb", desc: "南疆奇花,煉製凝嬰丹的主藥。", price: 240, exp: 870 },
-  { id: "longlinguo", name: "龍鱗果", kind: "herb", desc: "形如龍鱗的靈果,服之肉身堅如蛟龍。", price: 880, exp: 2400 },
+  { id: "longlinguo", name: "龍鱗果", kind: "herb", desc: "形如龍鱗的靈果,果皮堅硬如甲。", price: 880, exp: 2400 },
   { id: "huangjitiansui", name: "皇極天髓", kind: "herb", desc: "天地開闢時遺留的一縷精髓,化神以上方能承受。", price: 6900, exp: 21000 },
-  { id: "nimetanti", name: "古龍真血", kind: "herb", desc: "遠古龍族遺留真血，提供破天修為。", price: 36900, exp: 160000 },
-  { id: "lingmu_xianye", name: "靈木仙葉", kind: "herb", desc: "木靈森林千年古木所生的仙葉,靈氣充盈,服之修為大進。", element: "木", price: 5200, exp: 6000 },
+  { id: "nimetanti", name: "古龍真血", kind: "herb", desc: "遠古龍族遺留的真血,至今猶帶龍威。", price: 36900, exp: 160000 },
+  { id: "lingmu_xianye", name: "靈木仙葉", kind: "herb", desc: "木靈森林千年古木所生的仙葉,靈氣充盈。", element: "木", price: 5200, exp: 6000 },
 
   // ── 延壽極品(坊市不售,可遇不可求) ──
-  { id: "wanshoudan", name: "百壽丹", kind: "pill", desc: "以百種靈藥煉成的延壽奇丹,服之增壽百載。", price: 20000, life: 100 },
-  { id: "yanshouguo", name: "延壽果", kind: "herb", desc: "萬載一熟的延壽靈果,服之增壽三百載,可遇不可求。", price: 80000, life: 300 },
-  { id: "panlongtao", name: "蟠龍壽桃", kind: "herb", desc: "傳說仙界流落的壽桃,龍紋盤繞,一枚增壽千載。", price: 500000, life: 1000 },
+  { id: "wanshoudan", name: "百壽丹", kind: "pill", desc: "以百種靈藥煉成的延壽奇丹。", price: 20000, life: 100 },
+  { id: "yanshouguo", name: "延壽果", kind: "herb", desc: "萬載一熟的延壽靈果,可遇不可求。", price: 80000, life: 300 },
+  { id: "panlongtao", name: "蟠龍壽桃", kind: "herb", desc: "傳說自仙界流落的壽桃,龍紋盤繞。", price: 500000, life: 1000 },
   { id: "panlongtaoshu", name: "玄命果", kind: "herb", desc: "逆天改命，延長壽源，源壽無疆。", price: 50000000, life: 20000 },
 
   // ── 領主獎勵(地域王掉落,坊市不售) ──
-  { id: "zengyuandan", name: "增元丹", kind: "pill", desc: "地域王內丹煉成的奇丹,服之壯大本源,屬於福天地之造化,壽元上限永久增加 5%。", price: 100000, lifePct: 0.05 },
-  { id: "zenglingzhu", name: "增靈珠", kind: "special", desc: "蘊含精純法則之力的靈珠,可於「仙法」欄位強化一門仙法一個等級(法術最高七級)。", price: 150000 },
+  { id: "zengyuandan", name: "增元丹", kind: "pill", desc: "地域王內丹煉成的奇丹,屬天地造化之物。", price: 100000, lifePct: 0.05 },
+  { id: "zenglingzhu", name: "增靈珠", kind: "special", desc: "蘊含精純法則之力的靈珠。", effect: "於「仙法」欄位使用,指定仙法升一級(最高 7 級,每級威力 +30%)", price: 150000 },
 
   // ── 真仙之物(飛昇後,坊市不售,極難獲得) ──
-  { id: "tianxiandan", name: "天仙丹", kind: "special", desc: "仙界秘傳,唯真仙可煉化。服之凝練一點仙靈力,攻伐之力倍增。", price: 0, xianli: 1 },
-  { id: "xiantian_zhong", name: "先天靈鐘", kind: "special", desc: "北寒仙域中孕育的先天仙器,煉化可得二點仙靈力。", price: 0, xianli: 2 },
-  { id: "xiantian_qi", name: "破天丹", kind: "special", desc: "開天遺留的至寶,煉化可得三點仙靈力。", price: 0, xianli: 3 },
-  { id: "thantian_lu", name: "參天造化露", kind: "special", desc: "掌天瓶凝聚之露水，具有法則具象化的力量，煉化後可以獲得十五點先靈力。", price: 0, xianli: 15 },
-  { id: "jinhundan", name: "金魂丹", kind: "special", desc: "太上金仙隕落後凝成的金色魂丹,唯真仙可服。服之魂魄蛻變,可自真仙突破至金仙之境!", price: 0 },
+  { id: "tianxiandan", name: "天仙丹", kind: "special", desc: "仙界秘傳的丹藥。", effect: "真仙以上方能煉化", price: 0, xianli: 1 },
+  { id: "xiantian_zhong", name: "先天靈鐘", kind: "special", desc: "北寒仙域中孕育的先天仙器。", effect: "真仙以上方能煉化", price: 0, xianli: 2 },
+  { id: "xiantian_qi", name: "破天丹", kind: "special", desc: "開天遺留的至寶。", effect: "真仙以上方能煉化", price: 0, xianli: 3 },
+  { id: "thantian_lu", name: "參天造化露", kind: "special", desc: "掌天瓶凝聚的露水,蘊含法則具象之力。", effect: "真仙以上方能煉化", price: 0, xianli: 15 },
+  { id: "jinhundan", name: "金魂丹", kind: "special", desc: "太上金仙隕落後凝成的金色魂丹。", effect: "真仙服下直接晉入金仙境", price: 0 },
 
   // ── 黑市限定(美利堅靈石購入,不可煉製/坊市不售) ──
-  { id: "beilidan", name: "倍力丹", kind: "special", desc: "西域秘法煉成的奇丹,服下立即精力全滿,並使精力上限永久 +10%(帳號最多疊加 5 顆效果)。", price: 0 },
+  { id: "beilidan", name: "倍力丹", kind: "special", desc: "西域秘法煉成的奇丹。", effect: "精力立即全滿,精力上限永久 +10%(最多疊加 5 顆)", price: 0 },
 
   // ── 丹藥 ──
-  { id: "huanglongdan", name: "黃龍丹", kind: "pill", desc: "煉氣期修士常用補氣丹藥,增長修為。", price: 30, exp: 40 },
-  { id: "huiyuandan", name: "回元丹", kind: "pill", desc: "迅速回復法力的丹藥。", price: 9, mp: 50 },
+  { id: "huanglongdan", name: "黃龍丹", kind: "pill", desc: "煉氣期修士常用的補氣丹藥。", price: 30, exp: 40 },
+  { id: "huiyuandan", name: "回元丹", kind: "pill", desc: "修士隨身常備的回元丹藥。", price: 9, mp: 50 },
   { id: "liaoshangdan", name: "療傷丹", kind: "pill", desc: "外敷內服皆可,癒合傷勢。", price: 22, heal: 120 },
-  { id: "zhujidan", name: "築基丹", kind: "pill", desc: "傳說服之可大增築基成功率的靈丹,有價無市。", price: 520, exp: 390 },
+  { id: "zhujidan", name: "築基丹", kind: "pill", desc: "傳說中的築基靈丹,有價無市。", price: 520, exp: 390 },
   { id: "ningyingdan", name: "凝嬰丹", kind: "pill", desc: "結丹修士凝結元嬰的輔藥,紫猿花所煉。", price: 1800, exp: 1500 },
   { id: "dahuandan", name: "大還丹", kind: "pill", desc: "起死回生的靈丹,重傷垂死亦可救回。", price: 5000, heal: 99999 },
-  { id: "jiuqulingshen", name: "九曲靈參丹", kind: "pill", desc: "九曲靈參煉製,法力如潮湧回。", price: 3000, mp: 99999 },
+  { id: "jiuqulingshen", name: "九曲靈參丹", kind: "pill", desc: "以九曲靈參煉製的丹藥。", price: 3000, mp: 99999 },
   { id: "pojiedan", name: "破界丹", kind: "pill", desc: "衝擊大乘瓶頸的無上靈丹,以皇極天髓為引。", price: 4100, exp: 26000 },
 
   // ── 真仙專屬丹藥(煉丹堂,需圖譜解鎖) ──
-  { id: "xisuidan", name: "洗髓丹", kind: "pill", desc: "洗髓伐骨的真仙至藥,修為大補,唯真仙以上煉丹堂可煉,需圖譜方解配方。", price: 0, exp: 8000000, reqStage: 10 },
-  { id: "ningxiandan", name: "凝仙丹", kind: "special", desc: "凝練仙靈力的真仙至藥,小補仙靈力,唯真仙以上煉丹堂可煉,需圖譜方解配方。", price: 0, xianli: 1, reqStage: 10 },
+  { id: "xisuidan", name: "洗髓丹", kind: "pill", desc: "洗髓伐骨的真仙至藥。", effect: "需研讀洗髓丹圖譜方能煉製", price: 0, exp: 8000000, reqStage: 10 },
+  { id: "ningxiandan", name: "凝仙丹", kind: "special", desc: "凝練仙靈力的真仙至藥。", effect: "真仙以上方能煉化;需研讀凝仙丹圖譜方能煉製", price: 0, xianli: 1, reqStage: 10 },
 
   // ── 金源仙域 / 蠻荒異界回復丹藥(1.24 版新增,真仙以上煉器＆煉丹可直接煉製,毋須圖譜) ──
-  { id: "jinyuan_shengtidan", name: "金源聖體丹", kind: "pill", desc: "金源聖蓮反覆淬煉的聖體奇丹,服之氣血瞬間大復。", price: 0, heal: 5000000, reqStage: 10 },
-  { id: "manhuang_zhenyuandan", name: "混沌真元丹", kind: "pill", desc: "蠻荒靈髓合煉的真元奇丹,法力如潮水般瞬間湧回。", price: 0, mp: 3000000, reqStage: 10 },
-  { id: "taiyi_huiqidan", name: "太乙回氣丹", kind: "pill", desc: "金源聖蓮與蠻荒靈髓合煉的回氣奇丹,一息之間精力充盈。", price: 0, energy: 80, reqStage: 10 },
+  { id: "jinyuan_shengtidan", name: "金源聖體丹", kind: "pill", desc: "金源聖蓮反覆淬煉的聖體奇丹。", price: 0, heal: 5000000, reqStage: 10 },
+  { id: "manhuang_zhenyuandan", name: "混沌真元丹", kind: "pill", desc: "蠻荒靈髓合煉的真元奇丹。", price: 0, mp: 3000000, reqStage: 10 },
+  { id: "taiyi_huiqidan", name: "太乙回氣丹", kind: "pill", desc: "金源聖蓮與蠻荒靈髓合煉的回氣奇丹。", price: 0, energy: 80, reqStage: 10 },
 
   // ── 靈界三大陸回氣丹(2.17 版新增,以各大陸補充素材煉成,回復少量精力) ──
   { id: "fengyuan_huiqidan", name: "風元回氣丹", kind: "pill", desc: "飛昇雲霧、風刃夜葉與森林露珠合煉的回氣小丹,一口氣清神明。", price: 0, energy: 10, dropOnly: true },
-  { id: "leiming_huiqidan", name: "雷鳴回氣丹", kind: "pill", desc: "天霄雲氣佐冥河水藻煉成的回氣小丹,雷氣醒神,精力微振。", price: 0, energy: 10, dropOnly: true },
-  { id: "xuetian_huiqidan", name: "血天回氣丹", kind: "pill", desc: "地血草根佐九鼎祥雲煉成的回氣小丹,血氣調和,精力微振。", price: 0, energy: 10, dropOnly: true },
+  { id: "leiming_huiqidan", name: "雷鳴回氣丹", kind: "pill", desc: "天霄雲氣佐冥河水藻煉成的回氣小丹,雷氣醒神。", price: 0, energy: 10, dropOnly: true },
+  { id: "xuetian_huiqidan", name: "血天回氣丹", kind: "pill", desc: "地血草根佐九鼎祥雲煉成的回氣小丹,血氣調和。", price: 0, energy: 10, dropOnly: true },
 
   // ── 乾坤袋(黑眼貔貅專屬掉落,1.24 版新增) ──
-  { id: "qiankun_dai", name: "乾坤袋", kind: "special", desc: "黑眼貔貅隕落後遺留的奇物,袋中自成天地,可將靈石存入隨身收納——戰敗遁走時遺散的僅是袋外靈石,袋中所藏分毫不失。", price: 0, dropOnly: true },
+  { id: "qiankun_dai", name: "乾坤袋", kind: "special", desc: "黑眼貔貅隕落後遺留的奇物,袋中自成天地。", effect: "持有即可於儲物袋存取靈石;袋中靈石在戰敗遁走時不會遺失", price: 0, dropOnly: true },
 
   // ── 仙法秘笈 ──
   { id: "m_qingzhufeng", name: "《青竹風雲劍訣》殘卷", kind: "manual", desc: "研讀後可習得青竹風雲劍訣。", price: 800, teaches: "qingzhufeng" },
@@ -163,14 +163,14 @@ export const ITEMS: ItemDef[] = [
   { id: "m_lusheng_jianjue", name: "《戮神劍訣》執事密傳", kind: "manual", desc: "合體修士常修的金系秘法,執事堂高階任務獎勵。需合體期。", price: 8500000, teaches: "lusheng_jianjue", dropOnly: true },
   { id: "m_jiutian_fenyang", name: "《九天焚陽訣》執事密傳", kind: "manual", desc: "大乘修士常修的火系秘法,執事堂高階任務獎勵。需大乘期。", price: 8500000, teaches: "jiutian_fenyang", dropOnly: true },
   // 2.14 版起改為九龍獄墮落真仙馬良的極稀有掉落,不再是突破太乙境的直接饋贈
-  { id: "m_taiyi_hunyuan_lu", name: "《北冥六真天地訣》仙簡", kind: "manual", desc: "唯太乙境可修的至高仙法,唯登臨浮屠塔絕頂、窺見真正太歲天尊者方能悟得此簡。", price: 0, teaches: "taiyi_hunyuan_lu", dropOnly: true },
+  { id: "m_taiyi_hunyuan_lu", name: "《北冥六真天地訣》仙簡", kind: "manual", desc: "相傳唯有登臨浮屠塔絕頂、窺見真正太歲天尊者,方能悟得此簡。", price: 0, teaches: "taiyi_hunyuan_lu", dropOnly: true },
 
   // ── 法器(煉製所得) ──
   { id: "qingsuo", name: "青索劍", kind: "artifact", desc: "青光如索的木系飛劍。", element: "木", price: 100, atkBonus: 6 },
   { id: "jinjian", name: "金光巨劍", kind: "artifact", desc: "巨劍門制式法器,沉重鋒銳。", element: "金", price: 120, atkBonus: 7 },
   { id: "hanbingzhui", name: "寒冰錐", kind: "artifact", desc: "寒玉精煉成的冰錐法器。", element: "水", price: 110, atkBonus: 5, defBonus: 2 },
   { id: "huolingqi", name: "火靈旗", kind: "artifact", desc: "火蟒鱗煉製的赤色小旗,揮動間烈焰騰空。", element: "火", price: 130, atkBonus: 8 },
-  { id: "hutudun", name: "厚土盾", kind: "artifact", desc: "溫玉為心的土黃圓盾,防禦驚人。", element: "土", price: 110, atkBonus: 2, defBonus: 8 },
+  { id: "hutudun", name: "厚土盾", kind: "artifact", desc: "溫玉為心的土黃圓盾。", element: "土", price: 110, atkBonus: 2, defBonus: 8 },
   { id: "qingzhufengjian", name: "青竹風雲劍", kind: "artifact", desc: "以金雷竹煉製的本命飛劍,可一化為多。韓立的成名法寶。", element: "金", price: 600, atkBonus: 16, defBonus: 3 },
   { id: "dagengjian", name: "大庚劍陣", kind: "artifact", desc: "七十二口金色小劍結成的劍陣,青蒙山金精所煉。", element: "金", price: 4700, atkBonus: 170, defBonus: 28 },
   { id: "sanyanshan", name: "三焰扇", kind: "artifact", desc: "三色火鳥翎羽所製寶扇,一扇之威,焚天滅地。", element: "火", price: 12000, atkBonus: 750, defBonus: 75 },
@@ -187,7 +187,7 @@ export const ITEMS: ItemDef[] = [
   { id: "tianding_zhenlingchui", name: "天鼎鎮靈鎚", kind: "artifact", desc: "天鼎靈火淬鍊、蜉蝣翅膀輕身,佐天鼎碎片鎮魂,煉成的沉穩巨鎚。", element: "金", price: 160000, atkBonus: 6500, defBonus: 2500 },
 
   // ── 護身之寶 ──
-  { id: "hushenfu", name: "鐵護身符", kind: "amulet", desc: "注入法力後可擋一次致命攻擊的符籙。", price: 110, defBonus: 7 },
+  { id: "hushenfu", name: "鐵護身符", kind: "amulet", desc: "注入法力即可護身的鐵製符牌。", price: 110, defBonus: 7 },
   { id: "wuguangyi", name: "烏光甲衣", kind: "robe", desc: "陰煞之氣淬煉的軟甲,烏光流轉。", price: 240, defBonus: 10 },
   { id: "fengleichi", name: "風雷翅", kind: "amulet", desc: "風火之鱗煉製的雙翅,雷光一閃百里之外,兼可護身增速。", price: 6000, defBonus: 560, speedBonus: 40 },
   { id: "jinganghu", name: "金剛璃甲", kind: "robe", desc: "蛟龍之鱗綴玄天寒鐵而成,刀劍難傷。", price: 2400, defBonus: 230 },
@@ -200,24 +200,24 @@ export const ITEMS: ItemDef[] = [
   { id: "xuhuangding", name: "虛皇鼎", kind: "amulet", desc: "天鼎宮鎮宮至寶,九鼎之首,鼎中虛空自成天地,攻守速三者俱臻化境。", price: 500000, atkBonus: 25500, defBonus: 11000, speedBonus: 80, dropOnly: true },
 
   // ── 符籙(攻擊/輔助,符籙槽;高階由妖獸掉落) ──
-  { id: "fu_liehuo", name: "烈火符", kind: "talisman", desc: "貼身催動,火靈附刃,攻擊大增。", element: "火", price: 320, atkBonus: 20 },
+  { id: "fu_liehuo", name: "烈火符", kind: "talisman", desc: "貼身催動,火靈附刃。", element: "火", price: 320, atkBonus: 20 },
   { id: "fu_wulei", name: "雷電法符", kind: "talisman", desc: "五雷轟頂,攻速兼備的雷系符籙。", element: "金", price: 12000, atkBonus: 180, speedBonus: 20 },
-  { id: "fu_xuanyin", name: "玄陰噬魂符", kind: "talisman", desc: "陰煞凝符,攻伐凌厲,大乘修士所用。", price: 342000, atkBonus: 2600, dropOnly: true, reqStage: 8 },
+  { id: "fu_xuanyin", name: "玄陰噬魂符", kind: "talisman", desc: "陰煞凝成的符籙,大乘修士所用。", price: 342000, atkBonus: 2600, dropOnly: true, reqStage: 8 },
   { id: "minghe_lingfu", name: "冥河靈符", kind: "talisman", desc: "冥河沙攜雷鳴石之力凝成的符籙,亡魂怨氣附刃,速攻俱增。", price: 90000, atkBonus: 5000, speedBonus: 30 },
   { id: "xuesha_suohunfu", name: "血煞鎖魂符", kind: "talisman", desc: "地血晶淬煉、龍獄鱗為引,鎖魂攝魄,殺伐之氣濃烈至極。", price: 180000, atkBonus: 8000 },
   { id: "fengling_suohunfu", name: "風靈鎖魂符", kind: "talisman", desc: "風元晶、夜叉魂晶與夜陽岩礦三者合煉的鎖魂符籙,風刃裹魂,一觸即碎。", element: "木", price: 50000, atkBonus: 4500 },
-  { id: "fu_taixu", name: "太虛混元符", kind: "talisman", desc: "仙家符籙,唯真仙可禦,攻伐之力超凡。", price: 1600000, atkBonus: 18000, dropOnly: true, reqStage: 10 },
+  { id: "fu_taixu", name: "太虛混元符", kind: "talisman", desc: "仙家符籙,符紋玄奧。", price: 1600000, atkBonus: 18000, dropOnly: true, reqStage: 10 },
 
   // ── 靈寵(寵物槽,僅探索秘境 5% 獲得;增益靈石收益與攻防) ──
-  { id: "pet_linghu", name: "赤煉靈狐", kind: "pet", desc: "元嬰級靈寵,通人性,伴主嗅寶——靈石收益 ×1.2,略增攻防。", price: 0, stoneMult: 1.2, atkBonus: 120, defBonus: 80, reqStage: 4, dropOnly: true },
-  { id: "pet_xuangui", name: "玄冰靈龜", kind: "pet", desc: "化神級靈寵,龜甲護主——靈石收益 ×1.2,大增防禦。", price: 0, stoneMult: 1.2, atkBonus: 300, defBonus: 1200, reqStage: 5, dropOnly: true },
-  { id: "pet_jinpeng", name: "金翅靈鵬", kind: "pet", desc: "大乘級靈寵,馱主遨遊——靈石收益 ×1.2,大增攻擊與速度。", price: 0, stoneMult: 1.2, atkBonus: 6000, defBonus: 2000, speedBonus: 120, reqStage: 8, dropOnly: true },
-  { id: "pet_tianhu", name: "九尾天狐", kind: "pet", desc: "真仙級靈寵,九尾通天——靈石收益 ×1.2,攻防俱強。", price: 0, stoneMult: 1.2, atkBonus: 40000, defBonus: 20000, speedBonus: 200, reqStage: 10, dropOnly: true },
-  { id: "pet_hundun", name: "混沌幼獸", kind: "pet", desc: "金仙級靈寵,吞天噬地之姿——靈石收益 ×1.2,攻防冠絕。", price: 0, stoneMult: 1.2, atkBonus: 120000, defBonus: 60000, speedBonus: 400, reqStage: 11, dropOnly: true },
+  { id: "pet_linghu", name: "赤煉靈狐", kind: "pet", desc: "通人性的赤煉靈狐,常伴主人嗅尋寶物。", price: 0, stoneMult: 1.2, atkBonus: 120, defBonus: 80, reqStage: 4, dropOnly: true },
+  { id: "pet_xuangui", name: "玄冰靈龜", kind: "pet", desc: "龜甲堅厚的玄冰靈龜,以甲護主。", price: 0, stoneMult: 1.2, atkBonus: 300, defBonus: 1200, reqStage: 5, dropOnly: true },
+  { id: "pet_jinpeng", name: "金翅靈鵬", kind: "pet", desc: "金翅靈鵬,能馱主遨遊天際。", price: 0, stoneMult: 1.2, atkBonus: 6000, defBonus: 2000, speedBonus: 120, reqStage: 8, dropOnly: true },
+  { id: "pet_tianhu", name: "九尾天狐", kind: "pet", desc: "九尾通天的天狐。", price: 0, stoneMult: 1.2, atkBonus: 40000, defBonus: 20000, speedBonus: 200, reqStage: 10, dropOnly: true },
+  { id: "pet_hundun", name: "混沌幼獸", kind: "pet", desc: "混沌幼獸,已有吞天噬地之姿。", price: 0, stoneMult: 1.2, atkBonus: 120000, defBonus: 60000, speedBonus: 400, reqStage: 11, dropOnly: true },
 
   // ── 煉器圖譜(妖獸掉落,使用後解鎖對應配方;藍框標示) ──
-  { id: "blueprint_xuanyin", name: "《玄陰噬魂符》符籙圖譜", kind: "recipe", desc: "記載玄陰噬魂符的煉製之法,參詳後可自行煉製。", price: 0, unlocksRecipe: "r_fu_xuanyin", dropOnly: true },
-  { id: "blueprint_taixu", name: "《太虛混元符》仙符圖譜", kind: "recipe", desc: "仙家符籙圖譜,唯真仙可參悟煉製。", price: 0, unlocksRecipe: "r_fu_taixu", dropOnly: true },
+  { id: "blueprint_xuanyin", name: "《玄陰噬魂符》符籙圖譜", kind: "recipe", desc: "記載玄陰噬魂符煉製之法的圖譜。", price: 0, unlocksRecipe: "r_fu_xuanyin", dropOnly: true },
+  { id: "blueprint_taixu", name: "《太虛混元符》仙符圖譜", kind: "recipe", desc: "仙家符籙圖譜,符紋玄奧。", price: 0, unlocksRecipe: "r_fu_taixu", dropOnly: true },
 
   // ── 金源仙域仙器(五關卡妖獸掉落,強度遠超北寒) ──
   { id: "jy_taiyi", name: "太乙金光劍", kind: "artifact", desc: "金源仙域至寶,太乙金光縱橫,無堅不摧。", element: "金", price: 0, atkBonus: 45000, defBonus: 8000, dropOnly: true, reqStage: 10 },
@@ -230,36 +230,48 @@ export const ITEMS: ItemDef[] = [
   { id: "zhuxian_fu", name: "誅仙滅魂符", kind: "talisman", desc: "太乙精金為引凝成的殺伐仙符,一符出手,誅仙滅魂。", element: "金", price: 0, atkBonus: 20000, dropOnly: true, reqStage: 10 },
   { id: "zaohua_jian", name: "造化戮仙劍", kind: "artifact", desc: "金源靈砂與太乙精金合煉的造化之劍,劍出無雙,戮仙屠魔。", element: "金", price: 0, atkBonus: 30000, defBonus: 8000, dropOnly: true, reqStage: 10 },
 
+  // ── 5.0 版:北寒/金源一般妖獸的常見仙器(屬性低於上列仙器,但掉率較高,讓真仙初期的裝備有些變化) ──
+  { id: "bh_hanshuang_jian", name: "寒霜仙劍", kind: "artifact", desc: "玄冰仙蛟寒鱗淬成的仙劍,劍身常凝一層薄霜。", element: "水", price: 300000, atkBonus: 18000, defBonus: 3000, dropOnly: true, reqStage: 10 },
+  { id: "bh_bingpo_ji", name: "冰魄長戟", kind: "artifact", desc: "極寒天鵬翎骨所製的長戟,揮動時寒氣四溢。", element: "金", price: 350000, atkBonus: 22000, defBonus: 2000, dropOnly: true, reqStage: 10 },
+  { id: "jy_duanjin_dao", name: "斷金仙刀", kind: "artifact", desc: "金源仙關常見的制式仙刀,刀鋒能斷精金。", element: "金", price: 400000, atkBonus: 26000, defBonus: 4000, dropOnly: true, reqStage: 10 },
+  { id: "bh_bingcan_yi", name: "冰蠶仙衣", kind: "robe", desc: "萬載冰魂身上剝落的冰蠶絲織成,輕若無物。", price: 280000, defBonus: 14000, dropOnly: true, reqStage: 10 },
+  { id: "bh_xuanwu_jia", name: "玄武鱗甲", kind: "robe", desc: "北冥玄武背甲碎片綴成的鱗甲,厚重堅實。", price: 350000, defBonus: 18000, dropOnly: true, reqStage: 10 },
+  { id: "bh_hanyu_pei", name: "寒玉護心佩", kind: "amulet", desc: "北寒寒玉雕成的護心佩,貼身佩戴可凝神護體。", price: 250000, atkBonus: 4000, defBonus: 6000, dropOnly: true, reqStage: 10 },
+  { id: "jy_lingzhu", name: "金源靈珠", kind: "amulet", desc: "混天靈猿珍藏的靈珠,蘊含一縷金源之氣。", price: 300000, atkBonus: 7000, defBonus: 5000, dropOnly: true, reqStage: 10 },
+  { id: "bh_bingfeng_fu", name: "冰封仙符", kind: "talisman", desc: "以北寒玄冰為引繪成的仙符。", price: 250000, atkBonus: 10000, dropOnly: true, reqStage: 10 },
+  { id: "jy_chiyan_fu", name: "赤焰仙符", kind: "talisman", desc: "八荒火麒麟火鬃所繪的仙符,符紋灼熱。", price: 300000, atkBonus: 13000, dropOnly: true, reqStage: 10 },
+  { id: "pet_xuehu", name: "雪狐幼崽", kind: "pet", desc: "北寒仙域的雪狐幼崽,靈性初開。", price: 0, stoneMult: 1.1, atkBonus: 14000, defBonus: 6000, speedBonus: 100, reqStage: 10, dropOnly: true },
+
   // ── 金源仙域圖譜(妖獸掉落,使用後解鎖上列裝備配方) ──
-  { id: "blueprint_jishen", name: "《金源戮神戟》煉器圖譜", kind: "recipe", desc: "記載金源戮神戟的煉製之法,參詳後可自行煉製。", price: 0, unlocksRecipe: "r_jinyuan_ji", dropOnly: true },
-  { id: "blueprint_hunyuanjia", name: "《太虛混元甲》煉器圖譜", kind: "recipe", desc: "記載太虛混元甲的煉製之法,參詳後可自行煉製。", price: 0, unlocksRecipe: "r_taixu_hunyuanjia", dropOnly: true },
-  { id: "blueprint_hudao", name: "《金源護道鏡》煉器圖譜", kind: "recipe", desc: "記載金源護道鏡的煉製之法,參詳後可自行煉製。", price: 0, unlocksRecipe: "r_jinyuan_hujing", dropOnly: true },
-  { id: "blueprint_zhuxian", name: "《誅仙滅魂符》煉器圖譜", kind: "recipe", desc: "記載誅仙滅魂符的煉製之法,參詳後可自行煉製。", price: 0, unlocksRecipe: "r_zhuxian_fu", dropOnly: true },
-  { id: "blueprint_zaohuajian", name: "《造化戮仙劍》煉器圖譜", kind: "recipe", desc: "記載造化戮仙劍的煉製之法,參詳後可自行煉製。", price: 0, unlocksRecipe: "r_zaohua_jian", dropOnly: true },
-  { id: "blueprint_xisui", name: "《洗髓丹》煉丹圖譜", kind: "recipe", desc: "記載洗髓丹的煉製之法,參詳後可自行煉丹。", price: 0, unlocksRecipe: "r_xisuidan", dropOnly: true },
-  { id: "blueprint_ningxian", name: "《凝仙丹》煉丹圖譜", kind: "recipe", desc: "記載凝仙丹的煉製之法,參詳後可自行煉丹。", price: 0, unlocksRecipe: "r_ningxiandan", dropOnly: true },
+  { id: "blueprint_jishen", name: "《金源戮神戟》煉器圖譜", kind: "recipe", desc: "記載金源戮神戟煉製之法的圖譜。", price: 0, unlocksRecipe: "r_jinyuan_ji", dropOnly: true },
+  { id: "blueprint_hunyuanjia", name: "《太虛混元甲》煉器圖譜", kind: "recipe", desc: "記載太虛混元甲煉製之法的圖譜。", price: 0, unlocksRecipe: "r_taixu_hunyuanjia", dropOnly: true },
+  { id: "blueprint_hudao", name: "《金源護道鏡》煉器圖譜", kind: "recipe", desc: "記載金源護道鏡煉製之法的圖譜。", price: 0, unlocksRecipe: "r_jinyuan_hujing", dropOnly: true },
+  { id: "blueprint_zhuxian", name: "《誅仙滅魂符》煉器圖譜", kind: "recipe", desc: "記載誅仙滅魂符煉製之法的圖譜。", price: 0, unlocksRecipe: "r_zhuxian_fu", dropOnly: true },
+  { id: "blueprint_zaohuajian", name: "《造化戮仙劍》煉器圖譜", kind: "recipe", desc: "記載造化戮仙劍煉製之法的圖譜。", price: 0, unlocksRecipe: "r_zaohua_jian", dropOnly: true },
+  { id: "blueprint_xisui", name: "《洗髓丹》煉丹圖譜", kind: "recipe", desc: "記載洗髓丹煉製之法的丹方。", price: 0, unlocksRecipe: "r_xisuidan", dropOnly: true },
+  { id: "blueprint_ningxian", name: "《凝仙丹》煉丹圖譜", kind: "recipe", desc: "記載凝仙丹煉製之法的丹方。", price: 0, unlocksRecipe: "r_ningxiandan", dropOnly: true },
 
   // ── 命器(舊·天命符 / 地運符,已停止由妖獸掉落,僅為相容既有存檔保留定義,不會再有新玩家取得) ──
-  { id: "tianmingfu", name: "天命符", kind: "mingqi", desc: "命格之力凝成的符籙,大晉噬天鬼帝身死方遺,窺得一線天機——不論何種境界,突破成功率 +5%。", price: 0, dropOnly: true, breakBonus: 0.05 },
-  { id: "diyunfu", name: "地運符", kind: "mingqi", desc: "地脈氣運匯聚而成的符籙,萬鱗海皇秘藏之物——佩戴後借地氣相助,突破成功率 +3%。", price: 0, dropOnly: true, breakBonus: 0.03 },
+  { id: "tianmingfu", name: "天命符", kind: "mingqi", desc: "命格之力凝成的符籙,大晉噬天鬼帝身死方遺,窺得一線天機。", price: 0, dropOnly: true, breakBonus: 0.05 },
+  { id: "diyunfu", name: "地運符", kind: "mingqi", desc: "地脈氣運匯聚而成的符籙,萬鱗海皇秘藏之物。", price: 0, dropOnly: true, breakBonus: 0.03 },
 
   // ── 命器(黑市限定,消耗型:裝備後,下一次嘗試突破無論成敗皆會自動消耗一枚) ──
-  { id: "diminfu", name: "地命符", kind: "mingqi", desc: "黑市秘傳的消耗型命器,裝備後下一次嘗試突破成功率 +3%,無論成敗,突破後即化為飛灰。", price: 0, dropOnly: true, breakBonus: 0.03, consumable: true },
-  { id: "tianyunfu", name: "天運符", kind: "mingqi", desc: "黑市秘傳的消耗型命器,裝備後下一次嘗試突破成功率 +5%,無論成敗,突破後即化為飛灰。", price: 0, dropOnly: true, breakBonus: 0.05, consumable: true },
-  { id: "tianjifu", name: "天極符", kind: "mingqi", desc: "黑市秘傳的消耗型命器,裝備後下一次嘗試突破成功率 +8%,無論成敗,突破後即化為飛灰。", price: 0, dropOnly: true, breakBonus: 0.08, consumable: true },
+  { id: "diminfu", name: "地命符", kind: "mingqi", desc: "黑市秘傳的命符,符紋淺淡。", price: 0, dropOnly: true, breakBonus: 0.03, consumable: true },
+  { id: "tianyunfu", name: "天運符", kind: "mingqi", desc: "黑市秘傳的命符,符紋流轉。", price: 0, dropOnly: true, breakBonus: 0.05, consumable: true },
+  { id: "tianjifu", name: "天極符", kind: "mingqi", desc: "黑市秘傳的命符,符紋隱有天機。", price: 0, dropOnly: true, breakBonus: 0.08, consumable: true },
 
   // ── 真仙丹(渡劫飛昇必備,唯太古龍祖、九龍獄墮落真仙馬良掉落;嘗試突破時無論成敗皆消耗) ──
-  { id: "zhenxiandan", name: "真仙丹", kind: "special", desc: "太古龍祖精血凝成的無上奇丹,渡劫飛昇的必備之物。服下即會引來天劫神靈試煉,斬滅之則飛昇機率翻倍,不敵則機率減半;無論突破成敗皆會耗盡藥力。", price: 0 },
+  { id: "zhenxiandan", name: "真仙丹", kind: "special", desc: "太古龍祖精血凝成的無上奇丹。", effect: "渡劫期飛昇必備;服下引來天劫神靈試煉,勝則飛昇機率翻倍、敗則減半,無論成敗皆會耗盡", price: 0 },
 
   // ── 煉神術(2.14 版新增,九龍獄墮落真仙馬良極稀有掉落,終身限用一次) ──
-  { id: "lianshenshu", name: "煉神術", kind: "special", desc: "墮落真仙馬良殞落前留下的殘卷,記載脫胎換骨的煉神秘法。終身僅可修習一次,修成後精力上限永久倍增。", price: 0 },
+  { id: "lianshenshu", name: "煉神術", kind: "special", desc: "墮落真仙馬良殞落前留下的殘卷,記載脫胎換骨的煉神秘法。", effect: "精力上限永久 ×2(終身限用一次)", price: 0 },
 
 
   // ── 北寒仙尊獨有:更強大的仙法秘笈 ──
-  { id: "m_beiming", name: "《北冥玄天訣》", kind: "manual", desc: "北寒仙尊畢生所悟的無上仙法,水行之極,凍結仙靈。唯真仙可修。", price: 0, teaches: "beiming", dropOnly: true },
+  { id: "m_beiming", name: "《北冥玄天訣》", kind: "manual", desc: "北寒仙尊畢生所悟的無上仙法,水行之極,凍結仙靈。", price: 0, teaches: "beiming", dropOnly: true },
 
   // ── 先天造化丹(金源仙域怪物稀有掉落,築基期服下直升煉虛期) ──
-  { id: "xiantian_zaohuadan", name: "先天造化丹", kind: "special", desc: "金源仙域孕育的造化奇丹,築基期修士服之,可連跨結丹、元嬰、化神三境,直升煉虛!藥性霸道,唯築基期可服。", price: 0 },
+  { id: "xiantian_zaohuadan", name: "先天造化丹", kind: "special", desc: "金源仙域孕育的造化奇丹,藥性霸道。", effect: "築基期服下直升煉虛期(僅限築基期服用)", price: 0 },
 
   // ── 玄天仙器(玄天殘片 + 太乙精魂煉成,隨機一種,唯太乙境可用,屬性隨煉化品質浮動 100%~300%) ──
   { id: "xuantian_zhanling_jian", name: "玄天斬靈劍", kind: "artifact", desc: "玄天至寶,劍出斬靈,鋒芒所至萬法俱滅。", element: "金", price: 0, atkBonus: 300000, dropOnly: false, reqStage: 12 },
@@ -270,22 +282,22 @@ export const ITEMS: ItemDef[] = [
   { id: "huantian_jing", name: "幻天鏡", kind: "artifact", desc: "玄天至寶,鏡面幻化萬千身法,虛實難辨。", element: "水", price: 0, atkBonus: 180000, defBonus: 350000, speedBonus: 400, dropOnly: false, reqStage: 12 },
 
   // ── 太乙精魂(蠻荒異界四大地域王專屬掉落,集滿四枚於太乙殿突破太乙境) ──
-  { id: "taiyi_jinghun_tianhu", name: "太乙精魂 - 天狐", kind: "special", desc: "天狐身隕凝成的精魂,赤焰流轉。集滿四枚太乙精魂,可於太乙殿突破太乙境。", element: "火", price: 0 },
-  { id: "taiyi_jinghun_zhenlong", name: "太乙精魂 - 真龍", kind: "special", desc: "真龍身隕凝成的精魂,龍威隱現。集滿四枚太乙精魂,可於太乙殿突破太乙境。", element: "木", price: 0 },
-  { id: "taiyi_jinghun_baxia", name: "太乙精魂 - 霸下", kind: "special", desc: "霸下身隕凝成的精魂,厚重渾樸。集滿四枚太乙精魂,可於太乙殿突破太乙境。", element: "土", price: 0 },
-  { id: "taiyi_jinghun_pixiu", name: "太乙精魂 - 黑眼貔貅", kind: "special", desc: "黑眼貔貅身隕凝成的精魂,幽光流轉。集滿四枚太乙精魂,可於太乙殿突破太乙境。", element: "金", price: 0 },
+  { id: "taiyi_jinghun_tianhu", name: "太乙精魂 - 天狐", kind: "special", desc: "天狐身隕凝成的精魂,赤焰流轉。", effect: "集滿四枚太乙精魂(天狐、真龍、霸下、黑眼貔貅)且登上浮屠塔第 20 層,可於太乙殿自金仙突破太乙境", element: "火", price: 0 },
+  { id: "taiyi_jinghun_zhenlong", name: "太乙精魂 - 真龍", kind: "special", desc: "真龍身隕凝成的精魂,龍威隱現。", effect: "集滿四枚太乙精魂(天狐、真龍、霸下、黑眼貔貅)且登上浮屠塔第 20 層,可於太乙殿自金仙突破太乙境", element: "木", price: 0 },
+  { id: "taiyi_jinghun_baxia", name: "太乙精魂 - 霸下", kind: "special", desc: "霸下身隕凝成的精魂,厚重渾樸。", effect: "集滿四枚太乙精魂(天狐、真龍、霸下、黑眼貔貅)且登上浮屠塔第 20 層,可於太乙殿自金仙突破太乙境", element: "土", price: 0 },
+  { id: "taiyi_jinghun_pixiu", name: "太乙精魂 - 黑眼貔貅", kind: "special", desc: "黑眼貔貅身隕凝成的精魂,幽光流轉。", effect: "集滿四枚太乙精魂(天狐、真龍、霸下、黑眼貔貅)且登上浮屠塔第 20 層,可於太乙殿自金仙突破太乙境", element: "金", price: 0 },
 
   // ── 五色異星盤(金源仙域怪物稀有掉落,集滿金木水火土五枚可開啟蠻荒異界) ──
-  { id: "xingpan_jin", name: "異星盤(金)", kind: "special", desc: "金源仙域深處淬煉的異星圓盤,金光流轉。集滿五色異星盤,可開啟蠻荒異界之門。", element: "金", price: 0 },
-  { id: "xingpan_mu", name: "異星盤(木)", kind: "special", desc: "金源仙域深處淬煉的異星圓盤,木紋暗湧。集滿五色異星盤,可開啟蠻荒異界之門。", element: "木", price: 0 },
-  { id: "xingpan_shui", name: "異星盤(水)", kind: "special", desc: "金源仙域深處淬煉的異星圓盤,水波盪漾。集滿五色異星盤,可開啟蠻荒異界之門。", element: "水", price: 0 },
-  { id: "xingpan_huo", name: "異星盤(火)", kind: "special", desc: "金源仙域深處淬煉的異星圓盤,火紋灼灼。集滿五色異星盤,可開啟蠻荒異界之門。", element: "火", price: 0 },
-  { id: "xingpan_tu", name: "異星盤(土)", kind: "special", desc: "金源仙域深處淬煉的異星圓盤,土色渾厚。集滿五色異星盤,可開啟蠻荒異界之門。", element: "土", price: 0 },
+  { id: "xingpan_jin", name: "異星盤(金)", kind: "special", desc: "金源仙域深處淬煉的異星圓盤,金光流轉。", effect: "集滿五色異星盤可開啟蠻荒異界;再集一套並加上灰質破界盤,可開啟灰仙界", element: "金", price: 0 },
+  { id: "xingpan_mu", name: "異星盤(木)", kind: "special", desc: "金源仙域深處淬煉的異星圓盤,木紋暗湧。", effect: "集滿五色異星盤可開啟蠻荒異界;再集一套並加上灰質破界盤,可開啟灰仙界", element: "木", price: 0 },
+  { id: "xingpan_shui", name: "異星盤(水)", kind: "special", desc: "金源仙域深處淬煉的異星圓盤,水波盪漾。", effect: "集滿五色異星盤可開啟蠻荒異界;再集一套並加上灰質破界盤,可開啟灰仙界", element: "水", price: 0 },
+  { id: "xingpan_huo", name: "異星盤(火)", kind: "special", desc: "金源仙域深處淬煉的異星圓盤,火紋灼灼。", effect: "集滿五色異星盤可開啟蠻荒異界;再集一套並加上灰質破界盤,可開啟灰仙界", element: "火", price: 0 },
+  { id: "xingpan_tu", name: "異星盤(土)", kind: "special", desc: "金源仙域深處淬煉的異星圓盤,土色渾厚。", effect: "集滿五色異星盤可開啟蠻荒異界;再集一套並加上灰質破界盤,可開啟灰仙界", element: "土", price: 0 },
 
   // ── 真仙 / 金仙頂尖仙法秘笈(極難取得,修煉數十萬載) ──
-  { id: "m_hunyuan", name: "《混元一氣仙訣》殘卷", kind: "manual", desc: "開天混元至法,參悟需真仙之境,苦修三十萬載方能大成。金源仙帝身隕方出。", price: 0, teaches: "hunyuan_yiqi", dropOnly: true },
+  { id: "m_hunyuan", name: "《混元一氣仙訣》殘卷", kind: "manual", desc: "開天混元至法,金源仙帝身隕方出。", price: 0, teaches: "hunyuan_yiqi", dropOnly: true },
   { id: "m_taiqing", name: "《太清道韻九轉》玉冊", kind: "manual", desc: "太清仙尊遺留的九轉道韻,修習需五十萬載。太上金仙與浮屠塔高層機緣。", price: 0, teaches: "taiqing_daoyun", dropOnly: true },
-  { id: "m_zhutian", name: "《誅天神雷金仙法》仙簡", kind: "manual", desc: "唯金仙可修的無上殺伐仙法,修習需百萬載。傳說僅浮屠塔絕頂可得。", price: 0, teaches: "zhutian_shenlei", dropOnly: true },
+  { id: "m_zhutian", name: "《誅天神雷金仙法》仙簡", kind: "manual", desc: "仙庭鎮壓叛仙的無上殺伐仙法,傳說僅浮屠塔絕頂可得。", price: 0, teaches: "zhutian_shenlei", dropOnly: true },
 
   // ── 3.14 版新增 36 張符寶對應的修習秘笈:reqStage 1~4 沿用既有慣例坊市有售,reqStage 5 以上
   // 沿用既有慣例改為特定妖獸掉落(dropOnly,見 world.ts 對應妖獸的 drops),不直接販售 ──
@@ -327,12 +339,12 @@ export const ITEMS: ItemDef[] = [
   { id: "m_jiuxiao_leihuo", name: "《九霄雷火訣》仙簡", kind: "manual", desc: "真仙方能駕馭的雙屬性連擊秘法,天狐領地之主藏珍。", price: 0, teaches: "jiuxiao_leihuo", dropOnly: true },
 
   // ── 戰術卡(3.1 版新增):戰鬥中消耗型策略卡,效果依氣血上限百分比或固定機制運作,不隨境界過時 ──
-  { id: "hufu_fu", name: "護體法箓", kind: "tactic", desc: "貼身一符,瞬間凝聚護盾,優先抵擋接下來受到的傷害。", price: 60, shieldPct: 0.2 },
-  { id: "xishen_fu", name: "洗髓符", kind: "tactic", desc: "以符籙滌蕩經脈,清除自身當前所有負面狀態效果。", price: 55, cleanse: true },
-  { id: "shuairuo_zhen", name: "衰運針", kind: "tactic", desc: "暗渡陰針,令敵手周身氣機紊亂,攻擊輸出隨之下降。", price: 70, enemyWeaken: true },
-  { id: "liehuo_yin", name: "烈焰印", kind: "tactic", desc: "掌心烈焰印烙於敵身,必定引燃燒傷,不受命中機率限制。", element: "火", price: 65, forceStatus: "burn" },
-  { id: "shizhen_zhi", name: "蝕毒針", kind: "tactic", desc: "淬毒銀針一擊即中,必定令敵中毒,不受命中機率限制。", element: "木", price: 65, forceStatus: "poison" },
-  { id: "bingfeng_jian", name: "冰封箋", kind: "tactic", desc: "寒氣封箋一觸即發,必定令敵冰封動彈不得,不受命中機率限制。", element: "水", price: 80, forceStatus: "freeze" },
+  { id: "hufu_fu", name: "護體法箓", kind: "tactic", desc: "貼身一符,符光護體。", price: 60, shieldPct: 0.2 },
+  { id: "xishen_fu", name: "洗髓符", kind: "tactic", desc: "以符籙滌蕩經脈。", price: 55, cleanse: true },
+  { id: "shuairuo_zhen", name: "衰運針", kind: "tactic", desc: "暗渡陰針,擾亂敵手氣機。", price: 70, enemyWeaken: true },
+  { id: "liehuo_yin", name: "烈焰印", kind: "tactic", desc: "掌心烈焰印,烙於敵身。", element: "火", price: 65, forceStatus: "burn" },
+  { id: "shizhen_zhi", name: "蝕毒針", kind: "tactic", desc: "淬毒銀針,一擊即中。", element: "木", price: 65, forceStatus: "poison" },
+  { id: "bingfeng_jian", name: "冰封箋", kind: "tactic", desc: "寒氣封箋,一觸即發。", element: "水", price: 80, forceStatus: "freeze" },
 
   // ══════════════════════════ 3.19 版新增內容 ══════════════════════════
 
@@ -346,36 +358,36 @@ export const ITEMS: ItemDef[] = [
   { id: "kp_xinzhu", name: "鯤鵬心珠", kind: "amulet", desc: "鯤鵬心血所化的靈珠,攻守速三者兼備。", price: 0, atkBonus: 9000, defBonus: 8000, speedBonus: 40, dropOnly: true, reqStage: 10 },
   { id: "gh_lengyue_fu", name: "廣寒冷月符", kind: "talisman", desc: "廣寒界冷月之力凝成的符籙,寒芒噬骨。", element: "水", price: 0, atkBonus: 18000, dropOnly: true, reqStage: 10 },
   { id: "kp_pokong_fu", name: "鯤鵬破空符", kind: "talisman", desc: "鯤鵬遺骸淬煉的破空符,一符出手,直破九霄。", element: "金", price: 0, atkBonus: 20000, speedBonus: 50, dropOnly: true, reqStage: 10 },
-  { id: "pet_yutu", name: "廣寒玉兔", kind: "pet", desc: "真仙級靈寵,廣寒界月魄所化——靈石收益 ×1.2,身法極速。", price: 0, stoneMult: 1.2, atkBonus: 9000, defBonus: 6000, speedBonus: 80, reqStage: 10, dropOnly: true },
-  { id: "pet_kunpeng_chu", name: "鯤鵬幼雛", kind: "pet", desc: "真仙級靈寵,鯤鵬遺骸孵化而出——靈石收益 ×1.2,速度冠絕。", price: 0, stoneMult: 1.2, atkBonus: 12000, defBonus: 4000, speedBonus: 150, reqStage: 10, dropOnly: true },
-  { id: "mingqi_guanghan_yuepo", name: "廣寒月魄符", kind: "mingqi", desc: "廣寒界月魄凝成的命符,借月之力,突破成功率 +10%。", price: 0, dropOnly: true, breakBonus: 0.1, reqStage: 10 },
-  { id: "mingqi_kunpeng_tunan", name: "鯤鵬圖南令", kind: "mingqi", desc: "鯤鵬遺骸所化的令符,圖南萬里,突破成功率 +11%。", price: 0, dropOnly: true, breakBonus: 0.11, reqStage: 10 },
+  { id: "pet_yutu", name: "廣寒玉兔", kind: "pet", desc: "廣寒界月魄所化的玉兔,身法輕靈。", price: 0, stoneMult: 1.2, atkBonus: 9000, defBonus: 6000, speedBonus: 80, reqStage: 10, dropOnly: true },
+  { id: "pet_kunpeng_chu", name: "鯤鵬幼雛", kind: "pet", desc: "自鯤鵬遺骸中孵化而出的幼雛。", price: 0, stoneMult: 1.2, atkBonus: 12000, defBonus: 4000, speedBonus: 150, reqStage: 10, dropOnly: true },
+  { id: "mingqi_guanghan_yuepo", name: "廣寒月魄符", kind: "mingqi", desc: "廣寒界月魄凝成的命符,借月之力。", price: 0, dropOnly: true, breakBonus: 0.1, reqStage: 10 },
+  { id: "mingqi_kunpeng_tunan", name: "鯤鵬圖南令", kind: "mingqi", desc: "鯤鵬遺骸所化的令符,寓意圖南萬里。", price: 0, dropOnly: true, breakBonus: 0.11, reqStage: 10 },
   // 金仙(reqStage 11)
   { id: "hx_lueshi_dao", name: "灰仙戮世刀", kind: "artifact", desc: "灰仙界煞氣鑄成的戮世刀,刀鋒過處萬法俱滅。", price: 0, atkBonus: 55000, defBonus: 18000, dropOnly: true, reqStage: 11 },
   { id: "kp_guixu_jian", name: "鯤鵬歸墟劍", kind: "artifact", desc: "鯤鵬遺骸深處淬煉的歸墟劍,劍出如鯤化鵬。", element: "金", price: 0, atkBonus: 60000, defBonus: 16000, dropOnly: true, reqStage: 11 },
   { id: "hx_shaying_pao", name: "灰仙煞影袍", kind: "robe", desc: "灰仙界煞氣織就的煞影袍,身形隱於煞霧之中。", price: 0, atkBonus: 15000, defBonus: 22000, dropOnly: true, reqStage: 11 },
   { id: "gh_hanyuan_jia", name: "廣寒寒淵甲", kind: "robe", desc: "廣寒界寒淵之氣煉成的重甲,寒徹入骨。", element: "水", price: 0, defBonus: 24000, speedBonus: 70, dropOnly: true, reqStage: 11 },
-  { id: "hx_shihun_zhu", name: "灰仙噬魂珠", kind: "amulet", desc: "灰仙界煞氣凝成的噬魂珠,攻守俱強。", price: 0, atkBonus: 20000, defBonus: 20000, dropOnly: true, reqStage: 11 },
+  { id: "hx_shihun_zhu", name: "灰仙噬魂珠", kind: "amulet", desc: "灰仙界煞氣凝成的噬魂珠。", price: 0, atkBonus: 20000, defBonus: 20000, dropOnly: true, reqStage: 11 },
   { id: "kp_xingtu_zhu", name: "鯤鵬星圖珠", kind: "amulet", desc: "鯤鵬遺骸所遺的星圖珠,指引方向,兼護己身。", price: 0, atkBonus: 18000, defBonus: 19000, speedBonus: 60, dropOnly: true, reqStage: 11 },
   { id: "hx_mieshi_fu", name: "灰仙滅世符", kind: "talisman", desc: "灰仙界煞氣凝成的滅世符,一符出手,天地變色。", price: 0, atkBonus: 50000, dropOnly: true, reqStage: 11 },
   { id: "gh_ningyue_fu", name: "廣寒凝月符", kind: "talisman", desc: "廣寒界凝月之力煉成的符籙,月光所至,萬法俱寒。", element: "水", price: 0, atkBonus: 45000, speedBonus: 50, dropOnly: true, reqStage: 11 },
-  { id: "pet_youling_shou", name: "灰仙幽靈獸", kind: "pet", desc: "金仙級靈寵,灰仙界煞氣所化——靈石收益 ×1.2,攻守速俱強。", price: 0, stoneMult: 1.2, atkBonus: 30000, defBonus: 15000, speedBonus: 200, reqStage: 11, dropOnly: true },
-  { id: "pet_kunpeng_zhenyu", name: "鯤鵬真羽", kind: "pet", desc: "金仙級靈寵,鯤鵬遺骸淬煉真羽而生——靈石收益 ×1.2,速度絕倫。", price: 0, stoneMult: 1.2, atkBonus: 35000, defBonus: 12000, speedBonus: 250, reqStage: 11, dropOnly: true },
-  { id: "mingqi_hx_shawen", name: "灰仙煞紋符", kind: "mingqi", desc: "灰仙界煞氣烙印而成的命符,突破成功率 +14%。", price: 0, dropOnly: true, breakBonus: 0.14, reqStage: 11 },
-  { id: "mingqi_gh_tianji", name: "廣寒天機符", kind: "mingqi", desc: "廣寒界天機演算所化的命符,突破成功率 +13%。", price: 0, dropOnly: true, breakBonus: 0.13, reqStage: 11 },
+  { id: "pet_youling_shou", name: "灰仙幽靈獸", kind: "pet", desc: "灰仙界煞氣所化的幽靈獸。", price: 0, stoneMult: 1.2, atkBonus: 30000, defBonus: 15000, speedBonus: 200, reqStage: 11, dropOnly: true },
+  { id: "pet_kunpeng_zhenyu", name: "鯤鵬真羽", kind: "pet", desc: "鯤鵬遺骸淬煉真羽而生的靈寵。", price: 0, stoneMult: 1.2, atkBonus: 35000, defBonus: 12000, speedBonus: 250, reqStage: 11, dropOnly: true },
+  { id: "mingqi_hx_shawen", name: "灰仙煞紋符", kind: "mingqi", desc: "灰仙界煞氣烙印而成的命符。", price: 0, dropOnly: true, breakBonus: 0.14, reqStage: 11 },
+  { id: "mingqi_gh_tianji", name: "廣寒天機符", kind: "mingqi", desc: "廣寒界天機演算所化的命符。", price: 0, dropOnly: true, breakBonus: 0.13, reqStage: 11 },
   // 太乙(reqStage 12)
   { id: "hx_mieshi_zhanling_dao", name: "灰仙滅世斬靈刀", kind: "artifact", desc: "灰仙界煞氣所鑄的斬靈至寶,一刀滅世,萬靈俱寂。", price: 0, atkBonus: 130000, defBonus: 40000, dropOnly: true, reqStage: 12 },
   { id: "kp_jiutian_ji", name: "鯤鵬九天戟", kind: "artifact", desc: "鯤鵬遺骸深處的九天神戟,一擊貫穿九霄。", element: "金", price: 0, atkBonus: 140000, defBonus: 35000, dropOnly: true, reqStage: 12 },
   { id: "gh_taixu_yuyi", name: "廣寒太虛羽衣", kind: "robe", desc: "廣寒界太虛之氣織就的羽衣,萬法不侵。", element: "水", price: 0, atkBonus: 30000, defBonus: 55000, dropOnly: true, reqStage: 12 },
   { id: "hx_youming_kai", name: "灰仙幽冥鎧", kind: "robe", desc: "灰仙界幽冥煞氣凝成的重鎧,固若幽冥本源。", price: 0, defBonus: 58000, speedBonus: 100, dropOnly: true, reqStage: 12 },
   { id: "kp_hundun_zhu", name: "鯤鵬混沌珠", kind: "amulet", desc: "鯤鵬遺骸中孕育的混沌珠,吞吐天地之力。", price: 0, atkBonus: 80000, defBonus: 50000, dropOnly: true, reqStage: 12 },
-  { id: "hx_miehun_zhu", name: "灰仙滅魂珠", kind: "amulet", desc: "灰仙界煞氣凝聚的滅魂珠,攻守速三絕。", price: 0, atkBonus: 90000, defBonus: 45000, speedBonus: 80, dropOnly: true, reqStage: 12 },
+  { id: "hx_miehun_zhu", name: "灰仙滅魂珠", kind: "amulet", desc: "灰仙界煞氣凝聚的滅魂珠。", price: 0, atkBonus: 90000, defBonus: 45000, speedBonus: 80, dropOnly: true, reqStage: 12 },
   { id: "gh_tiangang_fu", name: "廣寒天罡符", kind: "talisman", desc: "廣寒界天罡之力凝成的符籙,罡風所至,萬法俱裂。", element: "水", price: 0, atkBonus: 110000, dropOnly: true, reqStage: 12 },
   { id: "hx_zhongyan_fu", name: "灰仙終焉符", kind: "talisman", desc: "灰仙界煞氣淬煉的終焉符,一符出手,終焉降臨。", price: 0, atkBonus: 120000, speedBonus: 60, dropOnly: true, reqStage: 12 },
-  { id: "pet_kunpeng_zhenshen", name: "鯤鵬真身", kind: "pet", desc: "太乙級靈寵,鯤鵬遺骸復甦的真身——靈石收益 ×1.2,速度冠絕古今。", price: 0, stoneMult: 1.2, atkBonus: 100000, defBonus: 40000, speedBonus: 400, reqStage: 12, dropOnly: true },
-  { id: "pet_hx_shashou", name: "灰仙煞獸", kind: "pet", desc: "太乙級靈寵,灰仙界煞氣孕育而生——靈石收益 ×1.2,攻守俱臻化境。", price: 0, stoneMult: 1.2, atkBonus: 110000, defBonus: 35000, speedBonus: 350, reqStage: 12, dropOnly: true },
-  { id: "mingqi_taiyi_guiyuan", name: "太乙歸元符", kind: "mingqi", desc: "太乙至理凝成的歸元符,突破成功率 +18%。", price: 0, dropOnly: true, breakBonus: 0.18, reqStage: 12 },
-  { id: "mingqi_hx_mieshi", name: "灰仙滅世符(命)", kind: "mingqi", desc: "灰仙界煞氣所鑄的命符,突破成功率 +20%。", price: 0, dropOnly: true, breakBonus: 0.2, reqStage: 12 },
+  { id: "pet_kunpeng_zhenshen", name: "鯤鵬真身", kind: "pet", desc: "自鯤鵬遺骸中復甦的鯤鵬真身。", price: 0, stoneMult: 1.2, atkBonus: 100000, defBonus: 40000, speedBonus: 400, reqStage: 12, dropOnly: true },
+  { id: "pet_hx_shashou", name: "灰仙煞獸", kind: "pet", desc: "灰仙界煞氣孕育而生的煞獸。", price: 0, stoneMult: 1.2, atkBonus: 110000, defBonus: 35000, speedBonus: 350, reqStage: 12, dropOnly: true },
+  { id: "mingqi_taiyi_guiyuan", name: "太乙歸元符", kind: "mingqi", desc: "太乙至理凝成的歸元符。", price: 0, dropOnly: true, breakBonus: 0.18, reqStage: 12 },
+  { id: "mingqi_hx_mieshi", name: "灰仙滅世符(命)", kind: "mingqi", desc: "灰仙界煞氣所鑄的命符。", price: 0, dropOnly: true, breakBonus: 0.2, reqStage: 12 },
 
   // ── 3.19 版新增 22 張符寶對應秘笈:reqStage 2~4 坊市有售,5 以上沿用既有慣例改由妖獸掉落 ──
   { id: "m_jingang_liesan", name: "《金剛裂閃》劍譜", kind: "manual", desc: "金剛之力裂空的連擊劍法,坊市有售。", price: 900, teaches: "jingang_liesan", shopSellable: true },
@@ -402,24 +414,24 @@ export const ITEMS: ItemDef[] = [
   { id: "m_jiutian_huoyu", name: "《九天火獄陣》仙簡", kind: "manual", desc: "真仙方能駕馭的雙屬性仙陣,鯤鵬遺骸秘藏。", price: 0, teaches: "jiutian_huoyu", dropOnly: true },
 
   // ── 煞屬性符寶秘笈(5 張,唯灰仙界怪物掉落,見對應怪物 drops[]) ──
-  { id: "m_shaqi_yidao", name: "《煞氣一刀》煞典", kind: "manual", desc: "灰仙界煞氣凝成的殺伐一刀,煞氣越盛,刀鋒越利。", price: 0, teaches: "shaqi_yidao", dropOnly: true },
-  { id: "m_shashen_xibo", name: "《煞神噬魄》煞典", kind: "manual", desc: "灰仙界煞神噬魄之法,以血養煞,煞氣越盛越烈。", price: 0, teaches: "shashen_xibo", dropOnly: true },
-  { id: "m_heiyu_shashi", name: "《黑域煞噬》煞典", kind: "manual", desc: "灰仙界黑域煞氣噬體之法,連環兩擊。", price: 0, teaches: "heiyu_shashi", dropOnly: true },
+  { id: "m_shaqi_yidao", name: "《煞氣一刀》煞典", kind: "manual", desc: "灰仙界煞氣凝成的殺伐一刀。", price: 0, teaches: "shaqi_yidao", dropOnly: true },
+  { id: "m_shashen_xibo", name: "《煞神噬魄》煞典", kind: "manual", desc: "灰仙界煞神噬魄之法,以血養煞。", price: 0, teaches: "shashen_xibo", dropOnly: true },
+  { id: "m_heiyu_shashi", name: "《黑域煞噬》煞典", kind: "manual", desc: "灰仙界黑域煞氣噬體之法。", price: 0, teaches: "heiyu_shashi", dropOnly: true },
   { id: "m_shahai_wushuang", name: "《煞海無雙》煞典", kind: "manual", desc: "灰仙界煞海翻湧之法,一往無前。", price: 0, teaches: "shahai_wushuang", dropOnly: true },
   { id: "m_mieshi_shazun", name: "《滅世煞尊》煞典", kind: "manual", desc: "灰仙界滅世煞尊臨世之法,焚盡蒼生。", price: 0, teaches: "mieshi_shazun", dropOnly: true },
 
   // ── 一次性秘境地圖道具(3.19 版新增):使用後直接開啟對應一次性戰鬥,見 engine.ts useItem ──
-  { id: "guanghanjie", name: "廣寒界", kind: "special", desc: "月魄凝成的秘境地圖,一次性開啟通往廣寒界的門扉,內裡機緣非凡,亦有絕世妖魔盤踞。", price: 0, dropOnly: true, reqStage: 10, mapEncounter: "boss_guanghan" },
-  { id: "kunpeng_yihai", name: "鯤鵬遺骸", kind: "special", desc: "上古鯤鵬殞落之地的殘存氣息所化地圖,一次性開啟通往鯤鵬遺骸的門扉,機緣與凶險並存。", price: 0, dropOnly: true, reqStage: 10, mapEncounter: "boss_kunpeng" },
+  { id: "guanghanjie", name: "廣寒界", kind: "special", desc: "月魄凝成的秘境地圖,廣寒界機緣非凡,亦有絕世妖魔盤踞。", effect: "使用後消耗,開啟一場廣寒仙子首領戰(真仙以上)", price: 0, dropOnly: true, reqStage: 10, mapEncounter: "boss_guanghan" },
+  { id: "kunpeng_yihai", name: "鯤鵬遺骸", kind: "special", desc: "上古鯤鵬殞落之地的殘存氣息所化地圖,機緣與凶險並存。", effect: "使用後消耗,開啟一場鯤鵬殘魂首領戰(真仙以上)", price: 0, dropOnly: true, reqStage: 10, mapEncounter: "boss_kunpeng" },
 
   // ── 煞氣解法(3.19 版新增) ──
-  { id: "mieshadan", name: "滅煞丹", kind: "pill", desc: "以真魔精血調配的奇丹,服下可滌盡周身煞氣。", price: 0, dropOnly: true, reqStage: 10, cureShaqi: true },
+  { id: "mieshadan", name: "滅煞丹", kind: "pill", desc: "以真魔精血調配的奇丹。", price: 0, dropOnly: true, reqStage: 10, cureShaqi: true },
 
   // ── 灰仙界開界道具(3.19 版新增) ──
-  { id: "huizhi_pojiepan", name: "灰質破界盤", kind: "special", desc: "極其稀有的灰質圓盤,與五色異星盤共鳴可開啟灰仙界之門。集滿五色異星盤 + 此盤,方能開啟灰仙界。", price: 0, dropOnly: true },
+  { id: "huizhi_pojiepan", name: "灰質破界盤", kind: "special", desc: "極其稀有的灰質圓盤,隱隱與五色異星盤共鳴。", effect: "搭配一套五色異星盤,可開啟灰仙界", price: 0, dropOnly: true },
 
   // ── 通天閣進場道具(3.19 版新增) ──
-  { id: "tongtian_ling", name: "通天令", kind: "special", desc: "唯真仙以上方能感應的令牌,使用後可開啟通天閣之門,與其他真仙一較高下。", price: 0, dropOnly: true, reqStage: 10 },
+  { id: "tongtian_ling", name: "通天令", kind: "special", desc: "唯真仙以上方能感應的令牌。", effect: "使用後永久開啟通天閣(真仙以上)", price: 0, dropOnly: true, reqStage: 10 },
 ];
 
 // 玄天仙器(蠻荒異界玄天殘片 + 太乙精魂煉成,唯太乙境可用,屬性極強且浮動 100%~300%)

@@ -136,7 +136,7 @@ function BagTab() {
     const item = itemById(id);
     const equipped = equippedIds.includes(id);
     const xuantian = isXuantianArtifact(id);
-    const statLine = itemStatLine(item, t);
+    const statLine = itemStatLine(item, t, lang);
     const nameSpan = (
       <span className={`${itemNameColor(item, xuantian)}${statLine ? " cursor-help underline decoration-dotted decoration-faded/40 underline-offset-2" : ""}`}>
         {itemDisplayName(item, lang)}
@@ -164,6 +164,7 @@ function BagTab() {
             )}
           </span>
           <p className="text-xs text-faded">{itemDisplayDesc(item, lang)}</p>
+          {statLine && <p className="text-xs text-cream/80 mt-0.5 font-mono">{statLine}</p>}
         </div>
         <div className="flex gap-1.5 shrink-0 ml-3">
           {(item.kind === "pill" || item.kind === "herb") && (
@@ -643,6 +644,9 @@ function CraftTab() {
           </span>
         </div>
         <p className="text-xs text-faded mt-1">{recipeDisplayDesc(rec, lang)}</p>
+        {itemStatLine(result, t, lang) && (
+          <p className="text-xs text-cream/80 mt-0.5 font-mono">{itemStatLine(result, t, lang)}</p>
+        )}
         <p className="text-xs mt-1.5">
           {rec.materials.map((m) => {
             const have = s.inventory[m.id] ?? 0;
@@ -896,7 +900,7 @@ function BlackMarketSection() {
       {BLACK_MARKET_CATALOG.map(({ itemId, priceUsd }) => {
         const item = itemById(itemId);
         if (!item) return null;
-        const statLine = itemStatLine(item, t);
+        const statLine = itemStatLine(item, t, lang);
         const nameSpan = (
           <span
             className={`${itemNameColor(item, isXuantianArtifact(itemId))}${statLine ? " cursor-help underline decoration-dotted decoration-faded/40 underline-offset-2" : ""}`}
@@ -922,6 +926,7 @@ function BlackMarketSection() {
                 )}
               </span>
               <p className="text-xs text-faded">{itemDisplayDesc(item, lang)}</p>
+              {statLine && <p className="text-xs text-cream/80 mt-0.5 font-mono">{statLine}</p>}
             </div>
             <button
               className="btn shrink-0 ml-3 border-fuchsia-400/60 text-fuchsia-300 hover:bg-fuchsia-400/15"
@@ -996,7 +1001,7 @@ function MarketTab() {
                 <div className="divider">{t(key)}</div>
                 <div className="space-y-2">
                   {group.map((item) => {
-                    const statLine = itemStatLine(item, t);
+                    const statLine = itemStatLine(item, t, lang);
                     const nameNode = statLine ? (
                       <Tooltip content={statLine}>
                         <span className="cursor-help underline decoration-dotted decoration-faded/40 underline-offset-2">
@@ -1024,6 +1029,7 @@ function MarketTab() {
                           )}
                         </span>
                         <p className="text-xs text-faded">{itemDisplayDesc(item, lang)}</p>
+                        {statLine && <p className="text-xs text-cream/80 mt-0.5 font-mono">{statLine}</p>}
                       </div>
                       <button
                         className="btn shrink-0 ml-3"
@@ -1260,7 +1266,7 @@ function TradeTab() {
         if (!item) return null;
         const mine = l.seller_name === s.name;
         const xuantian = isXuantianArtifact(l.item_id);
-        const statLine = itemStatLine(item, t);
+        const statLine = itemStatLine(item, t, lang);
         const nameSpan = (
           <span
             className={`${itemNameColor(item, xuantian)}${statLine ? " cursor-help underline decoration-dotted decoration-faded/40 underline-offset-2" : ""}`}
@@ -1286,6 +1292,7 @@ function TradeTab() {
                 <span className="text-gold">{formatStones(l.qty * l.price)}</span>
               </p>
               <p className="text-xs text-faded/70 mt-0.5">{itemDisplayDesc(item, lang)}</p>
+              {statLine && <p className="text-xs text-cream/80 mt-0.5 font-mono">{statLine}</p>}
             </div>
             <div className="shrink-0 ml-3">
               {mine ? (
@@ -1456,7 +1463,7 @@ function WanlingTab() {
             <div className="divider">{t(key)}</div>
             <div className="space-y-2">
               {group.map((item) => {
-                const stat = itemStatLine(item, t);
+                const stat = itemStatLine(item, t, lang);
                 const xuantian = isXuantianArtifact(item.id);
                 return (
                   <div
@@ -1612,7 +1619,7 @@ function PlayerDetailCard({ profile, onClose }: { profile: PlayerProfile; onClos
               {it ? (
                 <span className="text-right">
                   <Tooltip
-                    content={[itemStatLine(it, t), itemDisplayDesc(it, lang)].filter(Boolean).join(" · ")}
+                    content={[itemStatLine(it, t, lang), itemDisplayDesc(it, lang)].filter(Boolean).join(" · ")}
                   >
                     <span className={`${nameCls} cursor-help underline decoration-dotted decoration-faded/40 underline-offset-2`}>
                       {itemDisplayName(it, lang)}

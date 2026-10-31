@@ -461,7 +461,7 @@ export function StatusPanel() {
               {it ? (
                 <span className="text-right min-w-0 truncate" title={itemDisplayName(it, lang)}>
                   <Tooltip
-                    content={[itemStatLine(it, t), itemDisplayDesc(it, lang)]
+                    content={[itemStatLine(it, t, lang), itemDisplayDesc(it, lang)]
                       .filter(Boolean)
                       .join(" · ")}
                   >

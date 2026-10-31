@@ -55,7 +55,7 @@ export const RECIPE_DESC_EN: Record<string, string> = {
   r_yuancishan: "A demonic crystal nurtured for a hundred days with Sovereign Heaven Marrow, condensing Origin Magnetism power into a mountain.",
   r_zhenlongyin: "A seal carved from true dragon essence-bone, consecrated with Sovereign Heaven Marrow — a supreme Spirit Realm treasure, relied upon through the Tribulation.",
   r_fu_xuanyin: "Guided by a demonic crystal, Yin-Ill energy condensed into a talisman — an offensive talisman for Mahayana cultivators.",
-  r_fu_taixu: "An immortal talisman guided by true dragon essence-bone and Sovereign Heaven Marrow, forgeable only by true immortals.",
+  r_fu_taixu: "An immortal talisman guided by true dragon essence-bone and Sovereign Heaven Marrow.",
   r_jinyuan_ji: "A god-slaying halberd hammered repeatedly from Taiyi Refined Gold, infused throughout with Golden-Source power.",
   r_taixu_hunyuanjia: "Heavy protective armor tempered from Golden-Source Spirit Sand, warded by every technique.",
   r_jinyuan_hujing: "A treasured mirror ground from Golden-Source Spirit Sand, reflecting all techniques and warding off misfortune.",

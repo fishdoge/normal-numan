@@ -220,6 +220,9 @@ export interface ItemDef {
   mapEncounter?: string;
   // 滅煞丹專屬(3.19 版新增):服下後立即將玩家的煞氣(SaveData.shaqi)歸零。
   cureShaqi?: boolean;
+  // 效果說明(5.0 版):數值欄位表達不了的效果(解鎖地圖、突破金仙、存取靈石……)寫在這裡,
+  // desc 只放故事敘述,兩者在介面上分開顯示。
+  effect?: string;
 }
 
 export interface Technique {

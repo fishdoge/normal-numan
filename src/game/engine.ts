@@ -865,11 +865,11 @@ export function newSave(name: string, sectId: string): SaveData {
 function maybeEncounter(s: SaveData) {
   const realm = REALMS[s.realmIdx];
   const roll = Math.random();
+  // 5.0 版:真仙以上修為唯有斬妖獲得,打坐/採集時的頓悟、手談不再給修為(該次奇遇直接略過)
+  const xian = realm.stage >= XIAN_STAGE;
   if (roll < 0.03) {
-    // 真仙/金仙的 expNeed 是無法達成的巨大佔位值(用來鎖死「靠修為突破」這條路),
-    // 不可拿來換算獎勵,否則會灌出天量修為/靈石——改以 hpMax 為基準。
-    const gain =
-      realm.stage >= 10 ? Math.floor(realm.hpMax * 0.3) : Math.floor(realm.expNeed * 0.15);
+    if (xian) return;
+    const gain = Math.floor(realm.expNeed * 0.15);
     s.exp += gain;
     log(s, `打坐間心神空明,天地法則於眼前一閃而逝——頓悟!修為 +${gain}。`);
   } else if (roll < 0.05) {
@@ -889,6 +889,7 @@ function maybeEncounter(s: SaveData) {
     s.stones -= lost;
     log(s, `一名遊方散修與你論道半日,臨別時你才發現儲物袋輕了——被順走了 ${lost} 靈石!`);
   } else if (roll < 0.105) {
+    if (xian) return;
     const gain = Math.floor(realm.expNeed * 0.025);
     s.exp += gain;
     log(s, `荒亭避雨,偶遇一位白髮老道與你手談一局。局終人杳,棋盤上殘留一縷道韻——修為 +${gain}。`);
@@ -1566,11 +1567,10 @@ function applyActionInner(
       }
       s.age += cost;
       s.day = s.age; // 修行年限直接等於壽元
-      // 真仙/金仙的 expNeed 是不可達成的巨大佔位值,打坐修為公式同樣不可直接套用,
-      // 否則會在真仙期一次打坐就灌出數億修為(詳見 1.6 版說明)。
-      const expBase = realm.stage >= 10 ? realm.hpMax * 0.02 : realm.expNeed;
-      const base = expBase * (0.04 + Math.random() * 0.03);
-      const gain = Math.max(1, Math.floor(base * (1 + (sect?.bonus.exp ?? 0) / 100)));
+      // 5.0 版:真仙以上打坐不再增長修為(只療傷、推進修習),修為唯有斬妖獲得,讓修為榜可以比較
+      const xianNoExp = realm.stage >= XIAN_STAGE;
+      const base = realm.expNeed * (0.04 + Math.random() * 0.03);
+      const gain = xianNoExp ? 0 : Math.max(1, Math.floor(base * (1 + (sect?.bonus.exp ?? 0) / 100)));
       s.exp += gain;
       s.mp = Math.min(mpMax, s.mp + Math.floor(mpMax * 0.25));
       // 4.2 版:調息併入打坐——打坐同時運轉周天療傷,氣血回滿(原「調息」行動保留於引擎供相容,介面已移除)
@@ -1578,7 +1578,9 @@ function applyActionInner(
       s.hp = hpMax;
       s.cultToday += 1;
       const lines = [
-        `你盤膝打坐,吐納靈氣,修為 +${gain}${healed > 0 ? `,周天運轉間傷勢盡復(氣血 +${healed})` : ""}(耗壽元 ${cost} 年,現 ${s.age}/${cap})。`,
+        xianNoExp
+          ? `你盤膝打坐,吐納仙靈${healed > 0 ? `,周天運轉間傷勢盡復(氣血 +${healed})` : ""}(耗壽元 ${cost} 年,現 ${s.age}/${cap})。仙軀已成,修為唯有斬妖方能精進。`
+          : `你盤膝打坐,吐納靈氣,修為 +${gain}${healed > 0 ? `,周天運轉間傷勢盡復(氣血 +${healed})` : ""}(耗壽元 ${cost} 年,現 ${s.age}/${cap})。`,
       ];
       // 修習仙法推進(以打坐年月推進)
       if (s.learning) {

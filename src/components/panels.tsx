@@ -345,10 +345,11 @@ export function StatusPanel() {
           <div className="flex justify-between text-xs text-faded mb-0.5">
             <span>{t("statExp")}</span>
             <span>
-              {s.exp}/{expNeed}
+              {/* 真仙以上修為不再用於突破,只會一路累積(修為榜依此排名),直接顯示總數 */}
+              {realm.stage >= 10 ? s.exp.toLocaleString() : `${s.exp}/${expNeed}`}
             </span>
           </div>
-          <Bar v={s.exp} max={expNeed} cls="bg-jade" />
+          {realm.stage < 10 && <Bar v={s.exp} max={expNeed} cls="bg-jade" />}
         </div>
       </div>
 

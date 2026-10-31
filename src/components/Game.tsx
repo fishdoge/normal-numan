@@ -555,11 +555,13 @@ export default function Game() {
               <span className={`hud-realm-name ${isXian ? "text-fuchsia-300" : ""}`}>
                 {realmDisplayName(REALMS[save.realmIdx], language)}
               </span>
-              <span className="hud-exp" aria-hidden="true">
-                <span style={{ width: `${Math.min(100, (save.exp / REALMS[save.realmIdx].expNeed) * 100)}%` }} />
-              </span>
+              {!isXian && (
+                <span className="hud-exp" aria-hidden="true">
+                  <span style={{ width: `${Math.min(100, (save.exp / REALMS[save.realmIdx].expNeed) * 100)}%` }} />
+                </span>
+              )}
               <span className="hud-exp-num">
-                {save.exp}/{REALMS[save.realmIdx].expNeed}
+                {isXian ? save.exp.toLocaleString() : `${save.exp}/${REALMS[save.realmIdx].expNeed}`}
               </span>
             </div>
             <nav className="hud-nav" aria-label="遊戲導覽">

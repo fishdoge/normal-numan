@@ -31,6 +31,7 @@ import {
   XIAN_ITEM_COLOR,
   formatDamage,
   formatHpPair,
+  xianExpMilestone,
 } from "@/game/types";
 import { useT } from "@/i18n/useT";
 import type { DictKey } from "@/i18n/dict";
@@ -349,7 +350,7 @@ export function StatusPanel() {
               {realm.stage >= 10 ? s.exp.toLocaleString() : `${s.exp}/${expNeed}`}
             </span>
           </div>
-          {realm.stage < 10 && <Bar v={s.exp} max={expNeed} cls="bg-jade" />}
+          <Bar v={s.exp} max={realm.stage >= 10 ? xianExpMilestone(s.exp) : expNeed} cls="bg-jade" />
         </div>
       </div>
 
@@ -386,11 +387,11 @@ export function StatusPanel() {
 
       <div className="divider">◆</div>
 
-      {/* 4.2 版:屬性與裝備改為兩組並排(標籤、數值、標籤、數值),縮短道籍面板高度,讓主畫面一屏看完 */}
-      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-2 gap-y-1 text-[15px]">
+      {/* 5.0 版:屬性與裝備改回一排一組(標籤、數值)——道籍欄只有約 270~310px 寬,兩組並排會把數值擠成三行 */}
+      <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-[15px]">
         <span className="text-faded">{t("statLife")}</span>
         <span
-          className={`col-span-3 text-right ${maxLifeOf(s) - s.age <= maxLifeOf(s) * 0.2 ? "text-vermillion" : ""}`}
+          className={`text-right ${maxLifeOf(s) - s.age <= maxLifeOf(s) * 0.2 ? "text-vermillion" : ""}`}
         >
           {s.age}/{maxLifeOf(s)}
           {t("yearsSuffix")}
@@ -413,7 +414,7 @@ export function StatusPanel() {
         {isXian && (s.shaqi ?? 0) > 0 && (
           <>
             <span className="text-faded">{t("statShaqi")}</span>
-            <span className={`col-span-3 text-right font-bold ${(s.shaqi ?? 0) >= 10000 ? "text-red-600" : "text-vermillion"}`}>
+            <span className={`text-right font-bold ${(s.shaqi ?? 0) >= 10000 ? "text-red-600" : "text-vermillion"}`}>
               {t("shaqiValue")
                 .replace("{n}", String(s.shaqi))
                 .replace("{pct}", (((s.shaqi ?? 0) / 100)).toFixed(1))}
@@ -460,7 +461,7 @@ export function StatusPanel() {
       </div>
 
       <div className="divider">{t("statEquip")}</div>
-      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-2 gap-y-1 text-[15px]">
+      <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-[15px]">
         {EQUIP_SLOTS.map(({ slot, label }) => {
           const id = equipMap[slot];
           const it = id ? itemById(id) : null;

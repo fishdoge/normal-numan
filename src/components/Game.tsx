@@ -13,7 +13,7 @@ import {
   NOVICE_GUARD_REALMS,
   Modal,
 } from "@/game/store";
-import { formatStones } from "@/game/types";
+import { formatStones, xianExpMilestone } from "@/game/types";
 import { REALMS } from "@/game/data/realms";
 import { CHANGELOG } from "@/game/data/changelog";
 import { REVIVAL_PRICE_USD } from "@/game/data/blackMarket";
@@ -309,8 +309,11 @@ function CultivationBar({
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 mb-2">
         <p className="panel-title mb-0">{t("cultivateTitle")}</p>
         <p className="text-xs text-faded font-mono">
-          {t(s.realmIdx < NOVICE_GUARD_REALMS ? "cultivationSummaryNovice" : "cultivationSummaryLine")
-            .replace("{exp}", String(s.exp))
+          {/* 真仙以上修為只靠斬妖累積、不用於突破,不顯示「修為/需求、突破成功率」 */}
+          {(REALMS[s.realmIdx].stage >= 10
+            ? t("cultivationSummaryXian")
+            : t(s.realmIdx < NOVICE_GUARD_REALMS ? "cultivationSummaryNovice" : "cultivationSummaryLine"))
+            .replace("{exp}", REALMS[s.realmIdx].stage >= 10 ? s.exp.toLocaleString() : String(s.exp))
             .replace("{need}", String(expNeed))
             .replace("{chance}", String(Math.round(chance * 100)))}
         </p>
@@ -555,11 +558,13 @@ export default function Game() {
               <span className={`hud-realm-name ${isXian ? "text-fuchsia-300" : ""}`}>
                 {realmDisplayName(REALMS[save.realmIdx], language)}
               </span>
-              {!isXian && (
-                <span className="hud-exp" aria-hidden="true">
-                  <span style={{ width: `${Math.min(100, (save.exp / REALMS[save.realmIdx].expNeed) * 100)}%` }} />
-                </span>
-              )}
+              <span className="hud-exp" aria-hidden="true">
+                <span
+                  style={{
+                    width: `${Math.min(100, (save.exp / (isXian ? xianExpMilestone(save.exp) : REALMS[save.realmIdx].expNeed)) * 100)}%`,
+                  }}
+                />
+              </span>
               <span className="hud-exp-num">
                 {isXian ? save.exp.toLocaleString() : `${save.exp}/${REALMS[save.realmIdx].expNeed}`}
               </span>

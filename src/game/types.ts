@@ -81,6 +81,14 @@ export function formatDamage(n: number): string {
   return `${n}`;
 }
 
+// 真仙以上修為條(5.0 版):修為不再用於突破、只會一路累積,修為條改以「下一個十倍級距」為目標
+// (234 萬 → 朝 1,000 萬前進;到 1,000 萬後朝 1 億前進),讓條狀仍有進度感。
+export function xianExpMilestone(exp: number): number {
+  let m = 1_000_000;
+  while (m <= exp) m *= 10;
+  return m;
+}
+
 // 氣血顯示:超過一億(1e8)點的氣血改以「天仙氣血」計,每一億點為一點、顯示到小數點後三位,
 // 與「仙法傷害」同一個記數單位,方便直接比較一擊能打掉多少。
 export const TIANXIAN_HP_UNIT = 1e8;

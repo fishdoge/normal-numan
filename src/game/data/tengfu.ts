@@ -177,9 +177,9 @@ export const TENGFU_DROPS: Record<string, string[]> = {
   zhenmo_yuan: ["tf_zhenmo", "tf_hundun"],
   huixian_jie: ["tf_huixian", "tf_hundun"],
 };
-export const TENGFU_DROP_CHANCE = 0.05; // 一般妖獸
-export const TENGFU_DROP_CHANCE_LORD = 0.3; // 地域王
-export const TENGFU_DROP_CHANCE_ELITE = 0.5; // 大乘期菁英(4.2 版)
+export const TENGFU_DROP_CHANCE = 0.02; // 一般妖獸(5.0 版由 5% 下修)
+export const TENGFU_DROP_CHANCE_LORD = 0.12; // 地域王(5.0 版由 30% 下修)
+export const TENGFU_DROP_CHANCE_ELITE = 0.2; // 大乘期菁英(4.2 版;5.0 版由 50% 下修)
 
 export const tengfuLocationsOf = (id: string) =>
   Object.entries(TENGFU_DROPS)

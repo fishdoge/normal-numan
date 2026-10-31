@@ -10,6 +10,7 @@ import { techById } from "@/game/data/techniques";
 import { techDisplayName } from "@/i18n/techText";
 import type { DictKey } from "@/i18n/dict";
 import { useT } from "@/i18n/useT";
+import { formatHpPair } from "@/game/types";
 
 interface OnlinePlayer {
   id: number;
@@ -275,7 +276,7 @@ export default function TongtianPage() {
             </span>
           </div>
           <p className="text-sm mt-1">
-            {t("statHp")}: {meView.hp} / {meView.hpMax}
+            {t("statHp")}: {formatHpPair(meView.hp, meView.hpMax)}
           </p>
           <p className="text-sm">
             {t("statMp")}: {meView.mp} / {meView.mpMax}
@@ -291,7 +292,7 @@ export default function TongtianPage() {
             </span>
           </div>
           <p className="text-sm mt-1">
-            {t("statHp")}: {oppView.hp} / {oppView.hpMax}
+            {t("statHp")}: {formatHpPair(oppView.hp, oppView.hpMax)}
           </p>
           <p className="text-sm">
             {t("statMp")}: {oppView.mp} / {oppView.mpMax}

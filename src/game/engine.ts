@@ -1,5 +1,5 @@
 // 伺服器權威遊戲引擎:所有獎勵運算在此執行,前端僅顯示
-import { COUNTERS, Element, Monster, ItemDef, Technique, formatDamage } from "./types";
+import { COUNTERS, Element, Monster, ItemDef, Technique, formatDamage, formatHp, formatHpPair } from "./types";
 import { REALMS } from "./data/realms";
 import { SECTS } from "./data/sects";
 import { techById } from "./data/techniques";
@@ -37,6 +37,7 @@ export interface CombatState {
   bossHpMax?: number; // 動態 BOSS 的氣血上限(浮屠塔用)
   bossAtk?: number; // 動態 BOSS 的攻擊(浮屠塔用)
   tianjieTrial?: boolean; // 渡劫→真仙:服下真仙丹後降臨的天劫神靈試煉,勝負直接決定本次突破機率翻倍/減半
+  zhenmoGate?: boolean; // 真魔之門守關戰(5.0 版):擊敗冥翎天魔古龍才開啟真魔界,落敗不消耗真魔門令
   // 本回合可施展的仙法卡牌 id(不含法器攻擊,法器攻擊恆常可用)。3.4 版起改為符寶袋抽棄牌制:
   // 開戰由 startingCombatHand() 從符寶袋洗牌抽 HAND_SIZE 張,打出的牌進 discard,回合結束整批
   // 棄置重抽(見 redrawHand())。
@@ -196,9 +197,9 @@ export const techPowerMult = (level: number) => 1 + (level - 1) * 0.3;
 
 // 仙靈力:每一點 = 攻擊 ×0.02 倍,即 2% 額外傷害(真仙專屬,紫色)——3.19 版由 ×0.2 下修
 export const XIANLI_MULT = 0.02;
-// 戰鬥平衡性修正(4.0 版):仙靈力原本無上限,刷得越多攻擊力乘數越大、沒有盡頭。封頂在 ×5;
-// 5.0 版合併 3.19 的 ×0.02 後,需累積 200 點仙靈力才會碰到上限,此封頂只作為最後的安全網。
-export const XIANLI_MULT_CAP = 5;
+// 戰鬥平衡性修正(4.0 版):仙靈力原本無上限,刷得越多攻擊力乘數越大、沒有盡頭。封頂在 ×8;
+// 5.0 版合併 3.19 的 ×0.02 後,需累積 350 點仙靈力才會碰到上限(由 ×5 上調,讓長期累積的老角色保有回報)。
+export const XIANLI_MULT_CAP = 8;
 
 // 戰鬥平衡性修正(4.0 版):符寶連攜原本是「每多打一張同屬性符寶,全部同屬性符寶各自多吃一次加成」,
 // 總傷害隨張數呈平方成長(3 卡已達單卡的 104%~286%、4 卡 159%~436%,見「戰鬥膨脹診斷卷」03 節)。
@@ -444,6 +445,7 @@ for (const [id, key] of [
   ["huanxiang_taisui", "x-jinyuan"],
   ["boss_guanghan", "x-jinyuan"],
   ["boss_kunpeng", "x-jinyuan"],
+  ["zm_mingling_gulong", "x-zhenmo"],
 ] as const)
   MONSTER_TIER.set(id, key);
 export const monsterTierOf = (id: string) => MONSTER_TIER.get(id);
@@ -481,6 +483,7 @@ export function elementMult(
 // 蠻荒異界四大地域王的專屬異能(monster id 對照見 world.ts)
 const MONSTER_DODGE_CHANCE: Record<string, number> = {
   lord_tianhu: 0.3, // 天狐:三成機率避過玩家攻擊
+  zm_mingling_gulong: 0.2, // 冥翎天魔古龍:冥翎蔽身
   // 4.2 版大乘期菁英
   elite_yujiang: 0.25,
   elite_baidu: 0.25,
@@ -488,6 +491,7 @@ const MONSTER_DODGE_CHANCE: Record<string, number> = {
 };
 const MONSTER_TRIPLE_ATK_CHANCE: Record<string, number> = {
   lord_zhenlong: 0.2, // 真龍:兩成機率反擊 ×3
+  zm_mingling_gulong: 0.15, // 冥翎天魔古龍:天魔龍威
   // 4.2 版大乘期菁英
   elite_leizun: 0.2,
   elite_zhanzun: 0.2,
@@ -495,6 +499,13 @@ const MONSTER_TRIPLE_ATK_CHANCE: Record<string, number> = {
   elite_luzhu: 0.15,
 };
 const SPELL_SEALED_MONSTERS = new Set(["lord_pixiu"]); // 黑眼貔貅:封鎖玩家法術,無法施展仙法
+// 免疫燒傷/中毒(5.0 版,冥翎天魔古龍「魔鱗不侵」):燒傷、中毒按氣血上限比例扣血,會讓超厚血的王反而
+// 最好打;這類妖獸只吃直接傷害。冰封、虛弱仍然有效。
+const DOT_IMMUNE_MONSTERS = new Set(["zm_mingling_gulong"]);
+// 被這些妖獸擊敗(氣血歸零)時額外增加的煞氣(5.0 版);遁走不算
+const SHAQI_ON_DEFEAT: Record<string, number> = { zm_mingling_gulong: 2500 };
+const dotBlocked = (monId: string, kind: StatusEffect["kind"]) =>
+  DOT_IMMUNE_MONSTERS.has(monId) && (kind === "burn" || kind === "poison");
 
 // ═══ 符寶袋(2.21 版仙法卡牌化 → 3.1 持有制手牌 → 3.4 版全面改為符寶袋抽棄牌,見
 // pvp-territory-design.md 第九節 9.3/9.4)═══
@@ -1042,14 +1053,18 @@ function handlePlayerDefeat(s: SaveData, causeLine: string): Modal {
   s.mp = mpMax;
   s.stones -= lost;
   s.combat = null;
+  // 冥翎天魔古龍(5.0 版):落敗者遭天魔魔氣侵體,煞氣暴增(上限 10000)
+  const shaqiGain = SHAQI_ON_DEFEAT[mon.id] ?? 0;
+  if (shaqiGain > 0) s.shaqi = Math.min(10000, (s.shaqi ?? 0) + shaqiGain);
   log(s, causeLine, `你身受重傷不敵,倉皇遁走…… 遺失了 ${lost} 靈石。`);
   return {
     title: "戰 敗 遁 走",
     success: false,
     lines: [
       `不敵【${mon.name}】,身受重傷!`,
-      `氣血驟降至 ${surviveHp}/${hpMax}(僅剩三成)。`,
+      `氣血驟降至 ${formatHpPair(surviveHp, hpMax)}(僅剩三成)。`,
       `倉皇遁走間,遺失靈石 ${lost} 枚。`,
+      ...(shaqiGain > 0 ? [`天魔魔氣侵體,煞氣暴增 ${shaqiGain}(現 ${s.shaqi}/10000)!`] : []),
     ],
   };
 }
@@ -1215,6 +1230,15 @@ function winCombat(s: SaveData): Modal {
     return { title: `浮 屠 塔 · 第 ${floor} 層`, success: true, lines };
   }
 
+  // 真魔之門守關戰(5.0 版):擊敗冥翎天魔古龍,消耗真魔門令、開啟真魔界,其餘獎勵照一般擊殺結算
+  const gateLines: string[] = [];
+  // 門令須在勝利當下仍在身上才算數:戰鬥中把門令掛上市集賣掉,打贏也不會開門
+  if (s.combat!.zhenmoGate && !s.zhenmoUnlocked && take(s, "zhenmo_menling")) {
+    s.zhenmoUnlocked = true;
+    gateLines.push("冥翎天魔古龍轟然墜地,漆黑魔門應聲洞開——【真魔界】自此為你敞開!");
+    log(s, "你斬落冥翎天魔古龍,真魔之門洞開,新地圖【真魔界】解鎖!");
+  }
+
   // 靈石橫財:10% 機率雙倍靈石
   let stones = Math.floor(rand(mon.stones[0], mon.stones[1]) * stoneMult);
   const windfall = Math.random() < 0.1;
@@ -1251,10 +1275,11 @@ function winCombat(s: SaveData): Modal {
     `${isLord ? "歷經苦戰,你竟斬殺了地域之王 " : mon.elite ? "一番惡戰,你終於斬落菁英 " : "你擊殺了 "}${mon.name}!獲得修為 ${expGain}、靈石 ${stones}${windfall ? "(靈石橫財,雙倍!)" : ""}${dropNames.length ? ",拾得:" + dropNames.join("、") : ""}。`,
   );
   return {
-    title: isLord ? "地 域 王 授 首" : mon.elite ? "菁 英 伏 誅" : "戰 利 品",
+    title: gateLines.length ? "真 魔 之 門 · 洞 開" : isLord ? "地 域 王 授 首" : mon.elite ? "菁 英 伏 誅" : "戰 利 品",
     success: true,
     rewards: { exp: expGain, stones, items: dropIds, tengfu: tengfuIds },
     lines: [
+      ...gateLines,
       `${isLord ? "斬殺地域王" : mon.elite ? "斬落菁英" : "擊殺"}【${mon.name}】`,
       ...(expGain > 0 ? [`修為 +${expGain}`] : []),
       `靈石 +${stones}${windfall ? "(靈石橫財,雙倍!)" : ""}`,
@@ -1320,14 +1345,16 @@ function exploreSecretRealm(s: SaveData): ActionResult {
   }
 
   // 8% 解鎖真魔界(3.19 版新增,僅真仙,且尚未解鎖;獨立骰,不影響下方既有機率序列)
-  if (realm.stage >= 10 && !s.zhenmoUnlocked && Math.random() < 0.08) {
-    s.zhenmoUnlocked = true;
+  // 5.0 版:尋得魔門後不再直接解鎖,改得「真魔門令」,須擊敗守門的冥翎天魔古龍才開啟真魔界。
+  // 已持有門令或已開啟真魔界者仍會持續遇到,多的門令可於玩家市集轉賣
+  if (realm.stage >= 10 && Math.random() < 0.08) {
+    give(s, "zhenmo_menling");
     const zhenmoLines = [
       "雲遊途中,你踏入一處與世隔絕的上古【秘境】——",
-      "秘境盡頭,一道漆黑魔門轟然洞開——【真魔界】的入口自此為你顯現!",
-      "遊歷探索的地圖上,真魔界已然解鎖。相傳深處藏有可滌淨煞氣的洗煞池。",
+      "秘境盡頭,一道漆黑魔門矗立虛空,門前盤踞著一頭羽翼遮天的上古魔龍——【冥翎天魔古龍】!",
+      "你拾得魔門前的【真魔門令】。於儲物袋中動用此令,擊敗古龍方能踏入真魔界。",
     ];
-    log(s, "你於秘境深處尋得通往【真魔界】的魔門,新地圖解鎖!");
+    log(s, "你於秘境深處尋得真魔之門,拾得【真魔門令】——守門的冥翎天魔古龍虎視眈眈!");
     return { save: s, loot: { title: "秘 境 · 真 魔 之 門", success: true, lines: zhenmoLines } };
   }
 
@@ -2089,6 +2116,10 @@ function applyActionInner(
         let statusNote = "";
         for (const t of techs) {
           // forceStatus(3.13 版新增):必定命中,不受一般命中機率限制,優先於機率判定
+          if (t.forceStatus && dotBlocked(mon.id, t.forceStatus)) {
+            statusNote += `,${mon.name} 魔鱗不侵,${STATUS_LABEL[t.forceStatus]}無效!`;
+            continue;
+          }
           if (t.forceStatus) {
             s.combat.monsterStatus = applyStatus(
               s.combat.monsterStatus,
@@ -2099,7 +2130,7 @@ function applyActionInner(
             continue;
           }
           const statusKind = STATUS_BY_ELEMENT[effEl(t)];
-          if (statusKind && Math.random() < STATUS_PROC_CHANCE) {
+          if (statusKind && !dotBlocked(mon.id, statusKind) && Math.random() < STATUS_PROC_CHANCE) {
             s.combat.monsterStatus = applyStatus(
               s.combat.monsterStatus,
               statusKind,
@@ -2206,7 +2237,7 @@ function applyActionInner(
         );
         let statusNote = "";
         const statusKind = STATUS_BY_ELEMENT[tech.element];
-        if (statusKind && Math.random() < STATUS_PROC_CHANCE) {
+        if (statusKind && !dotBlocked(mon.id, statusKind) && Math.random() < STATUS_PROC_CHANCE) {
           s.combat.monsterStatus = applyStatus(
             s.combat.monsterStatus,
             statusKind,
@@ -2286,7 +2317,9 @@ function applyActionInner(
         s.combat.monsterStatus = applyStatus(s.combat.monsterStatus, "weaken", WEAKEN_DURATION);
         lines.push(`${mon.name} 氣機紊亂,陷入虛弱!`);
       }
-      if (item.forceStatus) {
+      if (item.forceStatus && dotBlocked(mon.id, item.forceStatus)) {
+        lines.push(`${mon.name} 魔鱗不侵,${STATUS_LABEL[item.forceStatus]}無效!`);
+      } else if (item.forceStatus) {
         const dur = item.forceStatus === "freeze" ? FREEZE_DURATION : STATUS_DURATION;
         s.combat.monsterStatus = applyStatus(s.combat.monsterStatus, item.forceStatus, dur);
         lines.push(`${mon.name} 中招,必定${STATUS_LABEL[item.forceStatus]}!`);
@@ -2341,7 +2374,7 @@ function applyActionInner(
       if (!s.lordsSeen.includes(base.id)) s.lordsSeen.push(base.id);
       log(
         s,
-        `你踏上浮屠塔第 ${floor} 層——幻象太歲天尊自虛空凝形!(氣血 ${bossHp}、攻擊 ${bossAtk})`,
+        `你踏上浮屠塔第 ${floor} 層——幻象太歲天尊自虛空凝形!(氣血 ${formatHp(bossHp)}、攻擊 ${bossAtk})`,
       );
       return { save: s };
     }
@@ -2657,12 +2690,19 @@ function applyActionInner(
         if (s.combat) return { save: s, error: "激戰之中,無法使用。" };
         if (realm.stage < 10) return { save: s, error: "此物玄奧非常,唯真仙以上方能啟用。" };
         const boss = monsterById(item.mapEncounter);
-        take(s, itemId);
+        // 真魔門令:擊敗古龍才消耗(見 winCombat),落敗保留可再戰
+        const isZhenmoGate = itemId === "zhenmo_menling";
+        if (isZhenmoGate && s.zhenmoUnlocked) {
+          log(s, "真魔界之門早已為你敞開,此令已無用處。");
+          return { save: s };
+        }
+        if (!isZhenmoGate) take(s, itemId);
         s.combat = {
           monsterId: boss.id,
           monsterHp: monsterHpOf(boss),
           locationId: `__map_${itemId}__`,
           isLord: true,
+          ...(isZhenmoGate ? { zhenmoGate: true } : {}),
           ...startingCombatHand(s),
           monsterStatus: [],
           playerStatus: [],
@@ -2696,11 +2736,21 @@ function applyActionInner(
         return { save: s };
       }
 
+      // 純解狀態的丹藥(5.0 版)只在戰鬥中有意義,戰鬥外服用不消耗
+      if (item.cureStatus?.length && !item.heal && !s.combat) {
+        return { save: s, error: "此藥用以解除戰鬥中的負面狀態,須於戰鬥中服用。" };
+      }
       take(s, itemId);
       const effects: string[] = [];
       if (item.heal) {
         s.hp = Math.min(hpMax, s.hp + item.heal);
         effects.push(`回復氣血 ${item.heal}`);
+      }
+      if (item.cureStatus?.length && s.combat) {
+        const before = s.combat.playerStatus ?? [];
+        const cured = before.filter((e) => item.cureStatus!.includes(e.kind as never));
+        s.combat.playerStatus = before.filter((e) => !item.cureStatus!.includes(e.kind as never));
+        effects.push(cured.length ? `解除${cured.map((e) => STATUS_LABEL[e.kind]).join("、")}` : "身上並無可解除的狀態");
       }
       if (item.mp) {
         s.mp = Math.min(mpMax, s.mp + item.mp);

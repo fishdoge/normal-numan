@@ -7,6 +7,18 @@ import { RECIPES } from "@/game/data/world";
 import { techDisplayName } from "./techText";
 
 export const ITEM_TEXT_EN: Record<string, { name: string; desc: string; effect?: string }> = {
+  jiedudan: { name: "Antidote Pill", desc: "An antidote pill refined mainly from seven-leaf paris." },
+  qingliangsan: { name: "Cooling Powder", desc: "A medicinal powder ground from borneol and mint, cool on the tongue." },
+  huiyangdan: { name: "Yang Return Pill", desc: "A pill tempered in pure yang fire; one pellet warms the whole body." },
+  tishendan: { name: "Clear Mind Pill", desc: "A small pill that clears the mind; cultivators often keep one under the tongue in long battles." },
+  baicao_linglu: { name: "Hundred Herb Dew", desc: "A potion gathered from the morning dew of a hundred spirit herbs, fragrant and fresh." },
+  yusui_lingquan: { name: "Jade Marrow Spring", desc: "Spirit spring water seeped from earth-vein jade marrow, kept in a jade vial." },
+  jiuzhuan_xianlu: { name: "Nine-Turn Heart-Clearing Immortal Dew", desc: "Immortal dew condensed over nine turns in the immortal realm; a single drop cleanses every meridian." },
+  xuelingdan: { name: "Blood Spirit Pill", desc: "A blood-restoring pill refined with beast essence blood, crimson in color." },
+  longxuedan: { name: "Dragon Blood Pill", desc: "A pill laced with a wisp of true dragon blood; taking it sends the blood surging." },
+  xianyuan_huichun: { name: "Immortal Origin Rejuvenation Pill", desc: "A rejuvenating immortal pill refined from the inner cores of North Frost and Golden-Source beasts." },
+  taiyi_huanhun: { name: "Taiyi Soul-Return Pill", desc: "A soul-return pill condensed from the remnant souls of Wildlands and Grey Realm beasts, overwhelming in potency." },
+  zhenmo_menling: { name: "True Demon Gate Token", desc: "A jet-black token picked up before a demonic gate deep in a secret realm; the dragon pattern on it seems to writhe.", effect: "Challenge the Netherplume Heavenly Demon Elder Dragon guarding the gate from your bag (True Immortal+). Defeat it to open the True Demon Realm (token consumed); if you lose, you keep the token but gain 2,500 Sha Qi. Tradable on the player market." },
   // ── 材料 ──
   tiekuang: { name: "Refined Iron Ore", desc: "Ordinary iron rarely touched by spirit energy; the basic material for artifact forging." },
   hanjing: { name: "Frost Jade Essence", desc: "Jade essence condensed at the bottom of a ten-thousand-year frozen pool, cold to the touch." },
@@ -259,6 +271,10 @@ export function itemStatLine(item: ItemDef, t: (k: DictKey) => string, lang: Lan
   if (item.consumable) parts.push(t("statLineConsumable"));
   if (item.price) parts.push(t("statLinePrice").replace("{n}", formatStones(item.price)));
   if (item.heal) parts.push(t("statLineHeal").replace("{n}", String(item.heal)));
+  if (item.cureStatus?.length) {
+    const label = { burn: "statusBurn", poison: "statusPoison", freeze: "statusFreeze", weaken: "statusWeaken" } as const;
+    parts.push(t("statLineCure").replace("{list}", item.cureStatus.map((k) => t(label[k])).join(lang === "en" ? ", " : "、")));
+  }
   if (item.mp) parts.push(t("statLineMp").replace("{n}", String(item.mp)));
   if (item.energy) parts.push(t("statLineEnergy").replace("{n}", String(item.energy)));
   if (item.exp) parts.push(t("statLineExp").replace("{n}", String(item.exp)));

@@ -137,7 +137,7 @@ export const useGame = create<ClientState>()((set, get) => ({
   breakResult: null,
   purchaseResult: null,
   busy: false,
-  activeTab: "tengfu",
+  activeTab: "bag",
   mainView: "game",
   revivalUsed: false,
   language: getInitialLanguage(),

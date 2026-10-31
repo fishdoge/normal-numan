@@ -29,6 +29,7 @@ import {
   isXianItem,
   XIAN_ITEM_COLOR,
   formatDamage,
+  formatHpPair,
 } from "@/game/types";
 import { useT } from "@/i18n/useT";
 import type { DictKey } from "@/i18n/dict";
@@ -222,7 +223,29 @@ export function RealmProgressPanel() {
 
 export function StatusPanel() {
   const s = useGame((x) => x.save)!;
-  const { realm, atk, baseAtk, def, hpMax, mpMax, speed } = statsOf(s);
+  const { realm, atk, baseAtk, def, hpMax, mpMax, speed, sect: sectDef, tengfu } = statsOf(s);
+  // 屬性來源拆解(滑鼠移上去才顯示):雲遊所得併入各項屬性,不再另列一欄
+  const en = useGame((x) => x.language) === "en";
+  const sectAtk = sectDef?.bonus.atk ?? 0;
+  const gearAtk = baseAtk - realm.atk - sectAtk - (s.boonAtk ?? 0);
+  const tfDef = Math.floor(realm.atk * tengfu.def);
+  const gearDef = def - (s.boonDef ?? 0) - tfDef;
+  const gearSpeed = speed - realm.atk - realm.stage * 5 - (s.boonSpeed ?? 0);
+  const xianliMult = Math.min(XIANLI_MULT_CAP, 1 + (s.xianli ?? 0) * XIANLI_MULT);
+  const parts = (xs: [string, number][]) => xs.filter(([, v]) => v).map(([k, v]) => `${k} ${v}`).join(" + ");
+  const atkTip = [
+    parts([[en ? "Realm" : "境界", realm.atk], [en ? "Sect" : "門派", sectAtk], [en ? "Gear" : "裝備", gearAtk], [en ? "Wandering" : "雲遊", s.boonAtk ?? 0]]) + ` = ${baseAtk}`,
+    xianliMult > 1 ? `× ${en ? "Immortal Qi" : "仙靈力"} ${xianliMult.toFixed(2)}` : "",
+    tengfu.atk ? `× ${en ? "Tengfu" : "滕符"} ${(1 + tengfu.atk).toFixed(2)}` : "",
+    `= ${atk}`,
+  ].filter(Boolean).join(" ");
+  const defTip = parts([[en ? "Gear" : "裝備", gearDef], [en ? "Wandering" : "雲遊", s.boonDef ?? 0], [en ? "Tengfu" : "滕符", tfDef]]) + ` = ${def}`;
+  const speedTip = parts([[en ? "Realm" : "境界", realm.atk + realm.stage * 5], [en ? "Gear" : "裝備", gearSpeed], [en ? "Wandering" : "雲遊", s.boonSpeed ?? 0]]) + ` = ${speed}`;
+  const hpTip =
+    parts([[en ? "Realm" : "境界", realm.hpMax], [en ? "Sect" : "門派", sectDef?.bonus.hp ?? 0], [en ? "Wandering" : "雲遊", s.boonHp ?? 0]]) +
+    (tengfu.hp ? ` × ${en ? "Tengfu" : "滕符"} ${(1 + tengfu.hp).toFixed(2)}` : "") +
+    ` = ${hpMax}`;
+  const tipCls = "cursor-help underline decoration-dotted decoration-faded/40 underline-offset-2";
   const sect = SECTS.find((x) => x.id === s.sectId);
   const expNeed = REALMS[s.realmIdx].expNeed;
   const isXian = realm.stage >= 10;
@@ -291,11 +314,11 @@ export function StatusPanel() {
 
       <div className="space-y-2 text-sm">
         <div>
-          <div className="flex justify-between text-xs text-faded mb-0.5">
+          <div className="flex justify-between text-[14px] text-faded mb-0.5">
             <span>{t("statHp")}</span>
-            <span>
-              {s.hp}/{hpMax}
-            </span>
+            <Tooltip content={hpTip}>
+              <span className={tipCls}>{formatHpPair(s.hp, hpMax)}</span>
+            </Tooltip>
           </div>
           <Bar v={s.hp} max={hpMax} cls="bg-vermillion" />
         </div>
@@ -362,7 +385,7 @@ export function StatusPanel() {
       <div className="divider">◆</div>
 
       {/* 4.2 版:屬性與裝備改為兩組並排(標籤、數值、標籤、數值),縮短道籍面板高度,讓主畫面一屏看完 */}
-      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-2 gap-y-1 text-[13px]">
+      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-2 gap-y-1 text-[15px]">
         <span className="text-faded">{t("statLife")}</span>
         <span
           className={`col-span-3 text-right ${maxLifeOf(s) - s.age <= maxLifeOf(s) * 0.2 ? "text-vermillion" : ""}`}
@@ -400,49 +423,42 @@ export function StatusPanel() {
             <span className="text-faded">{t("statBaseAtk")}</span>
             <span className="text-right text-faded">{baseAtk}</span>
             <span className="text-faded">{t("statAtkBoosted")}</span>
-            <span className={`text-right font-bold ${XIANLI_COLOR}`}>{atk}</span>
+            <span className={`text-right font-bold ${XIANLI_COLOR}`}>
+              <Tooltip content={atkTip}>
+                <span className={tipCls}>{atk}</span>
+              </Tooltip>
+            </span>
           </>
         ) : (
           <>
             <span className="text-faded">{t("statAtk")}</span>
-            <span className="text-right">{atk}</span>
-          </>
-        )}
-        <span className="text-faded">{t("statDef")}</span>
-        <span className="text-right">{def}</span>
-        <span className="text-faded">{t("statSpeed")}</span>
-        <span className="text-right">{speed}</span>
-        {s.boonHp + s.boonAtk + s.boonDef + s.boonSpeed > 0 && (
-          <>
-            <span className="text-fuchsia-300">{t("statBoon")}</span>
-            <span className="text-right text-fuchsia-300 text-xs">
-              {[
-                s.boonHp && (lang === "en" ? `HP+${s.boonHp}` : `血+${s.boonHp}`),
-                s.boonAtk && (lang === "en" ? `ATK+${s.boonAtk}` : `攻+${s.boonAtk}`),
-                s.boonDef && (lang === "en" ? `DEF+${s.boonDef}` : `防+${s.boonDef}`),
-                s.boonSpeed && (lang === "en" ? `SPD+${s.boonSpeed}` : `速+${s.boonSpeed}`),
-              ]
-                .filter(Boolean)
-                .join(" ")}
+            <span className="text-right">
+              <Tooltip content={atkTip}>
+                <span className={tipCls}>{atk}</span>
+              </Tooltip>
             </span>
           </>
         )}
+        <span className="text-faded">{t("statDef")}</span>
+        <span className="text-right">
+          <Tooltip content={defTip}>
+            <span className={tipCls}>{def}</span>
+          </Tooltip>
+        </span>
+        <span className="text-faded">{t("statSpeed")}</span>
+        <span className="text-right">
+          <Tooltip content={speedTip}>
+            <span className={tipCls}>{speed}</span>
+          </Tooltip>
+        </span>
         <span className="text-faded">{t("statStones")}</span>
         <span className="text-right text-gold">
           <StoneAmount n={s.stones} />
         </span>
-        {(s.pouchStones ?? 0) > 0 && (
-          <>
-            <span className="text-fuchsia-300/80">{t("pouchTitle")}</span>
-            <span className="text-right text-fuchsia-300">
-              <StoneAmount n={s.pouchStones ?? 0} />
-            </span>
-          </>
-        )}
       </div>
 
       <div className="divider">{t("statEquip")}</div>
-      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-2 gap-y-1 text-[13px]">
+      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-2 gap-y-1 text-[15px]">
         {EQUIP_SLOTS.map(({ slot, label }) => {
           const id = equipMap[slot];
           const it = id ? itemById(id) : null;
@@ -733,6 +749,11 @@ export function CombatPanel() {
   const tacticEntries = Object.entries(s.inventory)
     .map(([id, n]) => ({ id, n, item: itemById(id) }))
     .filter((e) => e.item.kind === "tactic" && e.n > 0);
+  // 丹藥欄(5.0 版):能回血或解除負面狀態的丹藥/藥水,戰鬥中於手牌下方直接服用
+  const potionEntries = Object.entries(s.inventory)
+    .map(([id, n]) => ({ id, n, item: itemById(id) }))
+    .filter((e) => e.item && e.n > 0 && (e.item.kind === "pill" || e.item.kind === "herb") && (e.item.heal || e.item.cureStatus?.length))
+    .sort((a, b) => (a.item.heal ?? 0) - (b.item.heal ?? 0));
 
   // 出牌改為「先選取、按出牌才打出」(3.5 版新增)。手牌一變(打出/回合結束重抽)時,舊的選取位置
   // 會由下面的 useEffect 清空,但那是非同步的——本次 render 仍可能先跑到、selectedSlots 裡还留著
@@ -863,7 +884,7 @@ export function CombatPanel() {
               <div className="battle-bar-label">
                 <span>{t("combatMonHp")}</span>
                 <strong>
-                  {combat.monsterHp} / {hpMaxMon}
+                  {formatHpPair(combat.monsterHp, hpMaxMon)}
                 </strong>
               </div>
               <DrainBar pct={(combat.monsterHp / hpMaxMon) * 100} mainClass="battle-meter-enemy" />
@@ -894,7 +915,7 @@ export function CombatPanel() {
               <div className="battle-bar-label">
                 <span>{t("statHp")}</span>
                 <strong>
-                  {s.hp} / {hpMax}
+                  {formatHpPair(s.hp, hpMax)}
                 </strong>
               </div>
               <DrainBar pct={(s.hp / hpMax) * 100} mainClass="battle-meter-hp" />
@@ -1043,6 +1064,25 @@ export function CombatPanel() {
           })}
         </div>
 
+        <div className="battle-potions" aria-label={t("combatPotionTitle")}>
+          <span className="battle-potions-label">{t("combatPotionTitle")}</span>
+          {potionEntries.length === 0 ? (
+            <span className="battle-no-status">{t("combatPotionNone")}</span>
+          ) : (
+            potionEntries.map(({ id, n, item }) => (
+              <Tooltip key={id} content={itemStatLine(item, t, lang)}>
+                <button
+                  type="button"
+                  className="btn battle-potion"
+                  disabled={busy}
+                  onClick={() => act("useItem", { itemId: id })}
+                >
+                  {itemDisplayName(item, lang)} <span className="text-faded">×{n}</span>
+                </button>
+              </Tooltip>
+            ))
+          )}
+        </div>
 
         {tacticEntries.length > 0 && (
           <details className="battle-tactics">

@@ -33,6 +33,7 @@ import {
   isXianItem,
   XIAN_ITEM_COLOR,
   nameColorOf,
+  formatHp,
 } from "@/game/types";
 import { useT } from "@/i18n/useT";
 import type { DictKey } from "@/i18n/dict";
@@ -57,8 +58,8 @@ export default function ActionTabs() {
   const setTab = useGame((x) => x.setActiveTab);
   const tt = useT(); // 命名為 tt,避免與下方 tabs.map(([t, label]) => ...) 的頁籤代號變數 t 衝突
   const tabs: [Tab, string][] = [
-    ["tengfu", tt("tabTengfu")],
     ["bag", tt("tabBag")],
+    ["tengfu", tt("tabTengfu")],
     ["tech", tt("tabTech")],
     ["craft", tt("tabCraft")],
     ["market", tt("tabMarket")],
@@ -412,15 +413,15 @@ function TechTab() {
       {techView === "pouch" && (
       <div className="border border-gold/30 bg-gold/5 rounded-sm p-3">
         <div className="flex items-baseline justify-between mb-1">
-          <span className="font-bold text-gold">{t("talismanPouchTitle")}</span>
-          <span className="text-xs font-mono text-faded">
+          <span className="font-bold text-gold text-[22px]">{t("talismanPouchTitle")}</span>
+          <span className="text-[18px] font-mono text-faded">
             {t("talismanPouchCountLine")
               .replace("{n}", String(pouch.length))
               .replace("{min}", String(pouchMin))}
           </span>
         </div>
-        <p className="text-xs text-faded mb-2">{t("talismanPouchDesc")}</p>
-        {inCombat && <p className="text-xs text-vermillion mb-2">{t("talismanPouchInCombatNote")}</p>}
+        <p className="text-[18px] text-faded mb-2">{t("talismanPouchDesc")}</p>
+        {inCombat && <p className="text-[18px] text-vermillion mb-2">{t("talismanPouchInCombatNote")}</p>}
         {(() => {
           // 基礎卡片(法器攻擊/法術攻擊,與生俱來)跟真正修習來的仙法分開列,兩者都能調整符寶袋張數
           const baseCards = s.learned.filter((id) => techById(id).innate);
@@ -434,31 +435,43 @@ function TechTab() {
             const basicAtMin = tech.innate && count <= BASIC_CARD_MIN;
             const atMin = pouch.length <= pouchMin || basicAtMin;
             return (
-              <div key={id} className="flex items-center justify-between gap-2 text-sm">
+              <div key={id} className="flex items-center justify-between gap-2 text-[20px]">
                 <span className={ELEMENT_COLOR[tech.element]}>
-                  {techDisplayName(tech, lang)}
-                  <span className="text-faded ml-1 text-xs">
+                  <Tooltip
+                    content={[
+                      `【${elementLabel(tech.element, lang)}】`,
+                      t("techPowerLine")
+                        .replace("{power}", (tech.power * techPowerMult(techLevelOf(s, id))).toFixed(1))
+                        .replace("{mp}", String(tech.mpCost)),
+                      techDisplayEffect(tech, lang) ? `${t("techEffectLabel")}:${techDisplayEffect(tech, lang)}` : techDisplayDesc(tech, lang),
+                    ].join(" · ")}
+                  >
+                    <span className="cursor-help underline decoration-dotted decoration-faded/40 underline-offset-2">
+                      {techDisplayName(tech, lang)}
+                    </span>
+                  </Tooltip>
+                  <span className="text-faded ml-1 text-[18px]">
                     ({tech.mpCost}
                     {tech.soloOnly ? ` · ${t("talismanPouchSoloTag")}` : ""})
                   </span>
                   {!tech.innate && (
-                    <span className="chip ml-1.5 text-faded/80 border-faded/30">
+                    <span className="chip ml-1.5 text-[18px] text-faded/80 border-faded/30">
                       {t("talismanPouchOwnedTag").replace("{n}", String(owned))}
                     </span>
                   )}
                 </span>
                 <div className="flex items-center gap-2">
                   <button
-                    className="chip hover:text-gold px-2"
+                    className="chip text-[18px] hover:text-gold px-2"
                     disabled={busy || inCombat || count === 0 || atMin}
                     title={basicAtMin ? t("talismanPouchBasicMinNote").replace("{n}", String(BASIC_CARD_MIN)) : ""}
                     onClick={() => act("pouchAdjust", { techId: id, delta: -1 })}
                   >
                     −
                   </button>
-                  <span className="font-mono text-xs w-4 text-center">{count}</span>
+                  <span className="font-mono text-[18px] w-4 text-center">{count}</span>
                   <button
-                    className="chip hover:text-gold px-2"
+                    className="chip text-[18px] hover:text-gold px-2"
                     disabled={busy || inCombat || atMax}
                     title={
                       atMax
@@ -479,25 +492,25 @@ function TechTab() {
           };
           return (
             <>
-              <p className="text-[10px] tracking-[0.2em] text-faded/60 uppercase mb-1">
+              <p className="text-[16px] tracking-[0.2em] text-faded/60 uppercase mb-1">
                 {t("talismanPouchBaseCardsTitle")}
                 <span className="normal-case tracking-normal ml-2 text-faded/80">
                   {t("talismanPouchBasicMinNote").replace("{n}", String(BASIC_CARD_MIN))}
                 </span>
               </p>
               <div className="space-y-1.5 mb-3">{baseCards.map(row)}</div>
-              <p className="text-[10px] tracking-[0.2em] text-faded/60 uppercase mb-1">
+              <p className="text-[16px] tracking-[0.2em] text-faded/60 uppercase mb-1">
                 {t("talismanPouchTechsTitle")}
               </p>
               <div className="space-y-1.5">
                 {studiedTechs.length === 0 ? (
-                  <p className="text-xs text-faded">{t("techNoneLearned")}</p>
+                  <p className="text-[18px] text-faded">{t("techNoneLearned")}</p>
                 ) : (
                   studiedTechs.map(row)
                 )}
               </div>
               {studiedTechs.length > 0 && (
-                <p className="text-[11px] text-faded/70 mt-2 leading-relaxed">{t("talismanPouchDupHint")}</p>
+                <p className="text-[17px] text-faded/70 mt-2 leading-relaxed">{t("talismanPouchDupHint")}</p>
               )}
             </>
           );
@@ -1356,7 +1369,7 @@ function DexTab() {
           </span>
           <span className="text-xs font-mono text-faded">
             {t("monsterStatLine")
-              .replace("{hp}", String(monsterHpOf(mon)))
+              .replace("{hp}", formatHp(monsterHpOf(mon)))
               .replace("{atk}", String(monsterAtkOf(mon)))
               .replace("{kills}", String(kills))}
           </span>

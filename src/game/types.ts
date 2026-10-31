@@ -72,13 +72,28 @@ export const nameColorOf = (stage: number): string =>
       ? NAME_COLOR_HUASHEN_TO_DUJIE
       : NAME_COLOR_BELOW_HUASHEN;
 
-// 傷害顯示:每一億(1e8)點傷害計為一點「仙法傷害」
+// 傷害顯示:每一億(1e8)點傷害計為一點「仙法傷害」,顯示到小數點後三位(與天仙氣血同一個單位)
 export function formatDamage(n: number): string {
   if (n >= 1e8) {
     const v = n / 1e8;
-    return `${v >= 100 ? Math.round(v) : v.toFixed(2)} 仙法傷害`;
+    return `${v.toFixed(3)} 仙法傷害`;
   }
   return `${n}`;
+}
+
+// 氣血顯示:超過一億(1e8)點的氣血改以「天仙氣血」計,每一億點為一點、顯示到小數點後三位,
+// 與「仙法傷害」同一個記數單位,方便直接比較一擊能打掉多少。
+export const TIANXIAN_HP_UNIT = 1e8;
+export function formatHp(n: number): string {
+  if (n >= TIANXIAN_HP_UNIT) return `${(n / TIANXIAN_HP_UNIT).toFixed(3)} 天仙氣血`;
+  return `${n}`;
+}
+// 「目前 / 上限」一組顯示:上限達一億時,目前值也用同一個單位(避免殘血時兩邊單位不同)
+export function formatHpPair(cur: number, max: number): string {
+  if (max >= TIANXIAN_HP_UNIT) {
+    return `${(Math.max(0, cur) / TIANXIAN_HP_UNIT).toFixed(3)} / ${(max / TIANXIAN_HP_UNIT).toFixed(3)} 天仙氣血`;
+  }
+  return `${cur} / ${max}`;
 }
 
 // 靈石面額:1 仙元石 = 100 極品 = 10,000 上品 = 1,000,000 中品 = 100,000,000 下品
@@ -184,6 +199,7 @@ export interface ItemDef {
   price: number; // 靈石售價
   // pill / herb 效果
   heal?: number;
+  cureStatus?: ("burn" | "poison" | "freeze" | "weaken")[]; // 解除自身的負面狀態(5.0 版解狀態丹藥)
   mp?: number;
   exp?: number;
   energy?: number; // 回復精力點數(1.24 版新增)

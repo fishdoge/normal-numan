@@ -2,6 +2,7 @@
 import { Language } from "./dict";
 
 export const MONSTER_TEXT_EN: Record<string, { name: string; desc: string }> = {
+  zm_mingling_gulong: { name: "Netherplume Heavenly Demon Elder Dragon", desc: "An ancient demon dragon coiled before the True Demon Gate; its wings hang like the netherworld night, its scales steeped in ten thousand years of demonic qi, and frost gathers with every breath." },
   // ── 天南 ──
   shulang: { name: "Red-Eyed Rat Wolf", desc: "The lowest Tier-1 beast, red-eyed and pack-hunting." },
   qinglang: { name: "Blue-Back Wolf", desc: "A wolf-type beast with a blue-furred back, swift and agile." },

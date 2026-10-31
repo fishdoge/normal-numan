@@ -36,7 +36,7 @@ describe("仙靈力攻擊力乘數封頂(XIANLI_MULT_CAP)", () => {
   it("封頂後,無論仙靈力刷多高,攻擊力乘數都不會超過 XIANLI_MULT_CAP", () => {
     const base = newSave("測試員", "huadao");
     const atk0 = statsOf({ ...base, xianli: 0 }).atk;
-    const s30 = { ...base, xianli: 300 }; // 1+300*0.02=7.0,未封頂前會到 ×7
+    const s30 = { ...base, xianli: 500 }; // 1+500*0.02=11.0,未封頂前會到 ×11
     const s9999 = { ...base, xianli: 9999 }; // 無論刷多高
     expect(statsOf(s30).atk).toBe(Math.floor(atk0 * XIANLI_MULT_CAP));
     expect(statsOf(s9999).atk).toBe(Math.floor(atk0 * XIANLI_MULT_CAP));

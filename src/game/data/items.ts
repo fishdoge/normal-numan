@@ -110,6 +110,18 @@ export const ITEMS: ItemDef[] = [
   { id: "zhujidan", name: "築基丹", kind: "pill", desc: "傳說中的築基靈丹,有價無市。", price: 520, exp: 390 },
   { id: "ningyingdan", name: "凝嬰丹", kind: "pill", desc: "結丹修士凝結元嬰的輔藥,紫猿花所煉。", price: 1800, exp: 1500 },
   { id: "dahuandan", name: "大還丹", kind: "pill", desc: "起死回生的靈丹,重傷垂死亦可救回。", price: 5000, heal: 99999 },
+  // ── 5.0 版:戰鬥中服用的解狀態丹藥與回血丹藥(手牌下方的丹藥欄可直接服用),一律妖獸掉落 ──
+  { id: "jiedudan", name: "解毒丹", kind: "pill", desc: "以七葉一枝花為主藥煉成的解毒丹。", price: 40, cureStatus: ["poison"], dropOnly: true },
+  { id: "qingliangsan", name: "清涼散", kind: "pill", desc: "冰片薄荷研成的藥散,入口沁涼。", price: 40, cureStatus: ["burn"], dropOnly: true },
+  { id: "huiyangdan", name: "回陽丹", kind: "pill", desc: "純陽之火溫養的丹藥,一粒入腹遍體生暖。", price: 60, cureStatus: ["freeze"], dropOnly: true },
+  { id: "tishendan", name: "提神丹", kind: "pill", desc: "清心醒神的小丹,修士鏖戰時常含一粒。", price: 50, cureStatus: ["weaken"], dropOnly: true },
+  { id: "baicao_linglu", name: "百草靈露", kind: "pill", desc: "百種靈草晨露收集而成的藥水,清香撲鼻。", price: 300, heal: 3000, reqStage: 2, dropOnly: true },
+  { id: "yusui_lingquan", name: "玉髓靈泉", kind: "pill", desc: "地脈玉髓滲出的靈泉,盛於玉瓶之中。", price: 3000, heal: 10000, cureStatus: ["burn", "poison", "freeze", "weaken"], reqStage: 6, dropOnly: true },
+  { id: "xuelingdan", name: "血靈丹", kind: "pill", desc: "以妖獸精血為引煉成的補血丹,丹色殷紅。", price: 8000, heal: 30000, reqStage: 6, dropOnly: true },
+  { id: "longxuedan", name: "龍血丹", kind: "pill", desc: "摻入一縷真龍血氣的丹藥,服之血氣奔湧。", price: 15000, heal: 50000, reqStage: 7, dropOnly: true },
+  { id: "xianyuan_huichun", name: "仙元回春丹", kind: "pill", desc: "北寒、金源仙獸內丹煉成的回春仙丹。", price: 60000, heal: 200000, reqStage: 10, dropOnly: true },
+  { id: "jiuzhuan_xianlu", name: "九轉清心仙露", kind: "pill", desc: "仙界九轉凝成的清心仙露,一滴可洗百脈。", price: 90000, heal: 300000, cureStatus: ["burn", "poison", "freeze", "weaken"], reqStage: 10, dropOnly: true },
+  { id: "taiyi_huanhun", name: "太乙還魂丹", kind: "pill", desc: "蠻荒與灰仙界凶獸殘魂凝成的還魂奇丹,霸道無匹。", price: 240000, heal: 800000, reqStage: 10, dropOnly: true },
   { id: "jiuqulingshen", name: "九曲靈參丹", kind: "pill", desc: "以九曲靈參煉製的丹藥。", price: 3000, mp: 99999 },
   { id: "pojiedan", name: "破界丹", kind: "pill", desc: "衝擊大乘瓶頸的無上靈丹,以皇極天髓為引。", price: 4100, exp: 26000 },
 
@@ -423,6 +435,7 @@ export const ITEMS: ItemDef[] = [
   // ── 一次性秘境地圖道具(3.19 版新增):使用後直接開啟對應一次性戰鬥,見 engine.ts useItem ──
   { id: "guanghanjie", name: "廣寒界", kind: "special", desc: "月魄凝成的秘境地圖,廣寒界機緣非凡,亦有絕世妖魔盤踞。", effect: "使用後消耗,開啟一場廣寒仙子首領戰(真仙以上)", price: 0, dropOnly: true, reqStage: 10, mapEncounter: "boss_guanghan" },
   { id: "kunpeng_yihai", name: "鯤鵬遺骸", kind: "special", desc: "上古鯤鵬殞落之地的殘存氣息所化地圖,機緣與凶險並存。", effect: "使用後消耗,開啟一場鯤鵬殘魂首領戰(真仙以上)", price: 0, dropOnly: true, reqStage: 10, mapEncounter: "boss_kunpeng" },
+  { id: "zhenmo_menling", name: "真魔門令", kind: "special", desc: "秘境深處魔門前拾得的漆黑令牌,令上龍紋隱隱蠕動。", effect: "於儲物袋挑戰守門的冥翎天魔古龍(真仙以上);擊敗後開啟真魔界並消耗此令,落敗則令牌保留,但煞氣 +2500;可於玩家市集轉賣", price: 0, mapEncounter: "zm_mingling_gulong", reqStage: 10 },
 
   // ── 煞氣解法(3.19 版新增) ──
   { id: "mieshadan", name: "滅煞丹", kind: "pill", desc: "以真魔精血調配的奇丹。", price: 0, dropOnly: true, reqStage: 10, cureShaqi: true },

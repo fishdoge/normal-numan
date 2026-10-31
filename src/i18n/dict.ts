@@ -302,6 +302,9 @@ export const DICT = {
     // 混沌萬靈榜(itemStatLine)
     statLinePrice: "售價 {n}",
     statLineHeal: "回氣血 {n}",
+    statLineCure: "解除{list}",
+    combatPotionTitle: "丹藥",
+    combatPotionNone: "身上沒有可服用的丹藥(療傷丹可於坊市購買,其餘丹藥由妖獸掉落)",
     statLineMp: "回法力 {n}",
     statLineEnergy: "回精力 {n}",
     statLineExp: "修為 +{n}",
@@ -911,6 +914,9 @@ export const DICT = {
     // 混沌萬靈榜(itemStatLine)
     statLinePrice: "Price {n}",
     statLineHeal: "Heals {n} HP",
+    statLineCure: "Cures {list}",
+    combatPotionTitle: "Pills",
+    combatPotionNone: "No usable pills (Healing Pills are sold at the market; others drop from beasts)",
     statLineMp: "Restores {n} MP",
     statLineEnergy: "Restores {n} Energy",
     statLineExp: "Exp +{n}",

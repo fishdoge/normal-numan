@@ -241,8 +241,10 @@ body::after {
 }
 .battle-arena {
   position: relative;
-  flex: 1 0 250px;
-  min-height: 250px;
+  /* 5.0 版:妖獸欄位略為調矮(原本 250px 起跳且會吃掉所有剩餘高度),上限 400px,讓手牌與丹藥欄靠上一些 */
+  flex: 1 0 235px;
+  min-height: 235px;
+  max-height: 400px;
   overflow: hidden;
   border: 1px solid rgba(201, 162, 39, 0.34);
   background:
@@ -293,7 +295,7 @@ body::after {
 }
 .battle-sigil-ring {
   position: absolute;
-  width: min(34vw, 290px);
+  width: min(32vw, 265px);
   aspect-ratio: 1;
   border: 1px solid rgba(201, 162, 39, 0.27);
   border-radius: 50%;
@@ -318,7 +320,7 @@ body::after {
 }
 .battle-sigil-glyph {
   color: rgba(226, 188, 111, 0.84);
-  font-size: clamp(80px, 10vw, 150px);
+  font-size: clamp(76px, 9.5vw, 140px);
   font-weight: 200;
   line-height: 1;
   text-shadow: 0 0 55px rgba(210, 149, 53, 0.3);
@@ -782,6 +784,27 @@ body::after {
   font-size: 14px;
   line-height: 1.6;
 }
+.battle-potions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  white-space: nowrap;
+  padding: 6px 0 2px;
+  border-top: 1px solid rgba(201, 162, 39, 0.17);
+}
+.battle-potions-label {
+  flex: none;
+  color: #e0a39a;
+  font-size: 15px;
+  letter-spacing: 0.1em;
+}
+.battle-potion {
+  flex: none;
+  font-size: 14px;
+  padding: 6px 12px;
+  border-color: rgba(224, 120, 100, 0.45);
+}
 .battle-tactic-list {
   display: flex;
   flex-wrap: wrap;
@@ -932,7 +955,7 @@ body::after {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .battle-arena {
-    flex-basis: 260px;
+    flex-basis: 245px;
   }
 }
 @media (max-width: 640px) {
@@ -968,7 +991,7 @@ body::after {
     gap: 11px;
   }
   .battle-arena {
-    min-height: 245px;
+    min-height: 230px;
     flex: none;
   }
   .battle-arena-copy {

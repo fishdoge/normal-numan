@@ -26,14 +26,15 @@ afterEach(() => {
 });
 
 describe("數值:3.19 的削弱 + 4.0 的封頂同時生效", () => {
-  it("仙靈力每點 ×0.02(3.19),封頂 ×5 仍在(4.0,需 200 點才碰到)", () => {
+  it("仙靈力每點 ×0.02(3.19),封頂 ×8(5.0 由 ×5 上調,需 350 點才碰到)", () => {
     expect(E.XIANLI_MULT).toBe(0.02);
-    expect(E.XIANLI_MULT_CAP).toBe(5);
+    expect(E.XIANLI_MULT_CAP).toBe(8);
     const s = newXian();
     const atk0 = E.statsOf({ ...s, xianli: 0 }).atk;
     expect(E.statsOf({ ...s, xianli: 50 }).atk).toBe(Math.floor(atk0 * 2));
     expect(E.statsOf({ ...s, xianli: 200 }).atk).toBe(Math.floor(atk0 * 5));
-    expect(E.statsOf({ ...s, xianli: 9999 }).atk).toBe(Math.floor(atk0 * 5));
+    expect(E.statsOf({ ...s, xianli: 350 }).atk).toBe(Math.floor(atk0 * 8));
+    expect(E.statsOf({ ...s, xianli: 9999 }).atk).toBe(Math.floor(atk0 * 8));
   });
 
   it("宗門加成為 3.19 數值,總倍率仍封頂 ×2", () => {

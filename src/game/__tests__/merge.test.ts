@@ -42,27 +42,19 @@ describe("數值:3.19 的削弱 + 4.0 的封頂同時生效", () => {
     expect(E.sectDamageMultOfStages(Array(50).fill(12))).toBe(2);
   });
 
-  it("4.0 的符寶連攜封頂與妖獸平衡乘數仍在", () => {
+  it("4.0 的符寶連攜封頂仍在", () => {
     expect(E.SYNERGY_STACK_CAP).toBe(2);
     expect(E.COMBO_SIZE_STACK_CAP).toBe(2);
-    expect(E.MONSTER_HP_BALANCE_MULT).toBe(2.5);
-    expect(E.MONSTER_ATK_BALANCE_MULT).toBe(1.5);
   });
 
-  it("3.19 的妖獸攻擊力調整寫在資料裡(以 3.18 → 3.19 有改動的兩隻為例)", () => {
-    // 3.18 原值:青狼 atk 3 → 3.19 的 2;蠻荒黑眼貔貅 12414 → 8690(-30%)
-    expect(MONSTERS.find((m) => m.id === "qinglang")!.atk).toBe(2);
-    expect(MONSTERS.find((m) => m.id === "lord_pixiu")!.atk).toBe(8690);
-  });
-
-  it("浮屠塔:每層氣血 ×1.4、攻擊 ×1.2(氣血乘 4.0 全域倍率,攻擊以 5.0 校準後的金源一般妖獸基準為第 1 層)", () => {
+  it("浮屠塔:每層氣血 ×1.4、攻擊 ×1.2(第 1 層氣血即 world.ts 的幻象太歲,攻擊以金源一般妖獸基準為第 1 層)", () => {
     const base = MONSTERS.find((m) => m.id === "huanxiang_taisui")!;
     for (const floor of [1, 5, 12]) {
       const s = newXian();
       s.jinyuanUnlocked = true;
       s.futuFloor = floor - 1;
       const r = E.applyAction(s, "challengeFutu").save;
-      expect(r.combat!.bossHpMax).toBe(Math.floor(base.hp * Math.pow(1.4, floor - 1) * E.MONSTER_HP_BALANCE_MULT));
+      expect(r.combat!.bossHpMax).toBe(Math.floor(base.hp * Math.pow(1.4, floor - 1)));
       expect(r.combat!.bossAtk).toBe(Math.floor(E.tierBaseAtkOf("x-jinyuan") * Math.pow(1.2, floor - 1)));
     }
   });

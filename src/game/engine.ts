@@ -339,36 +339,14 @@ export function sectDamageMultOfStages(stages: (number | null | undefined)[]): n
 const rand = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
 const monsterById = (id: string): Monster => MONSTERS.find((m) => m.id === id)!;
 
-// 戰鬥平衡性修正(4.0 版):怪物氣血的校準基準原本看起來是「單卡出牌」,但符寶化之後合併出牌
-// (2~4 張連攜)才是常態玩法——單卡只需 2~4 刀的怪,碰上 3 卡連攜常常直接一刀到兩刀帶走
-// (見「戰鬥膨脹診斷卷」04 節實測:2,998 場戰鬥、100% 勝率、平均 1.33 回合解決)。
-// 把怪物氣血整體上修,改用「典型 2~3 卡連攜」當新的校準基準(對應選項 D);同時小幅上修怪物攻擊力,
-// 讓戰鬥重新有一點「打不贏就會受傷」的風險,不再是零風險的數值輾壓(對應選項 E)。
-// 這兩個乘數統一套用在「戰鬥開場建立 CombatState」與「怪物出手」兩類地方,不直接改 world.ts 的
-// 原始資料(資料檔案保留設計者原意的相對倍率,實際戰鬥數值由這裡統一換算,方便之後整體再調)。
-export const MONSTER_HP_BALANCE_MULT = 2.5;
-export const MONSTER_ATK_BALANCE_MULT = 1.5;
-// 4.2 版:一般妖獸氣血再 ×1.35(地域王/BOSS 不變)——卡牌連攜下一般妖獸仍常被兩三刀帶走,略為拉長戰鬥
-export const MONSTER_HP_NORMAL_MULT = 1.35;
-// 4.2 版試玩回饋:練氣期(天南 1~2 階)攻擊力太低,一般妖獸再 ×1.35 後形成「練氣中期之牆」
-// (實測 10 場敗 5 場、平均 16 回合)。天南的一般妖獸改為 ×0.7(不加 35%、再減 30%),築基以後照舊 ×1.35。
-export const MONSTER_HP_EARLY_MULT = 0.7;
-export const EARLY_REGION = "tiannan";
-const EARLY_MONSTER_IDS = new Set(
-  LOCATIONS.filter((l) => l.region === EARLY_REGION).flatMap((l) => l.monsters),
-);
-export const isEarlyMonster = (id: string) => EARLY_MONSTER_IDS.has(id);
-// 4.2 版:煉虛~大乘(出沒秘境最低需求 6~8 階)的一般妖獸再 ×1.35——模擬顯示這段幾乎一兩回合就結束、
-// 妖獸來不及出手。以「出沒秘境的最低需求境界」歸類,同時出沒於低階秘境的妖獸(如魔化同時在 5 階魔淵)不受影響。
-export const MONSTER_HP_LATE_MULT = 1.35;
-export const LATE_STAGE_RANGE = [6, 8] as const;
+// 妖獸氣血與攻擊力:world.ts 寫多少就是多少。
+// 4.0~4.2 版曾在戰鬥開場對氣血另乘平衡倍率(全域 ×2.5、一般妖獸 ×1.35、天南 ×0.7、煉虛~大乘再 ×1.35、
+// 合體 ×2、大乘 ×2.5),5.0 版起已把換算後的數值直接寫回 world.ts,引擎不再乘任何倍率。
 const minStageOfMonster = new Map<string, number>();
 for (const l of LOCATIONS) {
   const ids = [...l.monsters, ...(ELITE_SPAWNS[l.id] ? [ELITE_SPAWNS[l.id]] : [])];
   for (const id of ids) minStageOfMonster.set(id, Math.min(minStageOfMonster.get(id) ?? 99, l.reqStage));
 }
-// 4.2 版:合體期(出沒最低 7 階)一般妖獸氣血再 ×2、大乘期(8 階)再 ×2.5,疊在上方各倍率之後
-export const MONSTER_HP_STAGE_EXTRA: Record<number, number> = { 7: 2, 8: 2.5 };
 export const monsterMinStage = (id: string) => minStageOfMonster.get(id);
 
 // 4.2 版:中後期妖獸修為下修——原始資料從結丹起「一隻就給一整個小境界的修為」(化神、合體甚至一隻超過需求),
@@ -379,22 +357,7 @@ export const monsterExpOf = (mon: Pick<Monster, "id" | "exp" | "isLord" | "elite
   mon.isLord || mon.elite
     ? mon.exp
     : Math.floor(mon.exp * (MONSTER_EXP_STAGE_MULT[minStageOfMonster.get(mon.id) ?? 0] ?? 1));
-const LATE_MONSTER_IDS = new Set(
-  [...minStageOfMonster].filter(([, st]) => st >= LATE_STAGE_RANGE[0] && st <= LATE_STAGE_RANGE[1]).map(([id]) => id),
-);
-export const isLateMonster = (id: string) => LATE_MONSTER_IDS.has(id);
-export const monsterHpOf = (mon: Pick<Monster, "id" | "hp" | "isLord">) =>
-  Math.floor(
-    mon.hp *
-      MONSTER_HP_BALANCE_MULT *
-      (mon.isLord
-        ? 1
-        : EARLY_MONSTER_IDS.has(mon.id)
-          ? MONSTER_HP_EARLY_MULT
-          : MONSTER_HP_NORMAL_MULT *
-            (LATE_MONSTER_IDS.has(mon.id) ? MONSTER_HP_LATE_MULT : 1) *
-            (MONSTER_HP_STAGE_EXTRA[minStageOfMonster.get(mon.id) ?? 0] ?? 1)),
-  );
+export const monsterHpOf = (mon: Pick<Monster, "hp">) => Math.max(1, mon.hp);
 
 // 4.2 版:秘境開放「越一階挑戰」——可進入需求境界比自身高一階的秘境;但仙域(需求 10 階)仍須真正飛昇
 export const LOCATION_STAGE_LEEWAY = 1;
@@ -415,18 +378,18 @@ export const regionUnlocked = (s: SaveData, regionId: string) => {
 };
 // 新手護體:realmIdx 小於此值(練氣期前/中/後)時,突破失敗只散去一半修為、不折損壽元
 export const NOVICE_GUARD_REALMS = 3;
-// ═══ 5.0 版:妖獸攻擊依「參考玩家」校準,並改為比例減傷 ═══
+// ═══ 5.0 版:妖獸攻擊改為比例減傷 ═══
 // 舊制傷害是「妖獸攻擊 − 玩家防禦」,但裝備防禦遠高於同階妖獸攻擊(例如元嬰坊市裝備防禦 818,元嬰妖獸
 // 攻擊只有 36~58),從築基起只要穿上坊市裝備,幾乎所有妖獸都只打 1 點;裸裝時結丹~大乘一擊也只有 1~5% 氣血。
 //
 // 新制(公式也寫在修仙入門錄裡):
 //   妖獸傷害 = 妖獸攻擊 × 隨機 0.8~1.2 × K ÷ (K + 玩家防禦),最低 1
+//     妖獸攻擊 = world.ts 寫的 atk,寫多少就是多少
 //     K = 該妖獸所屬階層的「參考防禦」(該階層玩家的典型防禦):防禦等於 K 時傷害減半,再高也只會遞減。
-//   妖獸攻擊 = 目標比例 × 參考氣血 × 2 × 階內相對強度 × 身分倍率
-//     參考氣血 = 該境界中期的氣血上限(仙域以真仙境計);×2 抵銷參考防禦減掉的一半
-//     目標比例 = 參考玩家(參考氣血、參考防禦)被一般妖獸打一下掉的氣血比例,約 5~9%,即 11~20 下倒地
-//     階內相對強度 = 該妖獸原始攻擊 ÷ 同階一般妖獸原始攻擊的中位數,夾在 0.75~1.3,保留設計上的強弱差異
-//     身分倍率 = 一般 1、菁英 1.8、地域王 2.2
+// world.ts 的 atk 是以下方 ATK_TIERS 校準後寫回的數值:目標比例 × 參考氣血 × 2 × 階內相對強度(0.75~1.3)
+// × 身分倍率(一般 1、菁英 1.8、地域王 2.2)。參考氣血 = 該境界中期的氣血上限(仙域以真仙境計),×2 抵銷
+// 參考防禦減掉的一半;目標比例 = 參考玩家被一般妖獸打一下掉的氣血比例,約 5~9%,即 11~20 下倒地。
+// 調整單隻妖獸直接改 world.ts;ATK_TIERS 的 target 僅供浮屠塔基準攻擊與修仙入門錄的參考表使用。
 export interface AtkTier {
   refHp: number;
   refDef: number;
@@ -452,8 +415,6 @@ export const ATK_TIERS: Record<string, AtkTier> = {
   "x-zhenmo": { refHp: midHpOf(10), refDef: 45000, target: 0.08 },
   "x-huixian": { refHp: midHpOf(10), refDef: 60000, target: 0.09 }, // 灰仙界:非常強大
 };
-export const ATK_ROLE_MULT = { normal: 1, elite: 1.8, lord: 2.2 } as const;
-export const ATK_REL_RANGE = [0.75, 1.3] as const;
 const XIAN_TIER_ORDER: Record<string, number> = { beihan: 1, jinyuan: 2, manhuang: 3, zhenmo: 3, huixian: 4 };
 const tierRank = (key: string) => (key.startsWith("x-") ? 100 + (XIAN_TIER_ORDER[key.slice(2)] ?? 9) : Number(key));
 const tierOfLocation = (l: { reqStage: number; region: string }) =>
@@ -485,32 +446,9 @@ for (const [id, key] of [
   ["boss_kunpeng", "x-jinyuan"],
 ] as const)
   MONSTER_TIER.set(id, key);
-// 各階一般妖獸原始攻擊的中位數(計算「階內相對強度」用)
-const TIER_MEDIAN_ATK = new Map<string, number>();
-{
-  const byTier = new Map<string, number[]>();
-  for (const m of MONSTERS) {
-    const key = MONSTER_TIER.get(m.id);
-    if (!key || m.isLord || m.elite) continue;
-    byTier.set(key, [...(byTier.get(key) ?? []), m.atk]);
-  }
-  for (const [key, xs] of byTier) {
-    const sorted = [...xs].sort((a, b) => a - b);
-    TIER_MEDIAN_ATK.set(key, sorted[Math.floor(sorted.length / 2)]);
-  }
-}
 export const monsterTierOf = (id: string) => MONSTER_TIER.get(id);
-export const monsterAtkOf = (mon: Pick<Monster, "id" | "atk" | "isLord" | "elite">) => {
-  const key = MONSTER_TIER.get(mon.id);
-  // 未歸屬任何階層的妖獸(理論上不存在,保險用)沿用 4.0 版的攻擊倍率
-  if (!key) return Math.floor(mon.atk * MONSTER_ATK_BALANCE_MULT);
-  const t = ATK_TIERS[key];
-  const role = mon.isLord ? ATK_ROLE_MULT.lord : mon.elite ? ATK_ROLE_MULT.elite : ATK_ROLE_MULT.normal;
-  const median = TIER_MEDIAN_ATK.get(key) ?? mon.atk;
-  const rel =
-    mon.isLord || mon.elite ? 1 : Math.min(ATK_REL_RANGE[1], Math.max(ATK_REL_RANGE[0], mon.atk / Math.max(1, median)));
-  return Math.max(1, Math.round(t.target * t.refHp * 2 * rel * role));
-};
+// 妖獸攻擊力:world.ts 寫多少就是多少
+export const monsterAtkOf = (mon: Pick<Monster, "atk">) => Math.max(1, mon.atk);
 // 某階一般妖獸的基準攻擊(相對強度 1、身分倍率 1)
 export const tierBaseAtkOf = (key: string) => {
   const t = ATK_TIERS[key];
@@ -2380,10 +2318,10 @@ function applyActionInner(
       }
       const base = monsterById("huanxiang_taisui");
       const floor = s.futuFloor + 1; // 挑戰下一層(從第 1 層起)
-      // 5.0 版合併:每層氣血 ×1.4(沿用 3.19)、每層攻擊 ×1.2(沿用 4.2),再乘上全域的怪物平衡乘數
+      // 5.0 版合併:每層氣血 ×1.4(沿用 3.19)、每層攻擊 ×1.2(沿用 4.2);第 1 層氣血即 world.ts 的數值
       const hpMult = Math.pow(1.4, floor - 1); // 每層氣血 ×1.4
       const atkMult = Math.pow(1.2, floor - 1); // 每層攻擊 ×1.2
-      const bossHp = Math.floor(base.hp * hpMult * MONSTER_HP_BALANCE_MULT);
+      const bossHp = Math.floor(base.hp * hpMult);
       // 5.0 版:第 1 層以金源仙域一般妖獸的基準攻擊起算,之後每層 ×1.2(以地域王攻擊起算時只能爬 7~10 層,
       // 太乙境需要登上第 20 層,門檻過高)
       const bossAtk = Math.floor(tierBaseAtkOf("x-jinyuan") * atkMult);
@@ -2722,7 +2660,6 @@ function applyActionInner(
         take(s, itemId);
         s.combat = {
           monsterId: boss.id,
-          // 5.0 版合併:與其他戰鬥一致套用 4.0 版妖獸氣血倍率(前端血條上限也以 monsterHpOf 計算)
           monsterHp: monsterHpOf(boss),
           locationId: `__map_${itemId}__`,
           isLord: true,

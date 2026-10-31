@@ -1,9 +1,8 @@
-// 5.0 版妖獸傷害:依階層校準的攻擊 + 比例減傷(攻擊 × K ÷ (K + 防禦))。
+// 5.0 版妖獸傷害:world.ts 原值的攻擊 + 比例減傷(攻擊 × K ÷ (K + 防禦))。
 // 舊制「攻擊 − 防禦」讓築基以後穿上坊市裝備的玩家幾乎只會被打 1 點,這份測試釘死新制的行為。
 import { describe, it, expect } from "vitest";
 import {
   ATK_TIERS,
-  ATK_ROLE_MULT,
   monsterAtkOf,
   monsterTierOf,
   monsterRefDefOf,
@@ -32,21 +31,6 @@ describe("妖獸歸屬階層", () => {
   });
 });
 
-describe("校準:參考玩家被一般妖獸打一下,掉的氣血約等於目標比例", () => {
-  for (const [key, t] of Object.entries(ATK_TIERS)) {
-    const mons = normalsOf(key);
-    if (mons.length === 0) continue;
-    it(`階層 ${key}:目標 ${(t.target * 100).toFixed(1)}%`, () => {
-      for (const m of mons) {
-        const pct = monsterDamageAfterDef(monsterAtkOf(m), t.refDef, monsterRefDefOf(m)) / t.refHp;
-        // 階內相對強度夾在 0.75~1.3,所以每隻落在目標的 0.75~1.3 倍之間
-        expect(pct, m.id).toBeGreaterThanOrEqual(t.target * 0.75 - 0.002);
-        expect(pct, m.id).toBeLessThanOrEqual(t.target * 1.3 + 0.002);
-      }
-    });
-  }
-});
-
 describe("比例減傷", () => {
   it("防禦等於 K 時傷害減半;沒有防禦時是全額", () => {
     expect(monsterDamageAfterDef(1000, 0, 500)).toBe(1000);
@@ -73,13 +57,8 @@ describe("比例減傷", () => {
   });
 });
 
-describe("身分倍率", () => {
-  it("菁英 ×1.8、地域王 ×2.2,以該階一般妖獸的基準計算", () => {
-    const elite = MONSTERS.find((m) => m.elite)!;
-    const lord = MONSTERS.find((m) => m.isLord && monsterTierOf(m.id) === "3")!;
-    const te = ATK_TIERS[monsterTierOf(elite.id)!];
-    const tl = ATK_TIERS[monsterTierOf(lord.id)!];
-    expect(monsterAtkOf(elite)).toBe(Math.round(te.target * te.refHp * 2 * ATK_ROLE_MULT.elite));
-    expect(monsterAtkOf(lord)).toBe(Math.round(tl.target * tl.refHp * 2 * ATK_ROLE_MULT.lord));
+describe("妖獸攻擊力取 world.ts 原值", () => {
+  it("一般妖獸、菁英、地域王的攻擊力都是資料裡寫的數字,不再另外換算", () => {
+    for (const m of MONSTERS) expect(monsterAtkOf(m), m.id).toBe(Math.max(1, m.atk));
   });
 });

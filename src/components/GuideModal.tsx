@@ -11,8 +11,6 @@ import {
   SYNERGY_STACK_CAP,
   COMBO_SIZE_STACK_CAP,
   ATK_TIERS,
-  ATK_ROLE_MULT,
-  ATK_REL_RANGE,
   ENERGY_COST,
   ENERGY_REGEN_PER_TICK,
   HAND_SIZE,
@@ -21,11 +19,6 @@ import {
   STATUS_PROC_CHANCE,
   STATUS_DURATION,
   FREEZE_DURATION,
-  MONSTER_HP_BALANCE_MULT,
-  MONSTER_HP_NORMAL_MULT,
-  MONSTER_HP_EARLY_MULT,
-  MONSTER_HP_LATE_MULT,
-  MONSTER_HP_STAGE_EXTRA,
   MONSTER_EXP_STAGE_MULT,
   LOCATION_STAGE_LEEWAY,
   SHAQI_DECAY_PER_HOUR,
@@ -269,13 +262,9 @@ function FormulaGuide() {
           K 是該妖獸所屬階層的「參考防禦」。你的防禦等於 K 時傷害減半;防禦再高會繼續遞減,但不會被壓到 1。舊版是「攻擊 −
           防禦」,裝備防禦一高,妖獸就只能打 1 點。
         </p>
-        <Formula>
-          妖獸攻擊 = 目標比例 × 參考氣血 × 2 × 階內相對強度({ATK_REL_RANGE[0]}~{ATK_REL_RANGE[1]})× 身分倍率
-          <br />
-          身分倍率:一般 ×{ATK_ROLE_MULT.normal}、菁英 ×{ATK_ROLE_MULT.elite}、地域王 ×{ATK_ROLE_MULT.lord}
-        </Formula>
         <p>
-          參考氣血為該境界中期的氣血上限,參考防禦為該階玩家的典型防禦。目標比例是「參考玩家被一般妖獸打一下掉多少氣血」,約 11~20 下倒地:
+          妖獸攻擊就是該妖獸本身的攻擊力數值,不再另外換算。各階妖獸的攻擊大致依下表設計:參考氣血為該境界中期的氣血上限,參考防禦為該階玩家的典型防禦,目標比例是「參考玩家被一般妖獸打一下掉多少氣血」,約
+          11~20 下倒地;同階妖獸依強弱落在基準攻擊的 0.75~1.3 倍,菁英約 1.8 倍、地域王約 2.2 倍:
         </p>
         <Table head={["階層", "參考氣血", "參考防禦 K", "目標比例", "一般妖獸基準攻擊"]} rows={tierRows} />
         <Formula>
@@ -284,16 +273,7 @@ function FormulaGuide() {
       </Section>
 
       <Section title="④ 妖獸氣血與修為">
-        <Formula>
-          一般妖獸氣血 = 原始氣血 × {MONSTER_HP_BALANCE_MULT} × 地區倍率
-          <br />
-          地區倍率:天南 ×{MONSTER_HP_EARLY_MULT};其他 ×{MONSTER_HP_NORMAL_MULT};煉虛~大乘再 ×{MONSTER_HP_LATE_MULT};
-          {Object.entries(MONSTER_HP_STAGE_EXTRA)
-            .map(([st, v]) => `${STAGE_NAME[Number(st)]}再 ×${v}`)
-            .join("、")}
-          <br />
-          地域王氣血 = 原始氣血 × {MONSTER_HP_BALANCE_MULT}
-        </Formula>
+        <p>妖獸氣血就是該妖獸本身的氣血數值,不再另外換算。</p>
         <Formula>
           一般妖獸修為 = 原始修為 ×{" "}
           {Object.entries(MONSTER_EXP_STAGE_MULT)
@@ -302,7 +282,7 @@ function FormulaGuide() {
           (其他境界 ×1;地域王與菁英不打折)
         </Formula>
         <Formula>
-          浮屠塔第 N 層:氣血 = 幻象太歲原始氣血 × 1.4^(N−1) × {MONSTER_HP_BALANCE_MULT};攻擊 = 金源仙域一般妖獸基準 × 1.2^(N−1)
+          浮屠塔第 N 層:氣血 = 幻象太歲氣血 × 1.4^(N−1);攻擊 = 金源仙域一般妖獸基準 × 1.2^(N−1)
         </Formula>
       </Section>
 

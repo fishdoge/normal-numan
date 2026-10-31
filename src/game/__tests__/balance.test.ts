@@ -10,17 +10,9 @@ import {
   XIANLI_MULT_CAP,
   monsterHpOf,
   monsterAtkOf,
-  MONSTER_HP_BALANCE_MULT,
-  MONSTER_ATK_BALANCE_MULT,
   NOVICE_GUARD_REALMS,
-  MONSTER_HP_NORMAL_MULT,
-  MONSTER_HP_EARLY_MULT,
-  isEarlyMonster,
-  isLateMonster,
   monsterMinStage,
   monsterExpOf,
-  MONSTER_HP_STAGE_EXTRA,
-  MONSTER_HP_LATE_MULT,
   canEnterStage,
 } from "../engine";
 import { MONSTERS, LOCATIONS, ELITE_SPAWNS } from "../data/world";
@@ -80,48 +72,22 @@ describe("符寶連攜同屬疊加封頂(SYNERGY_STACK_CAP)", () => {
   });
 });
 
-describe("怪物氣血/攻擊力的戰鬥平衡性倍率(MONSTER_HP_BALANCE_MULT / MONSTER_ATK_BALANCE_MULT)", () => {
-  it("monsterHpOf / monsterAtkOf 回傳的是原始資料乘上平衡性倍率", () => {
-    const mon = MONSTERS.find((m) => m.id === "shulang")!;
-    // 4.2 版:天南(練氣期)一般妖獸 ×MONSTER_HP_EARLY_MULT;其餘一般妖獸 ×MONSTER_HP_NORMAL_MULT;地域王/BOSS 不變
-    expect(isEarlyMonster(mon.id)).toBe(true);
-    expect(monsterHpOf(mon)).toBe(Math.floor(mon.hp * MONSTER_HP_BALANCE_MULT * MONSTER_HP_EARLY_MULT));
-    const later = MONSTERS.find((m) => !m.isLord && !isEarlyMonster(m.id) && !isLateMonster(m.id))!;
-    // 煉虛~大乘(出沒秘境最低 6~8 階)一般妖獸再 ×MONSTER_HP_LATE_MULT
-    const late = MONSTERS.find((m) => !m.isLord && isLateMonster(m.id) && monsterMinStage(m.id) === 6)!;
-    expect(monsterHpOf(late)).toBe(
-      Math.floor(late.hp * MONSTER_HP_BALANCE_MULT * MONSTER_HP_NORMAL_MULT * MONSTER_HP_LATE_MULT),
-    );
-    // 合體期(7 階)再 ×2、大乘期(8 階)再 ×2.5
-    for (const stage of [7, 8]) {
-      const m = MONSTERS.find((x) => !x.isLord && monsterMinStage(x.id) === stage)!;
-      expect(monsterHpOf(m)).toBe(
-        Math.floor(
-          m.hp * MONSTER_HP_BALANCE_MULT * MONSTER_HP_NORMAL_MULT * MONSTER_HP_LATE_MULT * MONSTER_HP_STAGE_EXTRA[stage],
-        ),
-      );
+describe("妖獸氣血/攻擊力取 world.ts 原值", () => {
+  it("monsterHpOf / monsterAtkOf 回傳的就是資料裡寫的數字", () => {
+    for (const m of MONSTERS) {
+      expect(monsterHpOf(m), m.id).toBe(Math.max(1, m.hp));
+      expect(monsterAtkOf(m), m.id).toBe(Math.max(1, m.atk));
     }
-    expect(isLateMonster("mohua")).toBe(false); // 同時出沒於 5 階魔淵,不受影響
-    expect(monsterHpOf(later)).toBe(
-      Math.floor(later.hp * MONSTER_HP_BALANCE_MULT * MONSTER_HP_NORMAL_MULT),
-    );
-    const lord = MONSTERS.find((m) => m.isLord)!;
-    expect(monsterHpOf(lord)).toBe(Math.floor(lord.hp * MONSTER_HP_BALANCE_MULT));
-    // 5.0 版:妖獸攻擊改依階層校準,詳見 monsterDamage.test.ts
-    expect(monsterAtkOf(mon)).toBeGreaterThan(0);
   });
 
-  it("開戰時 combat.monsterHp 套用的是平衡性倍率後的數字,不是 world.ts 的原始值", () => {
+  it("開戰時 combat.monsterHp 就是 world.ts 的氣血", () => {
     // 強制走「採集時遇襲」分支:第一個隨機數 <0.35 觸發遇襲,第二個隨機數選中怪物清單第 0 位
     restore = mockRandom([0.1, 0]);
     const s = newSave("測試員", "huadao");
     const r = applyAction(s, "gather", { locationId: "caiyaoshan" });
     expect(r.save.combat).not.toBeNull();
     const encountered = MONSTERS.find((m) => m.id === r.save.combat!.monsterId)!;
-    expect(r.save.combat!.monsterHp).toBe(monsterHpOf(encountered));
-    expect(r.save.combat!.monsterHp).toBe(
-      Math.floor(encountered.hp * MONSTER_HP_BALANCE_MULT * MONSTER_HP_EARLY_MULT),
-    );
+    expect(r.save.combat!.monsterHp).toBe(encountered.hp);
   });
 });
 

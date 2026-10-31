@@ -379,18 +379,22 @@ export const regionUnlocked = (s: SaveData, regionId: string) => {
 };
 // 新手護體:realmIdx 小於此值(練氣期前/中/後)時,突破失敗只散去一半修為、不折損壽元
 export const NOVICE_GUARD_REALMS = 3;
-// ═══ 5.0 版:妖獸攻擊改為比例減傷 ═══
-// 舊制傷害是「妖獸攻擊 − 玩家防禦」,但裝備防禦遠高於同階妖獸攻擊(例如元嬰坊市裝備防禦 818,元嬰妖獸
-// 攻擊只有 36~58),從築基起只要穿上坊市裝備,幾乎所有妖獸都只打 1 點;裸裝時結丹~大乘一擊也只有 1~5% 氣血。
+// ═══ 5.1 版:妖獸傷害回到減法,防禦依階層換算;妖獸攻擊/氣血仍是 world.ts 寫多少就是多少 ═══
+// 4.0 以前是純減法「妖獸攻擊 − 玩家防禦」,但裝備防禦遠高於同階妖獸攻擊(例如元嬰坊市裝備防禦 818,元嬰妖獸
+// 攻擊只有 36~58),從築基起只要穿上坊市裝備,幾乎所有妖獸都只打 1 點。5.0 版改成比例減傷 K ÷ (K + 防禦),
+// 但 K 沒有下限,裝備防禦遠超 K 時同樣趨近免疫(結丹裸裝與坊市頂裝的受傷差到 91 倍)。
 //
-// 新制(公式也寫在修仙入門錄裡):
-//   妖獸傷害 = 妖獸攻擊 × 隨機 0.8~1.2 × K ÷ (K + 玩家防禦),最低 1
+// 5.1 版(公式也寫在修仙入門錄裡):
+//   妖獸傷害 = max(保底, 妖獸攻擊 − 玩家防禦 × 防禦係數) × 隨機 0.8~1.2
 //     妖獸攻擊 = world.ts 寫的 atk,寫多少就是多少
-//     K = 該妖獸所屬階層的「參考防禦」(該階層玩家的典型防禦):防禦等於 K 時傷害減半,再高也只會遞減。
-// world.ts 的 atk 是以下方 ATK_TIERS 校準後寫回的數值:目標比例 × 參考氣血 × 2 × 階內相對強度(0.75~1.3)
-// × 身分倍率(一般 1、菁英 1.8、地域王 2.2)。參考氣血 = 該境界中期的氣血上限(仙域以真仙境計),×2 抵銷
-// 參考防禦減掉的一半;目標比例 = 參考玩家被一般妖獸打一下掉的氣血比例,約 5~9%,即 11~20 下倒地。
-// 調整單隻妖獸直接改 world.ts;ATK_TIERS 的 target 僅供浮屠塔基準攻擊與修仙入門錄的參考表使用。
+//     標準傷害 = 目標比例 × 參考氣血:參考玩家(參考氣血、參考防禦)被一般妖獸打一下該掉的氣血
+//     防禦係數 = 標準傷害 ÷ 參考防禦:參考玩家的防禦剛好擋掉一份標準傷害;裝備防禦動輒上萬,
+//               直接相減會讓防禦只在很窄的區間內有作用,所以先換算成同階妖獸傷害的量級
+//     保底 = 妖獸攻擊 × MONSTER_MIN_DMG_FRAC:防禦超過參考防禦兩倍以後不再減傷,但仍會被打痛
+// world.ts 的 atk 是依下式校準後寫回的數值:標準傷害 × (1 + 階內相對強度(0.75~1.3) × 身分倍率(一般 1、
+// 菁英 1.8、地域王 2.2))——「1 份」被參考玩家的防禦擋掉,剩下的才是實際傷害,參考玩家被一般妖獸打一下約掉
+// 目標比例(約 5~9%,11~20 下倒地),裸裝約兩倍。參考氣血 = 該境界中期的氣血上限(仙域以真仙境計);
+// 參考防禦 = 該階中期玩家的典型防禦。調整單隻妖獸直接改 world.ts。
 export interface AtkTier {
   refHp: number;
   refDef: number;
@@ -402,19 +406,19 @@ const midHpOf = (stage: number) => {
 };
 export const ATK_TIERS: Record<string, AtkTier> = {
   "1": { refHp: midHpOf(1), refDef: 10, target: 0.05 }, // 練氣:新手期稍輕
-  "2": { refHp: midHpOf(2), refDef: 25, target: 0.065 },
-  "3": { refHp: midHpOf(3), refDef: 60, target: 0.065 },
-  "4": { refHp: midHpOf(4), refDef: 600, target: 0.065 },
-  "5": { refHp: midHpOf(5), refDef: 900, target: 0.065 },
-  "6": { refHp: midHpOf(6), refDef: 6000, target: 0.065 },
-  "7": { refHp: midHpOf(7), refDef: 15000, target: 0.065 },
-  "8": { refHp: midHpOf(8), refDef: 17000, target: 0.065 },
-  "9": { refHp: midHpOf(9), refDef: 18000, target: 0.065 }, // 天劫試煉
-  "x-beihan": { refHp: midHpOf(10), refDef: 20000, target: 0.06 },
-  "x-jinyuan": { refHp: midHpOf(10), refDef: 20000, target: 0.07 },
-  "x-manhuang": { refHp: midHpOf(10), refDef: 45000, target: 0.08 },
-  "x-zhenmo": { refHp: midHpOf(10), refDef: 45000, target: 0.08 },
-  "x-huixian": { refHp: midHpOf(10), refDef: 60000, target: 0.09 }, // 灰仙界:非常強大
+  "2": { refHp: midHpOf(2), refDef: 20, target: 0.065 },
+  "3": { refHp: midHpOf(3), refDef: 240, target: 0.065 },
+  "4": { refHp: midHpOf(4), refDef: 865, target: 0.065 },
+  "5": { refHp: midHpOf(5), refDef: 13200, target: 0.065 },
+  "6": { refHp: midHpOf(6), refDef: 13200, target: 0.065 },
+  "7": { refHp: midHpOf(7), refDef: 13200, target: 0.065 },
+  "8": { refHp: midHpOf(8), refDef: 16600, target: 0.065 },
+  "9": { refHp: midHpOf(9), refDef: 20100, target: 0.065 }, // 天劫試煉
+  "x-beihan": { refHp: midHpOf(10), refDef: 20100, target: 0.06 },
+  "x-jinyuan": { refHp: midHpOf(10), refDef: 20100, target: 0.07 },
+  "x-manhuang": { refHp: midHpOf(10), refDef: 135000, target: 0.08 },
+  "x-zhenmo": { refHp: midHpOf(10), refDef: 135000, target: 0.08 },
+  "x-huixian": { refHp: midHpOf(10), refDef: 200000, target: 0.09 }, // 灰仙界:非常強大
 };
 const XIAN_TIER_ORDER: Record<string, number> = { beihan: 1, jinyuan: 2, manhuang: 3, zhenmo: 3, huixian: 4 };
 const tierRank = (key: string) => (key.startsWith("x-") ? 100 + (XIAN_TIER_ORDER[key.slice(2)] ?? 9) : Number(key));
@@ -449,18 +453,24 @@ for (const [id, key] of [
 ] as const)
   MONSTER_TIER.set(id, key);
 export const monsterTierOf = (id: string) => MONSTER_TIER.get(id);
+// 某階的標準傷害:參考玩家被一般妖獸打一下該掉的氣血
+const tierStdDmgOf = (t: AtkTier) => t.target * t.refHp;
 // 妖獸攻擊力:world.ts 寫多少就是多少
 export const monsterAtkOf = (mon: Pick<Monster, "atk">) => Math.max(1, mon.atk);
 // 某階一般妖獸的基準攻擊(相對強度 1、身分倍率 1)
-export const tierBaseAtkOf = (key: string) => {
-  const t = ATK_TIERS[key];
-  return Math.round(t.target * t.refHp * 2);
+export const tierBaseAtkOf = (key: string) => Math.round(tierStdDmgOf(ATK_TIERS[key]) * 2);
+// 防禦係數:該妖獸所屬階層的標準傷害 ÷ 參考防禦(未歸屬階層的妖獸是純減法)
+export const monsterDefCoefOf = (mon: Pick<Monster, "id">) => {
+  const t = ATK_TIERS[MONSTER_TIER.get(mon.id) ?? ""];
+  return t ? tierStdDmgOf(t) / t.refDef : 1;
 };
-// 比例減傷的 K 值:該妖獸所屬階層的參考防禦
-export const monsterRefDefOf = (mon: Pick<Monster, "id">) => ATK_TIERS[MONSTER_TIER.get(mon.id) ?? ""]?.refDef ?? 1000;
-// 妖獸對玩家的傷害(不含閃避、三倍重擊、護盾):攻擊 × K ÷ (K + 防禦),最低 1
-export const monsterDamageAfterDef = (rawAtk: number, def: number, refDef: number) =>
-  Math.max(1, Math.floor((rawAtk * refDef) / (refDef + Math.max(0, def))));
+// 保底:防禦再高,妖獸每下至少打出攻擊的這個比例(一般妖獸約為標準傷害的 30%)
+export const MONSTER_MIN_DMG_FRAC = 0.15;
+// 浮屠塔每層攻擊倍率
+export const FUTU_ATK_PER_FLOOR = 1.2;
+// 妖獸對玩家的傷害(不含隨機浮動、閃避、三倍重擊、護盾):max(保底, 攻擊 − 防禦 × 防禦係數),最低 1
+export const monsterDamageAfterDef = (rawAtk: number, def: number, defCoef: number) =>
+  Math.max(1, Math.floor(rawAtk * MONSTER_MIN_DMG_FRAC), Math.floor(rawAtk - Math.max(0, def) * defCoef));
 
 // 秘境可給予的裝備 / 秘笈池
 const EQUIP_KINDS = ["artifact", "robe", "amulet", "talisman", "pet"];
@@ -708,7 +718,7 @@ export function atkMultFromStatus(list: StatusEffect[] | undefined): number {
   return mult;
 }
 
-// 結算燒傷/中毒的持續傷害(冰封不在此處理,由跳過回合的邏輯各自扣減),回傳傷害總和與新的狀態清單;
+// 結算燒傷/中毒的持續傷害(冰封在回合跳過時扣減,縹緲在抵擋攻擊時消耗),回傳傷害總和與新的狀態清單;
 // 虛弱沒有持續傷害,但仍與燒傷/中毒一併在此扣減剩餘回合數,歸零即移除
 export function tickDot(
   list: StatusEffect[] | undefined,
@@ -731,7 +741,9 @@ export function tickDot(
       events.push({ element: "木", dmg: d });
     }
   }
-  const next = arr.map((e) => (e.kind === "freeze" ? e : { ...e, turns: e.turns - 1 })).filter((e) => e.turns > 0);
+  const next = arr
+    .map((e) => (e.kind === "freeze" || e.kind === "evade" ? e : { ...e, turns: e.turns - 1 }))
+    .filter((e) => e.turns > 0);
   return { list: next, dmg, labels, events };
 }
 
@@ -1071,7 +1083,7 @@ function handlePlayerDefeat(s: SaveData, causeLine: string): Modal {
 
 // 回傳戰敗彈窗(defeat 有值時代表這回合被打到氣血歸零,呼叫端應以此彈窗取代靜默記錄)。
 // 冰封判定放在最前面:不論攻擊/施法/遁走失敗召來的這一回合,只要怪物身上仍有冰封,一律直接跳過其攻擊。
-function monsterTurn(s: SaveData): { lines: string[]; defeat?: Modal } {
+function monsterTurn(s: SaveData, attackMult: number): { lines: string[]; defeat?: Modal } {
   if (!s.combat) return { lines: [] };
   const mon = monsterById(s.combat.monsterId);
   if (hasStatus(s.combat.monsterStatus, "freeze")) {
@@ -1090,7 +1102,7 @@ function monsterTurn(s: SaveData): { lines: string[]; defeat?: Modal } {
     return { lines: [line] };
   }
   const monAtkBase = s.combat.bossAtk ?? monsterAtkOf(mon);
-  const monAtk = Math.floor(monAtkBase * atkMultFromStatus(s.combat.monsterStatus));
+  const monAtk = Math.floor(monAtkBase * attackMult);
   const { def, speed } = statsOf(s);
   const monSpeed = Math.floor(monAtk * 1.2);
   const dodge = Math.min(0.35, Math.max(0.05, (speed / (speed + monSpeed)) * 0.5));
@@ -1099,8 +1111,11 @@ function monsterTurn(s: SaveData): { lines: string[]; defeat?: Modal } {
     log(s, ...lines);
     return { lines };
   }
-  // 5.0 版:比例減傷(見 monsterAtkOf 上方說明),取代舊制的「攻擊 − 防禦」
-  let dmg = monsterDamageAfterDef(rand(Math.floor(monAtk * 0.8), Math.floor(monAtk * 1.2)), def, monsterRefDefOf(mon));
+  // 5.1 版:減法,防禦依階層換算(見 ATK_TIERS 上方說明);浮屠塔每層攻擊變強,防禦係數同步放大,
+  // 讓同一位玩家在每一層承受的傷害都是第 1 層的同一倍數
+  const defScale = s.combat.futuFloor ? Math.pow(FUTU_ATK_PER_FLOOR, s.combat.futuFloor - 1) : 1;
+  const dmgBase = monsterDamageAfterDef(monAtk, def, monsterDefCoefOf(mon) * defScale);
+  let dmg = Math.max(1, rand(Math.floor(dmgBase * 0.8), Math.floor(dmgBase * 1.2)));
   const enraged = Math.random() < (MONSTER_TRIPLE_ATK_CHANCE[mon.id] ?? 0);
   if (enraged) dmg *= 3;
   let statusNote = "";
@@ -1137,9 +1152,13 @@ function monsterTurn(s: SaveData): { lines: string[]; defeat?: Modal } {
 // 3.4 版起手牌為符寶袋抽棄牌制:回合結束時手中剩牌一併棄置、重新抽 HAND_SIZE 張(見 redrawHand())。
 function postPlayerTurn(s: SaveData): { loot?: Modal } {
   if (!s.combat) return {};
+  // 本回合既有的冰封統一在此扣減一次;反擊新附加的冰封留到下一回合,避免立即少一回合。
+  s.combat.playerStatus = decrementStatus(s.combat.playerStatus, "freeze");
   const mon = monsterById(s.combat.monsterId);
   const monMaxHp = s.combat.bossHpMax ?? monsterHpOf(mon);
 
+  // 先保留本回合的減攻倍率,讓最後一回合的中毒/虛弱在 DOT 扣減回合後仍影響本次反擊。
+  const monAttackMult = atkMultFromStatus(s.combat.monsterStatus);
   const monTick = tickDot(s.combat.monsterStatus, monMaxHp);
   s.combat.monsterStatus = monTick.list;
   if (monTick.dmg > 0) {
@@ -1149,7 +1168,7 @@ function postPlayerTurn(s: SaveData): { loot?: Modal } {
     if (s.combat.monsterHp <= 0) return { loot: winCombat(s) };
   }
 
-  const turn = monsterTurn(s);
+  const turn = monsterTurn(s, monAttackMult);
   if (turn.defeat) return { loot: turn.defeat };
   if (!s.combat) return {}; // 防禦性檢查:理論上戰敗已由上一行攔截
 
@@ -1971,19 +1990,11 @@ function applyActionInner(
     // 不需要玩家再按一次施法結束。
     case "castBatch": {
       if (!s.combat) return { save: s, error: "並無戰鬥" };
-      if (SPELL_SEALED_MONSTERS.has(s.combat.monsterId)) {
-        return { save: s, error: "黑眼貔貅雙目幽光暴閃,將你的法力波動盡數封鎖,此戰唯有以法器相搏!" };
-      }
       const techIds = Array.isArray(payload.techIds) ? payload.techIds.map(String) : [];
       if (techIds.length === 0) return { save: s, error: "尚未選取任何符寶" };
-
-      // 冰封:動彈不得,這一整批出牌落空,不耗法力,但仍照樣結算本回合
-      if (hasStatus(s.combat.playerStatus, "freeze")) {
-        s.combat.playerStatus = decrementStatus(s.combat.playerStatus, "freeze");
-        log(s, "你深陷冰封,動彈不得,這一擊落空!");
-        const { loot } = postPlayerTurn(s);
-        if (loot) return { save: s, loot };
-        return { save: s };
+      // 封法只攔仙法;法器仍須通過下方的手牌、單獨出牌與法力檢查。
+      if (SPELL_SEALED_MONSTERS.has(s.combat.monsterId) && techIds.some((id) => id !== "artifact_attack")) {
+        return { save: s, error: "黑眼貔貅雙目幽光暴閃,將你的法力波動盡數封鎖,此戰唯有以法器相搏!" };
       }
 
       // 逐張核銷手牌:必須真的持有(允許同名重複,但不得超過手牌實際張數)
@@ -2000,6 +2011,14 @@ function applyActionInner(
       // 法器攻擊只能單獨出牌,不能跟其他符寶合併打出(包含跟另一張法器攻擊一起選)
       if (techs.length > 1 && techs.some((t) => t.soloOnly)) {
         return { save: s, error: "法器攻擊只能單獨出牌,無法與其他符寶一起打出。" };
+      }
+      // 清心是冰封的解控例外,整批仍須持有有效手牌且付得起總法力。
+      const doesCleanse = techs.some((t) => t.selfCleanse);
+      if (hasStatus(s.combat.playerStatus, "freeze") && !doesCleanse) {
+        log(s, "你深陷冰封,動彈不得,這一擊落空!");
+        const { loot } = postPlayerTurn(s);
+        if (loot) return { save: s, loot };
+        return { save: s };
       }
       const totalCost = techs.reduce((sum, t) => sum + t.mpCost, 0);
       if (s.mp < totalCost) {
@@ -2097,7 +2116,6 @@ function applyActionInner(
         s.combat.playerStatus = applyStatus(s.combat.playerStatus, "evade", 1);
       }
       // 清心符寶(3.14 版新增):立即清除玩家身上所有負面狀態(燒傷/中毒/冰封/虛弱),不影響 evade
-      const doesCleanse = techs.some((t) => t.selfCleanse);
       if (doesCleanse) {
         s.combat.playerStatus = (s.combat.playerStatus ?? []).filter((e) => e.kind === "evade");
       }
@@ -2187,10 +2205,10 @@ function applyActionInner(
 
     case "cast": {
       if (!s.combat) return { save: s, error: "並無戰鬥" };
-      if (SPELL_SEALED_MONSTERS.has(s.combat.monsterId)) {
+      const techId = String(payload.techId ?? "");
+      if (SPELL_SEALED_MONSTERS.has(s.combat.monsterId) && techId !== "artifact_attack") {
         return { save: s, error: "黑眼貔貅雙目幽光暴閃,將你的法力波動盡數封鎖,此戰唯有以法器相搏!" };
       }
-      const techId = String(payload.techId ?? "");
       if (!s.learned.includes(techId)) return { save: s, error: "未習得此仙法" };
       // 仙法卡牌化:僅本回合手牌內的仙法可施展,不在手牌中一律拒絕(前端只會顯示手牌內的按鈕,此為後端防線)
       if (!(s.combat.hand ?? []).includes(techId)) {
@@ -2198,9 +2216,8 @@ function applyActionInner(
       }
       const tech = techById(techId);
 
-      // 冰封:動彈不得,這一擊直接落空,不耗法力,但仍照樣結算本回合(怪物出手、雙方 DOT、重抽手牌)
-      if (hasStatus(s.combat.playerStatus, "freeze")) {
-        s.combat.playerStatus = decrementStatus(s.combat.playerStatus, "freeze");
+      // 清心可在冰封中施展;其餘出牌跳過整回合,由共用收尾扣減冰封。
+      if (hasStatus(s.combat.playerStatus, "freeze") && !tech.selfCleanse) {
         log(s, "你深陷冰封,動彈不得,這一擊落空!");
         const { loot } = postPlayerTurn(s);
         if (loot) return { save: s, loot };
@@ -2217,15 +2234,19 @@ function applyActionInner(
       const level = techLevelOf(s, techId);
       const lvlMult = techPowerMult(level);
       const sectMult = Number(payload.sectDamageMult ?? 1);
+      const weaken = atkMultFromStatus(s.combat.playerStatus);
       s.mp -= tech.mpCost;
       // 打出這張手牌:不論接下來是否被閃避,這張符寶都算「已出手」,從手中移掉這一張(手牌可能有
       // 同名重複符寶,只移掉這張)、送入棄牌堆,回合結束才會整批補回新的一手
       s.combat.hand = removeOneFromHand(s.combat.hand ?? [], techId);
       s.combat.discard = [...(s.combat.discard ?? []), techId];
+      if (tech.selfCleanse) {
+        s.combat.playerStatus = (s.combat.playerStatus ?? []).filter((e) => e.kind === "evade");
+        log(s, `【${tech.name}】清除自身負面狀態。`);
+      }
       if (Math.random() < (MONSTER_DODGE_CHANCE[mon.id] ?? 0)) {
         log(s, `你施展【${tech.name}】,${mon.name} 身形一晃,竟憑空避過這一擊!`);
       } else {
-        const weaken = atkMultFromStatus(s.combat.playerStatus);
         const shaqi = s.shaqi ?? 0;
         const shaqiMult =
           tech.element === "煞" && tech.shaqiScalePct
@@ -2291,9 +2312,8 @@ function applyActionInner(
       }
       const mon = monsterById(s.combat.monsterId);
 
-      // 冰封:動彈不得,連戰術卡都取用不了,但仍照樣結算本回合
-      if (hasStatus(s.combat.playerStatus, "freeze")) {
-        s.combat.playerStatus = decrementStatus(s.combat.playerStatus, "freeze");
+      // 淨化戰術卡可解冰封;其餘戰術卡仍跳過整回合,由共用收尾扣減冰封。
+      if (hasStatus(s.combat.playerStatus, "freeze") && !item.cleanse) {
         log(s, "你深陷冰封,動彈不得,取不出這張戰術卡!");
         const { loot } = postPlayerTurn(s);
         if (loot) return { save: s, loot };
@@ -2309,8 +2329,8 @@ function applyActionInner(
         lines.push(`凝聚護盾 ${gain} 點,將優先抵擋接下來受到的傷害。`);
       }
       if (item.cleanse) {
-        const had = (s.combat.playerStatus ?? []).length > 0;
-        s.combat.playerStatus = [];
+        const had = (s.combat.playerStatus ?? []).some((e) => e.kind !== "evade" && e.turns > 0);
+        s.combat.playerStatus = (s.combat.playerStatus ?? []).filter((e) => e.kind === "evade");
         lines.push(had ? "自身負面狀態盡數清除!" : "你身上並無負面狀態,此符暫無用武之地。");
       }
       if (item.enemyWeaken) {
@@ -2353,7 +2373,7 @@ function applyActionInner(
       const floor = s.futuFloor + 1; // 挑戰下一層(從第 1 層起)
       // 5.0 版合併:每層氣血 ×1.4(沿用 3.19)、每層攻擊 ×1.2(沿用 4.2);第 1 層氣血即 world.ts 的數值
       const hpMult = Math.pow(1.4, floor - 1); // 每層氣血 ×1.4
-      const atkMult = Math.pow(1.2, floor - 1); // 每層攻擊 ×1.2
+      const atkMult = Math.pow(FUTU_ATK_PER_FLOOR, floor - 1); // 每層攻擊 ×1.2
       const bossHp = Math.floor(base.hp * hpMult);
       // 5.0 版:第 1 層以金源仙域一般妖獸的基準攻擊起算,之後每層 ×1.2(以地域王攻擊起算時只能爬 7~10 層,
       // 太乙境需要登上第 20 層,門檻過高)

@@ -29,7 +29,7 @@ describe("真魔之門:冥翎天魔古龍守關", () => {
   });
 
   it("擊敗古龍:開啟真魔界並消耗門令", () => {
-    let s = applyAction(xianWithToken(), "useItem", { itemId: "zhenmo_menling" }).save;
+    const s = applyAction(xianWithToken(), "useItem", { itemId: "zhenmo_menling" }).save;
     s.combat!.monsterHp = 1;
     s.combat!.hand = ["spell_attack"];
     restore = mockRandom([0.99, 0.5, 0.5]); // 第一個亂數避開古龍的閃避
@@ -41,7 +41,7 @@ describe("真魔之門:冥翎天魔古龍守關", () => {
   });
 
   it("不敵古龍:真魔界不開啟,門令保留可再戰,煞氣 +2500", () => {
-    let s = applyAction(xianWithToken(), "useItem", { itemId: "zhenmo_menling" }).save;
+    const s = applyAction(xianWithToken(), "useItem", { itemId: "zhenmo_menling" }).save;
     s.hp = 1;
     s.shaqi = 100;
     restore = mockRandom([0.99, 0.5, 0.5, 0.5]); // 不閃避、照常命中
@@ -54,7 +54,7 @@ describe("真魔之門:冥翎天魔古龍守關", () => {
   });
 
   it("煞氣暴增有上限 10000", () => {
-    let s = applyAction(xianWithToken(), "useItem", { itemId: "zhenmo_menling" }).save;
+    const s = applyAction(xianWithToken(), "useItem", { itemId: "zhenmo_menling" }).save;
     s.hp = 1;
     s.shaqi = 9000;
     restore = mockRandom([0.99, 0.5, 0.5, 0.5]);
@@ -62,7 +62,7 @@ describe("真魔之門:冥翎天魔古龍守關", () => {
   });
 
   it("遁走不增加煞氣", () => {
-    let s = applyAction(xianWithToken(), "useItem", { itemId: "zhenmo_menling" }).save;
+    const s = applyAction(xianWithToken(), "useItem", { itemId: "zhenmo_menling" }).save;
     s.shaqi = 0;
     restore = mockRandom([0.1]); // 遁走成功
     const r = applyAction(s, "flee");
@@ -71,7 +71,7 @@ describe("真魔之門:冥翎天魔古龍守關", () => {
   });
 
   it("戰鬥中門令已不在身上(例如掛上市集賣掉),打贏也不會開門", () => {
-    let s = applyAction(xianWithToken(), "useItem", { itemId: "zhenmo_menling" }).save;
+    const s = applyAction(xianWithToken(), "useItem", { itemId: "zhenmo_menling" }).save;
     delete s.inventory["zhenmo_menling"];
     s.combat!.monsterHp = 1;
     s.combat!.hand = ["spell_attack"];
@@ -82,7 +82,7 @@ describe("真魔之門:冥翎天魔古龍守關", () => {
   });
 
   it("魔鱗不侵:戰術卡必定燒傷對古龍無效", () => {
-    let s = applyAction(xianWithToken(), "useItem", { itemId: "zhenmo_menling" }).save;
+    const s = applyAction(xianWithToken(), "useItem", { itemId: "zhenmo_menling" }).save;
     s.inventory["liehuo_yin"] = 1;
     const r = applyAction(s, "useTacticCard", { itemId: "liehuo_yin" });
     expect((r.save.combat?.monsterStatus ?? []).some((e) => e.kind === "burn")).toBe(false);

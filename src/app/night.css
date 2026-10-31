@@ -269,9 +269,9 @@ select:focus {
   font-weight: 700;
 }
 .chip {
-  border: 1px solid var(--line-2);
+  /* 只改形狀;顏色與邊框色交給 globals 的 .chip 及元件上的 text-metal 等 utility。
+     本檔載入於 utilities 之後,若在此寫 color/border,會蓋掉異星盤的點亮色。 */
   border-radius: 6px;
-  color: var(--text-2);
 }
 .stat-bar {
   height: 6px;

@@ -95,3 +95,19 @@ describe("真魔之門:冥翎天魔古龍守關", () => {
     expect(r.save.combat).toBeNull();
   });
 });
+
+describe("黑眼貔貅封法", () => {
+  it("只能出法器攻擊;其他符寶被擋,法器攻擊照常造成傷害", async () => {
+    const { freshCombatSave } = await import("./testUtils");
+    const { isCardSealed } = await import("../engine");
+    const s = freshCombatSave("huadao", "lord_pixiu", { learned: ["huoqiu"], hand: ["artifact_attack", "huoqiu"] });
+    expect(isCardSealed("lord_pixiu", "artifact_attack")).toBe(false);
+    expect(isCardSealed("lord_pixiu", "huoqiu")).toBe(true);
+    expect(isCardSealed("qinglang", "huoqiu")).toBe(false);
+    expect(applyAction(structuredClone(s), "castBatch", { techIds: ["huoqiu"] }).error).toBeTruthy();
+    restore = mockRandom([0.5, 0.5, 0.5]);
+    const r = applyAction(structuredClone(s), "castBatch", { techIds: ["artifact_attack"] });
+    expect(r.error).toBeFalsy();
+    expect(r.save.combat!.monsterHp).toBeLessThan(s.combat!.monsterHp);
+  });
+});

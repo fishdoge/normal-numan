@@ -784,6 +784,11 @@ body::after {
   font-size: 14px;
   line-height: 1.6;
 }
+.battle-card-sealed {
+  opacity: 0.35;
+  filter: grayscale(0.8);
+  cursor: not-allowed;
+}
 .battle-potions {
   display: flex;
   align-items: center;

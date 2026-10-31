@@ -11,6 +11,7 @@ import {
   XIANLI_MULT_CAP,
   sectDamageMultOfStages,
   monsterHpOf,
+  isCardSealed,
 } from "@/game/store";
 import { REALMS } from "@/game/data/realms";
 import { SECTS } from "@/game/data/sects";
@@ -758,7 +759,9 @@ export function CombatPanel() {
   // 出牌改為「先選取、按出牌才打出」(3.5 版新增)。手牌一變(打出/回合結束重抽)時,舊的選取位置
   // 會由下面的 useEffect 清空,但那是非同步的——本次 render 仍可能先跑到、selectedSlots 裡还留著
   // 已經不存在於新 usable 裡的 slot,這裡一律先過濾掉不存在的 slot 再使用,避免 .tech 噴 undefined。
-  const validSelectedSlots = selectedSlots.filter((slot) => usable.some((u) => u.slot === slot));
+  const validSelectedSlots = selectedSlots.filter((slot) =>
+    usable.some((u) => u.slot === slot && !isCardSealed(combat.monsterId, u.tech.id)),
+  );
   const selectedTechIds = validSelectedSlots.map(
     (slot) => usable.find((u) => u.slot === slot)!.tech.id,
   );
@@ -768,6 +771,7 @@ export function CombatPanel() {
     const found = usable.find((u) => u.slot === slot);
     if (!found) return;
     const tech = found.tech;
+    if (isCardSealed(combat.monsterId, tech.id)) return; // 黑眼貔貅封法:只有法器攻擊能選
     setSelectedSlots(() => {
       const prev = validSelectedSlots;
       if (prev.includes(slot)) return prev.filter((x) => x !== slot);
@@ -957,6 +961,7 @@ export function CombatPanel() {
           {usable.length === 0 && <p className="battle-empty-hand">{t("combatEmptyHand")}</p>}
           {usable.map(({ tech, slot }) => {
             const selected = validSelectedSlots.includes(slot);
+            const sealed = isCardSealed(combat.monsterId, tech.id);
             const elLabel = elementLabel(tech.element, lang);
             const fullElLabel = tech.extraElements?.length
               ? [tech.element, ...tech.extraElements]
@@ -1030,11 +1035,15 @@ export function CombatPanel() {
                   else cardRefs.current.delete(slot);
                 }}
                 type="button"
-                className={`battle-card ${spellCardBorderClass(tech)} ${selected ? "battle-card-selected" : ""} ${castEffect?.handKey === handKey && castEffect.slots.includes(slot) ? "battle-card-casting" : ""}`}
-                disabled={busy || (!selected && s.mp < tech.mpCost)}
+                className={`battle-card ${spellCardBorderClass(tech)} ${selected ? "battle-card-selected" : ""} ${castEffect?.handKey === handKey && castEffect.slots.includes(slot) ? "battle-card-casting" : ""} ${sealed ? "battle-card-sealed" : ""}`}
+                disabled={busy || sealed || (!selected && s.mp < tech.mpCost)}
                 onClick={() => toggleSlot(slot)}
                 aria-pressed={selected}
-                title={[techDisplayDesc(tech, lang), techDisplayEffect(tech, lang)].filter(Boolean).join(" ")}
+                title={
+                  sealed
+                    ? t("combatCardSealed")
+                    : [techDisplayDesc(tech, lang), techDisplayEffect(tech, lang)].filter(Boolean).join(" ")
+                }
               >
                 <span className="battle-card-top">
                   <span className={ELEMENT_COLOR[tech.element]}>

@@ -509,6 +509,9 @@ const MONSTER_TRIPLE_ATK_CHANCE: Record<string, number> = {
   elite_luzhu: 0.15,
 };
 const SPELL_SEALED_MONSTERS = new Set(["lord_pixiu"]); // 黑眼貔貅:封鎖玩家法術,無法施展仙法
+// 該張符寶此戰是否被封印(只剩法器攻擊可出),供前端把手牌變灰
+export const isCardSealed = (monsterId: string, techId: string) =>
+  SPELL_SEALED_MONSTERS.has(monsterId) && techId !== "artifact_attack";
 // 免疫燒傷/中毒(5.0 版,冥翎天魔古龍「魔鱗不侵」):燒傷、中毒按氣血上限比例扣血,會讓超厚血的王反而
 // 最好打;這類妖獸只吃直接傷害。冰封、虛弱仍然有效。
 const DOT_IMMUNE_MONSTERS = new Set(["zm_mingling_gulong"]);

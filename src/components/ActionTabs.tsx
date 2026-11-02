@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   useGame,
   statsOf,
@@ -29,6 +29,7 @@ import {
   XUANTIAN_FAIL,
   XUANTIAN_FORGE_MINUTES,
   XUANTIAN_STONES,
+  XUANTIAN_ELEMENTS,
   forgeMinutesOf,
   isDivineItem,
 } from "@/game/data/crafting";
@@ -646,6 +647,79 @@ function CraftTab() {
     filter === "filterAll" ? availableSections : availableSections.filter(([key]) => key === filter);
   const divineRecipes = RECIPES.filter((rec) => DIVINE_RECIPE_IDS.includes(rec.id));
 
+  // 配方卡(5.4 版):一般配方、圖譜配方、神器(含玄天仙器煉化)共用同一種排版——
+  // 標題列(名稱、標籤、失敗率、煉製時間 / 右側靈石)→ 介紹 → 屬性 → 材料(◆ 為五行與太乙精魂)與產出 → 按鈕
+  type CardMat = { id: string; label: string; have: number; need: number; mark?: string };
+  const recipeCard = (o: {
+    key: string;
+    title: string;
+    tone: "divine" | "blueprint" | "plain";
+    dim: boolean;
+    chips: ReactNode;
+    stones: number;
+    lifeCost?: number;
+    desc: string;
+    statLine?: string;
+    mats: CardMat[];
+    yields: string;
+    button: { label: string; disabled: boolean; title: string; onClick: () => void };
+  }) => (
+    <div
+      key={o.key}
+      className={`border rounded-sm p-3 ${
+        o.tone === "divine"
+          ? "border-fuchsia-400/60 bg-fuchsia-400/5"
+          : o.tone === "blueprint"
+            ? "border-azure/50 bg-azure/5"
+            : "border-faded/20"
+      } ${o.dim ? "opacity-55" : ""}`}
+    >
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="font-bold">
+          <span className={o.tone === "divine" ? "text-xuantian" : undefined}>{o.title}</span>
+          {o.chips}
+        </span>
+        <span className="shrink-0 flex items-center gap-2">
+          {o.lifeCost ? (
+            <span className="text-xs font-mono text-faded">
+              -{o.lifeCost} {t("lifeCostSuffix")}
+            </span>
+          ) : null}
+          <span className={`text-xs font-mono ${s.stones >= o.stones ? "text-gold" : "text-vermillion"}`}>
+            {formatStones(o.stones)}
+          </span>
+        </span>
+      </div>
+      <p className="text-xs text-faded mt-1">{o.desc}</p>
+      {o.statLine && <p className="text-xs text-cream/80 mt-0.5 font-mono">{o.statLine}</p>}
+      <p className="text-xs mt-1.5">
+        {o.mats.map((m) => (
+          <span key={m.id} className={`mr-3 ${m.have >= m.need ? "text-jade" : "text-vermillion"}`}>
+            {m.mark && <span className={`${m.mark} mr-0.5`}>◆</span>}
+            {m.label} {m.have}/{m.need}
+          </span>
+        ))}
+        {o.yields && <span className="text-faded">→ {o.yields}</span>}
+      </p>
+      <button
+        className={`btn mt-2 ${o.tone === "divine" ? "border-fuchsia-400/60 text-fuchsia-300 hover:bg-fuchsia-400/15" : ""}`}
+        disabled={o.button.disabled}
+        title={o.button.title}
+        onClick={o.button.onClick}
+      >
+        {o.button.label}
+      </button>
+    </div>
+  );
+  const chip = (cls: string, text: string) => <span className={`chip ml-2 ${cls}`}>{text}</span>;
+  const failChip = (pct: number) =>
+    pct > 0 ? chip("text-vermillion border-vermillion/50", t("craftFailChanceTag").replace("{n}", String(pct))) : null;
+  const timeChip = (min: number) =>
+    min > 0 ? chip("text-amber-300 border-amber-300/50", `⏳ ${t("forgeTimeTag").replace("{t}", dur(min))}`) : null;
+  const soulMat = (): CardMat => ({ id: "__soul", label: t("taiyiSoulNeed"), have: soulCount, need: 1, mark: "text-fuchsia-300" });
+  const energyTitle = (n: number, lack: boolean) =>
+    lack ? `${t("energyInsufficientTip")} (${n})` : `-${n} ${t("energyCostSuffix")}`;
+
   const recipeRow = (rec: (typeof RECIPES)[number]) => {
     const result = itemById(rec.result);
     const locked = rec.dropOnly && !s.unlockedRecipes.includes(rec.id);
@@ -654,125 +728,132 @@ function CraftTab() {
     const cost = craftCostOf(rec);
     const pity = s.craftPity?.[rec.id] ?? 0;
     const failPct = Math.round(failChanceFinal(cost.baseFail, pity, mingBonus) * 100);
-    const canStones = s.stones >= cost.stones;
-    const canMats =
-      [...cost.materials, ...cost.elements].every((m) => (s.inventory[m.id] ?? 0) >= m.n) &&
-      (!rec.taiyiSoul || soulCount >= 1);
+    const mats: CardMat[] = [
+      ...[...cost.materials, ...cost.elements].map((m) => {
+        const el = cost.elements.includes(m) ? itemById(m.id).element : undefined;
+        return {
+          id: m.id,
+          label: itemDisplayName(itemById(m.id), lang),
+          have: s.inventory[m.id] ?? 0,
+          need: m.n,
+          mark: el ? ELEMENT_COLOR[el] : undefined,
+        };
+      }),
+      ...(rec.taiyiSoul ? [soulMat()] : []),
+    ];
     const forgeMin = forgeMinutesOf(rec);
     const forgeBlocked = forgeMin > 0 && !!forge;
     const divine = DIVINE_RECIPE_IDS.includes(rec.id);
-    return (
-      <div
-        key={rec.id}
-        className={`border rounded-sm p-3 ${
-          divine
-            ? "border-fuchsia-400/60 bg-fuchsia-400/5"
-            : rec.dropOnly
-              ? "border-azure/50 bg-azure/5"
-              : "border-faded/20"
-        } ${locked || stageLocked ? "opacity-55" : ""}`}
-      >
-        <div className="flex items-baseline justify-between">
-          <span className="font-bold">
-            <span className={divine ? "text-xuantian" : undefined}>{itemDisplayName(result, lang)}</span>
-            <span className="chip ml-2 text-faded/80 border-faded/30">
-              {kindLabel(result.kind, lang)}
-            </span>
-            {result.element && (
-              <span className={`chip ml-2 ${ELEMENT_COLOR[result.element]}`}>
-                {elementLabel(result.element, lang)}
-              </span>
-            )}
-            {rec.dropOnly && (
-              <span className="chip ml-2 text-azure border-azure/60">{t("blueprintTag")}</span>
-            )}
-            {failPct > 0 ? (
-              <span className="chip ml-2 text-vermillion border-vermillion/50">
-                {t("craftFailChanceTag").replace("{n}", String(failPct))}
-              </span>
-            ) : null}
-            {pity > 0 ? (
-              <span className="chip ml-2 text-jade border-jade/50">
-                {t("craftPityTag").replace("{n}", String(Math.round(pity * PITY_STEP * 100)))}
-              </span>
-            ) : null}
-            {forgeMin > 0 && (
-              <span className="chip ml-2 text-amber-300 border-amber-300/50">
-                ⏳ {t("forgeTimeTag").replace("{t}", dur(forgeMin))}
-              </span>
-            )}
-          </span>
-          <span className="shrink-0 flex items-center gap-2">
-            {rec.lifeCost ? (
-              <span className="text-xs font-mono text-faded">
-                -{rec.lifeCost} {t("lifeCostSuffix")}
-              </span>
-            ) : null}
-            <span className={`text-xs font-mono ${canStones ? "text-gold" : "text-vermillion"}`}>
-              {formatStones(cost.stones)}
-            </span>
-          </span>
-        </div>
-        <p className="text-xs text-faded mt-1">{recipeDisplayDesc(rec, lang)}</p>
-        {itemStatLine(result, t, lang) && (
-          <p className="text-xs text-cream/80 mt-0.5 font-mono">{itemStatLine(result, t, lang)}</p>
-        )}
-        <p className="text-xs mt-1.5">
-          {[...cost.materials, ...cost.elements].map((m) => {
-            const have = s.inventory[m.id] ?? 0;
-            const el = cost.elements.includes(m) ? itemById(m.id).element : undefined;
-            return (
-              <span key={m.id} className={`mr-3 ${have >= m.n ? "text-jade" : "text-vermillion"}`}>
-                {el && <span className={`${ELEMENT_COLOR[el]} mr-0.5`}>◆</span>}
-                {itemDisplayName(itemById(m.id), lang)} {have}/{m.n}
-              </span>
-            );
-          })}
-          {rec.taiyiSoul && (
-            <span className={`mr-3 ${soulCount >= 1 ? "text-jade" : "text-vermillion"}`}>
-              <span className="text-fuchsia-300 mr-0.5">◆</span>
-              {t("taiyiSoulNeed")} {soulCount}/1
-            </span>
-          )}
-          <span className="text-faded">
-            →{" "}
-            {result.atkBonus ? (lang === "en" ? `ATK+${result.atkBonus} ` : `攻+${result.atkBonus} `) : ""}
-            {result.defBonus ? (lang === "en" ? `DEF+${result.defBonus} ` : `防+${result.defBonus} `) : ""}
-            {result.speedBonus ? (lang === "en" ? `SPD+${result.speedBonus}` : `速+${result.speedBonus}`) : ""}
-            {result.heal ? (lang === "en" ? `HP+${result.heal} ` : `氣血+${result.heal} `) : ""}
-            {result.mp ? (lang === "en" ? `MP+${result.mp} ` : `法力+${result.mp} `) : ""}
-            {result.energy ? (lang === "en" ? `Energy+${result.energy} ` : `精力+${result.energy} `) : ""}
-            {result.exp ? (lang === "en" ? `Exp+${result.exp} ` : `修為+${result.exp} `) : ""}
-            {result.life ? (lang === "en" ? `Lifespan+${result.life} ` : `壽元上限+${result.life} `) : ""}
-            {result.lifePct
-              ? lang === "en"
-                ? `Lifespan+${Math.round(result.lifePct * 100)}% `
-                : `壽元上限+${Math.round(result.lifePct * 100)}% `
-              : ""}
-            {result.xianli ? (lang === "en" ? `Immortal Qi+${result.xianli}` : `仙靈力+${result.xianli}`) : ""}
-          </span>
-        </p>
-        <button
-          className="btn mt-2"
-          disabled={busy || !canStones || !canMats || locked || stageLocked || energyLackCraft || forgeBlocked}
-          title={
-            forgeBlocked
-              ? t("forgeBusy")
-              : locked
-                ? t("blueprintLocked")
-                : stageLocked
-                  ? t("exploreStageLocked").replace("{n}", String(rec.reqStage))
-                  : energyLackCraft
-                    ? `${t("energyInsufficientTip")} (${ENERGY_COST.craft})`
-                    : `-${ENERGY_COST.craft} ${t("energyCostSuffix")}`
-          }
-          onClick={() => act("craft", { recipeId: rec.id })}
-        >
-          {locked ? t("craftBtnLocked") : stageLocked ? t("stageInsufficient") : t("craftBtn")}
-        </button>
-      </div>
-    );
+    const yields = [
+      result.atkBonus ? (lang === "en" ? `ATK+${result.atkBonus}` : `攻+${result.atkBonus}`) : "",
+      result.defBonus ? (lang === "en" ? `DEF+${result.defBonus}` : `防+${result.defBonus}`) : "",
+      result.speedBonus ? (lang === "en" ? `SPD+${result.speedBonus}` : `速+${result.speedBonus}`) : "",
+      result.heal ? (lang === "en" ? `HP+${result.heal}` : `氣血+${result.heal}`) : "",
+      result.mp ? (lang === "en" ? `MP+${result.mp}` : `法力+${result.mp}`) : "",
+      result.energy ? (lang === "en" ? `Energy+${result.energy}` : `精力+${result.energy}`) : "",
+      result.exp ? (lang === "en" ? `Exp+${result.exp}` : `修為+${result.exp}`) : "",
+      result.life ? (lang === "en" ? `Lifespan+${result.life}` : `壽元上限+${result.life}`) : "",
+      result.lifePct
+        ? lang === "en"
+          ? `Lifespan+${Math.round(result.lifePct * 100)}%`
+          : `壽元上限+${Math.round(result.lifePct * 100)}%`
+        : "",
+      result.xianli ? (lang === "en" ? `Immortal Qi+${result.xianli}` : `仙靈力+${result.xianli}`) : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+    return recipeCard({
+      key: rec.id,
+      title: itemDisplayName(result, lang),
+      tone: divine ? "divine" : rec.dropOnly ? "blueprint" : "plain",
+      dim: !!locked || stageLocked,
+      chips: (
+        <>
+          {chip("text-faded/80 border-faded/30", kindLabel(result.kind, lang))}
+          {result.element && chip(ELEMENT_COLOR[result.element], elementLabel(result.element, lang))}
+          {divine
+            ? chip("text-xuantian border-fuchsia-400/50", t("divineFilter"))
+            : rec.dropOnly && chip("text-azure border-azure/60", t("blueprintTag"))}
+          {failChip(failPct)}
+          {pity > 0 &&
+            chip("text-jade border-jade/50", t("craftPityTag").replace("{n}", String(Math.round(pity * PITY_STEP * 100))))}
+          {timeChip(forgeMin)}
+        </>
+      ),
+      stones: cost.stones,
+      lifeCost: rec.lifeCost,
+      desc: recipeDisplayDesc(rec, lang),
+      statLine: itemStatLine(result, t, lang) || undefined,
+      mats,
+      yields,
+      button: {
+        label: locked ? t("craftBtnLocked") : stageLocked ? t("stageInsufficient") : t("craftBtn"),
+        disabled:
+          busy ||
+          s.stones < cost.stones ||
+          mats.some((m) => m.have < m.need) ||
+          !!locked ||
+          stageLocked ||
+          energyLackCraft ||
+          forgeBlocked,
+        title: forgeBlocked
+          ? t("forgeBusy")
+          : locked
+            ? t("blueprintLocked")
+            : stageLocked
+              ? t("exploreStageLocked").replace("{n}", String(rec.reqStage))
+              : energyTitle(ENERGY_COST.craft, energyLackCraft),
+        onClick: () => act("craft", { recipeId: rec.id }),
+      },
+    });
   };
+
+  // 玄天仙器煉化:沿用配方卡,材料由說明文字移到材料列
+  const xuantianStageLocked = realm.stage < 12;
+  const xuantianMats: CardMat[] = [
+    { id: "xuantian_canpian", label: itemDisplayName(itemById("xuantian_canpian"), lang), have: fragmentCount, need: 10 },
+    { id: "poshou_jinhow", label: itemDisplayName(itemById("poshou_jinhow"), lang), have: fragmentMintCount, need: 20 },
+    ...XUANTIAN_ELEMENTS.map((m) => {
+      const it = itemById(m.id);
+      return { id: m.id, label: itemDisplayName(it, lang), have: s.inventory[m.id] ?? 0, need: m.n, mark: it.element ? ELEMENT_COLOR[it.element] : undefined };
+    }),
+    soulMat(),
+  ];
+  const xuantianCard = recipeCard({
+    key: "__xuantian",
+    title: t("xuantianCraftTitle"),
+    tone: "divine",
+    dim: xuantianStageLocked,
+    chips: (
+      <>
+        {chip("text-faded/80 border-faded/30", kindLabel("artifact", lang))}
+        {chip("text-xuantian border-fuchsia-400/50", t("divineFilter"))}
+        {failChip(Math.round(Math.max(0, XUANTIAN_FAIL - mingBonus) * 100))}
+        {timeChip(XUANTIAN_FORGE_MINUTES)}
+      </>
+    ),
+    stones: XUANTIAN_STONES,
+    desc: t("xuantianCraftDesc"),
+    statLine: t("xuantianStatLine"),
+    mats: xuantianMats,
+    yields: t("xuantianYield"),
+    button: {
+      label: xuantianStageLocked ? t("stageInsufficient") : t("craftBtn"),
+      disabled:
+        busy ||
+        xuantianStageLocked ||
+        !!forge ||
+        s.stones < XUANTIAN_STONES ||
+        xuantianMats.some((m) => m.have < m.need) ||
+        energyLackXuantian,
+      title: xuantianStageLocked
+        ? t("exploreStageLocked").replace("{n}", "12")
+        : forge
+          ? t("forgeBusy")
+          : energyTitle(ENERGY_COST.craftXuantian, energyLackXuantian),
+      onClick: () => act("craftXuantian"),
+    },
+  });
 
   return (
     <div className="space-y-2">
@@ -856,51 +937,7 @@ function CraftTab() {
           <div className="divider text-fuchsia-300">{t("divineSection")}</div>
           <p className="text-xs text-fuchsia-300/80 mb-2">{t("divineNote")}</p>
           <div className="space-y-2">
-            <div className={`border border-fuchsia-400/60 bg-fuchsia-400/5 rounded-sm p-3 ${realm.stage < 12 ? "opacity-55" : ""}`}>
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="font-bold text-xuantian">{t("xuantianCraftTitle")}</span>
-                <span className={`text-xs font-mono ${s.stones >= XUANTIAN_STONES ? "text-gold" : "text-vermillion"}`}>
-                  {formatStones(XUANTIAN_STONES)}
-                </span>
-              </div>
-              <p className="text-sm text-faded mt-1">{t("xuantianCraftDesc")}</p>
-              <p className="text-xs text-fuchsia-200/80 mt-1">
-                {t("xuantianCraftCost")
-                  .replace("{stones}", formatStones(XUANTIAN_STONES))
-                  .replace("{fail}", String(Math.round(Math.max(0, XUANTIAN_FAIL - mingBonus) * 100)))
-                  .replace("{time}", dur(XUANTIAN_FORGE_MINUTES))}
-              </p>
-              <p className="text-xs font-mono mt-1 text-faded">
-                {itemDisplayName(itemById("xuantian_canpian"), lang)} {fragmentCount}/10 ·{" "}
-                {itemDisplayName(itemById("poshou_jinhow"), lang)} {fragmentMintCount}/20 ·{" "}
-                {t("taiyiSoulSuffix")} {soulCount}/1
-              </p>
-              <button
-                className="btn mt-2 border-fuchsia-400/60 text-fuchsia-300 hover:bg-fuchsia-400/15"
-                disabled={
-                  busy ||
-                  realm.stage < 12 ||
-                  !!forge ||
-                  fragmentCount < 10 ||
-                  fragmentMintCount < 20 ||
-                  soulCount < 1 ||
-                  s.stones < XUANTIAN_STONES ||
-                  energyLackXuantian
-                }
-                title={
-                  realm.stage < 12
-                    ? t("exploreStageLocked").replace("{n}", "12")
-                    : forge
-                      ? t("forgeBusy")
-                      : energyLackXuantian
-                        ? `${t("energyInsufficientTip")} (${ENERGY_COST.craftXuantian})`
-                        : `-${ENERGY_COST.craftXuantian} ${t("energyCostSuffix")}`
-                }
-                onClick={() => act("craftXuantian")}
-              >
-                {t("xuantianCraftBtn")}
-              </button>
-            </div>
+            {xuantianCard}
             {divineRecipes.map(recipeRow)}
           </div>
         </div>

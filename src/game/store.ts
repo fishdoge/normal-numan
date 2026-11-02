@@ -37,6 +37,13 @@ import {
   BASIC_CARD_MIN,
   canEnterStage,
   monsterExpOf,
+  currentZoneOf,
+  homeTierOf,
+  travelOptionsOf,
+  geoDropsOf,
+  tollOf,
+  monsterTraitsOf,
+  WANGSHENG_REVIVES,
 } from "./engine";
 
 export type { SaveData, Modal, DamageEvent };
@@ -72,6 +79,13 @@ export {
   canEnterStage,
   monsterExpOf,
   ownedCopiesOf,
+  currentZoneOf,
+  homeTierOf,
+  travelOptionsOf,
+  geoDropsOf,
+  tollOf,
+  monsterTraitsOf,
+  WANGSHENG_REVIVES,
 };
 
 // 行動頁籤(ActionTabs)目前分頁,提到 store 讓其他面板(如道籍)也能切換頁籤
@@ -113,11 +127,10 @@ interface ClientState {
   // 戰鬥浮動傷害數字(3.5 版新增):每次 act() 回傳的 damageEvents 附上前端自產的唯一 id 後累積於此,
   // CombatPanel 依 id 渲染浮動數字動畫,動畫結束呼叫 consumeDamageEvent 移除,避免重複觸發。
   damageEvents: (DamageEvent & { id: string })[];
-  // 大陸遊歷的選擇(4.2 版):放在 store,戰鬥畫面切換回來後地圖仍停在原本的區域與秘境
-  explore: { region: string; continent: string; selected: string | null; autoPicked: boolean };
-  setExplore: (
-    patch: Partial<{ region: string; continent: string; selected: string | null; autoPicked: boolean }>,
-  ) => void;
+  // 遊歷探索的選擇(4.2 版;5.2 版改以地域為單位):放在 store,戰鬥畫面切換回來後地圖仍停在原本的地域與秘境。
+  // zone 為 null 時跟隨玩家現在所在的地域
+  explore: { zone: string | null; area: string | null; selected: string | null };
+  setExplore: (patch: Partial<{ zone: string | null; area: string | null; selected: string | null }>) => void;
 
   act: (type: string, payload?: Record<string, unknown>) => Promise<void>;
   consumeDamageEvent: (id: string) => void;
@@ -144,7 +157,7 @@ export const useGame = create<ClientState>()((set, get) => ({
   revivalUsed: false,
   language: getInitialLanguage(),
   damageEvents: [],
-  explore: { region: "tiannan", continent: "all", selected: null, autoPicked: false },
+  explore: { zone: null, area: null, selected: null },
   setExplore: (patch) => set((st) => ({ explore: { ...st.explore, ...patch } })),
 
   setSave: (save) => set({ save }),

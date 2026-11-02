@@ -1,9 +1,9 @@
 // 伺服器權威遊戲引擎:所有獎勵運算在此執行,前端僅顯示
-import { COUNTERS, Element, Monster, ItemDef, Technique, formatDamage, formatHp, formatHpPair } from "./types";
+import { COUNTERS, Element, Monster, ItemDef, Location, Technique, formatDamage, formatHp, formatHpPair, formatStones } from "./types";
 import { REALMS } from "./data/realms";
 import { SECTS } from "./data/sects";
 import { techById } from "./data/techniques";
-import { itemById, ITEMS, XUANTIAN_ARTIFACT_IDS } from "./data/items";
+import { itemById, ITEMS, XUANTIAN_ARTIFACT_IDS, RETIRED_ITEMS, isXuantianArtifact } from "./data/items";
 import { LOCATIONS, MONSTERS, RECIPES, REGIONS, ELITE_SPAWNS, ELITE_SPAWN_CHANCE } from "./data/world";
 import { MISSIONS } from "./data/missions";
 import { dwellingLevelOf } from "./data/sectTiers";
@@ -18,6 +18,69 @@ import {
   TENGFU_DROP_CHANCE_LORD,
   TENGFU_DROP_CHANCE_ELITE,
 } from "./data/tengfu";
+import {
+  zoneById,
+  zoneOfLocation,
+  zoneUnlocked,
+  locationsOfZone,
+  homeZoneForStage,
+  tierOfStage,
+  tierName,
+  flyPlan,
+  portalPlan,
+  descendTargets,
+  POJIE_ZHU,
+  NIXING_PAN,
+  DESCENT_ZONE,
+  needsDescentPlatform,
+  LANDING_ZONE,
+  CROSS_REALM_MINUTES,
+  VISIT_HOURS,
+  MINUTE_MS,
+  HOUR_MS,
+  type TravelOptions,
+  type WorldTier,
+} from "./data/geography";
+import {
+  factionById,
+  ownerOfZone,
+  relationOf,
+  type FactionId,
+  TIANTING_DEF_PCT,
+  TIANTING_PORTAL_MULT,
+  TIANTING_TRAVEL_MULT,
+  TIANTING_FAST_ZONES,
+  LUNHUI_ATK_PCT,
+  LUNHUI_VISIT_MULT,
+  LUNHUI_PEARLS_FOR_DISC,
+  LUNHUI_GRACE_HOURS,
+  MANHUANG_HP_PCT,
+  MANHUANG_MOUNT_MULT,
+  JIUYOU_SHA_CARD_PCT,
+  JIUYOU_SHAQI_PENALTY_MULT,
+  ZHENMO_KILL_HEAL_PCT,
+  ZHENMO_XISHA_MULT,
+  HOME_DROP_MULT,
+  AMBUSH_CHANCE,
+  TOLL_KILLS,
+  MERIT_HOME_KILL,
+  MERIT_GUARD_KILL,
+  RECALL_COOLDOWN_HOURS,
+  CHANGE_COOLDOWN_DAYS,
+  RIFT_COOLDOWN_HOURS,
+  RIFT_CROSS_COOLDOWN_HOURS,
+  RIFT_CROSS_WEAPON,
+  shopOf,
+} from "./data/factions";
+import {
+  craftCostOf,
+  failChanceFinal,
+  failLossOf,
+  ELEMENT_DROP,
+  elementMaterialFor,
+  XUANTIAN_ELEMENTS,
+  XUANTIAN_FAIL,
+} from "./data/crafting";
 
 // 狀態效果(2.21 版新增,仙法卡牌化的一部分;3.1 版新增 weaken;3.14 版新增 evade):掛在既有五行系統上,
 // 火→燒傷、木→中毒、水→冰封,不獨立發明新屬性池;weaken(虛弱)不對應五行,僅由戰術卡的「衰運針」附加;
@@ -37,6 +100,11 @@ export interface CombatState {
   bossHpMax?: number; // 動態 BOSS 的氣血上限(浮屠塔用)
   bossAtk?: number; // 動態 BOSS 的攻擊(浮屠塔用)
   tianjieTrial?: boolean; // 渡劫→真仙:服下真仙丹後降臨的天劫神靈試煉,勝負直接決定本次突破機率翻倍/減半
+  factionGuard?: boolean; // 5.4 版:敵對派系領地的巡守截殺,擊殺得功勳
+  // 5.4 版道祖特技(見 DAOZU_* 常數):已用掉的復活次數、本回合血條凍結、本回合封法
+  revivesUsed?: number;
+  timeFrozen?: boolean;
+  spellSealed?: boolean;
   zhenmoGate?: boolean; // 真魔之門守關戰(5.0 版):擊敗冥翎天魔古龍才開啟真魔界,落敗不消耗真魔門令
   // 本回合可施展的仙法卡牌 id(不含法器攻擊,法器攻擊恆常可用)。3.4 版起改為符寶袋抽棄牌制:
   // 開戰由 startingCombatHand() 從符寶袋洗牌抽 HAND_SIZE 張,打出的牌進 discard,回合結束整批
@@ -57,6 +125,22 @@ export interface CombatState {
   // 戰鬥見聞錄(獨立於 s.log 的全局見聞錄):只收錄本場戰鬥開打後產生的訊息,開戰時從空陣列開始,
   // 讓戰鬥中的見聞錄面板只顯示本場戰況,不與戰前的打坐/探索紀錄混在一起——見 log()。
   battleLog?: string[];
+}
+
+// 現在位置(5.2 版新增,見 world-travel-design.md):以地域(geography.ts 的 ZONES)為單位。
+// travel:趕路中(真實時間,抵達時間由伺服器判定);visit:以破界珠/逆星盤下界遠征中,
+// until 一到即被界面之力送回 returnZone。
+export interface Travel {
+  from: string;
+  to: string;
+  departAt: number;
+  arriveAt: number;
+  kind: "fly" | "descend" | "return";
+}
+export interface PlayerLocation {
+  zone: string;
+  travel?: Travel;
+  visit?: { returnZone: string; until: number };
 }
 
 export interface Learning {
@@ -133,6 +217,21 @@ export interface SaveData {
   // 滕符陣(4.2 版新增):tengfuBag 為尚未安裝的滕符(id → 張數),tengfuGrid 為已安裝在 6 寬 × 5 高符陣上的位置
   tengfuBag: Record<string, number>;
   tengfuGrid: TengfuPlacement[];
+  // 5.2 版:現在位置(舊存檔由 normalizeSave 依境界補上)
+  location?: PlayerLocation;
+  // 5.3 版:坐騎槽、煉器保底(配方 id → 連續失敗次數)
+  equippedMount?: string | null;
+  craftPity?: Record<string, number>;
+  // 5.4 版:派系(飛昇後擇定)、功勳、各種冷卻(epoch 毫秒)、輪迴界開通旗標
+  faction?: FactionId | null;
+  factionPending?: boolean; // 已在仙界但尚未擇定派系
+  factionChangedAt?: number;
+  merit?: number;
+  recallAt?: number; // 歸宗令
+  riftAt?: number; // 破空(玄天仙器)
+  riftCrossAt?: number; // 玄天斬靈劍斬破界壁
+  lunhuiGraceAt?: number; // 輪迴殿:每日一次戰敗不損靈石
+  lunhuiUnlocked?: boolean;
 }
 
 export interface Modal {
@@ -274,11 +373,20 @@ export function statsOf(s: SaveData) {
   const xianli = s.xianli ?? 0;
   // 滕符陣(4.2 版):攻擊/氣血/法力為百分比加成;防禦以境界攻擊力的百分比換算成護體值
   const tf = tengfuBonusOf(s.tengfuGrid);
+  // 派系加成(5.4 版):天庭防禦、輪迴殿攻擊、蠻荒勢力氣血
+  const fac = s.faction;
   const atk = Math.floor(
-    baseAtk * Math.min(XIANLI_MULT_CAP, 1 + xianli * XIANLI_MULT) * (1 + tf.atk),
+    baseAtk *
+      Math.min(XIANLI_MULT_CAP, 1 + xianli * XIANLI_MULT) *
+      (1 + tf.atk) *
+      (fac === "lunhui" ? 1 + LUNHUI_ATK_PCT : 1),
   );
-  const def = sumDef + (s.boonDef ?? 0) + Math.floor(realm.atk * tf.def);
-  const hpMax = Math.floor((realm.hpMax + (sect?.bonus.hp ?? 0) + (s.boonHp ?? 0)) * (1 + tf.hp));
+  const def = Math.floor(
+    (sumDef + (s.boonDef ?? 0) + Math.floor(realm.atk * tf.def)) * (fac === "tianting" ? 1 + TIANTING_DEF_PCT : 1),
+  );
+  const hpMax = Math.floor(
+    (realm.hpMax + (sect?.bonus.hp ?? 0) + (s.boonHp ?? 0)) * (1 + tf.hp) * (fac === "manhuang" ? 1 + MANHUANG_HP_PCT : 1),
+  );
   const mpMax = Math.floor((realm.mpMax + (sect?.bonus.mp ?? 0)) * (1 + tf.mp));
   const speed = realm.atk + Math.floor(sumSpeed) + realm.stage * 5 + (s.boonSpeed ?? 0);
   const stoneMult = pet?.stoneMult ?? 1;
@@ -372,11 +480,108 @@ const REGION_UNLOCK_FLAG: Record<string, keyof SaveData> = {
   manhuang: "manhuangUnlocked",
   zhenmo: "zhenmoUnlocked",
   huixian: "huixianUnlocked",
+  lunhui: "lunhuiUnlocked",
 };
 export const regionUnlocked = (s: SaveData, regionId: string) => {
   const flag = REGION_UNLOCK_FLAG[regionId];
-  return !flag || !!s[flag];
+  if (!flag || !!s[flag]) return true;
+  // 5.4 版:派系入派即開通的地域(本派領地與必經之地)也算開啟
+  const zone = zoneById(regionId);
+  return !!zone && zoneUnlocked(s, zone);
 };
+// ═══ 5.2 版:現在位置與移動(設計見 world-travel-design.md;地域與航路資料見 geography.ts)═══
+export const currentZoneOf = (s: Pick<SaveData, "location" | "realmIdx">) =>
+  s.location?.zone ?? homeZoneForStage(REALMS[s.realmIdx].stage);
+export const homeTierOf = (s: Pick<SaveData, "realmIdx">): WorldTier => tierOfStage(REALMS[s.realmIdx].stage);
+export function travelOptionsOf(s: SaveData): TravelOptions {
+  const mount = s.equippedMount ? itemById(s.equippedMount) : null;
+  const fac = s.faction;
+  // 派系加成(5.4 版):蠻荒勢力坐騎效果再 ×0.8;天庭在中土/北寒/金源之間移動 ×0.75、仙界傳送陣半價;
+  // 與天庭敵對的派系不得使用天庭掌控的仙界傳送網
+  const tiantingRel = fac ? relationOf(fac, "tianting") : "neutral";
+  return {
+    unlocked: (z) => zoneUnlocked(s, z),
+    travelMult: (mount?.travelMult ?? 1) * (mount && fac === "manhuang" ? MANHUANG_MOUNT_MULT : 1),
+    mountRoutes: mount?.routes ?? [],
+    routeMult: (r) =>
+      fac === "tianting" && TIANTING_FAST_ZONES.includes(r.a) && TIANTING_FAST_ZONES.includes(r.b)
+        ? TIANTING_TRAVEL_MULT
+        : 1,
+    portalFee: (r) => {
+      const xian = zoneById(r.a)?.tier === "xianjie";
+      if (!xian || r.portalFee == null) return r.portalFee ?? null;
+      if (tiantingRel === "hostile" || tiantingRel === "enemy") return null;
+      return fac === "tianting" ? Math.floor(r.portalFee * TIANTING_PORTAL_MULT) : r.portalFee;
+    },
+  };
+}
+const zoneLabel = (id: string) => {
+  const z = zoneById(id);
+  return z ? `${tierName(z.tier)} · ${z.name}` : id;
+};
+
+// 結算移動:抵達目的地、下界時限到期被送回、境界與所在界不符時校正。
+// 每次動作前(normalizeSave)與讀檔時都會呼叫,時間一律以伺服器的 now 為準。
+export function settleLocation(s: SaveData, now: number): void {
+  const stage = REALMS[s.realmIdx].stage;
+  if (!s.location || !zoneById(s.location.zone)) s.location = { zone: homeZoneForStage(stage) };
+  const loc = s.location;
+  const t = loc.travel;
+  if (t && now >= t.arriveAt) {
+    loc.zone = t.to;
+    delete loc.travel;
+    if (t.kind === "return") {
+      delete loc.visit;
+      log(s, `穿過界壁,你回到了【${zoneLabel(t.to)}】。`);
+    } else if (t.kind === "descend") {
+      log(s, `界壁在身後合攏——你降臨【${zoneLabel(t.to)}】。界面之力如影隨形,時限一到便會將你送回上界。`);
+    } else {
+      log(s, `一路風塵僕僕,你抵達了【${zoneLabel(t.to)}】。`);
+    }
+  }
+  // 下界時限到期:戰鬥中先打完,返回途中則讓它走完
+  if (loc.visit && now >= loc.visit.until && !s.combat && loc.travel?.kind !== "return") {
+    const back = loc.visit.returnZone;
+    s.location = { zone: back };
+    log(s, `界面之力驟然收緊,將你強行推回上界——你回到了【${zoneLabel(back)}】。`);
+  }
+  // 不在下界遠征時,所在界必須與境界相符(舊存檔、飛昇、其他途徑改變境界時校正)
+  if (!s.location.visit && zoneById(s.location.zone)!.tier !== tierOfStage(stage)) {
+    s.location = { zone: homeZoneForStage(stage) };
+  }
+}
+
+// 飛昇跨界:境界跨入新的界時,移到該界落點並回傳敘事文字
+function ascendRealmIfNeeded(s: SaveData, fromStage: number, toStage: number): string[] {
+  const from = tierOfStage(fromStage);
+  const to = tierOfStage(toStage);
+  if (from === to) return [];
+  s.location = { zone: LANDING_ZONE[to] };
+  if (to === "lingjie") {
+    return [
+      `一道接引之光自天而降,將你托起——你飛昇靈界,落足【${zoneLabel(LANDING_ZONE.lingjie)}】。`,
+      "人間自此與你隔絕,唯有破界珠方能重返。",
+    ];
+  }
+  // 5.4 版:飛昇仙界須先擇定派系
+  if (!s.faction) s.factionPending = true;
+  return [
+    `你落足仙界【${zoneLabel(LANDING_ZONE.xianjie)}】。萬載玄冰之上,仙靈之氣撲面而來;南方的中土仙域是道祖坐鎮之地,非初飛昇者所能涉足。`,
+    "下界自此與你隔絕,唯有破界珠、逆星盤方能重返。",
+    ...(s.factionPending ? ["仙界五大派系的使者已在此等候——擇定派系之前,無法動身。"] : []),
+  ];
+}
+
+// 狩獵/採集等「在秘境裡做事」的動作:必須身在該秘境所屬地域,且不在趕路途中
+function locationActionError(s: SaveData, loc: { name: string; region: string; continent?: string }): string | null {
+  if (s.location?.travel) return "你正在趕路途中,抵達之前無法在此行動。";
+  const z = zoneOfLocation(loc);
+  if (!z || z.id !== currentZoneOf(s)) {
+    return `${loc.name} 位於【${z ? zoneLabel(z.id) : "未知之地"}】,你須先前往該地。`;
+  }
+  return null;
+}
+
 // 新手護體:realmIdx 小於此值(練氣期前/中/後)時,突破失敗只散去一半修為、不折損壽元
 export const NOVICE_GUARD_REALMS = 3;
 // ═══ 5.1 版:妖獸傷害回到減法,防禦依階層換算;妖獸攻擊/氣血仍是 world.ts 寫多少就是多少 ═══
@@ -419,8 +624,10 @@ export const ATK_TIERS: Record<string, AtkTier> = {
   "x-manhuang": { refHp: midHpOf(10), refDef: 135000, target: 0.08 },
   "x-zhenmo": { refHp: midHpOf(10), refDef: 135000, target: 0.08 },
   "x-huixian": { refHp: midHpOf(10), refDef: 200000, target: 0.09 }, // 灰仙界:非常強大
+  "x-zhongtu": { refHp: midHpOf(10), refDef: 260000, target: 0.1 }, // 中土仙域:道祖坐鎮,仙界最強(高於灰仙界)
+  "x-lunhui": { refHp: midHpOf(10), refDef: 135000, target: 0.08 }, // 5.4 版:輪迴界與蠻荒、真魔同階
 };
-const XIAN_TIER_ORDER: Record<string, number> = { beihan: 1, jinyuan: 2, manhuang: 3, zhenmo: 3, huixian: 4 };
+const XIAN_TIER_ORDER: Record<string, number> = { beihan: 1, jinyuan: 2, manhuang: 3, zhenmo: 3, lunhui: 3, huixian: 4, zhongtu: 5 };
 const tierRank = (key: string) => (key.startsWith("x-") ? 100 + (XIAN_TIER_ORDER[key.slice(2)] ?? 9) : Number(key));
 const tierOfLocation = (l: { reqStage: number; region: string }) =>
   l.reqStage < XIAN_STAGE ? String(l.reqStage) : `x-${l.region}`;
@@ -450,6 +657,11 @@ for (const [id, key] of [
   ["boss_guanghan", "x-jinyuan"],
   ["boss_kunpeng", "x-jinyuan"],
   ["zm_mingling_gulong", "x-zhenmo"],
+  ["guard_tianting", "x-zhongtu"],
+  ["guard_lunhui", "x-lunhui"],
+  ["guard_manhuang", "x-manhuang"],
+  ["guard_jiuyou", "x-huixian"],
+  ["guard_zhenmo", "x-zhenmo"],
 ] as const)
   MONSTER_TIER.set(id, key);
 export const monsterTierOf = (id: string) => MONSTER_TIER.get(id);
@@ -509,12 +721,105 @@ const MONSTER_TRIPLE_ATK_CHANCE: Record<string, number> = {
   elite_luzhu: 0.15,
 };
 const SPELL_SEALED_MONSTERS = new Set(["lord_pixiu"]); // 黑眼貔貅:封鎖玩家法術,無法施展仙法
-// 該張符寶此戰是否被封印(只剩法器攻擊可出),供前端把手牌變灰
-export const isCardSealed = (monsterId: string, techId: string) =>
-  SPELL_SEALED_MONSTERS.has(monsterId) && techId !== "artifact_attack";
+// 該張符寶此回合是否被封印(只剩法器攻擊可出),供前端把手牌變灰。
+// 黑眼貔貅整場封法;時間道祖古或今每回合 25% 機率封法(combat.spellSealed,見 rollDaozuTurn)
+export const isSpellSealed = (combat: Pick<CombatState, "monsterId" | "spellSealed">) =>
+  SPELL_SEALED_MONSTERS.has(combat.monsterId) || !!combat.spellSealed;
+export const isCardSealed = (combat: Pick<CombatState, "monsterId" | "spellSealed">, techId: string) =>
+  isSpellSealed(combat) && techId !== "artifact_attack";
+
+// ═══ 5.4 版:道祖特技 ═══
+export const DAOZU_IDS = new Set(["daozu_wangsheng", "daozu_guixu", "daozu_moluo", "daozu_panyue", "lord_zhongtu"]);
+export const DAOZU_CRIT_CHANCE = 0.2; // 所有道祖:兩成機率暴擊,傷害 ×1.5
+export const DAOZU_CRIT_MULT = 1.5;
+export const WANGSHENG_REVIVES = 2; // 輪迴道祖:死後復活兩次(氣血回滿、狀態清空)
+export const GUIXU_DMG_TAKEN = 0.5; // 死寂道祖:受到的傷害減半
+export const GUIXU_DEATH_BLAST = 500_000; // 死寂道祖:隕落時爆發 50 萬傷害,玩家因此倒下仍算戰敗
+export const MOLUO_SURGE_HIGH = 1.6; // 真魔道祖:每次出手各半機率攻擊 ×1.6 或 ×0.6
+export const MOLUO_SURGE_LOW = 0.6;
+export const MOLUO_COUNTER_CHANCE = 0.35; // 真魔道祖:每次被出牌擊中時 35% 機率反擊,威力為一般攻擊的 1/3
+export const MOLUO_COUNTER_FRAC = 1 / 3;
+export const PANYUE_REGEN_PCT = 0.05; // 力之道祖:每回合回復 5% 氣血
+export const PANYUE_ATTACKS = 2; // 力之道祖:每回合攻擊兩次
+export const GUHUOJIN_FREEZE_CHANCE = 0.2; // 時間道祖:每回合 20% 機率凍結血條,該回合不受任何傷害
+export const GUHUOJIN_SEAL_CHANCE = 0.25; // 時間道祖:每回合 25% 機率封法(同黑眼貔貅,只剩法器攻擊)
+
+// 戰鬥畫面顯示的特性說明(道祖與既有的特技妖獸)
+const DAOZU_TRAITS: Record<string, string[]> = {
+  daozu_wangsheng: [`輪迴不滅:死後復活 ${WANGSHENG_REVIVES} 次,每次氣血回滿`],
+  daozu_guixu: [
+    `歸墟之體:受到的傷害減半`,
+    `同歸寂滅:隕落時爆發 ${GUIXU_DEATH_BLAST.toLocaleString()} 點傷害,你若因此倒下仍算戰敗`,
+  ],
+  daozu_moluo: [
+    `魔性無常:每次出手各半機率攻擊 +${Math.round((MOLUO_SURGE_HIGH - 1) * 100)}% 或 −${Math.round((1 - MOLUO_SURGE_LOW) * 100)}%`,
+    `以殺止殺:每次被你出牌擊中,${Math.round(MOLUO_COUNTER_CHANCE * 100)}% 機率反擊(威力 1/3)`,
+  ],
+  daozu_panyue: [`不朽肉身:每回合回復 ${Math.round(PANYUE_REGEN_PCT * 100)}% 氣血`, `開天雙擊:每回合攻擊 ${PANYUE_ATTACKS} 次`],
+  lord_zhongtu: [
+    `光陰凝滯:每回合 ${Math.round(GUHUOJIN_FREEZE_CHANCE * 100)}% 機率凍結血條,該回合不受任何傷害`,
+    `時光禁錮:每回合 ${Math.round(GUHUOJIN_SEAL_CHANCE * 100)}% 機率封印仙法,只能以法器攻擊`,
+  ],
+};
+export function monsterTraitsOf(monId: string): string[] {
+  const out = [...(DAOZU_TRAITS[monId] ?? [])];
+  if (DAOZU_IDS.has(monId)) out.push(`道祖威壓:${Math.round(DAOZU_CRIT_CHANCE * 100)}% 機率暴擊,傷害 ×${DAOZU_CRIT_MULT}`);
+  if (MONSTER_DODGE_CHANCE[monId]) out.push(`身法:${Math.round(MONSTER_DODGE_CHANCE[monId] * 100)}% 機率避過你的攻擊`);
+  if (MONSTER_TRIPLE_ATK_CHANCE[monId]) out.push(`狂暴:${Math.round(MONSTER_TRIPLE_ATK_CHANCE[monId] * 100)}% 機率攻擊 ×3`);
+  if (SPELL_SEALED_MONSTERS.has(monId)) out.push("封法:整場只能以法器攻擊");
+  if (DOT_IMMUNE_MONSTERS.has(monId)) out.push("魔鱗不侵:免疫燒傷、中毒");
+  const mon = MONSTERS.find((m) => m.id === monId);
+  if (mon?.ignoresCounters) out.push("無視五行相剋");
+  if (mon?.element === "煞") {
+    const gain = mon.isLord ? SHAQI_ON_SHA_HIT.lord : mon.elite ? SHAQI_ON_SHA_HIT.elite : SHAQI_ON_SHA_HIT.normal;
+    out.push(`煞氣侵體:每次擊中你,煞氣 +${gain}`);
+  }
+  return out;
+}
+
+// 玩家對妖獸造成傷害時的修正:時間道祖凍結血條(歸零)、死寂道祖減半
+function daozuDamageTaken(s: SaveData, dmg: number): { dmg: number; note: string } {
+  const id = s.combat?.monsterId;
+  if (s.combat?.timeFrozen) return { dmg: 0, note: "(光陰凝滯,傷害如石沉大海)" };
+  if (id === "daozu_guixu") return { dmg: Math.max(1, Math.floor(dmg * GUIXU_DMG_TAKEN)), note: "(歸墟之體,傷害減半)" };
+  return { dmg, note: "" };
+}
+
+// 新的玩家回合開始時:時間道祖擲骰決定本回合是否凍結血條、是否封法
+function rollDaozuTurn(s: SaveData) {
+  if (!s.combat || s.combat.monsterId !== "lord_zhongtu") return;
+  s.combat.timeFrozen = Math.random() < GUHUOJIN_FREEZE_CHANCE;
+  s.combat.spellSealed = Math.random() < GUHUOJIN_SEAL_CHANCE;
+  if (s.combat.timeFrozen) log(s, "古或今袖袍一拂,周身光陰凝滯——這一回合,任何攻擊都傷不了祂!");
+  if (s.combat.spellSealed) log(s, "時光倒流,你剛凝聚的法力化為烏有——這一回合只能以法器相搏!");
+}
+
+// 妖獸氣血歸零:輪迴道祖復活、死寂道祖同歸寂滅,否則照常勝利結算。回傳 null 代表戰鬥繼續
+function resolveMonsterDeath(s: SaveData): Modal | null {
+  const combat = s.combat!;
+  const mon = monsterById(combat.monsterId);
+  if (mon.id === "daozu_wangsheng" && (combat.revivesUsed ?? 0) < WANGSHENG_REVIVES) {
+    combat.revivesUsed = (combat.revivesUsed ?? 0) + 1;
+    combat.monsterHp = combat.bossHpMax ?? monsterHpOf(mon);
+    combat.monsterStatus = [];
+    log(s, `六道輪盤轟然轉動——${mon.name} 自輪迴中重生,氣血盡復!(已復活 ${combat.revivesUsed}/${WANGSHENG_REVIVES} 次)`);
+    return null;
+  }
+  if (mon.id === "daozu_guixu") {
+    const { dmg, absorbed } = absorbShield(s, GUIXU_DEATH_BLAST);
+    s.hp -= dmg;
+    pushDamageEvent("player", dmg, mon.element);
+    const line = `${mon.name} 隕落之際,歸墟之力轟然爆發,你受到 ${dmg} 點傷害${absorbed > 0 ? `(護盾抵擋 ${absorbed} 點)` : ""}!`;
+    if (s.hp <= 0) return handlePlayerDefeat(s, `${line}你與歸墟道祖同歸於盡。`);
+    log(s, line);
+  }
+  return winCombat(s);
+}
 // 免疫燒傷/中毒(5.0 版,冥翎天魔古龍「魔鱗不侵」):燒傷、中毒按氣血上限比例扣血,會讓超厚血的王反而
 // 最好打;這類妖獸只吃直接傷害。冰封、虛弱仍然有效。
 const DOT_IMMUNE_MONSTERS = new Set(["zm_mingling_gulong"]);
+// 被煞屬性妖獸擊中時增加的煞氣(5.4 版):一般 30、菁英 60、地域王/道祖 150,真仙以上才累積,上限 10000
+export const SHAQI_ON_SHA_HIT = { normal: 30, elite: 60, lord: 150 };
 // 被這些妖獸擊敗(氣血歸零)時額外增加的煞氣(5.0 版);遁走不算
 const SHAQI_ON_DEFEAT: Record<string, number> = { zm_mingling_gulong: 2500 };
 const dotBlocked = (monId: string, kind: StatusEffect["kind"]) =>
@@ -814,6 +1119,7 @@ export function newSave(name: string, sectId: string): SaveData {
     equippedTalisman: null,
     equippedPet: null,
     equippedMing: null,
+    equippedMount: null,
     unlockedRecipes: [],
     jinyuanUnlocked: false,
     manhuangUnlocked: false,
@@ -848,6 +1154,8 @@ export function newSave(name: string, sectId: string): SaveData {
     tengfuBag: {},
     tengfuGrid: [],
     pouchStones: 0,
+    location: { zone: LANDING_ZONE.renjian },
+    craftPity: {},
   };
   const { hpMax, mpMax } = statsOf(s);
   s.hp = hpMax;
@@ -880,7 +1188,7 @@ function maybeEncounter(s: SaveData) {
     s.stones += stones;
     log(s, `你偶遇一位隕落修士的遺蛻,收殮入土後,拾得遺留靈石 ${stones} 枚。`);
   } else if (roll < 0.075) {
-    const herbs = ["zhuguo", "xuelingzhi", "zijinhua", "qiannianlingru"];
+    const herbs = ["zhuguo", "xuelingzhi", "qiannianlingru"];
     const h = herbs[rand(0, realm.stage >= 3 ? 3 : 2)];
     give(s, h);
     log(s, `一隻靈猴自林間擲來一株【${itemById(h).name}】,吱吱兩聲便竄得無影無蹤。`);
@@ -1027,6 +1335,7 @@ function resolveAscensionRoll(s: SaveData, chance: number): Modal {
     const lines = [
       "九霄之上雷雲翻湧,萬丈金光自天門傾瀉——你踏碎虛空,白日飛昇!",
       "自山村凡童至真仙之軀,這一步,你走了一生。",
+      ...ascendRealmIfNeeded(s, realm.stage, REALMS[s.realmIdx].stage),
     ];
     log(s, ...lines);
     return { success: true, title: "白 日 飛 昇", lines };
@@ -1064,7 +1373,11 @@ function handlePlayerDefeat(s: SaveData, causeLine: string): Modal {
     return resolveAscensionRoll(s, chance);
   }
   const mon = monsterById(s.combat!.monsterId);
-  const lost = Math.floor(s.stones / 2);
+  // 輪迴殿(5.4 版):每 24 小時一次戰敗不損失靈石
+  const now = Date.now();
+  const grace = s.faction === "lunhui" && now - (s.lunhuiGraceAt ?? 0) >= LUNHUI_GRACE_HOURS * HOUR_MS;
+  if (grace) s.lunhuiGraceAt = now;
+  const lost = grace ? 0 : Math.floor(s.stones / 2);
   s.hp = surviveHp;
   s.mp = mpMax;
   s.stones -= lost;
@@ -1072,14 +1385,14 @@ function handlePlayerDefeat(s: SaveData, causeLine: string): Modal {
   // 冥翎天魔古龍(5.0 版):落敗者遭天魔魔氣侵體,煞氣暴增(上限 10000)
   const shaqiGain = SHAQI_ON_DEFEAT[mon.id] ?? 0;
   if (shaqiGain > 0) s.shaqi = Math.min(10000, (s.shaqi ?? 0) + shaqiGain);
-  log(s, causeLine, `你身受重傷不敵,倉皇遁走…… 遺失了 ${lost} 靈石。`);
+  log(s, causeLine, grace ? "你身受重傷不敵,遁入輪迴暗道脫身——靈石分毫未失。" : `你身受重傷不敵,倉皇遁走…… 遺失了 ${lost} 靈石。`);
   return {
     title: "戰 敗 遁 走",
     success: false,
     lines: [
       `不敵【${mon.name}】,身受重傷!`,
       `氣血驟降至 ${formatHpPair(surviveHp, hpMax)}(僅剩三成)。`,
-      `倉皇遁走間,遺失靈石 ${lost} 枚。`,
+      grace ? "遁入輪迴暗道脫身,靈石分毫未失(輪迴殿每日一次)。" : `倉皇遁走間,遺失靈石 ${lost} 枚。`,
       ...(shaqiGain > 0 ? [`天魔魔氣侵體,煞氣暴增 ${shaqiGain}(現 ${s.shaqi}/10000)!`] : []),
     ],
   };
@@ -1087,7 +1400,7 @@ function handlePlayerDefeat(s: SaveData, causeLine: string): Modal {
 
 // 回傳戰敗彈窗(defeat 有值時代表這回合被打到氣血歸零,呼叫端應以此彈窗取代靜默記錄)。
 // 冰封判定放在最前面:不論攻擊/施法/遁走失敗召來的這一回合,只要怪物身上仍有冰封,一律直接跳過其攻擊。
-function monsterTurn(s: SaveData, attackMult: number): { lines: string[]; defeat?: Modal } {
+function monsterTurn(s: SaveData, attackMult: number, counter = false): { lines: string[]; defeat?: Modal } {
   if (!s.combat) return { lines: [] };
   const mon = monsterById(s.combat.monsterId);
   if (hasStatus(s.combat.monsterStatus, "freeze")) {
@@ -1106,7 +1419,9 @@ function monsterTurn(s: SaveData, attackMult: number): { lines: string[]; defeat
     return { lines: [line] };
   }
   const monAtkBase = s.combat.bossAtk ?? monsterAtkOf(mon);
-  const monAtk = Math.floor(monAtkBase * attackMult);
+  // 真魔道祖:魔性無常,各半機率攻擊 ×1.6 / ×0.6
+  const surge = mon.id === "daozu_moluo" ? (Math.random() < 0.5 ? MOLUO_SURGE_HIGH : MOLUO_SURGE_LOW) : 1;
+  const monAtk = Math.floor(monAtkBase * attackMult * surge);
   const { def, speed } = statsOf(s);
   const monSpeed = Math.floor(monAtk * 1.2);
   const dodge = Math.min(0.35, Math.max(0.05, (speed / (speed + monSpeed)) * 0.5));
@@ -1122,6 +1437,8 @@ function monsterTurn(s: SaveData, attackMult: number): { lines: string[]; defeat
   let dmg = Math.max(1, rand(Math.floor(dmgBase * 0.8), Math.floor(dmgBase * 1.2)));
   const enraged = Math.random() < (MONSTER_TRIPLE_ATK_CHANCE[mon.id] ?? 0);
   if (enraged) dmg *= 3;
+  const crit = DAOZU_IDS.has(mon.id) && Math.random() < DAOZU_CRIT_CHANCE;
+  if (crit) dmg = Math.floor(dmg * DAOZU_CRIT_MULT);
   let statusNote = "";
   const statusKind = STATUS_BY_ELEMENT[mon.element];
   if (statusKind && Math.random() < STATUS_PROC_CHANCE) {
@@ -1133,8 +1450,15 @@ function monsterTurn(s: SaveData, attackMult: number): { lines: string[]; defeat
     statusNote = `,你因此${STATUS_LABEL[statusKind]}!`;
   }
   const { dmg: dmgAfterShield, absorbed } = absorbShield(s, dmg);
+  if (mon.element === "煞" && REALMS[s.realmIdx].stage >= XIAN_STAGE) {
+    const gain = mon.isLord ? SHAQI_ON_SHA_HIT.lord : mon.elite ? SHAQI_ON_SHA_HIT.elite : SHAQI_ON_SHA_HIT.normal;
+    s.shaqi = Math.min(10000, (s.shaqi ?? 0) + gain);
+    statusNote += `,煞氣侵體 +${gain}(現 ${s.shaqi}/10000)`;
+  }
   lines.push(
-    `${mon.name} 反擊${enraged ? ",龍血狂暴,攻擊力驟增三倍" : ""},你受到 ${dmgAfterShield} 點傷害${
+    `${mon.name} ${counter ? "以殺止殺,當場還手" : "反擊"}${enraged ? ",龍血狂暴,攻擊力驟增三倍" : ""}${
+      surge > 1 ? ",魔性大發,攻勢暴漲" : surge < 1 ? ",魔性低迷,攻勢稍緩" : ""
+    }${crit ? ",道祖威壓之下竟是暴擊" : ""},你受到 ${dmgAfterShield} 點傷害${
       absorbed > 0 ? `(護盾抵擋 ${absorbed} 點)` : ""
     }${statusNote}。`,
   );
@@ -1166,15 +1490,34 @@ function postPlayerTurn(s: SaveData): { loot?: Modal } {
   const monTick = tickDot(s.combat.monsterStatus, monMaxHp);
   s.combat.monsterStatus = monTick.list;
   if (monTick.dmg > 0) {
-    s.combat.monsterHp -= monTick.dmg;
-    for (const ev of monTick.events) pushDamageEvent("monster", ev.dmg, ev.element);
-    log(s, `${mon.name} 因${monTick.labels.join("、")}持續受創!`);
-    if (s.combat.monsterHp <= 0) return { loot: winCombat(s) };
+    // 5.4 版:持續傷害同樣受道祖的凍結血條、減傷影響
+    const taken = daozuDamageTaken(s, monTick.dmg);
+    const scale = taken.dmg / monTick.dmg;
+    s.combat.monsterHp -= taken.dmg;
+    for (const ev of monTick.events) pushDamageEvent("monster", Math.floor(ev.dmg * scale), ev.element);
+    log(s, `${mon.name} 因${monTick.labels.join("、")}持續受創!${taken.note}`);
+    if (s.combat.monsterHp <= 0) {
+      const end = resolveMonsterDeath(s);
+      if (end) return { loot: end };
+    }
   }
+  // 本回合的凍結/封法到此為止,換妖獸出手
+  s.combat.timeFrozen = false;
+  s.combat.spellSealed = false;
 
-  const turn = monsterTurn(s, monAttackMult);
-  if (turn.defeat) return { loot: turn.defeat };
-  if (!s.combat) return {}; // 防禦性檢查:理論上戰敗已由上一行攔截
+  // 力之道祖每回合攻擊兩次;其餘妖獸一次
+  const attacks = mon.id === "daozu_panyue" ? PANYUE_ATTACKS : 1;
+  for (let i = 0; i < attacks; i++) {
+    const turn = monsterTurn(s, monAttackMult);
+    if (turn.defeat) return { loot: turn.defeat };
+    if (!s.combat) return {}; // 防禦性檢查:理論上戰敗已由上一行攔截
+  }
+  // 力之道祖:不朽肉身,每回合回復 5% 氣血
+  if (mon.id === "daozu_panyue") {
+    const heal = Math.floor(monMaxHp * PANYUE_REGEN_PCT);
+    s.combat.monsterHp = Math.min(monMaxHp, s.combat.monsterHp + heal);
+    log(s, `${mon.name} 肉身不朽,傷勢自行癒合(氣血 +${formatHp(heal)})。`);
+  }
 
   const { hpMax, mpMax } = statsOf(s);
   const plyTick = tickDot(s.combat.playerStatus, hpMax);
@@ -1199,8 +1542,80 @@ function postPlayerTurn(s: SaveData): { loot?: Modal } {
   s.combat.hand = redrawn.drawn;
   s.combat.deck = redrawn.deck;
   s.combat.discard = redrawn.discard;
+  rollDaozuTurn(s);
 
   return {};
+}
+
+// ═══ 5.4 版:派系 ═══
+// 煞氣傷害懲罰:每點 −0.01%,九幽修羅減半
+function shaqiPenaltyMult(s: SaveData): number {
+  const pen = (s.shaqi ?? 0) / 10000;
+  return Math.max(0, 1 - pen * (s.faction === "jiuyou" ? JIUYOU_SHAQI_PENALTY_MULT : 1));
+}
+function combatZoneOf(locationId: string): string | undefined {
+  const loc = LOCATIONS.find((l) => l.id === locationId);
+  return loc ? zoneOfLocation(loc)?.id : undefined;
+}
+// 敵對派系領地:狩獵/採集時機率遭派系巡守截殺(敵對 12%、死敵 20%)
+function maybeFactionAmbush(s: SaveData, loc: Location): ActionResult | null {
+  const owner = ownerOfZone(zoneOfLocation(loc)?.id ?? "");
+  if (!owner || !s.faction) return null;
+  const chance = AMBUSH_CHANCE[relationOf(s.faction, owner.id)] ?? 0;
+  if (!(chance > 0) || Math.random() >= chance) return null;
+  const guard = monsterById(owner.guardId);
+  s.combat = {
+    monsterId: guard.id,
+    monsterHp: monsterHpOf(guard),
+    locationId: loc.id,
+    factionGuard: true,
+    ...startingCombatHand(s),
+    monsterStatus: [],
+    playerStatus: [],
+  };
+  if (!s.seen.includes(guard.id)) s.seen.push(guard.id);
+  log(s, `你身為${factionById(s.faction)!.name}門人擅入${owner.name}領地——【${guard.name}】自暗處殺出!(${guard.element}屬性)`);
+  return { save: s };
+}
+// 中立領地的過路費:該地域一般妖獸平均靈石 × TOLL_KILLS(本派、敵對、無主地域不收)
+export function tollOf(s: Pick<SaveData, "faction">, zoneId: string): number {
+  const owner = ownerOfZone(zoneId);
+  if (!owner || !s.faction || relationOf(s.faction, owner.id) !== "neutral") return 0;
+  const normals = locationsOfZone(zoneId)
+    .flatMap((l) => l.monsters)
+    .map(monsterById)
+    .filter((m) => !m.isLord && !m.elite);
+  if (!normals.length) return 0;
+  const avg = normals.reduce((a, m) => a + (m.stones[0] + m.stones[1]) / 2, 0) / normals.length;
+  return Math.floor(avg * TOLL_KILLS);
+}
+
+// ═══ 5.2/5.3 版:依妖獸所屬界統一追加的掉落(不必逐隻改 world.ts;圖鑑也用同一份顯示)═══
+export function worldTierOfMonster(id: string): WorldTier | null {
+  const key = MONSTER_TIER.get(id);
+  if (!key) return null;
+  if (key.startsWith("x-")) return "xianjie";
+  return tierOfStage(Number(key));
+}
+// 五行基礎材料:依自身五行、品級依所在界;一般 20% ×1、菁英 60% ×2、地域王必掉 ×3
+export function elementDropOf(mon: Monster): { id: string; n: number; chance: number } | null {
+  const tier = worldTierOfMonster(mon.id);
+  if (!tier || mon.id === "tianjie_shenling" || mon.id === "huanxiang_taisui") return null;
+  const rule = mon.isLord ? ELEMENT_DROP.lord : mon.elite ? ELEMENT_DROP.elite : ELEMENT_DROP.normal;
+  return { id: elementMaterialFor(tier, mon.element, Math.random()), n: rule.n, chance: rule.chance };
+}
+// 破界珠:靈界地域王 2%、靈界菁英 0.5%、仙界妖獸 0.3%;逆星盤:北寒/金源地域王 1%;
+// 碧眼雷鵬:靈界地域王 1%;鯤鵬坐騎:金源仙帝 1%
+export function geoDropsOf(mon: Pick<Monster, "id" | "isLord" | "elite">): { id: string; chance: number }[] {
+  const tier = worldTierOfMonster(mon.id);
+  if (!tier || mon.id === "tianjie_shenling" || mon.id === "huanxiang_taisui") return [];
+  const out: { id: string; chance: number }[] = [];
+  if (tier === "lingjie" && mon.isLord) out.push({ id: "pojie_zhu", chance: 0.02 }, { id: "biyan_leipeng", chance: 0.01 });
+  else if (tier === "lingjie" && mon.elite) out.push({ id: "pojie_zhu", chance: 0.005 });
+  else if (tier === "xianjie") out.push({ id: "pojie_zhu", chance: 0.003 });
+  if (mon.id === "lord_beihan" || mon.id === "lord_jinyuan") out.push({ id: "nixing_pan", chance: 0.01 });
+  if (mon.id === "lord_jinyuan") out.push({ id: "kunpeng_zuoqi", chance: 0.01 });
+  return out;
 }
 
 function winCombat(s: SaveData): Modal {
@@ -1268,8 +1683,28 @@ function winCombat(s: SaveData): Modal {
   if (windfall) stones *= 2;
   const dropNames: string[] = [];
   const dropIds: string[] = [];
-  for (const d of mon.drops) {
-    if (Math.random() < d.chance) {
+  // 5.2/5.3 版:五行基礎材料與跨界道具、異獸坐騎等依階層統一追加的掉落(見 geoDropsOf / elementDropOf)
+  const el = elementDropOf(mon);
+  if (el && Math.random() < el.chance) {
+    give(s, el.id, el.n);
+    dropNames.push(`${itemById(el.id).name}${el.n > 1 ? ` ×${el.n}` : ""}`);
+    for (let i = 0; i < el.n; i++) dropIds.push(el.id);
+  }
+  // 5.4 版:蠻荒/九幽/真魔成員在本派領地掉落率 +20%;本派領地擊殺 +1 功勳、擊殺巡守 +30 功勳
+  const combatZone = combatZoneOf(s.combat!.locationId);
+  const homeHere = !!s.faction && ownerOfZone(combatZone ?? "")?.id === s.faction;
+  const dropMult = homeHere && ["manhuang", "jiuyou", "zhenmo"].includes(s.faction!) ? HOME_DROP_MULT : 1;
+  const meritGain = (s.combat!.factionGuard ? MERIT_GUARD_KILL : 0) + (homeHere ? MERIT_HOME_KILL : 0);
+  if (meritGain > 0) {
+    s.merit = (s.merit ?? 0) + meritGain;
+    dropNames.push(`功勳 +${meritGain}`);
+  }
+  if (s.faction === "zhenmo") {
+    const { hpMax } = statsOf(s);
+    s.hp = Math.min(hpMax, s.hp + Math.floor(hpMax * ZHENMO_KILL_HEAL_PCT));
+  }
+  for (const d of [...mon.drops, ...geoDropsOf(mon)]) {
+    if (Math.random() < d.chance * dropMult) {
       give(s, d.id);
       dropNames.push(itemById(d.id).name);
       dropIds.push(d.id);
@@ -1335,6 +1770,9 @@ function equipToSlot(s: SaveData, item: ItemDef): boolean {
     case "mingqi":
       s.equippedMing = item.id;
       return true;
+    case "mount":
+      s.equippedMount = item.id;
+      return true;
     default:
       return false;
   }
@@ -1346,6 +1784,8 @@ const slotVerb = (kind: string) =>
       ? "貼身催動"
       : kind === "mingqi"
         ? "佩於命宮,冥冥中似有天機牽引"
+        : kind === "mount"
+          ? "收為坐騎,往後遠行快上許多"
         : kind === "pet"
           ? "收為靈寵,伴隨左右"
           : "穿戴護身";
@@ -1355,6 +1795,17 @@ function exploreSecretRealm(s: SaveData): ActionResult {
   const realm = REALMS[s.realmIdx];
   const lines: string[] = ["雲遊途中,你踏入一處與世隔絕的上古【秘境】——"];
   const roll = Math.random();
+
+  // 5.4 版:身在蠻荒異界雲遊時 8% 尋得輪迴界入口(尚未開通者;獨立骰,不影響下方既有機率序列)
+  if (realm.stage >= 10 && currentZoneOf(s) === "manhuang" && !zoneUnlocked(s, zoneById("lunhui")!) && Math.random() < 0.08) {
+    s.lunhuiUnlocked = true;
+    lines.push(
+      "秘境深處傳來忘川水聲——一道幽暗古門在你面前緩緩開啟,【輪迴界】的入口自此為你顯現!",
+      "輪迴界與蠻荒異界相連,是輪迴殿的領地,慎入。",
+    );
+    log(s, "你於蠻荒秘境深處尋得通往【輪迴界】的古門,新地圖解鎖!");
+    return { save: s, loot: { title: "秘 境 · 輪 迴 古 門", success: true, lines } };
+  }
 
   // 12% 解鎖金源仙域(僅真仙,且尚未解鎖)
   if (realm.stage >= 10 && !s.jinyuanUnlocked && roll < 0.12) {
@@ -1465,6 +1916,8 @@ export function normalizeSave(s: SaveData): void {
   if (s.equippedTalisman === undefined) s.equippedTalisman = null;
   if (s.equippedPet === undefined) s.equippedPet = null;
   if (s.equippedMing === undefined) s.equippedMing = null;
+  if (s.equippedMount === undefined) s.equippedMount = null;
+  if (!s.craftPity || typeof s.craftPity !== "object") s.craftPity = {};
   if (!Array.isArray(s.unlockedRecipes)) s.unlockedRecipes = [];
   if (typeof s.jinyuanUnlocked !== "boolean") s.jinyuanUnlocked = false;
   if (typeof s.manhuangUnlocked !== "boolean") s.manhuangUnlocked = false;
@@ -1490,6 +1943,23 @@ export function normalizeSave(s: SaveData): void {
     trimPouchToOwnership(s);
     s.pouchTrimmed = true;
   }
+  // 5.2 版:移除已無作用的補法力丹藥/仙草,持有者依原售價六成折回靈石(見 RETIRED_ITEMS)
+  for (const [id, { name, price }] of Object.entries(RETIRED_ITEMS)) {
+    if (!(id in s.inventory)) continue;
+    const n = Math.max(0, s.inventory[id] ?? 0);
+    delete s.inventory[id];
+    if (n <= 0) continue;
+    const refund = Math.floor(price * 0.6) * n;
+    s.stones += refund;
+    log(s, `【${name}】補充法力之效已無用武之地,${n} 份折回靈石 ${refund}。`);
+  }
+  // 5.2 版:現在位置(舊存檔依境界補上,並結算移動抵達與下界時限)
+  settleLocation(s, Date.now());
+  // 5.4 版:仙界玩家尚未擇定派系(舊存檔、或飛昇時未選)一律補上待選旗標
+  if (typeof s.merit !== "number") s.merit = 0;
+  if (typeof s.lunhuiUnlocked !== "boolean") s.lunhuiUnlocked = false;
+  if (!s.faction && REALMS[s.realmIdx].stage >= XIAN_STAGE) s.factionPending = true;
+  if (s.faction && s.factionPending) s.factionPending = false;
   // 3.0/3.1/3.3 版:符寶袋上線前,可能已有玩家戰鬥進行到一半(combat 存在但缺少 deck/discard,
   // 舊制 hand 就算存在也是不同邏輯抽出來的,一併重新洗一手新的),避免舊戰鬥因缺欄位而出錯或
   // 前端無牌可選(playerShield 為 undefined 時各處皆以 ?? 0 處理,無需在此額外補值)
@@ -1541,9 +2011,20 @@ function applyActionInner(
       type === "wander" ||
       type === "cultivate" ||
       type === "rest" ||
-      type === "breakthrough")
+      type === "breakthrough" ||
+      type === "travel" ||
+      type === "descend" ||
+      type === "returnUp")
   ) {
     return { save: s, error: "你正於宗門仙境中閉關潛修,無法分心他顧,須先離開仙境方可行動。" };
+  }
+
+  // 5.4 版:仙界玩家擇定派系之前,無法離開飛昇台(狩獵、採集、移動、雲遊、下界、登塔)
+  if (
+    s.factionPending &&
+    ["hunt", "gather", "travel", "wander", "descend", "challengeFutu", "rift", "recall"].includes(type)
+  ) {
+    return { save: s, error: "仙界五大派系的使者正等你答覆——請先擇定派系。" };
   }
 
   switch (type) {
@@ -1630,6 +2111,8 @@ function applyActionInner(
 
     case "wander": {
       if (s.combat) return { save: s, error: "激戰之中,無法遠遊。" };
+      if (s.location?.travel) return { save: s, error: "你正在趕路途中,無法分心雲遊。" };
+      if (s.location?.visit) return { save: s, error: "身處下界,受界面之力牽制,無法雲遊四海。" };
       const WANDER_LIFE = 5000;
       const WANDER_STONES = 100 * 1000000; // 100 極品靈石
       const cap = maxLifeOf(s);
@@ -1737,6 +2220,7 @@ function applyActionInner(
 
     case "breakthrough": {
       if (s.combat) return { save: s, error: "激戰之中,無法突破。" };
+      if (s.location?.visit) return { save: s, error: "身處下界,受界面之力壓制,無法突破。" };
       const realm = REALMS[s.realmIdx];
       // 金仙/太乙皆非修為突破可及(金仙→太乙須集滿太乙精魂於太乙殿突破),一併攔下
       if (s.realmIdx >= REALMS.length - 1 || realm.id === "jinxian_realm") {
@@ -1821,6 +2305,7 @@ function applyActionInner(
             lines: [`靈氣灌體,經脈轟鳴——你成功突破至【${next.name}】!氣血法力盡復。`],
           };
         }
+        breakResult.lines.push(...ascendRealmIfNeeded(s, realm.stage, next.stage));
         log(s, ...breakResult.lines);
         return { save: s, breakResult };
       }
@@ -1860,12 +2345,16 @@ function applyActionInner(
       const loc = LOCATIONS.find((l) => l.id === payload.locationId);
       if (!loc) return { save: s, error: "無此秘境" };
       if (!regionUnlocked(s, loc.region)) return { save: s, error: "此地尚未開啟" };
+      const locErr = locationActionError(s, loc);
+      if (locErr) return { save: s, error: locErr };
       const { realm } = statsOf(s);
       if (!canEnterStage(realm.stage, loc.reqStage)) {
         log(s, `${loc.name} 兇險異常,以你現在的境界踏入必死無疑。`);
         return { save: s };
       }
       s.energy -= energyCost;
+      const ambush = maybeFactionAmbush(s, loc);
+      if (ambush) return ambush;
       if (Math.random() < 0.35 && loc.monsters.length) {
         const mid = loc.monsters[rand(0, loc.monsters.length - 1)];
         const mon = monsterById(mid);
@@ -1882,7 +2371,8 @@ function applyActionInner(
         return { save: s };
       }
       // 洗煞池(3.19 版新增):真魔界採集時,一定機率不掉材料、改觸發洗煞池,將煞氣直接歸零
-      if (loc.region === "zhenmo" && (s.shaqi ?? 0) > 0 && Math.random() < 0.08) {
+      const xishaChance = 0.08 * (s.faction === "zhenmo" ? ZHENMO_XISHA_MULT : 1);
+      if (loc.region === "zhenmo" && (s.shaqi ?? 0) > 0 && Math.random() < xishaChance) {
         s.shaqi = 0;
         log(s, `你在 ${loc.name} 採集時,腳下靈光一閃——竟是一池上古【洗煞池】!煞氣瞬間滌淨無存。`);
         return {
@@ -1920,12 +2410,16 @@ function applyActionInner(
       const loc = LOCATIONS.find((l) => l.id === payload.locationId);
       if (!loc) return { save: s, error: "無此秘境" };
       if (!regionUnlocked(s, loc.region)) return { save: s, error: "此地尚未開啟" };
+      const locErr = locationActionError(s, loc);
+      if (locErr) return { save: s, error: locErr };
       const { realm } = statsOf(s);
       if (!canEnterStage(realm.stage, loc.reqStage)) {
         log(s, `${loc.name} 兇險異常,以你現在的境界踏入必死無疑。`);
         return { save: s };
       }
       s.energy -= energyCost;
+      const ambush = maybeFactionAmbush(s, loc);
+      if (ambush) return ambush;
       // 機率遭遇地域王(妖獸領主);秘境專屬地域王(如蠻荒異界四領地)優先於區域統一地域王
       const region = REGIONS.find((r) => r.id === loc.region);
       const lordId = loc.lordId ?? region?.lordId;
@@ -1998,8 +2492,13 @@ function applyActionInner(
       const techIds = Array.isArray(payload.techIds) ? payload.techIds.map(String) : [];
       if (techIds.length === 0) return { save: s, error: "尚未選取任何符寶" };
       // 封法只攔仙法;法器仍須通過下方的手牌、單獨出牌與法力檢查。
-      if (SPELL_SEALED_MONSTERS.has(s.combat.monsterId) && techIds.some((id) => id !== "artifact_attack")) {
-        return { save: s, error: "黑眼貔貅雙目幽光暴閃,將你的法力波動盡數封鎖,此戰唯有以法器相搏!" };
+      if (isSpellSealed(s.combat) && techIds.some((id) => id !== "artifact_attack")) {
+        return {
+          save: s,
+          error: s.combat.spellSealed
+            ? "時光禁錮之下,法力凝滯不動,這一回合唯有以法器相搏!"
+            : "黑眼貔貅雙目幽光暴閃,將你的法力波動盡數封鎖,此戰唯有以法器相搏!",
+        };
       }
 
       // 逐張核銷手牌:必須真的持有(允許同名重複,但不得超過手牌實際張數)
@@ -2055,7 +2554,7 @@ function applyActionInner(
       // 煞氣傷害懲罰(3.19 版新增):真仙以上才會累積 shaqi(其餘角色恆為 0,以下恆為 1 倍,無影響)。
       // 每點 -0.01% 傷害,滿 10000 時 0 倍;煞屬性符寶反其道而行,見下方逐張判斷。
       const shaqi = s.shaqi ?? 0;
-      const shaqiDmgMult = Math.max(0, 1 - shaqi / 10000);
+      const shaqiDmgMult = shaqiPenaltyMult(s);
       for (const t of techs) {
         const level = techLevelOf(s, t.id);
         let p = t.power * techPowerMult(level);
@@ -2078,6 +2577,8 @@ function applyActionInner(
         // 煞屬性符寶(3.19 版新增):不受煞氣傷害懲罰,反而依煞氣額外提升傷害;其餘符寶正常吃懲罰
         if (t.element === "煞" && t.shaqiScalePct) p *= 1 + (shaqi / 10000) * t.shaqiScalePct;
         else p *= shaqiDmgMult;
+        // 九幽修羅(5.4 版):煞屬性符寶傷害 +20%
+        if (t.element === "煞" && s.faction === "jiuyou") p *= 1 + JIUYOU_SHA_CARD_PCT;
         rawPower += p;
       }
       // 延續加成用掉即消耗,不論這次批次是否真的命中同元素都算用過一次機會
@@ -2135,8 +2636,9 @@ function applyActionInner(
       if (Math.random() < (MONSTER_DODGE_CHANCE[mon.id] ?? 0)) {
         log(s, `你同時施展【${names}】,${mon.name} 身形一晃,竟憑空避過這一擊!` + (extraNotes.length ? `(${extraNotes.join("、")})` : ""));
       } else {
-        const dmg = Math.max(1, Math.floor(atk * rawPower * sectMult * weaken * (0.9 + Math.random() * 0.2)));
-        let statusNote = "";
+        const taken = daozuDamageTaken(s, Math.max(1, Math.floor(atk * rawPower * sectMult * weaken * (0.9 + Math.random() * 0.2))));
+        const dmg = taken.dmg;
+        let statusNote = taken.note;
         for (const t of techs) {
           // forceStatus(3.13 版新增):必定命中,不受一般命中機率限制,優先於機率判定
           if (t.forceStatus && dotBlocked(mon.id, t.forceStatus)) {
@@ -2198,7 +2700,14 @@ function applyActionInner(
           }
         }
       }
-      if (s.combat.monsterHp <= 0) return { save: s, loot: winCombat(s) };
+      if (s.combat.monsterHp <= 0) {
+        const end = resolveMonsterDeath(s);
+        if (end) return { save: s, loot: end };
+      } else if (mon.id === "daozu_moluo" && Math.random() < MOLUO_COUNTER_CHANCE) {
+        // 真魔道祖:每次被出牌擊中都可能反擊(一回合出牌多次就可能被反擊多次)
+        const counter = monsterTurn(s, atkMultFromStatus(s.combat.monsterStatus) * MOLUO_COUNTER_FRAC, true);
+        if (counter.defeat) return { save: s, loot: counter.defeat };
+      }
 
       // 法力歸零,或批次中含終結技(endsTurn):自動觸發施法結束,不需要玩家再按一次
       if (s.mp <= 0 || techs.some((t) => t.endsTurn)) {
@@ -2211,8 +2720,13 @@ function applyActionInner(
     case "cast": {
       if (!s.combat) return { save: s, error: "並無戰鬥" };
       const techId = String(payload.techId ?? "");
-      if (SPELL_SEALED_MONSTERS.has(s.combat.monsterId) && techId !== "artifact_attack") {
-        return { save: s, error: "黑眼貔貅雙目幽光暴閃,將你的法力波動盡數封鎖,此戰唯有以法器相搏!" };
+      if (isCardSealed(s.combat, techId)) {
+        return {
+          save: s,
+          error: s.combat.spellSealed
+            ? "時光禁錮之下,法力凝滯不動,這一回合唯有以法器相搏!"
+            : "黑眼貔貅雙目幽光暴閃,將你的法力波動盡數封鎖,此戰唯有以法器相搏!",
+        };
       }
       if (!s.learned.includes(techId)) return { save: s, error: "未習得此仙法" };
       // 仙法卡牌化:僅本回合手牌內的仙法可施展,不在手牌中一律拒絕(前端只會顯示手牌內的按鈕,此為後端防線)
@@ -2254,14 +2768,15 @@ function applyActionInner(
       } else {
         const shaqi = s.shaqi ?? 0;
         const shaqiMult =
-          tech.element === "煞" && tech.shaqiScalePct
+          (tech.element === "煞" && tech.shaqiScalePct
             ? 1 + (shaqi / 10000) * tech.shaqiScalePct
-            : Math.max(0, 1 - shaqi / 10000);
-        const dmg = Math.max(
-          1,
-          Math.floor(atk * tech.power * lvlMult * mult * sectMult * weaken * shaqiMult * (0.9 + Math.random() * 0.2)),
+            : shaqiPenaltyMult(s)) * (tech.element === "煞" && s.faction === "jiuyou" ? 1 + JIUYOU_SHA_CARD_PCT : 1);
+        const taken = daozuDamageTaken(
+          s,
+          Math.max(1, Math.floor(atk * tech.power * lvlMult * mult * sectMult * weaken * shaqiMult * (0.9 + Math.random() * 0.2))),
         );
-        let statusNote = "";
+        const dmg = taken.dmg;
+        let statusNote = taken.note;
         const statusKind = STATUS_BY_ELEMENT[tech.element];
         if (statusKind && !dotBlocked(mon.id, statusKind) && Math.random() < STATUS_PROC_CHANCE) {
           s.combat.monsterStatus = applyStatus(
@@ -2282,7 +2797,13 @@ function applyActionInner(
         s.combat.monsterHp -= dmg;
         pushDamageEvent("monster", dmg, tech.element, mult > 1 ? "super" : mult < 1 ? "resist" : undefined);
       }
-      if (s.combat.monsterHp <= 0) return { save: s, loot: winCombat(s) };
+      if (s.combat.monsterHp <= 0) {
+        const end = resolveMonsterDeath(s);
+        if (end) return { save: s, loot: end };
+      } else if (mon.id === "daozu_moluo" && Math.random() < MOLUO_COUNTER_CHANCE) {
+        const counter = monsterTurn(s, atkMultFromStatus(s.combat.monsterStatus) * MOLUO_COUNTER_FRAC, true);
+        if (counter.defeat) return { save: s, loot: counter.defeat };
+      }
       // 3.3 版:出牌不再自動結束回合,法力允許就能接著出下一張,直到玩家主動施法結束(見 case "endTurn")
       return { save: s };
     }
@@ -2373,6 +2894,9 @@ function applyActionInner(
       }
       if (!s.jinyuanUnlocked) {
         return { save: s, error: "你尚未尋得金源仙域,浮屠塔無從得見。" };
+      }
+      if (s.location?.travel || currentZoneOf(s) !== "jinyuan") {
+        return { save: s, error: "浮屠塔矗立於金源仙域,須身在金源仙域方能登塔。" };
       }
       const base = monsterById("huanxiang_taisui");
       const floor = s.futuFloor + 1; // 挑戰下一層(從第 1 層起)
@@ -2806,6 +3330,229 @@ function applyActionInner(
       return { save: s };
     }
 
+    // ═══ 5.2 版:移動(見 world-travel-design.md 第三節)═══
+    // 前端倒數結束時呼叫,僅觸發 normalizeSave 裡的移動結算
+    case "syncLocation":
+      return { save: s };
+
+    // 同一界內移動:mode "fly" 沿航路飛遁(真實時間,坐騎縮短);"portal" 支付傳送陣費用瞬間抵達
+    case "travel": {
+      if (s.combat) return { save: s, error: "激戰之中,無法脫身遠行。" };
+      if (s.location?.travel) return { save: s, error: "你已在趕路途中。" };
+      const from = currentZoneOf(s);
+      const dest = zoneById(String(payload.to ?? ""));
+      if (!dest) return { save: s, error: "無此地域" };
+      if (dest.id === from) return { save: s, error: "你已身在此地。" };
+      if (dest.tier !== zoneById(from)!.tier) return { save: s, error: "界壁阻隔,無法以尋常手段前往他界。" };
+      if (!zoneUnlocked(s, dest)) return { save: s, error: `尚未開通前往【${dest.name}】的航路(${dest.unlockHint ?? "另有機緣"})。` };
+      const opts = travelOptionsOf(s);
+      // 5.4 版:前往中立派系領地須先繳過路費(與傳送陣費用分開計)
+      const toll = tollOf(s, dest.id);
+      const tollNote = toll > 0 ? `,繳交${ownerOfZone(dest.id)!.name}過路費 ${formatStones(toll)}` : "";
+      if (payload.mode === "portal") {
+        const plan = portalPlan(opts, from, dest.id);
+        if (!plan) return { save: s, error: `沒有通往【${dest.name}】的傳送陣(或你的派系不得使用)。` };
+        if (s.stones < plan.fee + toll) {
+          log(s, `傳送陣需 ${formatStones(plan.fee)} 靈石${tollNote},你囊中不足。`);
+          return { save: s };
+        }
+        s.stones -= plan.fee + toll;
+        s.location = { ...s.location!, zone: dest.id };
+        log(s, `你付出 ${formatStones(plan.fee)} 靈石${tollNote},陣紋亮起——轉瞬便到了【${zoneLabel(dest.id)}】。`);
+        return { save: s };
+      }
+      const plan = flyPlan(opts, from, dest.id);
+      if (!plan) return { save: s, error: `找不到通往【${dest.name}】的航路。` };
+      if (s.stones < toll) {
+        log(s, `前往【${dest.name}】須繳${ownerOfZone(dest.id)!.name}過路費 ${formatStones(toll)},你囊中不足。`);
+        return { save: s };
+      }
+      s.stones -= toll;
+      const now = Date.now();
+      s.location = {
+        ...s.location!,
+        travel: { from, to: dest.id, departAt: now, arriveAt: now + plan.minutes * MINUTE_MS, kind: "fly" },
+      };
+      const via = plan.path.length > 2 ? `,途經${plan.path.slice(1, -1).map((z) => zoneById(z)!.name).join("、")}` : "";
+      log(s, `你駕起遁光,自【${zoneById(from)!.name}】動身前往【${dest.name}】${via}${tollNote},約需 ${plan.minutes} 分鐘。`);
+      return { save: s };
+    }
+
+    // 折返:立即回到出發地,已花的時間不退;下界途中折返則取消遠征(破界珠/逆星盤已耗用,不退還)
+    case "cancelTravel": {
+      const t = s.location?.travel;
+      if (!t) return { save: s, error: "你並未在趕路。" };
+      if (t.kind === "return") return { save: s, error: "已在返回上界的界壁通道中,無法回頭。" };
+      if (t.kind === "descend") {
+        s.location = { zone: t.from };
+        log(s, "你在界壁通道中回身折返,通道隨即崩散——這次下界之行就此作罷。");
+        return { save: s };
+      }
+      s.location = { ...s.location!, zone: t.from, travel: undefined };
+      log(s, `你掉轉遁光,回到了【${zoneById(t.from)!.name}】。`);
+      return { save: s };
+    }
+
+    // 下界:破界珠往下一界、逆星盤自仙界往人間或靈界;穿越界壁 30 分鐘,停留 VISIT_HOURS 小時
+    case "descend": {
+      if (s.combat) return { save: s, error: "激戰之中,無法脫身遠行。" };
+      if (s.location?.travel) return { save: s, error: "你已在趕路途中。" };
+      if (s.location?.visit) return { save: s, error: "你已身處下界。" };
+      const itemId = String(payload.itemId ?? "");
+      const from = currentZoneOf(s);
+      const fromTier = zoneById(from)!.tier;
+      const dest = zoneById(String(payload.to ?? ""));
+      if (!dest) return { save: s, error: "無此地域" };
+      // 5.4 版:下界須從本界的降靈臺出發;唯仙界往靈界不必(任何仙域皆可)
+      if (needsDescentPlatform(fromTier, dest.tier) && from !== DESCENT_ZONE[fromTier]) {
+        return { save: s, error: `須先前往降靈臺(${zoneById(DESCENT_ZONE[fromTier])!.name})方能下界。` };
+      }
+      const now = Date.now();
+      // 下界方式:破界珠/逆星盤;輪迴殿可用兩顆破界珠代替逆星盤;玄天斬靈劍斬破界壁(冷卻 24 小時,免道具)
+      let cost: { id: string; n: number } | null = null;
+      let how = "";
+      if (itemId === RIFT_CROSS_WEAPON) {
+        if (s.equippedWeapon?.split("@")[0] !== RIFT_CROSS_WEAPON) return { save: s, error: "你並未祭出玄天斬靈劍。" };
+        if (now - (s.riftCrossAt ?? 0) < RIFT_CROSS_COOLDOWN_HOURS * HOUR_MS) {
+          return { save: s, error: "玄天斬靈劍劍意未復,尚無法再斬界壁。" };
+        }
+        if (!descendTargets(POJIE_ZHU, fromTier).includes(dest.tier)) {
+          return { save: s, error: `玄天斬靈劍只能斬開通往下一界的界壁。` };
+        }
+        s.riftCrossAt = now;
+        how = "你祭起玄天斬靈劍,一劍斬落,界壁應聲而開";
+      } else if (descendTargets(itemId, fromTier).includes(dest.tier) && (s.inventory[itemId] ?? 0) > 0) {
+        cost = { id: itemId, n: 1 };
+      } else if (
+        itemId === POJIE_ZHU &&
+        s.faction === "lunhui" &&
+        descendTargets(NIXING_PAN, fromTier).includes(dest.tier) &&
+        (s.inventory[POJIE_ZHU] ?? 0) >= LUNHUI_PEARLS_FOR_DISC
+      ) {
+        cost = { id: POJIE_ZHU, n: LUNHUI_PEARLS_FOR_DISC };
+      } else if ((s.inventory[itemId] ?? 0) <= 0) {
+        return { save: s, error: "並無此物" };
+      } else {
+        return { save: s, error: `【${itemById(itemId).name}】無法帶你前往${tierName(dest.tier)}。` };
+      }
+      if (cost) {
+        take(s, cost.id, cost.n);
+        how = `你捏碎${cost.n > 1 ? `${cost.n} 顆` : ""}【${itemById(cost.id).name}】,界壁應聲裂開一道縫隙`;
+      }
+      const stayHours = VISIT_HOURS * (s.faction === "lunhui" ? LUNHUI_VISIT_MULT : 1);
+      const arriveAt = now + CROSS_REALM_MINUTES * MINUTE_MS;
+      s.location = {
+        zone: from,
+        travel: { from, to: dest.id, departAt: now, arriveAt, kind: "descend" },
+        visit: { returnZone: from, until: arriveAt + stayHours * HOUR_MS },
+      };
+      log(
+        s,
+        `${how}——動身前往${tierName(dest.tier)}【${dest.name}】,穿越界壁約需 ${CROSS_REALM_MINUTES} 分鐘,可停留 ${stayHours} 小時。`,
+      );
+      return { save: s };
+    }
+
+    // 返回上界:下界遠征中隨時可以返回出發地(穿越界壁 30 分鐘)
+    case "returnUp": {
+      if (s.combat) return { save: s, error: "激戰之中,無法脫身。" };
+      const visit = s.location?.visit;
+      if (!visit) return { save: s, error: "你並未身處下界。" };
+      if (s.location?.travel?.kind === "return") return { save: s, error: "你已在返回上界的途中。" };
+      if (s.location?.travel?.kind === "descend") return { save: s, error: "尚在界壁通道中,可選擇折返。" };
+      const now = Date.now();
+      const from = s.location!.zone;
+      s.location = {
+        zone: from,
+        visit,
+        travel: { from, to: visit.returnZone, departAt: now, arriveAt: now + CROSS_REALM_MINUTES * MINUTE_MS, kind: "return" },
+      };
+      log(s, `你循著來時的界壁裂隙動身返回【${zoneLabel(visit.returnZone)}】,約需 ${CROSS_REALM_MINUTES} 分鐘。`);
+      return { save: s };
+    }
+
+    // ═══ 5.4 版:派系 ═══
+    // 擇定 / 改投派系:仙界限定;改投須距上次 CHANGE_COOLDOWN_DAYS 天,功勳歸零
+    case "chooseFaction": {
+      const fac = factionById(String(payload.factionId ?? ""));
+      if (!fac) return { save: s, error: "無此派系" };
+      if (REALMS[s.realmIdx].stage < XIAN_STAGE) return { save: s, error: "唯有飛昇真仙方能投身仙界派系。" };
+      if (s.faction === fac.id) return { save: s, error: `你已是${fac.name}門人。` };
+      const now = Date.now();
+      if (s.faction) {
+        if (s.combat) return { save: s, error: "激戰之中,無法改投他派。" };
+        const wait = s.factionChangedAt ? s.factionChangedAt + CHANGE_COOLDOWN_DAYS * 24 * HOUR_MS - now : 0;
+        if (wait > 0) return { save: s, error: `叛派之事非同小可,尚須等待 ${Math.ceil(wait / HOUR_MS)} 小時方能改投他派。` };
+      }
+      const prev = factionById(s.faction);
+      s.faction = fac.id;
+      s.factionPending = false;
+      s.factionChangedAt = now;
+      s.merit = 0;
+      const lines = prev
+        ? [`你叛出${prev.name},改投${fac.name}門下——過往功勳一筆勾銷。`]
+        : [`你投身【${fac.name}】,自此以${fac.city}為歸宿。`];
+      if (fac.opensZones.length) {
+        lines.push(`${fac.name}的航路已為你開通:${fac.opensZones.map((z) => zoneById(z)!.name).join("、")}。`);
+      }
+      log(s, ...lines);
+      return { save: s, breakResult: { success: true, title: `投 身 ${fac.name}`, lines } };
+    }
+
+    // 歸宗令:每 RECALL_COOLDOWN_HOURS 小時可瞬移回本派主城一次(趕路中使用會取消趕路)
+    case "recall": {
+      const fac = factionById(s.faction);
+      if (!fac) return { save: s, error: "你尚未投身任何派系。" };
+      if (s.combat) return { save: s, error: "激戰之中,無法脫身。" };
+      if (s.location?.visit) return { save: s, error: "身處下界,歸宗令感應不到宗門。" };
+      const now = Date.now();
+      const wait = (s.recallAt ?? 0) + RECALL_COOLDOWN_HOURS * HOUR_MS - now;
+      if (wait > 0) return { save: s, error: `歸宗令靈光未復,尚須 ${Math.ceil(wait / MINUTE_MS)} 分鐘。` };
+      if (currentZoneOf(s) === fac.homeZone && !s.location?.travel) return { save: s, error: `你已身在${fac.city}所在的領地。` };
+      s.recallAt = now;
+      s.location = { zone: fac.homeZone };
+      log(s, `你捏碎歸宗令,一道靈光將你接引回【${fac.city}】(${zoneLabel(fac.homeZone)})。`);
+      return { save: s };
+    }
+
+    // 破空(玄天仙器):同一界內瞬移至已開通的地域,冷卻 RIFT_COOLDOWN_HOURS 小時
+    case "rift": {
+      if (!s.equippedWeapon || !isXuantianArtifact(s.equippedWeapon)) return { save: s, error: "唯有祭出玄天仙器方能破開虛空。" };
+      if (s.combat) return { save: s, error: "激戰之中,無法脫身。" };
+      if (s.location?.travel) return { save: s, error: "你正在趕路途中。" };
+      const dest = zoneById(String(payload.to ?? ""));
+      const from = currentZoneOf(s);
+      if (!dest || dest.id === from) return { save: s, error: "無此地域" };
+      if (dest.tier !== zoneById(from)!.tier) return { save: s, error: "破空只能在同一界內往來。" };
+      if (!zoneUnlocked(s, dest)) return { save: s, error: `尚未開通前往【${dest.name}】的航路。` };
+      const now = Date.now();
+      const wait = (s.riftAt ?? 0) + RIFT_COOLDOWN_HOURS * HOUR_MS - now;
+      if (wait > 0) return { save: s, error: `仙器之力未復,尚須 ${Math.ceil(wait / MINUTE_MS)} 分鐘方能再破虛空。` };
+      const toll = tollOf(s, dest.id);
+      if (s.stones < toll) return { save: s, error: `須繳${ownerOfZone(dest.id)!.name}過路費 ${formatStones(toll)},你囊中不足。` };
+      s.stones -= toll;
+      s.riftAt = now;
+      s.location = { ...s.location!, zone: dest.id };
+      log(s, `你以玄天仙器破開虛空,一步踏出,已到【${zoneLabel(dest.id)}】。`);
+      return { save: s };
+    }
+
+    // 派系商店:以功勳兌換
+    case "buyFaction": {
+      const fac = factionById(s.faction);
+      if (!fac) return { save: s, error: "你尚未投身任何派系。" };
+      const entry = shopOf(fac.id).find((e) => e.itemId === payload.itemId);
+      if (!entry) return { save: s, error: "此物不在派系商店之列。" };
+      if ((s.merit ?? 0) < entry.merit) {
+        log(s, `兌換【${itemById(entry.itemId).name}】需功勳 ${entry.merit}(現有 ${s.merit ?? 0})。`);
+        return { save: s };
+      }
+      s.merit = (s.merit ?? 0) - entry.merit;
+      give(s, entry.itemId);
+      log(s, `你以功勳 ${entry.merit} 向${fac.name}兌換了【${itemById(entry.itemId).name}】。`);
+      return { save: s };
+    }
+
     case "buy": {
       const item = itemById(String(payload.itemId ?? ""));
       if (!item) return { save: s, error: "無此商品" };
@@ -2845,6 +3592,7 @@ function applyActionInner(
         if (s.equippedTalisman === item.id) s.equippedTalisman = null;
         if (s.equippedPet === item.id) s.equippedPet = null;
         if (s.equippedMing === item.id) s.equippedMing = null;
+        if (s.equippedMount === item.id) s.equippedMount = null;
       }
       log(s, `售出 ${item.name},得 ${gain} 靈石。`);
       return { save: s };
@@ -2883,11 +3631,13 @@ function applyActionInner(
       if ((rec.reqStage ?? 1) > realm.stage) {
         return { save: s, error: "境界不足,無法駕馭此配方" };
       }
-      if (s.stones < rec.stones) {
-        log(s, `煉製 ${rec.name} 需 ${rec.stones} 靈石作爐火之資,靈石不足。`);
+      // 5.3 版:裝備類配方另需五行材料、靈石費用提高,並有失敗率(見 crafting.ts 的 craftCostOf)
+      const cost = craftCostOf(rec);
+      if (s.stones < cost.stones) {
+        log(s, `煉製 ${rec.name} 需 ${cost.stones} 靈石作爐火之資,靈石不足。`);
         return { save: s };
       }
-      for (const m of rec.materials) {
+      for (const m of [...cost.materials, ...cost.elements]) {
         if ((s.inventory[m.id] ?? 0) < m.n) {
           log(s, `材料不足:煉製 ${rec.name} 需 ${itemById(m.id).name} ×${m.n}。`);
           return { save: s };
@@ -2897,8 +3647,8 @@ function applyActionInner(
       const lifeCost = rec.lifeCost ?? 0;
       const cap = maxLifeOf(s);
       if (lifeCost > 0 && s.age + lifeCost >= cap) {
-        for (const m of rec.materials) take(s, m.id, m.n);
-        s.stones -= rec.stones;
+        for (const m of [...cost.materials, ...cost.elements]) take(s, m.id, m.n);
+        s.stones -= cost.stones;
         s.age = cap;
         s.dead = true;
         s.combat = null;
@@ -2909,29 +3659,52 @@ function applyActionInner(
         );
         return { save: s };
       }
-      for (const m of rec.materials) take(s, m.id, m.n);
-      s.stones -= rec.stones;
+      s.stones -= cost.stones;
       s.energy -= energyCost;
+      for (const m of cost.elements) take(s, m.id, m.n);
       if (lifeCost > 0) {
         s.age += lifeCost;
         s.day = s.age;
       }
-      // 高階符籙配方(需三種以上材料)有一定機率煉製失敗:材料與靈石照樣耗盡,但煉不出成品
-      if (rec.failChance && Math.random() < rec.failChance) {
-        log(s, `爐火驟然失控,轟然一聲炸響——煉製【${rec.name}】失敗,材料盡數化為飛灰!`);
+      // 失敗:靈石與五行材料全數耗盡、主要材料損失一半;同一配方連續失敗累積保底,下次失敗率 −5%
+      const pity = s.craftPity?.[rec.id] ?? 0;
+      const mingBonus = statsOf(s).breakBonus;
+      const failChance = failChanceFinal(cost.baseFail, pity, mingBonus);
+      const result0 = itemById(rec.result);
+      if (failChance > 0 && Math.random() < failChance) {
+        for (const m of cost.materials) take(s, m.id, failLossOf(m.n));
+        s.craftPity = { ...(s.craftPity ?? {}), [rec.id]: pity + 1 };
+        const nextFail = Math.round(failChanceFinal(cost.baseFail, pity + 1, mingBonus) * 100);
+        log(
+          s,
+          result0.kind === "pill"
+            ? `丹爐中藥香驟散,一爐靈液化作焦炭——煉製【${rec.name}】失敗!`
+            : `爐火驟然失控,轟然一聲炸響——煉製【${rec.name}】失敗!`,
+        );
         return {
           save: s,
           loot: {
             title: "煉 製 失 敗",
             success: false,
-            lines: [`煉製【${rec.name}】失敗`, "材料與靈石已耗盡,一無所獲。"],
+            lines: [
+              `煉製【${rec.name}】失敗`,
+              cost.elements.length
+                ? "靈石與五行材料已耗盡,主要材料損失一半。"
+                : `靈石已耗盡,材料損失一半${lifeCost > 0 ? ",壽元照耗" : ""}。`,
+              `${result0.kind === "pill" ? "煉丹" : "煉器"}心得 +1:下次煉製此物失敗率降為 ${nextFail}%。`,
+            ],
           },
         };
       }
+      for (const m of cost.materials) take(s, m.id, m.n);
+      if (s.craftPity?.[rec.id]) {
+        const { [rec.id]: _done, ...rest } = s.craftPity;
+        s.craftPity = rest;
+      }
       const result = itemById(rec.result);
       // 丹藥/仙物類產出效果不隨品質浮動(exp/heal/mp 等非 atkBonus/defBonus/speedBonus,浮動無意義),
-      // 直接原樣給予;裝備類維持既有的 ±30% 屬性浮動機制。
-      const isPillLike = result.kind === "pill" || result.kind === "special";
+      // 直接原樣給予;裝備類維持既有的 ±30% 屬性浮動機制。坐騎只有移動倍率,同樣不浮動。
+      const isPillLike = result.kind === "pill" || result.kind === "special" || result.kind === "mount";
       const rolledId = isPillLike ? rec.result : `${rec.result}@${rand(70, 130)}`;
       give(s, rolledId);
       const rolled = itemById(rolledId);
@@ -2940,7 +3713,7 @@ function applyActionInner(
       return {
         save: s,
         loot: {
-          title: isPillLike ? "煉 丹 大 成" : "煉 器 大 成",
+          title: result.kind === "pill" ? "煉 丹 大 成" : "煉 器 大 成",
           success: true,
           lines: [`【${rolled.name}】出爐!`, rolled.desc],
         },
@@ -2973,10 +3746,30 @@ function applyActionInner(
         log(s, "煉化玄天仙器需太乙精魂一枚(天狐/真龍/霸下/黑眼貔貅任一皆可),你尚未持有。");
         return { save: s };
       }
+      // 5.3 版:另需仙品五行各 5,失敗率 40%;失敗只耗五行材料與一半殘片/精華,太乙精魂保留
+      const lackEl = XUANTIAN_ELEMENTS.find((m) => (s.inventory[m.id] ?? 0) < m.n);
+      if (lackEl) {
+        log(s, `煉化玄天仙器需${itemById(lackEl.id).name} ×${lackEl.n}(仙品五行各 5),你尚未集齊。`);
+        return { save: s };
+      }
+      for (const m of XUANTIAN_ELEMENTS) take(s, m.id, m.n);
+      s.energy -= energyCost;
+      if (Math.random() < Math.max(0, XUANTIAN_FAIL - statsOf(s).breakBonus)) {
+        take(s, "xuantian_canpian", failLossOf(FRAGMENT_COST));
+        take(s, "poshou_jinhow", failLossOf(FRAGMENT_COST2));
+        log(s, "紫氣反噬,爐中殘片崩裂——煉化玄天仙器失敗!所幸太乙精魂護住爐心,未曾損毀。");
+        return {
+          save: s,
+          loot: {
+            title: "煉 化 失 敗",
+            success: false,
+            lines: ["煉化玄天仙器失敗", "仙品五行材料已耗盡,玄天殘片與破曉精華損失一半,太乙精魂保留。"],
+          },
+        };
+      }
       take(s, "xuantian_canpian", FRAGMENT_COST);
       take(s, "poshou_jinhow", FRAGMENT_COST2);
       take(s, haveSoul);
-      s.energy -= energyCost;
       const pool = Array.from(XUANTIAN_ARTIFACT_IDS);
       const picked = pool[rand(0, pool.length - 1)];
       const quality = rand(100, 300); // 玄天仙器屬性浮動 100%~300%

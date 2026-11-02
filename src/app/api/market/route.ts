@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql, userFromToken } from "@/lib/db";
+import { isKnownItem } from "@/game/data/items";
 
 export const runtime = "nodejs";
 
@@ -11,7 +12,10 @@ export async function GET() {
     ORDER BY l.created_at DESC LIMIT 200`;
   // price 為 BIGINT,驅動程式回傳字串以避免精度誤差,這裡轉回一般 number 給前端使用
   // (遊戲內靈石數量遠低於 Number.MAX_SAFE_INTEGER,轉換不會失真)
-  const listings = rows.map((r) => ({ ...r, price: Number(r.price) }));
+  // 已移除的道具(5.2 版補法力丹藥等)不再顯示,避免前端查無道具定義
+  const listings = rows
+    .filter((r) => isKnownItem(String(r.item_id)))
+    .map((r) => ({ ...r, price: Number(r.price) }));
   return NextResponse.json({ ok: true, listings });
 }
 

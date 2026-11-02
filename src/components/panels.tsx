@@ -12,12 +12,18 @@ import {
   sectDamageMultOfStages,
   monsterHpOf,
   isCardSealed,
+  currentZoneOf,
+  monsterTraitsOf,
+  WANGSHENG_REVIVES,
 } from "@/game/store";
 import { REALMS } from "@/game/data/realms";
 import { SECTS } from "@/game/data/sects";
-import { LOCATIONS, MONSTERS } from "@/game/data/world";
+import { MONSTERS } from "@/game/data/world";
 import { itemById, isXuantianArtifact } from "@/game/data/items";
 import { currentEraYears, eraLabelText } from "@/game/data/eraTime";
+import { zoneById, WORLD_TIERS } from "@/game/data/geography";
+import { factionById } from "@/game/data/factions";
+import { zoneDisplayName, tierDisplayName } from "@/i18n/worldText";
 import { techById } from "@/game/data/techniques";
 import {
   type Element,
@@ -41,7 +47,6 @@ import { monsterDisplayName, monsterDisplayDesc } from "@/i18n/monsterText";
 import { techDisplayName, techDisplayDesc, techDisplayEffect } from "@/i18n/techText";
 import { realmDisplayName } from "@/i18n/realmText";
 import { sectDisplayName } from "@/i18n/sectText";
-import { locationDisplayName } from "@/i18n/worldText";
 import { elementLabel, equipSlotLabel } from "@/i18n/labelText";
 import { MONSTER_TEXT_EN } from "@/i18n/monsterText";
 import StoneAmount from "./StoneAmount";
@@ -279,6 +284,17 @@ export function StatusPanel() {
     };
   }, [s.sectId, s.realmIdx]);
 
+  // 現在位置(5.2 版):趕路中顯示目的地
+  const zoneText = (id: string) => {
+    const z = zoneById(id);
+    if (!z) return id;
+    return `${tierDisplayName(WORLD_TIERS.find((w) => w.id === z.tier)!, lang)} · ${zoneDisplayName(z, lang)}`;
+  };
+  const travel = s.location?.travel;
+  const locationLabel = travel
+    ? `${zoneText(travel.from)} → ${zoneText(travel.to)}(${t("locTraveling")})`
+    : `${zoneText(currentZoneOf(s))}${s.location?.visit ? `(${t("locVisit")})` : ""}`;
+
   // 各裝備槽當前裝備
   const equipMap: Record<string, string | null> = {
     weapon: s.equippedWeapon,
@@ -287,6 +303,7 @@ export function StatusPanel() {
     talisman: s.equippedTalisman,
     pet: s.equippedPet,
     ming: s.equippedMing,
+    mount: s.equippedMount ?? null,
   };
 
   const Bar = ({ v, max, cls }: { v: number; max: number; cls: string }) => (
@@ -310,9 +327,18 @@ export function StatusPanel() {
       <p className={`mb-1 ${isXian ? "text-fuchsia-300 font-bold" : "text-gold"}`}>
         {realmDisplayName(realm, lang)}
       </p>
-      <p className="mb-3 text-[11px] font-mono text-faded/80">
+      <p className="mb-1 text-[11px] font-mono text-faded/80">
         {t("bornEraLine").replace("{era}", eraLabelText(s.bornEra ?? currentEraYears()))}
       </p>
+      <p className={`${s.faction ? "mb-1" : "mb-3"} text-[11px] text-faded/90`}>
+        {t("statLocation")}:{locationLabel}
+      </p>
+      {factionById(s.faction) && (
+        <p className="mb-3 text-[11px] text-faded/90">
+          {t("facLabel")}:<span className={factionById(s.faction)!.color}>{factionById(s.faction)!.name}</span> ·{" "}
+          {t("facMerit")} {s.merit ?? 0}
+        </p>
+      )}
 
       <div className="space-y-2 text-sm">
         <div>
@@ -708,7 +734,6 @@ export function CombatPanel() {
   const hpMaxMon = combat.bossHpMax ?? monsterHpOf(mon); // 浮屠塔動態 BOSS 用其實際上限;一般怪物即 world.ts 的氣血
   const monName = monsterDisplayName(mon, lang);
   const displayName = combat.futuFloor ? `${monName} · 第 ${combat.futuFloor} 層` : monName;
-  const battleLocation = LOCATIONS.find((loc) => loc.id === combat.locationId);
   const scene = sceneOfLocation(combat.locationId);
   // 戰鬥見聞錄(獨立於全局見聞錄 s.log):只顯示 combat.battleLog——本場戰鬥開打後才產生的訊息,
   // 讓玩家戰鬥中檢視戰況時不會被戰前的打坐/探索紀錄洗掉。
@@ -738,9 +763,31 @@ export function CombatPanel() {
   const monsterStatusChips = (combat.monsterStatus ?? []).map((e) =>
     statusChip(e.kind, e.turns, "text-vermillion border-vermillion/50"),
   );
+  // 5.4 版道祖特技的即時狀態
+  if (combat.timeFrozen) {
+    monsterStatusChips.push(
+      <span key="frozen" className="chip text-sky-300 border-sky-300/60">
+        {t("combatTimeFrozen")}
+      </span>,
+    );
+  }
+  if (combat.monsterId === "daozu_wangsheng") {
+    monsterStatusChips.push(
+      <span key="revive" className="chip text-violet-300 border-violet-300/60">
+        {t("combatRevivesLeft").replace("{n}", String(WANGSHENG_REVIVES - (combat.revivesUsed ?? 0)))}
+      </span>,
+    );
+  }
   const playerStatusChips = (combat.playerStatus ?? []).map((e) =>
     statusChip(e.kind, e.turns, "text-azure border-azure/50"),
   );
+  if (combat.spellSealed) {
+    playerStatusChips.push(
+      <span key="sealed" className="chip text-sky-300 border-sky-300/60">
+        {t("combatSpellSealed")}
+      </span>,
+    );
+  }
   if ((combat.playerShield ?? 0) > 0) {
     playerStatusChips.push(
       <span key="shield" className="chip text-jade border-jade/50">
@@ -762,7 +809,7 @@ export function CombatPanel() {
   // 會由下面的 useEffect 清空,但那是非同步的——本次 render 仍可能先跑到、selectedSlots 裡还留著
   // 已經不存在於新 usable 裡的 slot,這裡一律先過濾掉不存在的 slot 再使用,避免 .tech 噴 undefined。
   const validSelectedSlots = selectedSlots.filter((slot) =>
-    usable.some((u) => u.slot === slot && !isCardSealed(combat.monsterId, u.tech.id)),
+    usable.some((u) => u.slot === slot && !isCardSealed(combat, u.tech.id)),
   );
   const selectedTechIds = validSelectedSlots.map(
     (slot) => usable.find((u) => u.slot === slot)!.tech.id,
@@ -773,7 +820,7 @@ export function CombatPanel() {
     const found = usable.find((u) => u.slot === slot);
     if (!found) return;
     const tech = found.tech;
-    if (isCardSealed(combat.monsterId, tech.id)) return; // 黑眼貔貅封法:只有法器攻擊能選
+    if (isCardSealed(combat, tech.id)) return; // 黑眼貔貅封法:只有法器攻擊能選
     setSelectedSlots(() => {
       const prev = validSelectedSlots;
       if (prev.includes(slot)) return prev.filter((x) => x !== slot);
@@ -817,33 +864,6 @@ export function CombatPanel() {
       className={`battle-view ${isTianjieTrial ? "battle-trial" : isLord ? "battle-lord" : mon.elite ? "battle-elite" : ""}`}
       aria-label={t("combatTitle")}
     >
-      <header className="battle-header">
-        <div className="battle-brand">
-          <span className="battle-brand-mark">✦</span>
-          <div>
-            <p className="battle-eyebrow">{t("appTitle")}</p>
-            <h1>
-              {isTianjieTrial
-                ? t("combatTianjieArrives")
-                : combat.futuFloor
-                  ? t("combatFutu")
-                  : isLord
-                    ? t("combatLordArrives")
-                    : mon.elite
-                      ? t("combatEliteArrives")
-                      : t("combatFierce")}
-            </h1>
-          </div>
-        </div>
-        <div className="battle-header-meta">
-          {battleLocation && <span>{locationDisplayName(battleLocation, lang)}</span>}
-          <span className="battle-header-player">{s.name}</span>
-          <span className="battle-header-rule" />
-          <span>
-            {t("statDay")} {s.day}
-          </span>
-        </div>
-      </header>
 
       <div className="battle-content">
         <div
@@ -872,6 +892,13 @@ export function CombatPanel() {
             ) : null}
             <h2>{displayName}</h2>
             <p>{monsterDisplayDesc(mon, lang)}</p>
+            {monsterTraitsOf(mon.id).length > 0 && (
+              <ul className="battle-traits">
+                {monsterTraitsOf(mon.id).map((tr) => (
+                  <li key={tr}>◆ {tr}</li>
+                ))}
+              </ul>
+            )}
           </div>
           <div className="battle-sigil" aria-hidden="true" ref={sigilRef}>
             <span className="battle-sigil-ring" />
@@ -963,7 +990,7 @@ export function CombatPanel() {
           {usable.length === 0 && <p className="battle-empty-hand">{t("combatEmptyHand")}</p>}
           {usable.map(({ tech, slot }) => {
             const selected = validSelectedSlots.includes(slot);
-            const sealed = isCardSealed(combat.monsterId, tech.id);
+            const sealed = isCardSealed(combat, tech.id);
             const elLabel = elementLabel(tech.element, lang);
             const fullElLabel = tech.extraElements?.length
               ? [tech.element, ...tech.extraElements]

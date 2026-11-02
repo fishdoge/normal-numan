@@ -53,6 +53,7 @@ describe("數值:3.19 的削弱 + 4.0 的封頂同時生效", () => {
     for (const floor of [1, 5, 12]) {
       const s = newXian();
       s.jinyuanUnlocked = true;
+      s.location = { zone: "jinyuan" };
       s.futuFloor = floor - 1;
       const r = E.applyAction(s, "challengeFutu").save;
       expect(r.combat!.bossHpMax).toBe(Math.floor(base.hp * Math.pow(1.4, floor - 1)));
@@ -125,6 +126,7 @@ describe("新區域與伺服器端檢查", () => {
     expect(E.applyAction(structuredClone(s), "hunt", { locationId: "huixian_jie" }).error).toBe("此地尚未開啟");
     expect(E.applyAction(structuredClone(s), "gather", { locationId: "zhenmo_yuan" }).error).toBe("此地尚未開啟");
     s.huixianUnlocked = true;
+    s.location = { zone: "huixian" };
     const r = E.applyAction(structuredClone(s), "hunt", { locationId: "huixian_jie" });
     expect(r.error).toBeUndefined();
     expect(r.save.combat).toBeTruthy();
@@ -135,6 +137,7 @@ describe("新區域與伺服器端檢查", () => {
     expect(E.applyAction(structuredClone(s), "hunt", { locationId: "jy_guan1" }).error).toBe("此地尚未開啟");
     expect(E.applyAction(structuredClone(s), "hunt", { locationId: "manhuang_tianhu" }).error).toBe("此地尚未開啟");
     s.jinyuanUnlocked = true;
+    s.location = { zone: "jinyuan" };
     expect(E.applyAction(structuredClone(s), "hunt", { locationId: "jy_guan1" }).error).toBeUndefined();
   });
 
@@ -171,6 +174,7 @@ describe("煞氣(3.19)在合併後的戰鬥中照常運作", () => {
   it("真仙擊殺妖獸煞氣 +1", () => {
     let s = newXian();
     s.shaqi = 10;
+    s.location = { zone: "beihan" };
     s = E.applyAction(s, "hunt", { locationId: "xuanbing_yuan" }).save;
     s.combat!.monsterHp = 1;
     s = E.applyAction(s, "castBatch", { techIds: [s.combat!.hand!.find((id) => techById(id).mpCost <= s.mp)!] }).save;
@@ -263,6 +267,7 @@ describe("內容總數", () => {
 function newXian(): SaveData {
   const s = E.newSave("真仙", "huangfeng");
   s.realmIdx = xianIdx;
+  s.faction = "tianting"; // 5.4 版:仙界須先擇定派系;天庭不開通任何隱藏地域,不影響解鎖檢查
   const { hpMax, mpMax } = E.statsOf(s);
   s.hp = hpMax;
   s.mp = mpMax;

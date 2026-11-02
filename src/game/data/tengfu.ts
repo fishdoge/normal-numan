@@ -1,4 +1,5 @@
 import type { Element } from "../types";
+import { XIAN_LOCATIONS } from "./xianExpansion";
 
 // ═══ 滕符陣(4.2 版新增)═══
 // 仿 Path of Exile / 暗黑破壞神的背包格:6 寬 × 5 高(共 30 格)的符陣,滕符依形狀佔用格子,安裝後效果常駐。
@@ -163,6 +164,9 @@ export const TENGFU_DROPS: Record<string, string[]> = {
   dixue_xueyu: ["tf_xueyu"],
   jiulongyu: ["tf_jiulong"],
   tiandinggong: ["tf_tianding"],
+  lh_suixingdai: ["tf_feisheng", "tf_minghe"],
+  lh_guxu: ["tf_tianding", "tf_jiulong"],
+  lh_tianchi: ["tf_feisheng", "tf_tianding"],
   xuanbing_yuan: ["tf_xuanbing"],
   beihan_dian: ["tf_beihan"],
   jy_guan1: ["tf_jinyuan"],
@@ -176,7 +180,22 @@ export const TENGFU_DROPS: Record<string, string[]> = {
   manhuang_pixiu: ["tf_pixiu", "tf_hundun"],
   zhenmo_yuan: ["tf_zhenmo", "tf_hundun"],
   huixian_jie: ["tf_huixian", "tf_hundun"],
+  nantianmen: ["tf_jindi", "tf_hundun"],
+  yaochi_xianlin: ["tf_wuchong", "tf_hundun"],
+  wangchuan: ["tf_zhenmo", "tf_hundun"],
+  lunhui_gudao: ["tf_huixian", "tf_hundun"],
 };
+// 5.4 版仙界大擴充的新關卡:沿用各仙域既有的高階滕符池
+const XIAN_ZONE_TENGFU: Record<string, string[]> = {
+  beihan: ["tf_xuanbing", "tf_beihan"],
+  jinyuan: ["tf_jinyuan", "tf_wuchong"],
+  manhuang: ["tf_baxia", "tf_hundun"],
+  zhenmo: ["tf_zhenmo", "tf_hundun"],
+  lunhui: ["tf_zhenmo", "tf_hundun"],
+  huixian: ["tf_huixian", "tf_hundun"],
+  zhongtu: ["tf_jindi", "tf_hundun"],
+};
+for (const l of XIAN_LOCATIONS) TENGFU_DROPS[l.id] ??= XIAN_ZONE_TENGFU[l.region] ?? ["tf_hundun"];
 export const TENGFU_DROP_CHANCE = 0.02; // 一般妖獸(5.0 版由 5% 下修)
 export const TENGFU_DROP_CHANCE_LORD = 0.12; // 地域王(5.0 版由 30% 下修)
 export const TENGFU_DROP_CHANCE_ELITE = 0.2; // 大乘期菁英(4.2 版;5.0 版由 50% 下修)

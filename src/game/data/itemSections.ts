@@ -11,6 +11,7 @@ export const ITEM_SECTIONS: [DictKey, ItemKind[]][] = [
 
   ["bagSecGear", ["artifact", "robe", "treasure", "amulet", "talisman"]],
   ["bagSecPet", ["pet"]],
+  ["bagSecMount", ["mount"]], // 坐騎(5.3 版新增)
   ["bagSecMing", ["mingqi"]],
   ["bagSecManual", ["manual", "recipe"]],
   ["bagSecSpecial", ["special"]],

@@ -1,4 +1,5 @@
 import { ItemDef } from "../types";
+import { XIAN_ITEMS } from "./xianExpansion";
 
 export const ITEMS: ItemDef[] = [
   // ── 材料 ──
@@ -67,6 +68,11 @@ export const ITEMS: ItemDef[] = [
   { id: "dixue_caogen", name: "地血草根", kind: "herb", desc: "血獄縫隙中頑強生長的草根,吸食地脈精血而生。", price: 13400, dropOnly: true },
   { id: "jiulong_suoshi", name: "九龍鎖石", kind: "material", desc: "九龍獄鎖柱基座崩落的石塊,隱有龍屬威壓封印其中。", price: 21500 },
   { id: "longyu_yinhuo", name: "龍獄陰火", kind: "material", desc: "九龍獄深處終年不熄的陰火,凝而不散,冷冽刺骨。", price: 21800 },
+  // 5.4 版:靈環界材料
+  { id: "lh_huanjing", name: "靈環晶", kind: "material", desc: "靈環本體剝落的晶石,環紋流轉,蘊含一方小天地的靈氣。", element: "金", price: 38000 },
+  { id: "lh_xingsuisha", name: "碎星砂", kind: "material", desc: "碎星帶星屑研成的細砂,夜裡會自己發光。", element: "金", price: 30000 },
+  { id: "lh_guxu_wenshi", name: "古墟紋石", kind: "material", desc: "靈環古墟殘陣上的紋石,上古陣紋仍有餘威。", element: "土", price: 32000 },
+  { id: "lh_huanxin_lian", name: "環心靈蓮", kind: "herb", desc: "只生於環心天池的靈蓮,一瓣入口,神魂清明。", element: "水", price: 36000 },
   { id: "tianding_linghuo", name: "天鼎靈火", kind: "material", desc: "天鼎宮九鼎爐心外溢的靈火,溫潤而不灼人。", element: "金", price: 26500 },
   { id: "jiuding_xiangyun", name: "九鼎祥雲", kind: "herb", desc: "天鼎宮九鼎交輝所化的祥雲,隱隱透著清氣。", effect: "煉丹材料:血天回氣丹;天鼎守衛、天鼎執事掉落", price: 26800, dropOnly: true },
 
@@ -74,7 +80,6 @@ export const ITEMS: ItemDef[] = [
   { id: "huanglongcao", name: "黃龍草", kind: "herb", desc: "常見靈草,煉製黃龍丹主藥。", price: 6, exp: 8 },
   { id: "zhuguo", name: "朱果", kind: "herb", desc: "百年一熟的靈果。", price: 13, exp: 26 },
   { id: "tianlingguo", name: "地靈果", kind: "herb", desc: "傳說中的靈果,凡人食之可開靈根。", price: 36, exp: 48 },
-  { id: "zijinhua", name: "紫金花", kind: "herb", desc: "生於絕壁的奇花,可入丹。", price: 7, mp: 50 },
   { id: "xuelingzhi", name: "血靈芝", kind: "herb", desc: "赤紅如血的靈芝,生機盎然,可直接服用療傷。", price: 9, heal: 29 },
   { id: "qiannianlingru", name: "千年靈乳", kind: "herb", desc: "石鐘乳萬載凝成,一滴便可洗髓伐骨。", price: 180, exp: 400 },
   { id: "ziyuanhua", name: "紫猿花", kind: "herb", desc: "南疆奇花,煉製凝嬰丹的主藥。", price: 240, exp: 870 },
@@ -105,7 +110,6 @@ export const ITEMS: ItemDef[] = [
 
   // ── 丹藥 ──
   { id: "huanglongdan", name: "黃龍丹", kind: "pill", desc: "煉氣期修士常用的補氣丹藥。", price: 30, exp: 40 },
-  { id: "huiyuandan", name: "回元丹", kind: "pill", desc: "修士隨身常備的回元丹藥。", price: 9, mp: 50 },
   { id: "liaoshangdan", name: "療傷丹", kind: "pill", desc: "外敷內服皆可,癒合傷勢。", price: 22, heal: 120 },
   { id: "zhujidan", name: "築基丹", kind: "pill", desc: "傳說中的築基靈丹,有價無市。", price: 520, exp: 390 },
   { id: "ningyingdan", name: "凝嬰丹", kind: "pill", desc: "結丹修士凝結元嬰的輔藥,紫猿花所煉。", price: 1800, exp: 1500 },
@@ -122,7 +126,6 @@ export const ITEMS: ItemDef[] = [
   { id: "xianyuan_huichun", name: "仙元回春丹", kind: "pill", desc: "北寒、金源仙獸內丹煉成的回春仙丹。", price: 60000, heal: 200000, reqStage: 10, dropOnly: true },
   { id: "jiuzhuan_xianlu", name: "九轉清心仙露", kind: "pill", desc: "仙界九轉凝成的清心仙露,一滴可洗百脈。", price: 90000, heal: 300000, cureStatus: ["burn", "poison", "freeze", "weaken"], reqStage: 10, dropOnly: true },
   { id: "taiyi_huanhun", name: "太乙還魂丹", kind: "pill", desc: "蠻荒與灰仙界凶獸殘魂凝成的還魂奇丹,霸道無匹。", price: 240000, heal: 800000, reqStage: 10, dropOnly: true },
-  { id: "jiuqulingshen", name: "九曲靈參丹", kind: "pill", desc: "以九曲靈參煉製的丹藥。", price: 3000, mp: 99999 },
   { id: "pojiedan", name: "破界丹", kind: "pill", desc: "衝擊大乘瓶頸的無上靈丹,以皇極天髓為引。", price: 4100, exp: 26000 },
 
   // ── 真仙專屬丹藥(煉丹堂,需圖譜解鎖) ──
@@ -131,7 +134,6 @@ export const ITEMS: ItemDef[] = [
 
   // ── 金源仙域 / 蠻荒異界回復丹藥(1.24 版新增,真仙以上煉器＆煉丹可直接煉製,毋須圖譜) ──
   { id: "jinyuan_shengtidan", name: "金源聖體丹", kind: "pill", desc: "金源聖蓮反覆淬煉的聖體奇丹。", price: 0, heal: 5000000, reqStage: 10 },
-  { id: "manhuang_zhenyuandan", name: "混沌真元丹", kind: "pill", desc: "蠻荒靈髓合煉的真元奇丹。", price: 0, mp: 3000000, reqStage: 10 },
   { id: "taiyi_huiqidan", name: "太乙回氣丹", kind: "pill", desc: "金源聖蓮與蠻荒靈髓合煉的回氣奇丹。", price: 0, energy: 80, reqStage: 10 },
 
   // ── 靈界三大陸回氣丹(2.17 版新增,以各大陸補充素材煉成,回復少量精力) ──
@@ -445,7 +447,54 @@ export const ITEMS: ItemDef[] = [
 
   // ── 通天閣進場道具(3.19 版新增) ──
   { id: "tongtian_ling", name: "通天令", kind: "special", desc: "唯真仙以上方能感應的令牌。", effect: "使用後永久開啟通天閣(真仙以上)", price: 0, dropOnly: true, reqStage: 10 },
+
+  // ── 五行基礎材料(5.3 版新增):妖獸依自身五行掉落,品級依所在界,煉製裝備必備(見 crafting.ts) ──
+  { id: "wx_fan_jin", name: "金精砂", kind: "material", element: "金", desc: "人間金屬性妖獸體內凝聚的金砂,鋒銳之氣尚淺。", price: 6, dropOnly: true },
+  { id: "wx_fan_mu", name: "青木髓", kind: "material", element: "木", desc: "人間木屬性妖獸體內的青綠髓液,生機盎然。", price: 6, dropOnly: true },
+  { id: "wx_fan_shui", name: "癸水精", kind: "material", element: "水", desc: "人間水屬性妖獸體內的陰柔水精。", price: 6, dropOnly: true },
+  { id: "wx_fan_huo", name: "丙火砂", kind: "material", element: "火", desc: "人間火屬性妖獸體內的赤紅火砂,觸手微燙。", price: 6, dropOnly: true },
+  { id: "wx_fan_tu", name: "戊土石", kind: "material", element: "土", desc: "人間土屬性妖獸體內的黃褐石核,沉實厚重。", price: 6, dropOnly: true },
+  { id: "wx_ling_jin", name: "庚金精魄", kind: "material", element: "金", desc: "靈界金屬性妖獸的精魄,庚金殺伐之氣凝而不散。", price: 300, dropOnly: true, reqStage: 7 },
+  { id: "wx_ling_mu", name: "乙木靈心", kind: "material", element: "木", desc: "靈界木屬性妖獸的靈心,乙木之氣綿延不絕。", price: 300, dropOnly: true, reqStage: 7 },
+  { id: "wx_ling_shui", name: "壬水玄晶", kind: "material", element: "水", desc: "靈界水屬性妖獸的玄晶,壬水之力浩蕩。", price: 300, dropOnly: true, reqStage: 7 },
+  { id: "wx_ling_huo", name: "離火靈焰", kind: "material", element: "火", desc: "靈界火屬性妖獸的一縷本命靈焰,封於晶中長燃不熄。", price: 300, dropOnly: true, reqStage: 7 },
+  { id: "wx_ling_tu", name: "坤土靈壤", kind: "material", element: "土", desc: "靈界土屬性妖獸的靈壤,坤土之德承載萬物。", price: 300, dropOnly: true, reqStage: 7 },
+  { id: "wx_xian_jin", name: "太白金精", kind: "material", element: "金", desc: "仙界金屬性妖獸的太白金精,鋒芒可斷仙器。", price: 800, dropOnly: true, reqStage: 10 },
+  { id: "wx_xian_mu", name: "建木神髓", kind: "material", element: "木", desc: "相傳取自通天建木的神髓,仙界木屬性妖獸偶有凝結。", price: 800, dropOnly: true, reqStage: 10 },
+  { id: "wx_xian_shui", name: "天一真水", kind: "material", element: "水", desc: "天一生水,萬水之源,仙界水屬性妖獸體內的一滴真水。", price: 800, dropOnly: true, reqStage: 10 },
+  { id: "wx_xian_huo", name: "南明離火", kind: "material", element: "火", desc: "南明離火,焚盡萬物,仙界火屬性妖獸的本源之火。", price: 800, dropOnly: true, reqStage: 10 },
+  { id: "wx_xian_tu", name: "九天息壤", kind: "material", element: "土", desc: "自生自長、永不耗減的神土,仙界土屬性妖獸偶有凝結。", price: 800, dropOnly: true, reqStage: 10 },
+
+  // ── 跨界道具(5.2 版新增,見 geography.ts):極難取得,用於往下界遠征 ──
+  { id: "pojie_zhu", name: "破界珠", kind: "special", desc: "封存一縷界壁裂隙之力的晶珠,捏碎即可撕開通往下界的通道。", effect: "於遊歷探索使用:前往下一界(靈界 → 人間、仙界 → 靈界),穿越界壁 30 分鐘,可停留 6 小時,時限一到被界面之力送回", price: 0, dropOnly: true, reqStage: 7 },
+  { id: "nixing_pan", name: "逆星盤", kind: "special", desc: "逆轉星辰軌跡的上古羅盤,能讓仙人逆行兩界、直落人間。", effect: "於遊歷探索使用(仙界限定):前往人間或靈界,穿越界壁 30 分鐘,可停留 6 小時,時限一到被界面之力送回", price: 0, dropOnly: true, reqStage: 10 },
+
+  // ── 坐騎(5.3 版新增):載具可煉製、異獸只能掉落;縮短地域之間的移動時間,佔坐騎槽 ──
+  { id: "fengxing_zhou", name: "風行舟", kind: "mount", element: "木", desc: "青木為骨、精鐵為龍骨的輕舟,御風而行,人間修士遠行的首選。", effect: "移動時間 ×0.85", price: 0, travelMult: 0.85, reqStage: 2 },
+  { id: "qingjiao_feizhou", name: "青蛟飛舟", kind: "mount", element: "水", desc: "船首雕青蛟,以風元晶催動,可載人橫渡靈界大陸。", effect: "移動時間 ×0.70", price: 0, travelMult: 0.7, reqStage: 7 },
+  { id: "jiutian_xianzhou", name: "九天仙舟", kind: "mount", element: "金", desc: "金源靈砂鑄就的仙家寶舟,破雲穿霄,日行億里。", effect: "移動時間 ×0.55", price: 0, travelMult: 0.55, reqStage: 10 },
+  { id: "biyan_leipeng", name: "碧眼雷鵬", kind: "mount", element: "金", desc: "靈界地域王座下的異種雷鵬,雙翼一振,雷光百里。", effect: "移動時間 ×0.60", price: 0, travelMult: 0.6, reqStage: 7, dropOnly: true },
+  // 派系坐騎(5.4 版新增):派系商店以功勳兌換;除天庭外皆可走北寒 ⇄ 蠻荒險路,繞過天庭坐鎮的中土
+  { id: "mount_tianma", name: "天馬", kind: "mount", element: "金", desc: "天庭御馬監飼養的天馬,踏雲而行。", effect: "移動時間 ×0.50", price: 0, travelMult: 0.5, reqStage: 10, dropOnly: true },
+  { id: "mount_mingchuan", name: "幽冥渡船", kind: "mount", element: "水", desc: "輪迴殿擺渡亡魂的冥船,能在虛空中划行。", effect: "移動時間 ×0.50;可走北寒仙域與蠻荒異界之間的險路", price: 0, travelMult: 0.5, routes: ["beihan|manhuang"], reqStage: 10, dropOnly: true },
+  { id: "mount_juxi", name: "蠻荒巨犀", kind: "mount", element: "土", desc: "蠻荒部族馴養的洪荒巨犀,橫衝直撞、無路不通。", effect: "移動時間 ×0.50;可走北寒仙域與蠻荒異界之間的險路", price: 0, travelMult: 0.5, routes: ["beihan|manhuang"], reqStage: 10, dropOnly: true },
+  { id: "mount_gujiu", name: "修羅骨鷲", kind: "mount", element: "煞", desc: "只剩骨架仍振翅不休的巨鷲,煞氣托翼而飛。", effect: "移動時間 ×0.50;可走北寒仙域與蠻荒異界之間的險路", price: 0, travelMult: 0.5, routes: ["beihan|manhuang"], reqStage: 10, dropOnly: true },
+  { id: "mount_moqi", name: "魔焰夜騏", kind: "mount", element: "火", desc: "真魔聖域的夜騏,四蹄踏魔焰,夜行千萬里。", effect: "移動時間 ×0.50;可走北寒仙域與蠻荒異界之間的險路", price: 0, travelMult: 0.5, routes: ["beihan|manhuang"], reqStage: 10, dropOnly: true },
+  { id: "kunpeng_zuoqi", name: "鯤鵬坐騎", kind: "mount", element: "水", desc: "金源仙帝豢養的鯤鵬,北冥化鵬,扶搖九萬里。", effect: "移動時間 ×0.40;可飛越北寒仙域與蠻荒異界之間的險路", price: 0, travelMult: 0.4, routes: ["beihan|manhuang"], reqStage: 10, dropOnly: true },
 ];
+
+// 5.4 版仙界大擴充:各區採集材料與仙草、七套仙域裝備(見 xianExpansion.ts)
+ITEMS.push(...XIAN_ITEMS);
+
+// 5.2 版移除的道具(補充法力的丹藥/仙草:法力每場戰鬥與每回合自動回滿,已無作用)。
+// 舊存檔持有者於 normalizeSave 依原售價六成折回靈石;交易行/宗門倉庫的殘留資料由各 API 過濾。
+export const RETIRED_ITEMS: Record<string, { name: string; price: number }> = {
+  zijinhua: { name: "紫金花", price: 7 },
+  huiyuandan: { name: "回元丹", price: 9 },
+  jiuqulingshen: { name: "九曲靈參丹", price: 3000 },
+  manhuang_zhenyuandan: { name: "混沌真元丹", price: 0 },
+};
+export const isKnownItem = (id: string) => ITEMS.some((i) => i.id === id.split("@")[0]);
 
 // 玄天仙器(蠻荒異界玄天殘片 + 太乙精魂煉成,唯太乙境可用,屬性極強且浮動 100%~300%)
 export const XUANTIAN_ARTIFACT_IDS = new Set<string>([

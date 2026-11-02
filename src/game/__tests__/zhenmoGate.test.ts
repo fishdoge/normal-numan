@@ -101,9 +101,9 @@ describe("黑眼貔貅封法", () => {
     const { freshCombatSave } = await import("./testUtils");
     const { isCardSealed } = await import("../engine");
     const s = freshCombatSave("huadao", "lord_pixiu", { learned: ["huoqiu"], hand: ["artifact_attack", "huoqiu"] });
-    expect(isCardSealed("lord_pixiu", "artifact_attack")).toBe(false);
-    expect(isCardSealed("lord_pixiu", "huoqiu")).toBe(true);
-    expect(isCardSealed("qinglang", "huoqiu")).toBe(false);
+    expect(isCardSealed({ monsterId: "lord_pixiu" }, "artifact_attack")).toBe(false);
+    expect(isCardSealed({ monsterId: "lord_pixiu" }, "huoqiu")).toBe(true);
+    expect(isCardSealed({ monsterId: "qinglang" }, "huoqiu")).toBe(false);
     expect(applyAction(structuredClone(s), "castBatch", { techIds: ["huoqiu"] }).error).toBeTruthy();
     restore = mockRandom([0.5, 0.5, 0.5]);
     const r = applyAction(structuredClone(s), "castBatch", { techIds: ["artifact_attack"] });

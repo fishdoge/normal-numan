@@ -17,6 +17,7 @@ export const KIND_LABEL_EN: Record<string, string> = {
   treasure: "Robe",
   special: "Relic",
   tactic: "Tactic Card",
+  mount: "Mount",
 };
 
 export const EQUIP_SLOT_LABEL_EN: Record<EquipSlot, string> = {
@@ -26,6 +27,7 @@ export const EQUIP_SLOT_LABEL_EN: Record<EquipSlot, string> = {
   talisman: "Talisman",
   pet: "Pet",
   ming: "Mingqi",
+  mount: "Mount",
 };
 
 export const ELEMENT_LABEL_EN: Record<Element, string> = {

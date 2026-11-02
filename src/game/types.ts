@@ -167,10 +167,11 @@ export type ItemKind =
   | "recipe" // 煉器圖譜(使用後解鎖配方)
   | "treasure" // 舊:護身之寶(向後相容,視為 robe)
   | "special"
-  | "tactic"; // 戰術卡(3.1 版新增):戰鬥中消耗型策略卡,見 ItemDef 下方的戰術卡專屬欄位
+  | "tactic" // 戰術卡(3.1 版新增):戰鬥中消耗型策略卡,見 ItemDef 下方的戰術卡專屬欄位
+  | "mount"; // 坐騎(5.3 版新增):載具或異獸,縮短地域之間的移動時間,見 geography.ts
 
 // 裝備槽定義(順序即人物欄顯示順序)
-export type EquipSlot = "weapon" | "robe" | "amulet" | "talisman" | "pet" | "ming";
+export type EquipSlot = "weapon" | "robe" | "amulet" | "talisman" | "pet" | "ming" | "mount";
 export const EQUIP_SLOTS: { slot: EquipSlot; label: string; kinds: ItemKind[] }[] = [
   { slot: "weapon", label: "法器", kinds: ["artifact"] },
   { slot: "robe", label: "法衣", kinds: ["robe", "treasure"] },
@@ -178,6 +179,7 @@ export const EQUIP_SLOTS: { slot: EquipSlot; label: string; kinds: ItemKind[] }[
   { slot: "talisman", label: "符籙", kinds: ["talisman"] },
   { slot: "pet", label: "靈寵", kinds: ["pet"] },
   { slot: "ming", label: "命器", kinds: ["mingqi"] },
+  { slot: "mount", label: "坐騎", kinds: ["mount"] },
 ];
 export const KIND_LABEL: Record<string, string> = {
   material: "材料",
@@ -194,6 +196,7 @@ export const KIND_LABEL: Record<string, string> = {
   treasure: "法衣",
   special: "仙物",
   tactic: "戰術卡",
+  mount: "坐騎",
 };
 export const slotOfKind = (kind: ItemKind): EquipSlot | null =>
   EQUIP_SLOTS.find((s) => s.kinds.includes(kind))?.slot ?? null;
@@ -244,6 +247,9 @@ export interface ItemDef {
   mapEncounter?: string;
   // 滅煞丹專屬(3.19 版新增):服下後立即將玩家的煞氣(SaveData.shaqi)歸零。
   cureShaqi?: boolean;
+  // 坐騎專屬(5.3 版新增):移動時間倍率(0.7 = 縮短 30%),routes 為可通行的險路(geography.ts 的 routeKey)
+  travelMult?: number;
+  routes?: string[];
   // 效果說明(5.0 版):數值欄位表達不了的效果(解鎖地圖、突破金仙、存取靈石……)寫在這裡,
   // desc 只放故事敘述,兩者在介面上分開顯示。
   effect?: string;
@@ -377,4 +383,5 @@ export const CONTINENTS: { id: string; name: string }[] = [
   { id: "fengyuan", name: "風元大陸" },
   { id: "leiming", name: "雷鳴大陸" },
   { id: "xuetian", name: "血天大陸" },
+  { id: "linghuan", name: "靈環界" }, // 5.4 版:三大陸之外的小天地
 ];

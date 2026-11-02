@@ -29,6 +29,7 @@ import SectPage from "./SectPage";
 import TongtianPage from "./TongtianPage";
 import LogChatPanel from "./LogChatPanel";
 import GuideModal from "./GuideModal";
+import FactionPicker from "./FactionPicker";
 import { StatusPanel, CombatPanel, RealmProgressPanel } from "./panels";
 import { ActionFx, ActionFxKind, BreakFailFx, BreakthroughCelebration, GainFloat, LootBurst } from "./fx";
 
@@ -544,6 +545,8 @@ export default function Game() {
       )}
       {showChangelog && <ChangelogModal onClose={() => setShowChangelog(false)} />}
       {showGuide && <GuideModal onClose={() => setShowGuide(false)} />}
+      {/* 5.4 版:飛昇仙界後尚未擇定派系(飛昇演出、結果彈窗結束後才跳出) */}
+      {save.factionPending && !save.combat && !celebration && !breakResult && !loot && <FactionPicker />}
       {save.combat ? (
         <CombatPanel />
       ) : (

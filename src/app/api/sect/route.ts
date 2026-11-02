@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { sql, userFromToken, ensureSchema } from "@/lib/db";
 import { REALMS } from "@/game/data/realms";
 import { SECTS } from "@/game/data/sects";
-import { itemById } from "@/game/data/items";
+import { itemById, isKnownItem } from "@/game/data/items";
 import { sectDamageMultOfStages, applyDwellingExp, SaveData } from "@/game/engine";
 import {
   sectTierOf,
@@ -134,7 +134,12 @@ export async function GET(req: NextRequest) {
     LIMIT 2000`;
 
   const bankRows = await sql`SELECT items FROM sect_bank WHERE sect_id = ${sectId}`;
-  const items = (bankRows[0] as { items: Record<string, number> } | undefined)?.items ?? {};
+  // 已移除的道具(5.2 版補法力丹藥等)不再顯示,避免前端查無道具定義
+  const items = Object.fromEntries(
+    Object.entries((bankRows[0] as { items: Record<string, number> } | undefined)?.items ?? {}).filter(([id]) =>
+      isKnownItem(id),
+    ),
+  );
 
   const { tier, contribution, donatedItems } = await loadTier(sectId);
   const cur = sectTierOf(tier);

@@ -1,6 +1,6 @@
 // 大陸地圖(區域/秘境)與煉器配方英文翻譯對照表(1.21 版新增)。
 // 配方(RECIPES)的 name 與對應物品同名,直接沿用 itemText.ts 的翻譯,此處只收錄 desc。
-import { Language } from "./dict";
+import type { DictKey, Language } from "./dict";
 
 export const REGION_TEXT_EN: Record<string, { name: string; desc: string }> = {
   tiannan: { name: "Tiannan · Yue Kingdom", desc: "A small cultivation kingdom jointly ruled by seven sects, the starting point of Han Li's path to immortality." },
@@ -10,10 +10,16 @@ export const REGION_TEXT_EN: Record<string, { name: string; desc: string }> = {
   lingjie: { name: "Spirit Realm", desc: "The final realm before ascension, true spirits everywhere, the Heavenly Tribulation looming overhead." },
   beihan: { name: "North Frost Immortal Realm", desc: "A far-northern immortal realm only ascended true immortals may set foot in; beneath ten-thousand-year mystic ice, innate immortal artifacts and celestial fortune lie dormant." },
   jinyuan: { name: "Golden-Source Immortal Realm", desc: "A primordial immortal realm glimpsed only by wandering deep into hidden realms; Golden-Source energy soars skyward, five immortal passes stand in succession, its beasts far stronger than North Frost's." },
+  zhongtu: { name: "Central Immortal Realm", desc: "The vast immortal realm at the heart of the Immortal World; its Ascension Platform receives true immortals from every direction, and the Heavenly Court's portal network links it to North Frost, Golden-Source, and the Wildlands." },
+  lunhui: { name: "Realm of Reincarnation", desc: "The source of the six paths of reincarnation, where the River of Forgetting flows; the Reincarnation Hall schemes here to wrest control of rebirth from the Heavenly Court." },
   manhuang: { name: "Wildlands", desc: "A primordial hidden realm opened by the resonance of the five elemental Strange Star Discs; its beasts attack weakly but possess unmatched vitality, each of the four domains ruled by its own regional lord." },
 };
 
 export const LOCATION_TEXT_EN: Record<string, { name: string; desc: string }> = {
+  nantianmen: { name: "Beyond the Southern Heaven Gate", desc: "The sea of clouds outside the Southern Heaven Gate, haunted by deserter soldiers and stray divine beasts, patrolled day and night." },
+  yaochi_xianlin: { name: "Jade Pool Immortal Grove", desc: "The peach grove beside the Jade Pool, home to immortal birds and spirit beasts." },
+  wangchuan: { name: "Banks of the Forgetting River", desc: "The black, still River of Forgetting; the scent of Meng Po's broth mingles with the wailing of resentful souls." },
+  lunhui_gudao: { name: "Ancient Road of Reincarnation", desc: "The ancient road to the six paths, lined with undying flame spirits; at its end lies Diting, who hears every heart." },
   caiyaoshan: { name: "Rainbow Cloud Mountain", desc: "An outer spirit mountain of Yellow Maple Valley, wreathed in cloud and mist, where low-level disciples gather herbs and hone their skills." },
   heifengling: { name: "Black Wind Ridge", desc: "A beast-infested wild ridge where black winds never cease; many cultivators have fallen here." },
   hantan: { name: "Ten-Thousand-Year Frost Pool", desc: "A bottomless frozen pool hiding Frost Jade Essence at its depths, and Frost-Water Pythons coiled within." },
@@ -60,6 +66,9 @@ export const RECIPE_DESC_EN: Record<string, string> = {
   r_taixu_hunyuanjia: "Heavy protective armor tempered from Golden-Source Spirit Sand, warded by every technique.",
   r_jinyuan_hujing: "A treasured mirror ground from Golden-Source Spirit Sand, reflecting all techniques and warding off misfortune.",
   r_zhuxian_fu: "A slaughter talisman guided by and condensed from Taiyi Refined Gold — one talisman slays immortals and souls alike.",
+  r_fengxing_zhou: "Millennium wood-heart as its frame, refined iron as its keel, engraved with wind-riding array patterns.",
+  r_qingjiao_feizhou: "A Wind Origin Crystal at its heart, Netherriver Sand as ballast — able to cross the Spirit Realm's continents.",
+  r_jiutian_xianzhou: "Cast from Golden-Source Spirit Sand with Mystic Ice Crystal sails, piercing cloud and sky.",
   r_zaohua_jian: "A sword of creation co-forged from Golden-Source Spirit Sand and Taiyi Refined Gold, unmatched when drawn.",
 };
 
@@ -82,4 +91,22 @@ export function locationDisplayDesc(l: { id: string; desc: string }, lang: Langu
 export function recipeDisplayDesc(r: { id: string; desc: string }, lang: Language): string {
   if (lang !== "en") return r.desc;
   return RECIPE_DESC_EN[r.id] ?? r.desc;
+}
+
+// 地域(5.2 版,見 geography.ts):靈界三大陸沿用大陸名稱,其餘沿用區域名稱
+const ZONE_NAME_EN: Record<string, string> = {
+  fengyuan: "Wind Origin Continent",
+  leiming: "Thunderclap Continent",
+  xuetian: "Blood Sky Continent",
+  linghuan: "Spirit Ring Realm",
+};
+// 有專屬介紹的地域(不沿用所屬區域的介紹):中土仙域、靈環界
+export const ZONE_NOTE: Record<string, DictKey> = { zhongtu: "locZhongtuNote", linghuan: "locLinghuanNote" };
+const TIER_NAME_EN: Record<string, string> = { renjian: "Mortal Realm", lingjie: "Spirit Realm", xianjie: "Immortal Realm" };
+export function zoneDisplayName(z: { id: string; name: string; region: string }, lang: Language): string {
+  if (lang !== "en") return z.name;
+  return ZONE_NAME_EN[z.id] ?? REGION_TEXT_EN[z.region]?.name ?? z.name;
+}
+export function tierDisplayName(t: { id: string; name: string }, lang: Language): string {
+  return lang === "en" ? (TIER_NAME_EN[t.id] ?? t.name) : t.name;
 }

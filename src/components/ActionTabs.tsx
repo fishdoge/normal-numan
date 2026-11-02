@@ -17,8 +17,10 @@ import {
   BASIC_CARD_MIN,
   monsterHpOf,
   monsterAtkOf,
+  geoDropsOf,
 } from "@/game/store";
 import { MONSTERS, RECIPES } from "@/game/data/world";
+import { craftCostOf, failChanceFinal, PITY_STEP } from "@/game/data/crafting";
 import { ITEMS, itemById, isXuantianArtifact } from "@/game/data/items";
 import { REALMS } from "@/game/data/realms";
 import { SECTS } from "@/game/data/sects";
@@ -110,6 +112,7 @@ const EQUIPPABLE: ItemKind[] = [
   "talisman",
   "pet",
   "mingqi",
+  "mount",
 ];
 
 function BagTab() {
@@ -131,6 +134,7 @@ function BagTab() {
     s.equippedTalisman,
     s.equippedPet,
     s.equippedMing,
+    s.equippedMount,
   ];
 
   const row = ([id, n]: [string, number]) => {
@@ -594,7 +598,7 @@ function CraftTab() {
   const busy = useGame((x) => x.busy);
   const lang = useGame((x) => x.language);
   const t = useT();
-  const { realm } = statsOf(s);
+  const { realm, breakBonus: mingBonus } = statsOf(s);
   const SOUL_IDS = [
     "taiyi_jinghun_tianhu",
     "taiyi_jinghun_zhenlong",
@@ -618,8 +622,14 @@ function CraftTab() {
     const result = itemById(rec.result);
     const locked = rec.dropOnly && !s.unlockedRecipes.includes(rec.id);
     const stageLocked = (rec.reqStage ?? 1) > realm.stage;
-    const canStones = s.stones >= rec.stones;
-    const canMats = rec.materials.every((m) => (s.inventory[m.id] ?? 0) >= m.n);
+    // 5.3 版:裝備類配方另需五行材料、靈石較高、有失敗率與保底(見 crafting.ts)
+    const cost = craftCostOf(rec);
+    const pity = s.craftPity?.[rec.id] ?? 0;
+    const failPct = Math.round(failChanceFinal(cost.baseFail, pity, mingBonus) * 100);
+    const canStones = s.stones >= cost.stones;
+    const canMats = [...cost.materials, ...cost.elements].every(
+      (m) => (s.inventory[m.id] ?? 0) >= m.n,
+    );
     return (
       <div
         key={rec.id}
@@ -639,9 +649,14 @@ function CraftTab() {
             {rec.dropOnly && (
               <span className="chip ml-2 text-azure border-azure/60">{t("blueprintTag")}</span>
             )}
-            {rec.failChance ? (
+            {failPct > 0 ? (
               <span className="chip ml-2 text-vermillion border-vermillion/50">
-                {t("craftFailChanceTag").replace("{n}", String(Math.round(rec.failChance * 100)))}
+                {t("craftFailChanceTag").replace("{n}", String(failPct))}
+              </span>
+            ) : null}
+            {pity > 0 ? (
+              <span className="chip ml-2 text-jade border-jade/50">
+                {t("craftPityTag").replace("{n}", String(Math.round(pity * PITY_STEP * 100)))}
               </span>
             ) : null}
           </span>
@@ -652,7 +667,7 @@ function CraftTab() {
               </span>
             ) : null}
             <span className={`text-xs font-mono ${canStones ? "text-gold" : "text-vermillion"}`}>
-              {formatStones(rec.stones)}
+              {formatStones(cost.stones)}
             </span>
           </span>
         </div>
@@ -661,10 +676,12 @@ function CraftTab() {
           <p className="text-xs text-cream/80 mt-0.5 font-mono">{itemStatLine(result, t, lang)}</p>
         )}
         <p className="text-xs mt-1.5">
-          {rec.materials.map((m) => {
+          {[...cost.materials, ...cost.elements].map((m) => {
             const have = s.inventory[m.id] ?? 0;
+            const el = cost.elements.includes(m) ? itemById(m.id).element : undefined;
             return (
               <span key={m.id} className={`mr-3 ${have >= m.n ? "text-jade" : "text-vermillion"}`}>
+                {el && <span className={`${ELEMENT_COLOR[el]} mr-0.5`}>◆</span>}
                 {itemDisplayName(itemById(m.id), lang)} {have}/{m.n}
               </span>
             );
@@ -710,6 +727,11 @@ function CraftTab() {
   return (
     <div className="space-y-2">
       <p className="text-xs text-faded">{t("craftHeaderNote")}</p>
+      {mingBonus > 0 && (
+        <p className="text-xs text-jade">
+          {t("craftMingBonus").replace("{n}", String(Math.round(mingBonus * 100)))}
+        </p>
+      )}
       {realm.stage >= 12 && (
         <div className="border border-fuchsia-400/50 bg-fuchsia-400/5 rounded-sm p-3">
           <span className="font-bold text-xuantian">{t("xuantianCraftTitle")}</span>
@@ -1086,6 +1108,7 @@ function TradeTab() {
   const [sellItem, setSellItem] = useState<string>("");
   const [sellQty, setSellQty] = useState(1);
   const [sellPrice, setSellPrice] = useState(10);
+  const [listFilter, setListFilter] = useState<DictKey | "filterAll">("filterAll");
 
   const refresh = async () => {
     try {
@@ -1209,6 +1232,63 @@ function TradeTab() {
     }
   };
 
+  const listingSections = ITEM_SECTIONS.filter(([, kinds]) =>
+    listings.some((l) => itemById(l.item_id) && kinds.includes(itemById(l.item_id).kind)),
+  );
+  const listingRow = (l: Listing) => {
+    const item = itemById(l.item_id);
+    if (!item) return null;
+    const mine = l.seller_name === s.name;
+    const xuantian = isXuantianArtifact(l.item_id);
+    const statLine = itemStatLine(item, t, lang);
+    const nameSpan = (
+      <span
+        className={`${itemNameColor(item, xuantian)}${statLine ? " cursor-help underline decoration-dotted decoration-faded/40 underline-offset-2" : ""}`}
+      >
+        {itemDisplayName(item, lang)}
+      </span>
+    );
+    return (
+      <div
+        key={l.id}
+        className={`flex items-center justify-between border rounded-sm p-2.5 ${xuantian ? "border-fuchsia-400/50" : "border-faded/20"}`}
+      >
+        <div className="min-w-0">
+          <span className="font-bold">
+            {statLine ? <Tooltip content={statLine}>{nameSpan}</Tooltip> : nameSpan}{" "}
+            <span className="text-faded font-normal">×{l.qty}</span>
+            {mine && (
+              <span className="chip ml-2 text-gold border-gold/50">{t("myListingTag")}</span>
+            )}
+          </span>
+          <p className="text-xs text-faded">
+            {t("listingSellerLine")
+              .replace("{seller}", l.seller_name)
+              .replace("{price}", formatStones(l.price))}{" "}
+            <span className="text-gold">{formatStones(l.qty * l.price)}</span>
+          </p>
+          <p className="text-xs text-faded/70 mt-0.5">{itemDisplayDesc(item, lang)}</p>
+          {statLine && <p className="text-xs text-cream/80 mt-0.5 font-mono">{statLine}</p>}
+        </div>
+        <div className="shrink-0 ml-3">
+          {mine ? (
+            <button className="btn btn-danger" disabled={busy} onClick={() => cancel(l)}>
+              {t("btnDelist")}
+            </button>
+          ) : (
+            <button
+              className="btn"
+              disabled={busy || s.stones < l.qty * l.price}
+              onClick={() => buy(l)}
+            >
+              {t("btnBuy")}
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-3">
       <p className="text-xs text-faded">
@@ -1271,60 +1351,35 @@ function TradeTab() {
       </div>
 
       <div className="divider">{t("onSaleTitle")}</div>
-      {listings.length === 0 && (
-        <p className="text-sm text-faded">{t("noListings")}</p>
+      {listings.length === 0 && <p className="text-sm text-faded">{t("noListings")}</p>}
+      {/* 5.4 版:交易行依儲物袋同一套分類拆開,上方按鈕篩選 */}
+      {listingSections.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 pb-1">
+          {(["filterAll", ...listingSections.map(([key]) => key)] as (DictKey | "filterAll")[]).map(
+            (key) => (
+              <button
+                key={key}
+                onClick={() => setListFilter(key)}
+                className={`px-2.5 py-1 text-xs rounded-sm border transition-colors ${
+                  listFilter === key
+                    ? "border-gold bg-gold/15 text-gold"
+                    : "border-faded/30 text-faded hover:text-cream"
+                }`}
+              >
+                {t(key).replace(/\s/g, "")}
+              </button>
+            ),
+          )}
+        </div>
       )}
-      {listings.map((l) => {
-        const item = itemById(l.item_id);
-        if (!item) return null;
-        const mine = l.seller_name === s.name;
-        const xuantian = isXuantianArtifact(l.item_id);
-        const statLine = itemStatLine(item, t, lang);
-        const nameSpan = (
-          <span
-            className={`${itemNameColor(item, xuantian)}${statLine ? " cursor-help underline decoration-dotted decoration-faded/40 underline-offset-2" : ""}`}
-          >
-            {itemDisplayName(item, lang)}
-          </span>
-        );
-        return (
-          <div
-            key={l.id}
-            className={`flex items-center justify-between border rounded-sm p-2.5 ${xuantian ? "border-fuchsia-400/50" : "border-faded/20"}`}
-          >
-            <div className="min-w-0">
-              <span className="font-bold">
-                {statLine ? <Tooltip content={statLine}>{nameSpan}</Tooltip> : nameSpan}{" "}
-                <span className="text-faded font-normal">×{l.qty}</span>
-                {mine && <span className="chip ml-2 text-gold border-gold/50">{t("myListingTag")}</span>}
-              </span>
-              <p className="text-xs text-faded">
-                {t("listingSellerLine")
-                  .replace("{seller}", l.seller_name)
-                  .replace("{price}", formatStones(l.price))}{" "}
-                <span className="text-gold">{formatStones(l.qty * l.price)}</span>
-              </p>
-              <p className="text-xs text-faded/70 mt-0.5">{itemDisplayDesc(item, lang)}</p>
-              {statLine && <p className="text-xs text-cream/80 mt-0.5 font-mono">{statLine}</p>}
-            </div>
-            <div className="shrink-0 ml-3">
-              {mine ? (
-                <button className="btn btn-danger" disabled={busy} onClick={() => cancel(l)}>
-                  {t("btnDelist")}
-                </button>
-              ) : (
-                <button
-                  className="btn"
-                  disabled={busy || s.stones < l.qty * l.price}
-                  onClick={() => buy(l)}
-                >
-                  {t("btnBuy")}
-                </button>
-              )}
-            </div>
+      {listingSections
+        .filter(([key]) => listFilter === "filterAll" || listFilter === key)
+        .map(([key, kinds]) => (
+          <div key={key} className="space-y-2">
+            {listFilter === "filterAll" && <div className="divider">{t(key)}</div>}
+            {listings.filter((l) => kinds.includes(itemById(l.item_id).kind)).map(listingRow)}
           </div>
-        );
-      })}
+        ))}
     </div>
   );
 }
@@ -1870,17 +1925,24 @@ function RankTab() {
               <div key={mon.id} className="text-xs border-t border-faded/10 pt-1.5 first:border-t-0 first:pt-0">
                 <span className="font-bold">{monsterDisplayName(mon, lang)}</span>
                 <span className="text-faded ml-2">
-                  {mon.drops.length === 0
-                    ? t("monsterDropNone")
-                    : mon.drops.map((d, i) => {
-                        const item = itemById(d.id);
-                        return (
-                          <span key={d.id} className={itemNameColor(item, isXuantianArtifact(d.id))}>
-                            {itemDisplayName(item, lang)}
-                            {i < mon.drops.length - 1 ? "、" : ""}
-                          </span>
-                        );
-                      })}
+                  {(() => {
+                    // 5.2 版:跨界道具/異獸坐騎等依階層統一追加的掉落,一併列出
+                    const drops = [...mon.drops, ...geoDropsOf(mon)];
+                    return drops.length === 0
+                      ? t("monsterDropNone")
+                      : drops.map((d, i) => {
+                          const item = itemById(d.id);
+                          return (
+                            <span
+                              key={d.id}
+                              className={itemNameColor(item, isXuantianArtifact(d.id))}
+                            >
+                              {itemDisplayName(item, lang)}
+                              {i < drops.length - 1 ? "、" : ""}
+                            </span>
+                          );
+                        });
+                  })()}
                 </span>
               </div>
             ))}

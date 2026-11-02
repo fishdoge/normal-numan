@@ -62,9 +62,21 @@ export async function POST(req: NextRequest) {
       }
     }
     const save = newSave(name, sectId);
-    await sql`
+    // 5.4 版:只在「沒有存檔、尚未開始或已隕落」時寫入。讀檔偶發失敗時前端可能誤顯示創角畫面,
+    // 舊版這裡會直接覆蓋掉活著的角色;現在遇到活著的角色一律不覆蓋,改把原本的存檔交回前端載入。
+    const written = await sql`
       INSERT INTO saves (user_id, data) VALUES (${user.id}, ${JSON.stringify(save)}::jsonb)
-      ON CONFLICT (user_id) DO UPDATE SET data = EXCLUDED.data, updated_at = now(), last_life_at = now()`;
+      ON CONFLICT (user_id) DO UPDATE SET data = EXCLUDED.data, updated_at = now(), last_life_at = now()
+      WHERE COALESCE((saves.data->>'started')::boolean, false) = false
+         OR COALESCE((saves.data->>'dead')::boolean, false) = true
+      RETURNING user_id`;
+    if (!written.length) {
+      const [existing] = (await sql`SELECT data FROM saves WHERE user_id = ${user.id}`) as { data: SaveData }[];
+      return NextResponse.json(
+        { ok: false, error: "此帳號已有角色,已為你載入原本的存檔。", save: existing?.data ?? null },
+        { status: 409 },
+      );
+    }
     return NextResponse.json({ ok: true, save });
   }
 

@@ -43,7 +43,6 @@ export const ITEM_TEXT_EN: Record<string, { name: string; desc: string; effect?:
   huanglongcao: { name: "Yellow Dragon Grass", desc: "A common spirit herb, the main ingredient for Yellow Dragon Pills." },
   zhuguo: { name: "Vermilion Fruit", desc: "A spirit fruit that ripens once a century." },
   tianlingguo: { name: "Earth-Spirit Fruit", desc: "A legendary spirit fruit — mortals who eat it may open a spirit root." },
-  zijinhua: { name: "Purple-Gold Blossom", desc: "A rare flower growing on sheer cliffs, usable in pills." },
   xuelingzhi: { name: "Blood Ganoderma", desc: "A blood-red ganoderma brimming with vitality, can be eaten raw to heal wounds." },
   qiannianlingru: { name: "Millennium Spirit Stalactite", desc: "A stalactite formed over a thousand years; one drop can cleanse marrow and reshape bone." },
   ziyuanhua: { name: "Purple Ape Blossom", desc: "A rare flower of the southern wilds, the main ingredient for Nascent Soul Condensing Pills." },
@@ -70,12 +69,10 @@ export const ITEM_TEXT_EN: Record<string, { name: string; desc: string; effect?:
 
   // ── 丹藥 ──
   huanglongdan: { name: "Yellow Dragon Pill", desc: "A common qi-nourishing pill for Qi Refining cultivators." },
-  huiyuandan: { name: "Origin-Return Pill", desc: "A restorative pill cultivators keep on hand." },
   liaoshangdan: { name: "Wound-Healing Pill", desc: "Usable both externally and internally; heals injuries." },
   zhujidan: { name: "Foundation Establishment Pill", desc: "A legendary Foundation Establishment pill; priceless and rarely available." },
   ningyingdan: { name: "Nascent Soul Condensing Pill", desc: "An aid for Core Formation cultivators condensing their Nascent Soul, refined from Purple Ape Blossoms." },
   dahuandan: { name: "Great Revival Pill", desc: "A miracle pill said to bring the dying back from the brink of death." },
-  jiuqulingshen: { name: "Nine-Bend Spirit Ginseng Pill", desc: "A pill refined from nine-bend spirit ginseng." },
   pojiedan: { name: "Boundary-Breaking Pill", desc: "A supreme pill for breaching the Mahayana bottleneck, guided by Sovereign Heaven Marrow." },
 
   // ── 仙法秘笈 ──

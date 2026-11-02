@@ -13,11 +13,14 @@ const REGION_ART: Record<string, string> = {
   manhuang: "manhuang",
   zhenmo: "zhenmo", // 5.0 版合併 3.19:真魔界
   huixian: "huixian", // 5.0 版合併 3.19:灰仙界
+  zhongtu: "guanghan", // 5.4 版:中土仙域、輪迴界暫借既有插畫
+  lunhui: "kunpeng",
 };
 const CONTINENT_ART: Record<string, string> = {
   fengyuan: "lingjie-fengyuan",
   leiming: "lingjie-leiming",
   xuetian: "lingjie-xuetian",
+  linghuan: "kunpeng", // 5.4 版:靈環界暫借鯤鵬遺海插畫
 };
 // 非秘境的特殊戰鬥(雲遊大 BOSS / 天劫試煉 / 浮屠塔)
 const SPECIAL_ART: Record<string, string> = {

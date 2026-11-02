@@ -18,7 +18,7 @@ export const MISSIONS: MissionDef[] = [
   { id: "ms_qinglang", name: "獵狼護道", kind: "kill", targetId: "qinglang", n: 3, reqStage: 1, stones: 45, exp: 60, desc: "青背狼群襲擾山道,獵殺三頭以儆效尤。" },
   { id: "ms_tiekuang", name: "礦石徵集", kind: "gather", targetId: "tiekuang", n: 6, reqStage: 1, stones: 52, exp: 30, desc: "煉器堂徵集精鐵礦六塊,以充爐料。", item: "hushenfu" },
   { id: "ms_hanjing", name: "寒潭取精", kind: "gather", targetId: "hanjing", n: 3, reqStage: 2, stones: 39, exp: 31, desc: "長老閉關需寒玉精三塊,潭深妖兇,量力而行。" },
-  { id: "ms_huomang", name: "誅殺火蟒", kind: "kill", targetId: "huomang", n: 2, reqStage: 2, stones: 52, exp: 68, desc: "赤炎火蟒屢傷同門,誅殺兩條,鱗甲自留。", item: "huiyuandan" },
+  { id: "ms_huomang", name: "誅殺火蟒", kind: "kill", targetId: "huomang", n: 2, reqStage: 2, stones: 52, exp: 68, desc: "赤炎火蟒屢傷同門,誅殺兩條,鱗甲自留。", item: "liaoshangdan" },
   { id: "ms_leizhu", name: "雷竹難求", kind: "gather", targetId: "jinleizhu", n: 2, reqStage: 3, stones: 60, exp: 71, desc: "宗門懸賞金雷竹枝兩根,此物煉劍聖品。" },
   { id: "ms_xuejiao", name: "斬蛟除害", kind: "kill", targetId: "xuejiao", n: 1, reqStage: 3, stones: 95, exp: 120, desc: "血蛟興風作浪,斬之,宗門重賞。", item: "zhujidan" },
   // ── 執事堂高階任務(1.8 版新增,合體/大乘專屬) ──

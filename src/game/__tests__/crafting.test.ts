@@ -71,13 +71,13 @@ describe("煉製結果", () => {
     expect(r.save.stones).toBe(0);
     expect(r.save.craftPity?.r_qingsuo).toBeUndefined();
   });
-  it("失敗:靈石與五行全耗、主材料損失一半(進位),保底 +1", () => {
+  it("失敗:靈石與所有材料全數損失,保底 +1", () => {
     const s = stocked("r_qingsuo");
     restore = mockRandom([0]);
     const r = applyAction(s, "craft", { recipeId: "r_qingsuo" });
     expect(r.loot?.success).toBe(false);
-    expect(r.save.inventory.qingmu).toBe(2 - 1); // 青木心 2 → 損失 1
-    expect(r.save.inventory.tiekuang).toBe(3 - 2); // 精鐵 3 → 損失 2(進位)
+    expect(r.save.inventory.qingmu ?? 0).toBe(0);
+    expect(r.save.inventory.tiekuang ?? 0).toBe(0);
     expect(r.save.inventory[ELEMENT_MATERIAL.renjian["木"]] ?? 0).toBe(0);
     expect(r.save.stones).toBe(0);
     expect(r.save.craftPity?.r_qingsuo).toBe(1);

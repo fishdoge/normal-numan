@@ -313,7 +313,7 @@ export const DICT = {
     xuantianCraftDesc:
       "以玄天殘片(蠻荒異界怪物掉落,需 10 枚)+ 破曉精華 20 枚 + 太乙精魂(天狐/真龍/霸下/黑眼貔貅任一 1 枚)同淬爐火,隨機煉成【玄天斬靈劍】【玄天葫蘆】【破天槌】【天狐化血刃】【玄天斬魔劍】【幻天鏡】其中一種,屬性隨機浮動 100%~300%,唯太乙境可用。",
     xuantianCraftBtn: "煉 化 玄 天 仙 器",
-    xuantianCraftCost: "另需仙品五行各 5、爐火之資 {stones};失敗率 {fail}%,需煉 {time}。失敗時殘片與精華損失一半,太乙精魂退回。",
+    xuantianCraftCost: "另需仙品五行各 5、爐火之資 {stones};失敗率 {fail}%,需煉 {time}。失敗時所有材料(含太乙精魂)全數損失。",
     divineFilter: "神器",
     divineSection: "神 器",
     divineNote: "神器需太乙精魂一枚,煉製費時,紫框標示。",
@@ -1012,7 +1012,7 @@ export const DICT = {
     xuantianCraftDesc:
       "Temper a Mystic Heaven Shard (10 needed, dropped by Wildlands beasts) together with 1 Taiyi Essence Soul (Heaven Fox / True Dragon / Baxia / Black-Eyed Pixiu, any one) to randomly forge one of: Mystic Heaven Spirit-Severing Sword, Mystic Heaven Gourd, Heaven-Breaking Hammer, Heaven Fox Blood-Transmuting Blade, Mystic Heaven Demon-Severing Sword, or Illusion-Heaven Mirror — stats fluctuate randomly 100%~300%. Taiyi Realm only.",
     xuantianCraftBtn: "Refine a Mystic Heaven Artifact",
-    xuantianCraftCost: "Also needs 5 of each Immortal-grade element and {stones}; {fail}% failure, takes {time}. On failure you lose half the fragments and essence; the Taiyi soul is returned.",
+    xuantianCraftCost: "Also needs 5 of each Immortal-grade element and {stones}; {fail}% failure, takes {time}. On failure every material, including the Taiyi soul, is lost.",
     divineFilter: "Divine",
     divineSection: "Divine Artifacts",
     divineNote: "Divine artifacts need one Taiyi soul, take time to forge, and are framed in purple.",

@@ -75,7 +75,6 @@ import {
 import {
   craftCostOf,
   failChanceFinal,
-  failLossOf,
   ELEMENT_DROP,
   elementMaterialFor,
   XUANTIAN_ELEMENTS,
@@ -152,7 +151,7 @@ export interface Learning {
   remain: number; // 剩餘年數
 }
 
-// 煉製中的器物(5.4 版):failChance 於開爐時定下;refund 為失敗時退回的材料(主要材料的一半、太乙精魂)
+// 煉製中的器物(5.4 版):failChance 於開爐時定下;材料開爐即扣,失敗全數損失
 export interface Forge {
   kind: "craft" | "xuantian";
   recipeId?: string;
@@ -160,7 +159,6 @@ export interface Forge {
   startAt: number;
   readyAt: number;
   failChance: number;
-  refund: { id: string; n: number }[];
 }
 
 export interface SaveData {
@@ -1995,7 +1993,7 @@ export const forgeDurationText = (minutes: number) =>
   minutes % 60 === 0 ? `${minutes / 60} 小時` : minutes > 60 ? `${Math.floor(minutes / 60)} 小時 ${minutes % 60} 分` : `${minutes} 分鐘`;
 
 // 失敗:同一配方連續失敗累積保底,下次失敗率 −5%(材料的扣除由呼叫端處理)
-function craftFailed(s: SaveData, rec: Recipe, hasElements: boolean, lifeCost = 0, soulKept = false): ActionResult {
+function craftFailed(s: SaveData, rec: Recipe, lifeCost = 0): ActionResult {
   const result0 = itemById(rec.result);
   const pity = s.craftPity?.[rec.id] ?? 0;
   s.craftPity = { ...(s.craftPity ?? {}), [rec.id]: pity + 1 };
@@ -2013,9 +2011,7 @@ function craftFailed(s: SaveData, rec: Recipe, hasElements: boolean, lifeCost = 
       success: false,
       lines: [
         `煉製【${rec.name}】失敗`,
-        hasElements
-          ? `靈石與五行材料已耗盡,主要材料損失一半${soulKept ? ",太乙精魂退回" : ""}。`
-          : `靈石已耗盡,材料損失一半${lifeCost > 0 ? ",壽元照耗" : ""}。`,
+        `靈石與所有材料已全數損失${lifeCost > 0 ? ",壽元照耗" : ""}。`,
         `${result0.kind === "pill" ? "煉丹" : "煉器"}心得 +1:下次煉製此物失敗率降為 ${nextFail}%。`,
       ],
     },
@@ -3754,10 +3750,6 @@ function applyActionInner(
           startAt: now,
           readyAt: now + forgeMin * MINUTE_MS,
           failChance: failChanceFinal(cost.baseFail, s.craftPity?.[rec.id] ?? 0, statsOf(s).breakBonus),
-          refund: [
-            ...cost.materials.map((m) => ({ id: m.id, n: m.n - failLossOf(m.n) })),
-            ...(soul ? [{ id: soul, n: 1 }] : []),
-          ].filter((m) => m.n > 0),
         };
         log(s, `爐火已起——【${rec.name}】需煉 ${forgeDurationText(forgeMin)},屆時方可出爐。`);
         return { save: s };
@@ -3785,13 +3777,13 @@ function applyActionInner(
         s.age += lifeCost;
         s.day = s.age;
       }
-      // 失敗:靈石與五行材料全數耗盡、主要材料損失一半;同一配方連續失敗累積保底,下次失敗率 −5%
+      // 失敗:靈石與所有材料全數損失;同一配方連續失敗累積保底,下次失敗率 −5%
       const pity = s.craftPity?.[rec.id] ?? 0;
       const mingBonus = statsOf(s).breakBonus;
       const failChance = failChanceFinal(cost.baseFail, pity, mingBonus);
       if (failChance > 0 && Math.random() < failChance) {
-        for (const m of cost.materials) take(s, m.id, failLossOf(m.n));
-        return craftFailed(s, rec, cost.elements.length > 0, lifeCost);
+        for (const m of cost.materials) take(s, m.id, m.n);
+        return craftFailed(s, rec, lifeCost);
       }
       for (const m of cost.materials) take(s, m.id, m.n);
       return craftSucceeded(s, rec, lifeCost);
@@ -3828,7 +3820,7 @@ function applyActionInner(
         log(s, `煉化玄天仙器需 ${formatStones(XUANTIAN_STONES)} 作爐火之資,靈石不足。`);
         return { save: s };
       }
-      // 開爐即扣:五行材料與靈石不退;失敗時殘片/精華退回一半、太乙精魂全數退回
+      // 開爐即扣,失敗時所有材料(含太乙精魂)與靈石全數損失
       for (const m of XUANTIAN_ELEMENTS) take(s, m.id, m.n);
       take(s, "xuantian_canpian", FRAGMENT_COST);
       take(s, "poshou_jinhow", FRAGMENT_COST2);
@@ -3842,39 +3834,33 @@ function applyActionInner(
         startAt: now,
         readyAt: now + XUANTIAN_FORGE_MINUTES * MINUTE_MS,
         failChance: Math.max(0, XUANTIAN_FAIL - statsOf(s).breakBonus),
-        refund: [
-          { id: "xuantian_canpian", n: FRAGMENT_COST - failLossOf(FRAGMENT_COST) },
-          { id: "poshou_jinhow", n: FRAGMENT_COST2 - failLossOf(FRAGMENT_COST2) },
-          { id: haveSoul, n: 1 },
-        ],
       };
       log(s, `玄天殘片與太乙精魂同入爐中,紫氣氤氳——煉化玄天仙器需 ${forgeDurationText(XUANTIAN_FORGE_MINUTES)},屆時方可出爐。`);
       return { save: s };
     }
 
-    // 出爐(5.4 版):時間到才擲成敗;失敗退回 refund 所列材料
+    // 出爐(5.4 版):時間到才擲成敗;失敗時材料已在開爐時扣除,全數損失
     case "forgeCollect": {
       const f = s.forge;
       if (!f) return { save: s, error: "爐中並無煉製中的器物。" };
       if (Date.now() < f.readyAt) return { save: s, error: `【${f.name}】火候未到,尚不能出爐。` };
       s.forge = null;
       const failed = f.failChance > 0 && Math.random() < f.failChance;
-      if (failed) for (const r of f.refund) give(s, r.id, r.n);
       if (f.kind === "xuantian") {
         if (!failed) return xuantianSucceeded(s);
-        log(s, "紫氣反噬,爐中殘片崩裂——煉化玄天仙器失敗!所幸太乙精魂護住爐心,未曾損毀。");
+        log(s, "紫氣反噬,爐中殘片與太乙精魂盡數崩散——煉化玄天仙器失敗!");
         return {
           save: s,
           loot: {
             title: "煉 化 失 敗",
             success: false,
-            lines: ["煉化玄天仙器失敗", "靈石與仙品五行材料已耗盡,玄天殘片與破曉精華損失一半,太乙精魂保留。"],
+            lines: ["煉化玄天仙器失敗", "靈石、仙品五行材料、玄天殘片、破曉精華與太乙精魂全數損失。"],
           },
         };
       }
       const rec = RECIPES.find((x) => x.id === f.recipeId);
       if (!rec) return { save: s, error: "無此配方" };
-      return failed ? craftFailed(s, rec, true, 0, !!rec.taiyiSoul) : craftSucceeded(s, rec);
+      return failed ? craftFailed(s, rec) : craftSucceeded(s, rec);
     }
 
     // 滕符陣(4.2 版):安裝 / 移動 / 卸下。payload.from = "bag" 從未安裝區放入,或傳 index 移動已安裝的滕符

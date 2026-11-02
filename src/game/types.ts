@@ -324,7 +324,7 @@ export interface Recipe {
   reqStage?: number; // 需要境界
   lifeCost?: number; // 煉丹配方額外消耗壽元(載);煉器類配方不填即可,向後相容
   failChance?: number; // 煉製失敗機率(2.17 版新增,目前僅需三種以上材料的符籙配方使用);材料與靈石照樣消耗,失敗則無成品
-  taiyiSoul?: boolean; // 另需太乙精魂一枚(天狐/真龍/霸下/黑眼貔貅任一;5.4 版:道祖神念符),失敗時退回
+  taiyiSoul?: boolean; // 另需太乙精魂一枚(天狐/真龍/霸下/黑眼貔貅任一;5.4 版:道祖神念符),失敗時與其他材料一併損失
 }
 
 export interface Sect {

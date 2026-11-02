@@ -1,4 +1,4 @@
-// 5.4 版:十階器具與玄天仙器需要煉製時間(開爐即扣材料,出爐時才擲成敗)、玄天仙器 25 仙元石 / 35% 失敗率、
+// 5.4 版:十階器具與玄天仙器需要煉製時間(開爐即扣材料,出爐時才擲成敗,失敗材料全數損失)、玄天仙器 25 仙元石 / 35% 失敗率、
 // 道祖神念符另需太乙精魂。
 import { describe, it, expect, afterEach, vi } from "vitest";
 import { applyAction, newSave, normalizeSave } from "../engine";
@@ -72,7 +72,7 @@ describe("煉製時間", () => {
 });
 
 describe("道祖神念符(神器)", () => {
-  it("需研讀圖譜並另耗太乙精魂一枚;失敗退回太乙精魂與一半主要材料", () => {
+  it("需研讀圖譜並另耗太乙精魂一枚;失敗時太乙精魂與所有材料全數損失", () => {
     at(T0);
     let s = saveAt(10);
     s.unlockedRecipes.push("r_zt_b_shennian_fu");
@@ -86,8 +86,8 @@ describe("道祖神念符(神器)", () => {
     restore = mockRandom([0]);
     const r = applyAction(s, "forgeCollect");
     expect(r.loot?.success).toBe(false);
-    expect(r.save.inventory.taiyi_jinghun_baxia).toBe(1);
-    for (const m of c.materials) expect(r.save.inventory[m.id] ?? 0, m.id).toBe(m.n - Math.ceil(m.n / 2));
+    expect(r.save.inventory.taiyi_jinghun_baxia ?? 0).toBe(0);
+    for (const m of [...c.materials, ...c.elements]) expect(r.save.inventory[m.id] ?? 0, m.id).toBe(0);
     expect(r.save.craftPity?.r_zt_b_shennian_fu).toBe(1);
   });
 });
@@ -115,7 +115,7 @@ describe("玄天仙器煉化", () => {
     expect(s.forge?.failChance).toBe(0.35);
     expect(s.forge?.readyAt).toBe(T0 + XUANTIAN_FORGE_MINUTES * MIN);
   });
-  it("出爐:擲出 0.36 成功煉成玄天仙器;擲出 0.34 失敗,殘片/精華退回一半、太乙精魂保留", () => {
+  it("出爐:擲出 0.36 成功煉成玄天仙器;擲出 0.34 失敗,殘片、精華、太乙精魂全數損失", () => {
     at(T0);
     const s = applyAction(ready(), "craftXuantian").save;
     at(T0 + 361 * MIN);
@@ -126,8 +126,8 @@ describe("玄天仙器煉化", () => {
     restore = mockRandom([0.34]);
     const bad = applyAction(structuredClone(s), "forgeCollect");
     expect(bad.loot?.success).toBe(false);
-    expect(bad.save.inventory.xuantian_canpian).toBe(5);
-    expect(bad.save.inventory.poshou_jinhow).toBe(10);
-    expect(bad.save.inventory.taiyi_jinghun_tianhu).toBe(1);
+    expect(bad.save.inventory.xuantian_canpian ?? 0).toBe(0);
+    expect(bad.save.inventory.poshou_jinhow ?? 0).toBe(0);
+    expect(bad.save.inventory.taiyi_jinghun_tianhu ?? 0).toBe(0);
   });
 });

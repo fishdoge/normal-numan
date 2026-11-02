@@ -135,10 +135,8 @@ export const failChanceWithPity = (baseFail: number, pity: number) => Math.max(0
 export const failChanceFinal = (baseFail: number, pity: number, mingBonus: number) =>
   Math.max(0, failChanceWithPity(baseFail, pity) - mingBonus);
 
-// 失敗時主要材料損失一半(無條件進位);五行材料與靈石全數耗盡
-export const failLossOf = (n: number) => Math.ceil(n / 2);
 
-// 玄天仙器(太乙境):額外需要仙品五行各 5,失敗率 40%;失敗只耗五行材料與一半殘片/精華,太乙精魂保留
+// 玄天仙器(太乙境):額外需要仙品五行各 5;失敗時所有材料(含太乙精魂)與靈石全數損失
 export const XUANTIAN_ELEMENTS = BASE_ELEMENTS.map((el) => ({ id: ELEMENT_MATERIAL.xianjie[el], n: 5 }));
 export const XUANTIAN_FAIL = 0.35; // 5.4 版由 40% 改為 35%
 export const XUANTIAN_STONES = 2_500_000_000; // 5.4 版:爐火之資 25 仙元石

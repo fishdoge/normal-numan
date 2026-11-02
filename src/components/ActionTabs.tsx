@@ -20,7 +20,18 @@ import {
   geoDropsOf,
 } from "@/game/store";
 import { MONSTERS, RECIPES } from "@/game/data/world";
-import { craftCostOf, failChanceFinal, PITY_STEP } from "@/game/data/crafting";
+import {
+  craftCostOf,
+  failChanceFinal,
+  PITY_STEP,
+  DIVINE_RECIPE_IDS,
+  TAIYI_SOUL_IDS,
+  XUANTIAN_FAIL,
+  XUANTIAN_FORGE_MINUTES,
+  XUANTIAN_STONES,
+  forgeMinutesOf,
+  isDivineItem,
+} from "@/game/data/crafting";
 import { ITEMS, itemById, isXuantianArtifact } from "@/game/data/items";
 import { REALMS } from "@/game/data/realms";
 import { SECTS } from "@/game/data/sects";
@@ -141,16 +152,17 @@ function BagTab() {
     const item = itemById(id);
     const equipped = equippedIds.includes(id);
     const xuantian = isXuantianArtifact(id);
+    const divine = isDivineItem(id); // 5.4 版:道祖神念符與玄天仙器同為神器,紫框紫字
     const statLine = itemStatLine(item, t, lang);
     const nameSpan = (
-      <span className={`${itemNameColor(item, xuantian)}${statLine ? " cursor-help underline decoration-dotted decoration-faded/40 underline-offset-2" : ""}`}>
+      <span className={`${itemNameColor(item, xuantian || divine)}${statLine ? " cursor-help underline decoration-dotted decoration-faded/40 underline-offset-2" : ""}`}>
         {itemDisplayName(item, lang)}
       </span>
     );
     return (
       <div
         key={id}
-        className={`flex items-center justify-between border rounded-sm p-2.5 ${xuantian ? "border-fuchsia-400/50" : "border-faded/20"}`}
+        className={`flex items-center justify-between border rounded-sm p-2.5 ${xuantian || divine ? "border-fuchsia-400/50" : "border-faded/20"}`}
       >
         <div className="min-w-0">
           <span className="font-bold">
@@ -161,6 +173,7 @@ function BagTab() {
               <span className={`chip ml-2 ${ELEMENT_COLOR[item.element]}`}>{item.element}</span>
             )}
             {xuantian && <span className="chip ml-2 text-xuantian border-fuchsia-400/50">{t("xuantianTag")}</span>}
+            {divine && <span className="chip ml-2 text-xuantian border-fuchsia-400/50">{t("divineFilter")}</span>}
             {equipped && <span className="chip ml-2 text-gold border-gold/50">{t("equippedTag")}</span>}
             {item.kind === "manual" && item.teaches && (
               <span className="chip ml-2 text-azure border-azure/50">
@@ -599,24 +612,39 @@ function CraftTab() {
   const lang = useGame((x) => x.language);
   const t = useT();
   const { realm, breakBonus: mingBonus } = statsOf(s);
-  const SOUL_IDS = [
-    "taiyi_jinghun_tianhu",
-    "taiyi_jinghun_zhenlong",
-    "taiyi_jinghun_baxia",
-    "taiyi_jinghun_pixiu",
-  ];
-  const soulCount = SOUL_IDS.reduce((a, id) => a + (s.inventory[id] ?? 0), 0);
+  const soulCount = TAIYI_SOUL_IDS.reduce((a, id) => a + (s.inventory[id] ?? 0), 0);
+  // 5.4 版:爐中煉製中的器物(十階器具、玄天仙器)倒數
+  const forge = s.forge;
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!forge) return;
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, [forge]);
+  const dur = (min: number) =>
+    min % 60 === 0
+      ? t("durHours").replace("{h}", String(min / 60))
+      : min > 60
+        ? t("durHoursMin").replace("{h}", String(Math.floor(min / 60))).replace("{m}", String(min % 60))
+        : t("durMin").replace("{m}", String(min));
+  const clock = (ms: number) => {
+    const sec = Math.max(0, Math.ceil(ms / 1000));
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    return `${h}:${String(m).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
+  };
   const fragmentCount = s.inventory["xuantian_canpian"] ?? 0;
   const fragmentMintCount = s.inventory["poshou_jinhow"] ?? 0;
   const energy = s.energy ?? 0;
   const energyLackCraft = energy < ENERGY_COST.craft;
   const energyLackXuantian = energy < ENERGY_COST.craftXuantian;
-  const [filter, setFilter] = useState<DictKey | "filterAll">("filterAll");
+  const [filter, setFilter] = useState<DictKey | "filterAll" | "divine">("filterAll");
   const availableSections = ITEM_SECTIONS.filter(([, kinds]) =>
     RECIPES.some((rec) => kinds.includes(itemById(rec.result).kind)),
   );
   const sectionsToShow =
     filter === "filterAll" ? availableSections : availableSections.filter(([key]) => key === filter);
+  const divineRecipes = RECIPES.filter((rec) => DIVINE_RECIPE_IDS.includes(rec.id));
 
   const recipeRow = (rec: (typeof RECIPES)[number]) => {
     const result = itemById(rec.result);
@@ -627,17 +655,26 @@ function CraftTab() {
     const pity = s.craftPity?.[rec.id] ?? 0;
     const failPct = Math.round(failChanceFinal(cost.baseFail, pity, mingBonus) * 100);
     const canStones = s.stones >= cost.stones;
-    const canMats = [...cost.materials, ...cost.elements].every(
-      (m) => (s.inventory[m.id] ?? 0) >= m.n,
-    );
+    const canMats =
+      [...cost.materials, ...cost.elements].every((m) => (s.inventory[m.id] ?? 0) >= m.n) &&
+      (!rec.taiyiSoul || soulCount >= 1);
+    const forgeMin = forgeMinutesOf(rec);
+    const forgeBlocked = forgeMin > 0 && !!forge;
+    const divine = DIVINE_RECIPE_IDS.includes(rec.id);
     return (
       <div
         key={rec.id}
-        className={`border rounded-sm p-3 ${rec.dropOnly ? "border-azure/50 bg-azure/5" : "border-faded/20"} ${locked || stageLocked ? "opacity-55" : ""}`}
+        className={`border rounded-sm p-3 ${
+          divine
+            ? "border-fuchsia-400/60 bg-fuchsia-400/5"
+            : rec.dropOnly
+              ? "border-azure/50 bg-azure/5"
+              : "border-faded/20"
+        } ${locked || stageLocked ? "opacity-55" : ""}`}
       >
         <div className="flex items-baseline justify-between">
           <span className="font-bold">
-            {itemDisplayName(result, lang)}
+            <span className={divine ? "text-xuantian" : undefined}>{itemDisplayName(result, lang)}</span>
             <span className="chip ml-2 text-faded/80 border-faded/30">
               {kindLabel(result.kind, lang)}
             </span>
@@ -659,6 +696,11 @@ function CraftTab() {
                 {t("craftPityTag").replace("{n}", String(Math.round(pity * PITY_STEP * 100)))}
               </span>
             ) : null}
+            {forgeMin > 0 && (
+              <span className="chip ml-2 text-amber-300 border-amber-300/50">
+                ⏳ {t("forgeTimeTag").replace("{t}", dur(forgeMin))}
+              </span>
+            )}
           </span>
           <span className="shrink-0 flex items-center gap-2">
             {rec.lifeCost ? (
@@ -686,6 +728,12 @@ function CraftTab() {
               </span>
             );
           })}
+          {rec.taiyiSoul && (
+            <span className={`mr-3 ${soulCount >= 1 ? "text-jade" : "text-vermillion"}`}>
+              <span className="text-fuchsia-300 mr-0.5">◆</span>
+              {t("taiyiSoulNeed")} {soulCount}/1
+            </span>
+          )}
           <span className="text-faded">
             →{" "}
             {result.atkBonus ? (lang === "en" ? `ATK+${result.atkBonus} ` : `攻+${result.atkBonus} `) : ""}
@@ -706,15 +754,17 @@ function CraftTab() {
         </p>
         <button
           className="btn mt-2"
-          disabled={busy || !canStones || !canMats || locked || stageLocked || energyLackCraft}
+          disabled={busy || !canStones || !canMats || locked || stageLocked || energyLackCraft || forgeBlocked}
           title={
-            locked
-              ? t("blueprintLocked")
-              : stageLocked
-                ? t("exploreStageLocked").replace("{n}", String(rec.reqStage))
-                : energyLackCraft
-                  ? `${t("energyInsufficientTip")} (${ENERGY_COST.craft})`
-                  : `-${ENERGY_COST.craft} ${t("energyCostSuffix")}`
+            forgeBlocked
+              ? t("forgeBusy")
+              : locked
+                ? t("blueprintLocked")
+                : stageLocked
+                  ? t("exploreStageLocked").replace("{n}", String(rec.reqStage))
+                  : energyLackCraft
+                    ? `${t("energyInsufficientTip")} (${ENERGY_COST.craft})`
+                    : `-${ENERGY_COST.craft} ${t("energyCostSuffix")}`
           }
           onClick={() => act("craft", { recipeId: rec.id })}
         >
@@ -732,26 +782,23 @@ function CraftTab() {
           {t("craftMingBonus").replace("{n}", String(Math.round(mingBonus * 100)))}
         </p>
       )}
-      {realm.stage >= 12 && (
-        <div className="border border-fuchsia-400/50 bg-fuchsia-400/5 rounded-sm p-3">
-          <span className="font-bold text-xuantian">{t("xuantianCraftTitle")}</span>
-          <p className="text-sm text-faded mt-1">{t("xuantianCraftDesc")}</p>
-          <p className="text-xs font-mono mt-1 text-faded">
-            {itemDisplayName(itemById("xuantian_canpian"), lang)} {fragmentCount}/10 ·{" "}
-            {itemDisplayName(itemById("poshou_jinhow"), lang)} {fragmentMintCount}/20 ·{" "}
-            {t("taiyiSoulSuffix")} {soulCount}/1
-          </p>
-          <button
-            className="btn mt-2 border-fuchsia-400/60 text-fuchsia-300 hover:bg-fuchsia-400/15"
-            disabled={busy || fragmentCount < 10 || soulCount < 1 || energyLackXuantian}
-            title={
-              energyLackXuantian
-                ? `${t("energyInsufficientTip")} (${ENERGY_COST.craftXuantian})`
-                : `-${ENERGY_COST.craftXuantian} ${t("energyCostSuffix")}`
-            }
-            onClick={() => act("craftXuantian")}
-          >
-            {t("xuantianCraftBtn")}
+      {forge && (
+        <div
+          className={`border rounded-sm p-3 flex flex-wrap items-center justify-between gap-2 ${
+            forge.kind === "xuantian" || DIVINE_RECIPE_IDS.includes(forge.recipeId ?? "")
+              ? "border-fuchsia-400/60 bg-fuchsia-400/5"
+              : "border-amber-300/50 bg-amber-300/5"
+          }`}
+        >
+          <span className="text-sm">
+            <span className="text-faded mr-2">🔥 {t("forgeTitle")}</span>
+            <span className="font-bold text-cream">{forge.name}</span>
+            <span className={`ml-3 text-xs font-mono ${now >= forge.readyAt ? "text-jade" : "text-amber-300"}`}>
+              {now >= forge.readyAt ? t("forgeReady") : t("forgeLeft").replace("{t}", clock(forge.readyAt - now))}
+            </span>
+          </span>
+          <button className="btn" disabled={busy || now < forge.readyAt} onClick={() => act("forgeCollect")}>
+            {t("forgeCollectBtn")}
           </button>
         </div>
       )}
@@ -779,17 +826,85 @@ function CraftTab() {
             {t(key).replace(/\s/g, "")}
           </button>
         ))}
+        <button
+          onClick={() => setFilter("divine")}
+          className={`px-2.5 py-1 text-xs rounded-sm border transition-colors ${
+            filter === "divine"
+              ? "border-fuchsia-400 bg-fuchsia-400/20 text-fuchsia-200"
+              : "border-fuchsia-400/50 text-fuchsia-300 hover:bg-fuchsia-400/10"
+          }`}
+        >
+          ✦ {t("divineFilter")}
+        </button>
       </div>
-      {sectionsToShow.map(([key, kinds]) => {
-        const group = RECIPES.filter((rec) => kinds.includes(itemById(rec.result).kind));
-        if (!group.length) return null;
-        return (
-          <div key={key}>
-            <div className="divider">{t(key)}</div>
-            <div className="space-y-2">{group.map(recipeRow)}</div>
+      {filter !== "divine" &&
+        sectionsToShow.map(([key, kinds]) => {
+          const group = RECIPES.filter(
+            (rec) => kinds.includes(itemById(rec.result).kind) && !DIVINE_RECIPE_IDS.includes(rec.id),
+          );
+          if (!group.length) return null;
+          return (
+            <div key={key}>
+              <div className="divider">{t(key)}</div>
+              <div className="space-y-2">{group.map(recipeRow)}</div>
+            </div>
+          );
+        })}
+      {/* 神器(5.4 版):玄天仙器煉化與道祖神念符,放在最下方、紫框與其他煉器區分 */}
+      {(filter === "filterAll" || filter === "divine") && (
+        <div>
+          <div className="divider text-fuchsia-300">{t("divineSection")}</div>
+          <p className="text-xs text-fuchsia-300/80 mb-2">{t("divineNote")}</p>
+          <div className="space-y-2">
+            <div className={`border border-fuchsia-400/60 bg-fuchsia-400/5 rounded-sm p-3 ${realm.stage < 12 ? "opacity-55" : ""}`}>
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="font-bold text-xuantian">{t("xuantianCraftTitle")}</span>
+                <span className={`text-xs font-mono ${s.stones >= XUANTIAN_STONES ? "text-gold" : "text-vermillion"}`}>
+                  {formatStones(XUANTIAN_STONES)}
+                </span>
+              </div>
+              <p className="text-sm text-faded mt-1">{t("xuantianCraftDesc")}</p>
+              <p className="text-xs text-fuchsia-200/80 mt-1">
+                {t("xuantianCraftCost")
+                  .replace("{stones}", formatStones(XUANTIAN_STONES))
+                  .replace("{fail}", String(Math.round(Math.max(0, XUANTIAN_FAIL - mingBonus) * 100)))
+                  .replace("{time}", dur(XUANTIAN_FORGE_MINUTES))}
+              </p>
+              <p className="text-xs font-mono mt-1 text-faded">
+                {itemDisplayName(itemById("xuantian_canpian"), lang)} {fragmentCount}/10 ·{" "}
+                {itemDisplayName(itemById("poshou_jinhow"), lang)} {fragmentMintCount}/20 ·{" "}
+                {t("taiyiSoulSuffix")} {soulCount}/1
+              </p>
+              <button
+                className="btn mt-2 border-fuchsia-400/60 text-fuchsia-300 hover:bg-fuchsia-400/15"
+                disabled={
+                  busy ||
+                  realm.stage < 12 ||
+                  !!forge ||
+                  fragmentCount < 10 ||
+                  fragmentMintCount < 20 ||
+                  soulCount < 1 ||
+                  s.stones < XUANTIAN_STONES ||
+                  energyLackXuantian
+                }
+                title={
+                  realm.stage < 12
+                    ? t("exploreStageLocked").replace("{n}", "12")
+                    : forge
+                      ? t("forgeBusy")
+                      : energyLackXuantian
+                        ? `${t("energyInsufficientTip")} (${ENERGY_COST.craftXuantian})`
+                        : `-${ENERGY_COST.craftXuantian} ${t("energyCostSuffix")}`
+                }
+                onClick={() => act("craftXuantian")}
+              >
+                {t("xuantianCraftBtn")}
+              </button>
+            </div>
+            {divineRecipes.map(recipeRow)}
           </div>
-        );
-      })}
+        </div>
+      )}
     </div>
   );
 }

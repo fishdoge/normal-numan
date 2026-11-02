@@ -5,6 +5,7 @@ import type { Element, ItemKind, Recipe } from "../types";
 import { ITEMS, itemById } from "./items";
 import { LOCATIONS, MONSTERS, REGIONS, ELITE_SPAWNS } from "./world";
 import { tierOfStage, type WorldTier } from "./geography";
+import { RECIPE_ZONE } from "./xianExpansion";
 
 export type BaseElement = "金" | "木" | "水" | "火" | "土";
 export const BASE_ELEMENTS: BaseElement[] = ["金", "木", "水", "火", "土"];
@@ -139,7 +140,23 @@ export const failLossOf = (n: number) => Math.ceil(n / 2);
 
 // 玄天仙器(太乙境):額外需要仙品五行各 5,失敗率 40%;失敗只耗五行材料與一半殘片/精華,太乙精魂保留
 export const XUANTIAN_ELEMENTS = BASE_ELEMENTS.map((el) => ({ id: ELEMENT_MATERIAL.xianjie[el], n: 5 }));
-export const XUANTIAN_FAIL = FAIL_CAP;
+export const XUANTIAN_FAIL = 0.35; // 5.4 版由 40% 改為 35%
+export const XUANTIAN_STONES = 2_500_000_000; // 5.4 版:爐火之資 25 仙元石
+
+// 神器(5.4 版):玄天仙器煉化與道祖神念符,煉器堂另立「神器」分頁、紫框顯示,皆需太乙精魂一枚
+export const DIVINE_RECIPE_IDS = ["r_zt_b_shennian_fu"];
+export const isDivineItem = (id: string) => id.split("@")[0] === "zt_b_shennian_fu";
+export const TAIYI_SOUL_IDS = ["taiyi_jinghun_tianhu", "taiyi_jinghun_zhenlong", "taiyi_jinghun_baxia", "taiyi_jinghun_pixiu"];
+
+// 十階器具的煉製時間(5.4 版,真實分鐘):開爐即扣材料,時間到才出爐揭曉成敗。
+// 一般仙域裝備 1~2 小時、圖譜進階裝備 4~6 小時(依仙域強弱),玄天仙器 6 小時;丹藥與十階以下照舊即時完成
+const FORGE_ZONE_RANK: Record<string, number> = { beihan: 0, jinyuan: 0, manhuang: 1, zhenmo: 1, lunhui: 1, huixian: 2, zhongtu: 2 };
+export const XUANTIAN_FORGE_MINUTES = 360;
+export function forgeMinutesOf(rec: Recipe): number {
+  if ((rec.reqStage ?? 1) < 10 || !GEAR_KINDS.includes(itemById(rec.result).kind)) return 0;
+  const rank = FORGE_ZONE_RANK[RECIPE_ZONE[rec.id] ?? ""] ?? 0;
+  return rec.dropOnly ? 240 + 60 * rank : 60 + 30 * rank;
+}
 
 // 五行材料掉落:一般妖獸 20% 掉 1 個、菁英 60% 掉 2 個、地域王必掉 3 個
 export const ELEMENT_DROP = {

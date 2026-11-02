@@ -382,6 +382,7 @@ export const XIAN_LOCATIONS: Location[] = [];
 export const XIAN_ELITE_SPAWNS: Record<string, string> = {};
 export const XIAN_ITEMS: ItemDef[] = [];
 export const XIAN_RECIPES: Recipe[] = [];
+export const RECIPE_ZONE: Record<string, string> = {}; // 配方 id → 所屬仙域(十階器具的煉製時間依仙域推算)
 // 既有秘境補上的採集物(world.ts 併入時追加到該秘境的 materials/herbs)
 export const XIAN_EXISTING_GATHER: Record<string, { materials: string[]; herbs: string[] }> = {};
 
@@ -509,6 +510,8 @@ for (const spec of SPECS) {
       materials: m2 === m1 ? [{ id: m0, n: 4 }, { id: m1, n: 3 }] : [{ id: m2, n: 4 }, { id: m1, n: 3 }],
     },
   );
+  RECIPE_ZONE[`r_${aId}`] = spec.zone;
+  RECIPE_ZONE[`r_${rId}`] = spec.zone;
 }
 
 // 區域所屬仙域與名稱查詢(介面用)
@@ -677,7 +680,7 @@ const EXTRAS: ZoneExtra[] = [
     blueprints: [
       ["zt_b_jinque_jian", "南天門金闕劍", "artifact", "金", "以南天門金瓦熔鑄的仙劍,劍光如天門洞開。"],
       ["zt_b_xing_pao", "天河星袍", "robe", undefined, "以天河星砂織成的星袍,身披滿天星辰。"],
-      ["zt_b_shennian_fu", "道祖神念符", "talisman", undefined, "封入道祖神念的符籙,焚之如道祖親臨。"],
+      ["zt_b_shennian_fu", "道祖神念符", "talisman", undefined, "封入道祖神念的符籙,焚之如道祖親臨。煉製需另耗太乙精魂一枚,與玄天仙器同列神器。"],
     ],
   },
 ];
@@ -736,7 +739,10 @@ for (const ex of EXTRAS) {
         : i === 1
           ? [{ id: x2, n: 4 }, { id: x1, n: 2 }, { id: areaMats[1] ?? areaMats[0], n: 2 }]
           : [{ id: x3, n: 3 }, { id: x2, n: 2 }, { id: areaMats[areaMats.length - 1], n: 2 }];
-    XIAN_RECIPES.push({ id: recipeId, result: id, name, stones: Math.round(econ.recipe * 1.5), desc, reqStage: 10, dropOnly: true, materials: mats });
+    // 道祖神念符(神器):另需太乙精魂一枚
+    const taiyiSoul = id === "zt_b_shennian_fu" ? true : undefined;
+    XIAN_RECIPES.push({ id: recipeId, result: id, name, stones: Math.round(econ.recipe * 1.5), desc, reqStage: 10, dropOnly: true, materials: mats, taiyiSoul });
+    RECIPE_ZONE[recipeId] = ex.zone;
     const bpId = `bp_${id}`;
     blueprintIds.push(bpId);
     XIAN_ITEMS.push({ id: bpId, name: `《${name}》圖譜`, kind: "recipe", desc: `記載${name}煉製之法的圖譜,研讀後可於煉器堂煉製。`, price: 0, unlocksRecipe: recipeId, dropOnly: true, reqStage: 10 });

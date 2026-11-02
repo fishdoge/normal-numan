@@ -1,5 +1,5 @@
 // 伺服器權威遊戲引擎:所有獎勵運算在此執行,前端僅顯示
-import { COUNTERS, Element, Monster, ItemDef, Location, Technique, formatDamage, formatHp, formatHpPair, formatStones } from "./types";
+import { COUNTERS, Element, Monster, ItemDef, Location, Recipe, Technique, formatDamage, formatHp, formatHpPair, formatStones } from "./types";
 import { REALMS } from "./data/realms";
 import { SECTS } from "./data/sects";
 import { techById } from "./data/techniques";
@@ -80,6 +80,10 @@ import {
   elementMaterialFor,
   XUANTIAN_ELEMENTS,
   XUANTIAN_FAIL,
+  XUANTIAN_STONES,
+  XUANTIAN_FORGE_MINUTES,
+  TAIYI_SOUL_IDS,
+  forgeMinutesOf,
 } from "./data/crafting";
 
 // 狀態效果(2.21 版新增,仙法卡牌化的一部分;3.1 版新增 weaken;3.14 版新增 evade):掛在既有五行系統上,
@@ -146,6 +150,17 @@ export interface PlayerLocation {
 export interface Learning {
   techId: string;
   remain: number; // 剩餘年數
+}
+
+// 煉製中的器物(5.4 版):failChance 於開爐時定下;refund 為失敗時退回的材料(主要材料的一半、太乙精魂)
+export interface Forge {
+  kind: "craft" | "xuantian";
+  recipeId?: string;
+  name: string;
+  startAt: number;
+  readyAt: number;
+  failChance: number;
+  refund: { id: string; n: number }[];
 }
 
 export interface SaveData {
@@ -222,6 +237,8 @@ export interface SaveData {
   // 5.3 版:坐騎槽、煉器保底(配方 id → 連續失敗次數)
   equippedMount?: string | null;
   craftPity?: Record<string, number>;
+  // 5.4 版:十階器具與玄天仙器的煉製需要時間,爐中只能有一件(開爐即扣材料,出爐時才擲成敗)
+  forge?: Forge | null;
   // 5.4 版:派系(飛昇後擇定)、功勳、各種冷卻(epoch 毫秒)、輪迴界開通旗標
   faction?: FactionId | null;
   factionPending?: boolean; // 已在仙界但尚未擇定派系
@@ -1973,6 +1990,77 @@ export function normalizeSave(s: SaveData): void {
   }
 }
 
+// ═══ 煉器結果(即時煉製與 5.4 版開爐出爐共用)═══
+export const forgeDurationText = (minutes: number) =>
+  minutes % 60 === 0 ? `${minutes / 60} 小時` : minutes > 60 ? `${Math.floor(minutes / 60)} 小時 ${minutes % 60} 分` : `${minutes} 分鐘`;
+
+// 失敗:同一配方連續失敗累積保底,下次失敗率 −5%(材料的扣除由呼叫端處理)
+function craftFailed(s: SaveData, rec: Recipe, hasElements: boolean, lifeCost = 0, soulKept = false): ActionResult {
+  const result0 = itemById(rec.result);
+  const pity = s.craftPity?.[rec.id] ?? 0;
+  s.craftPity = { ...(s.craftPity ?? {}), [rec.id]: pity + 1 };
+  const nextFail = Math.round(failChanceFinal(craftCostOf(rec).baseFail, pity + 1, statsOf(s).breakBonus) * 100);
+  log(
+    s,
+    result0.kind === "pill"
+      ? `丹爐中藥香驟散,一爐靈液化作焦炭——煉製【${rec.name}】失敗!`
+      : `爐火驟然失控,轟然一聲炸響——煉製【${rec.name}】失敗!`,
+  );
+  return {
+    save: s,
+    loot: {
+      title: "煉 製 失 敗",
+      success: false,
+      lines: [
+        `煉製【${rec.name}】失敗`,
+        hasElements
+          ? `靈石與五行材料已耗盡,主要材料損失一半${soulKept ? ",太乙精魂退回" : ""}。`
+          : `靈石已耗盡,材料損失一半${lifeCost > 0 ? ",壽元照耗" : ""}。`,
+        `${result0.kind === "pill" ? "煉丹" : "煉器"}心得 +1:下次煉製此物失敗率降為 ${nextFail}%。`,
+      ],
+    },
+  };
+}
+
+function craftSucceeded(s: SaveData, rec: Recipe, lifeCost = 0): ActionResult {
+  if (s.craftPity?.[rec.id]) {
+    const { [rec.id]: _done, ...rest } = s.craftPity;
+    s.craftPity = rest;
+  }
+  const result = itemById(rec.result);
+  // 丹藥/仙物類產出效果不隨品質浮動(exp/heal/mp 等非 atkBonus/defBonus/speedBonus,浮動無意義),
+  // 直接原樣給予;裝備類維持既有的 ±30% 屬性浮動機制。坐騎只有移動倍率,同樣不浮動。
+  const isPillLike = result.kind === "pill" || result.kind === "special" || result.kind === "mount";
+  const rolledId = isPillLike ? rec.result : `${rec.result}@${rand(70, 130)}`;
+  give(s, rolledId);
+  const rolled = itemById(rolledId);
+  const lifeNote = lifeCost > 0 ? `(耗壽元 ${lifeCost} 年)` : "";
+  log(s, `爐火純青,三日三夜——你成功煉製出【${rolled.name}】!${lifeNote}`);
+  return {
+    save: s,
+    loot: {
+      title: result.kind === "pill" ? "煉 丹 大 成" : "煉 器 大 成",
+      success: true,
+      lines: [`【${rolled.name}】出爐!`, rolled.desc],
+    },
+  };
+}
+
+// 玄天仙器煉成:隨機一種,屬性浮動 100%~300%
+function xuantianSucceeded(s: SaveData): ActionResult {
+  const pool = Array.from(XUANTIAN_ARTIFACT_IDS);
+  const picked = pool[rand(0, pool.length - 1)];
+  const quality = rand(100, 300);
+  const rolledId = `${picked}@${quality}`;
+  give(s, rolledId);
+  const rolled = itemById(rolledId);
+  log(s, `玄天殘片與太乙精魂同淬爐火,天地紫氣暴湧——煉成【${rolled.name}】!`);
+  return {
+    save: s,
+    loot: { title: "玄 天 仙 器 · 煉 成", success: true, lines: [`煉成【${rolled.name}】`, rolled.desc] },
+  };
+}
+
 export function applyAction(
   s: SaveData,
   type: string,
@@ -3631,6 +3719,11 @@ function applyActionInner(
       if ((rec.reqStage ?? 1) > realm.stage) {
         return { save: s, error: "境界不足,無法駕馭此配方" };
       }
+      // 5.4 版:十階器具需要煉製時間,爐中一次只能煉一件
+      const forgeMin = forgeMinutesOf(rec);
+      if (forgeMin > 0 && s.forge) {
+        return { save: s, error: `爐中尚有【${s.forge.name}】未出爐,待其出爐後方可再開爐。` };
+      }
       // 5.3 版:裝備類配方另需五行材料、靈石費用提高,並有失敗率(見 crafting.ts 的 craftCostOf)
       const cost = craftCostOf(rec);
       if (s.stones < cost.stones) {
@@ -3642,6 +3735,32 @@ function applyActionInner(
           log(s, `材料不足:煉製 ${rec.name} 需 ${itemById(m.id).name} ×${m.n}。`);
           return { save: s };
         }
+      }
+      const soul = rec.taiyiSoul ? TAIYI_SOUL_IDS.find((id) => (s.inventory[id] ?? 0) >= 1) : undefined;
+      if (rec.taiyiSoul && !soul) {
+        log(s, `煉製 ${rec.name} 需太乙精魂一枚(天狐/真龍/霸下/黑眼貔貅任一皆可),你尚未持有。`);
+        return { save: s };
+      }
+      if (forgeMin > 0) {
+        s.stones -= cost.stones;
+        s.energy -= energyCost;
+        for (const m of [...cost.elements, ...cost.materials]) take(s, m.id, m.n);
+        if (soul) take(s, soul);
+        const now = Date.now();
+        s.forge = {
+          kind: "craft",
+          recipeId: rec.id,
+          name: rec.name,
+          startAt: now,
+          readyAt: now + forgeMin * MINUTE_MS,
+          failChance: failChanceFinal(cost.baseFail, s.craftPity?.[rec.id] ?? 0, statsOf(s).breakBonus),
+          refund: [
+            ...cost.materials.map((m) => ({ id: m.id, n: m.n - failLossOf(m.n) })),
+            ...(soul ? [{ id: soul, n: 1 }] : []),
+          ].filter((m) => m.n > 0),
+        };
+        log(s, `爐火已起——【${rec.name}】需煉 ${forgeDurationText(forgeMin)},屆時方可出爐。`);
+        return { save: s };
       }
       // 煉丹配方額外消耗壽元;壽元耗盡即道隕(與打坐/調息一致的處理方式)
       const lifeCost = rec.lifeCost ?? 0;
@@ -3670,54 +3789,12 @@ function applyActionInner(
       const pity = s.craftPity?.[rec.id] ?? 0;
       const mingBonus = statsOf(s).breakBonus;
       const failChance = failChanceFinal(cost.baseFail, pity, mingBonus);
-      const result0 = itemById(rec.result);
       if (failChance > 0 && Math.random() < failChance) {
         for (const m of cost.materials) take(s, m.id, failLossOf(m.n));
-        s.craftPity = { ...(s.craftPity ?? {}), [rec.id]: pity + 1 };
-        const nextFail = Math.round(failChanceFinal(cost.baseFail, pity + 1, mingBonus) * 100);
-        log(
-          s,
-          result0.kind === "pill"
-            ? `丹爐中藥香驟散,一爐靈液化作焦炭——煉製【${rec.name}】失敗!`
-            : `爐火驟然失控,轟然一聲炸響——煉製【${rec.name}】失敗!`,
-        );
-        return {
-          save: s,
-          loot: {
-            title: "煉 製 失 敗",
-            success: false,
-            lines: [
-              `煉製【${rec.name}】失敗`,
-              cost.elements.length
-                ? "靈石與五行材料已耗盡,主要材料損失一半。"
-                : `靈石已耗盡,材料損失一半${lifeCost > 0 ? ",壽元照耗" : ""}。`,
-              `${result0.kind === "pill" ? "煉丹" : "煉器"}心得 +1:下次煉製此物失敗率降為 ${nextFail}%。`,
-            ],
-          },
-        };
+        return craftFailed(s, rec, cost.elements.length > 0, lifeCost);
       }
       for (const m of cost.materials) take(s, m.id, m.n);
-      if (s.craftPity?.[rec.id]) {
-        const { [rec.id]: _done, ...rest } = s.craftPity;
-        s.craftPity = rest;
-      }
-      const result = itemById(rec.result);
-      // 丹藥/仙物類產出效果不隨品質浮動(exp/heal/mp 等非 atkBonus/defBonus/speedBonus,浮動無意義),
-      // 直接原樣給予;裝備類維持既有的 ±30% 屬性浮動機制。坐騎只有移動倍率,同樣不浮動。
-      const isPillLike = result.kind === "pill" || result.kind === "special" || result.kind === "mount";
-      const rolledId = isPillLike ? rec.result : `${rec.result}@${rand(70, 130)}`;
-      give(s, rolledId);
-      const rolled = itemById(rolledId);
-      const lifeNote = lifeCost > 0 ? `(耗壽元 ${lifeCost} 年)` : "";
-      log(s, `爐火純青,三日三夜——你成功煉製出【${rolled.name}】!${lifeNote}`);
-      return {
-        save: s,
-        loot: {
-          title: result.kind === "pill" ? "煉 丹 大 成" : "煉 器 大 成",
-          success: true,
-          lines: [`【${rolled.name}】出爐!`, rolled.desc],
-        },
-      };
+      return craftSucceeded(s, rec, lifeCost);
     }
 
     case "craftXuantian": {
@@ -3725,6 +3802,7 @@ function applyActionInner(
       if (realm.stage < 12) {
         return { save: s, error: "玄天仙器唯太乙境修士方能煉化,此刻你尚無資格。" };
       }
+      if (s.forge) return { save: s, error: `爐中尚有【${s.forge.name}】未出爐,待其出爐後方可再開爐。` };
       const FRAGMENT_COST = 10;
       const FRAGMENT_COST2 = 20;
       if ((s.inventory["xuantian_canpian"] ?? 0) < FRAGMENT_COST) {
@@ -3735,56 +3813,68 @@ function applyActionInner(
         log(s, `煉化玄天仙器需破曉精華 ${FRAGMENT_COST2} 枚,你尚未集齊。`);
         return { save: s };
       }
-      const soulIds = [
-        "taiyi_jinghun_tianhu",
-        "taiyi_jinghun_zhenlong",
-        "taiyi_jinghun_baxia",
-        "taiyi_jinghun_pixiu",
-      ];
-      const haveSoul = soulIds.find((id) => (s.inventory[id] ?? 0) >= 1);
+      const haveSoul = TAIYI_SOUL_IDS.find((id) => (s.inventory[id] ?? 0) >= 1);
       if (!haveSoul) {
         log(s, "煉化玄天仙器需太乙精魂一枚(天狐/真龍/霸下/黑眼貔貅任一皆可),你尚未持有。");
         return { save: s };
       }
-      // 5.3 版:另需仙品五行各 5,失敗率 40%;失敗只耗五行材料與一半殘片/精華,太乙精魂保留
+      // 5.3 版:另需仙品五行各 5;5.4 版:爐火之資 25 仙元石、失敗率 35%、需煉 6 小時
       const lackEl = XUANTIAN_ELEMENTS.find((m) => (s.inventory[m.id] ?? 0) < m.n);
       if (lackEl) {
         log(s, `煉化玄天仙器需${itemById(lackEl.id).name} ×${lackEl.n}(仙品五行各 5),你尚未集齊。`);
         return { save: s };
       }
+      if (s.stones < XUANTIAN_STONES) {
+        log(s, `煉化玄天仙器需 ${formatStones(XUANTIAN_STONES)} 作爐火之資,靈石不足。`);
+        return { save: s };
+      }
+      // 開爐即扣:五行材料與靈石不退;失敗時殘片/精華退回一半、太乙精魂全數退回
       for (const m of XUANTIAN_ELEMENTS) take(s, m.id, m.n);
+      take(s, "xuantian_canpian", FRAGMENT_COST);
+      take(s, "poshou_jinhow", FRAGMENT_COST2);
+      take(s, haveSoul);
+      s.stones -= XUANTIAN_STONES;
       s.energy -= energyCost;
-      if (Math.random() < Math.max(0, XUANTIAN_FAIL - statsOf(s).breakBonus)) {
-        take(s, "xuantian_canpian", failLossOf(FRAGMENT_COST));
-        take(s, "poshou_jinhow", failLossOf(FRAGMENT_COST2));
+      const now = Date.now();
+      s.forge = {
+        kind: "xuantian",
+        name: "玄天仙器",
+        startAt: now,
+        readyAt: now + XUANTIAN_FORGE_MINUTES * MINUTE_MS,
+        failChance: Math.max(0, XUANTIAN_FAIL - statsOf(s).breakBonus),
+        refund: [
+          { id: "xuantian_canpian", n: FRAGMENT_COST - failLossOf(FRAGMENT_COST) },
+          { id: "poshou_jinhow", n: FRAGMENT_COST2 - failLossOf(FRAGMENT_COST2) },
+          { id: haveSoul, n: 1 },
+        ],
+      };
+      log(s, `玄天殘片與太乙精魂同入爐中,紫氣氤氳——煉化玄天仙器需 ${forgeDurationText(XUANTIAN_FORGE_MINUTES)},屆時方可出爐。`);
+      return { save: s };
+    }
+
+    // 出爐(5.4 版):時間到才擲成敗;失敗退回 refund 所列材料
+    case "forgeCollect": {
+      const f = s.forge;
+      if (!f) return { save: s, error: "爐中並無煉製中的器物。" };
+      if (Date.now() < f.readyAt) return { save: s, error: `【${f.name}】火候未到,尚不能出爐。` };
+      s.forge = null;
+      const failed = f.failChance > 0 && Math.random() < f.failChance;
+      if (failed) for (const r of f.refund) give(s, r.id, r.n);
+      if (f.kind === "xuantian") {
+        if (!failed) return xuantianSucceeded(s);
         log(s, "紫氣反噬,爐中殘片崩裂——煉化玄天仙器失敗!所幸太乙精魂護住爐心,未曾損毀。");
         return {
           save: s,
           loot: {
             title: "煉 化 失 敗",
             success: false,
-            lines: ["煉化玄天仙器失敗", "仙品五行材料已耗盡,玄天殘片與破曉精華損失一半,太乙精魂保留。"],
+            lines: ["煉化玄天仙器失敗", "靈石與仙品五行材料已耗盡,玄天殘片與破曉精華損失一半,太乙精魂保留。"],
           },
         };
       }
-      take(s, "xuantian_canpian", FRAGMENT_COST);
-      take(s, "poshou_jinhow", FRAGMENT_COST2);
-      take(s, haveSoul);
-      const pool = Array.from(XUANTIAN_ARTIFACT_IDS);
-      const picked = pool[rand(0, pool.length - 1)];
-      const quality = rand(100, 300); // 玄天仙器屬性浮動 100%~300%
-      const rolledId = `${picked}@${quality}`;
-      give(s, rolledId);
-      const rolled = itemById(rolledId);
-      log(s, `玄天殘片與太乙精魂同淬爐火,天地紫氣暴湧——煉成【${rolled.name}】!`);
-      return {
-        save: s,
-        loot: {
-          title: "玄 天 仙 器 · 煉 成",
-          success: true,
-          lines: [`煉成【${rolled.name}】`, rolled.desc],
-        },
-      };
+      const rec = RECIPES.find((x) => x.id === f.recipeId);
+      if (!rec) return { save: s, error: "無此配方" };
+      return failed ? craftFailed(s, rec, true, 0, !!rec.taiyiSoul) : craftSucceeded(s, rec);
     }
 
     // 滕符陣(4.2 版):安裝 / 移動 / 卸下。payload.from = "bag" 從未安裝區放入,或傳 index 移動已安裝的滕符

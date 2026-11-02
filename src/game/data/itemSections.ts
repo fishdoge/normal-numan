@@ -13,7 +13,8 @@ export const ITEM_SECTIONS: [DictKey, ItemKind[]][] = [
   ["bagSecPet", ["pet"]],
   ["bagSecMount", ["mount"]], // 坐騎(5.3 版新增)
   ["bagSecMing", ["mingqi"]],
-  ["bagSecManual", ["manual", "recipe"]],
+  ["bagSecManual", ["manual"]],
+  ["bagSecBlueprint", ["recipe"]], // 5.4 版:煉器圖譜與功法秘笈分開,較易辨識
   ["bagSecSpecial", ["special"]],
 ];
 

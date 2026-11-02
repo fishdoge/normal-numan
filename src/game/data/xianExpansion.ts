@@ -731,7 +731,9 @@ for (const ex of EXTRAS) {
         : kind === "robe"
           ? { atkBonus: Math.round(Math.max(g.robe[0], g.art[0] * 0.1) * 1.2), defBonus: Math.round(g.robe[1] * 1.2) }
           : { atkBonus: Math.round(g.tal * 1.25) };
-    XIAN_ITEMS.push({ id, name, kind, element: el, desc, price: 0, reqStage: 10, dropOnly: true, ...stats });
+    // 道祖神念符(神器):另加 5 萬防禦
+    const divineDef = id === "zt_b_shennian_fu" ? { defBonus: 50_000 } : {};
+    XIAN_ITEMS.push({ id, name, kind, element: el, desc, price: 0, reqStage: 10, dropOnly: true, ...stats, ...divineDef });
     const recipeId = `r_${id}`;
     const mats =
       i === 0

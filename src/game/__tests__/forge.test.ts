@@ -4,6 +4,7 @@ import { describe, it, expect, afterEach, vi } from "vitest";
 import { applyAction, newSave, normalizeSave } from "../engine";
 import type { SaveData } from "../engine";
 import { RECIPES } from "../data/world";
+import { ITEMS } from "../data/items";
 import { REALMS } from "../data/realms";
 import { craftCostOf, forgeMinutesOf, XUANTIAN_ELEMENTS, XUANTIAN_STONES, XUANTIAN_FORGE_MINUTES, XUANTIAN_FAIL } from "../data/crafting";
 import { mockRandom } from "./testUtils";
@@ -129,5 +130,13 @@ describe("玄天仙器煉化", () => {
     expect(bad.save.inventory.xuantian_canpian ?? 0).toBe(0);
     expect(bad.save.inventory.poshou_jinhow ?? 0).toBe(0);
     expect(bad.save.inventory.taiyi_jinghun_tianhu ?? 0).toBe(0);
+  });
+});
+
+describe("道祖神念符屬性", () => {
+  it("攻擊之外另有 5 萬防禦", () => {
+    const it0 = ITEMS.find((i) => i.id === "zt_b_shennian_fu")!;
+    expect(it0.defBonus).toBe(50_000);
+    expect(it0.atkBonus).toBeGreaterThan(0);
   });
 });

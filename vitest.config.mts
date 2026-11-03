@@ -8,5 +8,6 @@ export default defineConfig({
     environment: "node",
     include: ["src/game/__tests__/**/*.test.ts", "src/lib/__tests__/**/*.test.ts"],
     pool: "forks", // 每個測試檔案各自的 process:全域 Math.random 覆寫(見 testUtils.ts)不會互相污染
+    setupFiles: ["src/game/__tests__/setup.ts"], // 預設無天氣,傷害測試不隨現實日期浮動
   },
 });

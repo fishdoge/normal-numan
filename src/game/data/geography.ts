@@ -28,10 +28,18 @@ export interface Zone {
   region: string; // 對應 REGIONS 的 id
   continent?: string; // 靈界三大陸:同一 region 再以 continent 細分
   // 需要開通的旗標(沿用既有的區域解鎖欄位);未設定 = 天生可達
-  unlockFlag?: "jinyuanUnlocked" | "manhuangUnlocked" | "zhenmoUnlocked" | "huixianUnlocked" | "lunhuiUnlocked";
+  unlockFlag?:
+    | "jinyuanUnlocked"
+    | "manhuangUnlocked"
+    | "zhenmoUnlocked"
+    | "huixianUnlocked"
+    | "lunhuiUnlocked"
+    | "jilingUnlocked"
+    | "chashuiUnlocked";
   unlockHint?: string; // 未開通時顯示的取得方式
 }
 
+const CANTU_HINT = "蠻荒異界血肉聖殿的妖獸掉落界域殘圖,打開隨機開啟";
 export const ZONES: Zone[] = [
   { id: "tiannan", name: "天南 · 越國", tier: "renjian", region: "tiannan" },
   { id: "jindi", name: "血色禁地", tier: "renjian", region: "jindi" },
@@ -46,9 +54,12 @@ export const ZONES: Zone[] = [
   { id: "beihan", name: "北寒仙域", tier: "xianjie", region: "beihan" },
   { id: "jinyuan", name: "金源仙域", tier: "xianjie", region: "jinyuan", unlockFlag: "jinyuanUnlocked", unlockHint: "雲遊探索秘境時機緣發現" },
   { id: "manhuang", name: "蠻荒異界", tier: "xianjie", region: "manhuang", unlockFlag: "manhuangUnlocked", unlockHint: "集滿五色異星盤開路" },
-  { id: "zhenmo", name: "真魔界", tier: "xianjie", region: "zhenmo", unlockFlag: "zhenmoUnlocked", unlockHint: "以真魔門令擊敗守關古龍" },
-  { id: "huixian", name: "灰仙界", tier: "xianjie", region: "huixian", unlockFlag: "huixianUnlocked", unlockHint: "集滿五色異星盤與灰質破界盤" },
-  { id: "lunhui", name: "輪迴界", tier: "xianjie", region: "lunhui", unlockFlag: "lunhuiUnlocked", unlockHint: "在蠻荒異界雲遊時機緣發現" },
+  // 5.4 版:真魔、灰仙、輪迴、積菱空境、茶水仙域一律由血肉聖殿(蠻荒)妖獸掉落的界域殘圖隨機開啟
+  { id: "zhenmo", name: "真魔界", tier: "xianjie", region: "zhenmo", unlockFlag: "zhenmoUnlocked", unlockHint: CANTU_HINT },
+  { id: "huixian", name: "灰仙界", tier: "xianjie", region: "huixian", unlockFlag: "huixianUnlocked", unlockHint: CANTU_HINT },
+  { id: "lunhui", name: "輪迴界", tier: "xianjie", region: "lunhui", unlockFlag: "lunhuiUnlocked", unlockHint: CANTU_HINT },
+  { id: "jiling", name: "積菱空境", tier: "xianjie", region: "jiling", unlockFlag: "jilingUnlocked", unlockHint: CANTU_HINT },
+  { id: "chashui", name: "茶水仙域", tier: "xianjie", region: "chashui", unlockFlag: "chashuiUnlocked", unlockHint: CANTU_HINT },
 ];
 
 // 各界的落點:飛昇靈界落在風元大陸、飛昇仙界落在北寒仙域(中土是道祖坐鎮的最強地域,不適合初飛昇者)
@@ -84,7 +95,28 @@ export const ZONE_MAP_POS: Record<string, { x: number; y: number }> = {
   zhenmo: { x: 20, y: 64 },
   lunhui: { x: 50, y: 65 },
   huixian: { x: 80, y: 64 },
+  jiling: { x: 84, y: 40 },
+  chashui: { x: 16, y: 46 },
 };
+
+// ═══ 5.4 版:血肉聖殿與界域殘圖 ═══
+// 擊敗蠻荒四大地域王後,四大領地現出【血肉聖殿】;聖殿妖獸 4% 掉落界域殘圖,
+// 打開後完全隨機開啟以下其一(抽到已開通的地域,殘圖就白白耗掉)
+export const MANHUANG_LORDS = ["lord_tianhu", "lord_zhenlong", "lord_baxia", "lord_pixiu"];
+export const SOUL_OF_LORD: Record<string, string> = {
+  taiyi_jinghun_tianhu: "lord_tianhu",
+  taiyi_jinghun_zhenlong: "lord_zhenlong",
+  taiyi_jinghun_baxia: "lord_baxia",
+  taiyi_jinghun_pixiu: "lord_pixiu",
+};
+export const XUEROU_LOCATION = "xuerou_shengdian";
+export const JIEYU_CANTU = "jieyu_cantu";
+export const CANTU_DROP_CHANCE = 0.04;
+export const CANTU_ZONES = ["lunhui", "zhenmo", "huixian", "jiling", "chashui"];
+export const manhuangLordsCleared = (s: Pick<SaveData, "manhuangLordsSlain">) =>
+  MANHUANG_LORDS.every((id) => s.manhuangLordsSlain?.includes(id));
+export const locationRevealed = (s: Pick<SaveData, "manhuangLordsSlain">, loc: Pick<Location, "unlock">) =>
+  loc.unlock !== "manhuangLords" || manhuangLordsCleared(s);
 
 export const zoneOfLocation = (loc: Pick<Location, "region" | "continent">): Zone | undefined =>
   ZONES.find((z) => z.region === loc.region && (!z.continent || z.continent === loc.continent));
@@ -150,6 +182,8 @@ export const ROUTES: Route[] = [
   { a: "manhuang", b: "zhenmo", minutes: 60 },
   { a: "manhuang", b: "huixian", minutes: 90 },
   { a: "manhuang", b: "lunhui", minutes: 60 },
+  { a: "manhuang", b: "jiling", minutes: 90 }, // 5.4 版:界域殘圖開啟的兩處新地域,皆由蠻荒前往
+  { a: "manhuang", b: "chashui", minutes: 45 },
 ];
 
 export const routeKey = (a: string, b: string) => [a, b].sort().join("|");

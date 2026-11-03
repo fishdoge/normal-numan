@@ -6,6 +6,7 @@ import { techById } from "./data/techniques";
 import { itemById, ITEMS, XUANTIAN_ARTIFACT_IDS, RETIRED_ITEMS, isXuantianArtifact } from "./data/items";
 import { LOCATIONS, MONSTERS, RECIPES, REGIONS, ELITE_SPAWNS, ELITE_SPAWN_CHANCE } from "./data/world";
 import { MISSIONS } from "./data/missions";
+import { weatherAt, playerWeatherMult, elementWeatherMult } from "./data/weather";
 import { dwellingLevelOf } from "./data/sectTiers";
 import { currentEraYears } from "./data/eraTime";
 import {
@@ -33,6 +34,12 @@ import {
   NIXING_PAN,
   DESCENT_ZONE,
   needsDescentPlatform,
+  MANHUANG_LORDS,
+  SOUL_OF_LORD,
+  JIEYU_CANTU,
+  CANTU_ZONES,
+  manhuangLordsCleared,
+  locationRevealed,
   LANDING_ZONE,
   CROSS_REALM_MINUTES,
   VISIT_HOURS,
@@ -247,6 +254,10 @@ export interface SaveData {
   riftCrossAt?: number; // 玄天斬靈劍斬破界壁
   lunhuiGraceAt?: number; // 輪迴殿:每日一次戰敗不損靈石
   lunhuiUnlocked?: boolean;
+  // 5.4 版:界域殘圖開啟的兩處新地域;擊敗過的蠻荒四大地域王(集滿四位即現身血肉聖殿)
+  jilingUnlocked?: boolean;
+  chashuiUnlocked?: boolean;
+  manhuangLordsSlain?: string[];
 }
 
 export interface Modal {
@@ -496,6 +507,8 @@ const REGION_UNLOCK_FLAG: Record<string, keyof SaveData> = {
   zhenmo: "zhenmoUnlocked",
   huixian: "huixianUnlocked",
   lunhui: "lunhuiUnlocked",
+  jiling: "jilingUnlocked",
+  chashui: "chashuiUnlocked",
 };
 export const regionUnlocked = (s: SaveData, regionId: string) => {
   const flag = REGION_UNLOCK_FLAG[regionId];
@@ -588,7 +601,11 @@ function ascendRealmIfNeeded(s: SaveData, fromStage: number, toStage: number): s
 }
 
 // 狩獵/採集等「在秘境裡做事」的動作:必須身在該秘境所屬地域,且不在趕路途中
-function locationActionError(s: SaveData, loc: { name: string; region: string; continent?: string }): string | null {
+function locationActionError(
+  s: SaveData,
+  loc: { name: string; region: string; continent?: string; unlock?: "manhuangLords" },
+): string | null {
+  if (!locationRevealed(s, loc)) return `${loc.name}尚未現世——須先擊敗蠻荒四大地域王。`;
   if (s.location?.travel) return "你正在趕路途中,抵達之前無法在此行動。";
   const z = zoneOfLocation(loc);
   if (!z || z.id !== currentZoneOf(s)) {
@@ -641,8 +658,10 @@ export const ATK_TIERS: Record<string, AtkTier> = {
   "x-huixian": { refHp: midHpOf(10), refDef: 200000, target: 0.09 }, // 灰仙界:非常強大
   "x-zhongtu": { refHp: midHpOf(10), refDef: 260000, target: 0.1 }, // 中土仙域:道祖坐鎮,仙界最強(高於灰仙界)
   "x-lunhui": { refHp: midHpOf(10), refDef: 135000, target: 0.08 }, // 5.4 版:輪迴界與蠻荒、真魔同階
+  "x-jiling": { refHp: midHpOf(10), refDef: 230000, target: 0.095 }, // 5.4 版:積菱空境介於灰仙與中土之間
+  "x-chashui": { refHp: midHpOf(10), refDef: 20100, target: 0.03 }, // 5.4 版:茶水仙域,輕鬆的補給地
 };
-const XIAN_TIER_ORDER: Record<string, number> = { beihan: 1, jinyuan: 2, manhuang: 3, zhenmo: 3, lunhui: 3, huixian: 4, zhongtu: 5 };
+const XIAN_TIER_ORDER: Record<string, number> = { chashui: 0, beihan: 1, jinyuan: 2, manhuang: 3, zhenmo: 3, lunhui: 3, huixian: 4, jiling: 4.5, zhongtu: 5 };
 const tierRank = (key: string) => (key.startsWith("x-") ? 100 + (XIAN_TIER_ORDER[key.slice(2)] ?? 9) : Number(key));
 const tierOfLocation = (l: { reqStage: number; region: string }) =>
   l.reqStage < XIAN_STAGE ? String(l.reqStage) : `x-${l.region}`;
@@ -1140,6 +1159,9 @@ export function newSave(name: string, sectId: string): SaveData {
     manhuangUnlocked: false,
     zhenmoUnlocked: false,
     huixianUnlocked: false,
+    jilingUnlocked: false,
+    chashuiUnlocked: false,
+    manhuangLordsSlain: [],
     tongtianUnlocked: false,
     shaqi: 0,
     futuFloor: 0,
@@ -1449,7 +1471,9 @@ function monsterTurn(s: SaveData, attackMult: number, counter = false): { lines:
   // 讓同一位玩家在每一層承受的傷害都是第 1 層的同一倍數
   const defScale = s.combat.futuFloor ? Math.pow(FUTU_ATK_PER_FLOOR, s.combat.futuFloor - 1) : 1;
   const dmgBase = monsterDamageAfterDef(monAtk, def, monsterDefCoefOf(mon) * defScale);
-  let dmg = Math.max(1, rand(Math.floor(dmgBase * 0.8), Math.floor(dmgBase * 1.2)));
+  // 天地靈氣(5.4 版):妖獸攻擊同樣吃五行天氣(雷/煞天氣只壓制玩家仙法)
+  const wMult = elementWeatherMult(weatherAt(Date.now()).kind, mon.element);
+  let dmg = Math.max(1, Math.floor(rand(Math.floor(dmgBase * 0.8), Math.floor(dmgBase * 1.2)) * wMult));
   const enraged = Math.random() < (MONSTER_TRIPLE_ATK_CHANCE[mon.id] ?? 0);
   if (enraged) dmg *= 3;
   const crit = DAOZU_IDS.has(mon.id) && Math.random() < DAOZU_CRIT_CHANCE;
@@ -1683,13 +1707,15 @@ function winCombat(s: SaveData): Modal {
     return { title: `浮 屠 塔 · 第 ${floor} 層`, success: true, lines };
   }
 
-  // 真魔之門守關戰(5.0 版):擊敗冥翎天魔古龍,消耗真魔門令、開啟真魔界,其餘獎勵照一般擊殺結算
+  // 5.4 版:擊敗蠻荒四大地域王留下紀錄,集滿四位時血肉聖殿現世
   const gateLines: string[] = [];
-  // 門令須在勝利當下仍在身上才算數:戰鬥中把門令掛上市集賣掉,打贏也不會開門
-  if (s.combat!.zhenmoGate && !s.zhenmoUnlocked && take(s, "zhenmo_menling")) {
-    s.zhenmoUnlocked = true;
-    gateLines.push("冥翎天魔古龍轟然墜地,漆黑魔門應聲洞開——【真魔界】自此為你敞開!");
-    log(s, "你斬落冥翎天魔古龍,真魔之門洞開,新地圖【真魔界】解鎖!");
+  if (MANHUANG_LORDS.includes(mon.id) && !(s.manhuangLordsSlain ?? []).includes(mon.id)) {
+    const before = manhuangLordsCleared(s);
+    s.manhuangLordsSlain = [...(s.manhuangLordsSlain ?? []), mon.id];
+    if (!before && manhuangLordsCleared(s)) {
+      gateLines.push("四大地域王盡數伏誅——荒原中央血氣翻湧,【血肉聖殿】自此現世!");
+      log(s, "蠻荒四大地域王盡數伏誅,四大領地中央現出【血肉聖殿】!");
+    }
   }
 
   // 靈石橫財:10% 機率雙倍靈石
@@ -1748,7 +1774,7 @@ function winCombat(s: SaveData): Modal {
     `${isLord ? "歷經苦戰,你竟斬殺了地域之王 " : mon.elite ? "一番惡戰,你終於斬落菁英 " : "你擊殺了 "}${mon.name}!獲得修為 ${expGain}、靈石 ${stones}${windfall ? "(靈石橫財,雙倍!)" : ""}${dropNames.length ? ",拾得:" + dropNames.join("、") : ""}。`,
   );
   return {
-    title: gateLines.length ? "真 魔 之 門 · 洞 開" : isLord ? "地 域 王 授 首" : mon.elite ? "菁 英 伏 誅" : "戰 利 品",
+    title: gateLines.length ? "血 肉 聖 殿 · 現 世" : isLord ? "地 域 王 授 首" : mon.elite ? "菁 英 伏 誅" : "戰 利 品",
     success: true,
     rewards: { exp: expGain, stones, items: dropIds, tengfu: tengfuIds },
     lines: [
@@ -1811,17 +1837,6 @@ function exploreSecretRealm(s: SaveData): ActionResult {
   const lines: string[] = ["雲遊途中,你踏入一處與世隔絕的上古【秘境】——"];
   const roll = Math.random();
 
-  // 5.4 版:身在蠻荒異界雲遊時 8% 尋得輪迴界入口(尚未開通者;獨立骰,不影響下方既有機率序列)
-  if (realm.stage >= 10 && currentZoneOf(s) === "manhuang" && !zoneUnlocked(s, zoneById("lunhui")!) && Math.random() < 0.08) {
-    s.lunhuiUnlocked = true;
-    lines.push(
-      "秘境深處傳來忘川水聲——一道幽暗古門在你面前緩緩開啟,【輪迴界】的入口自此為你顯現!",
-      "輪迴界與蠻荒異界相連,是輪迴殿的領地,慎入。",
-    );
-    log(s, "你於蠻荒秘境深處尋得通往【輪迴界】的古門,新地圖解鎖!");
-    return { save: s, loot: { title: "秘 境 · 輪 迴 古 門", success: true, lines } };
-  }
-
   // 12% 解鎖金源仙域(僅真仙,且尚未解鎖)
   if (realm.stage >= 10 && !s.jinyuanUnlocked && roll < 0.12) {
     s.jinyuanUnlocked = true;
@@ -1833,19 +1848,6 @@ function exploreSecretRealm(s: SaveData): ActionResult {
     return { save: s, loot: { title: "秘 境 · 金 源 仙 門", success: true, lines } };
   }
 
-  // 8% 解鎖真魔界(3.19 版新增,僅真仙,且尚未解鎖;獨立骰,不影響下方既有機率序列)
-  // 5.0 版:尋得魔門後不再直接解鎖,改得「真魔門令」,須擊敗守門的冥翎天魔古龍才開啟真魔界。
-  // 已持有門令或已開啟真魔界者仍會持續遇到,多的門令可於玩家市集轉賣
-  if (realm.stage >= 10 && Math.random() < 0.08) {
-    give(s, "zhenmo_menling");
-    const zhenmoLines = [
-      "雲遊途中,你踏入一處與世隔絕的上古【秘境】——",
-      "秘境盡頭,一道漆黑魔門矗立虛空,門前盤踞著一頭羽翼遮天的上古魔龍——【冥翎天魔古龍】!",
-      "你拾得魔門前的【真魔門令】。於儲物袋中動用此令,擊敗古龍方能踏入真魔界。",
-    ];
-    log(s, "你於秘境深處尋得真魔之門,拾得【真魔門令】——守門的冥翎天魔古龍虎視眈眈!");
-    return { save: s, loot: { title: "秘 境 · 真 魔 之 門", success: true, lines: zhenmoLines } };
-  }
 
   // 5% 得靈寵(依境界給對應等級靈寵)
   if (roll < 0.17) {
@@ -1973,6 +1975,25 @@ export function normalizeSave(s: SaveData): void {
   // 5.4 版:仙界玩家尚未擇定派系(舊存檔、或飛昇時未選)一律補上待選旗標
   if (typeof s.merit !== "number") s.merit = 0;
   if (typeof s.lunhuiUnlocked !== "boolean") s.lunhuiUnlocked = false;
+  if (typeof s.jilingUnlocked !== "boolean") s.jilingUnlocked = false;
+  if (typeof s.chashuiUnlocked !== "boolean") s.chashuiUnlocked = false;
+  // 5.4 版:血肉聖殿須擊敗蠻荒四大地域王。舊存檔沒有擊殺紀錄,以太乙境(已集齊四枚精魂)與手上的精魂回推
+  if (!Array.isArray(s.manhuangLordsSlain)) {
+    const slain = new Set<string>();
+    if (REALMS[s.realmIdx]?.stage >= 12) MANHUANG_LORDS.forEach((id) => slain.add(id));
+    for (const [soul, lord] of Object.entries(SOUL_OF_LORD)) if ((s.inventory[soul] ?? 0) > 0) slain.add(lord);
+    s.manhuangLordsSlain = [...slain];
+  }
+  // 5.4 版:真魔門令、灰質破界盤隨舊的開通方式一併移除,持有者 1:1 換成界域殘圖
+  for (const old of ["zhenmo_menling", "huizhi_pojiepan"]) {
+    const n = s.inventory[old] ?? 0;
+    if (!(old in s.inventory)) continue;
+    delete s.inventory[old];
+    if (n > 0) {
+      give(s, JIEYU_CANTU, n);
+      log(s, `舊日的開界之物已失其效,你手上的 ${n} 件化作【界域殘圖】。`);
+    }
+  }
   if (!s.faction && REALMS[s.realmIdx].stage >= XIAN_STAGE) s.factionPending = true;
   if (s.faction && s.factionPending) s.factionPending = false;
   // 3.0/3.1/3.3 版:符寶袋上線前,可能已有玩家戰鬥進行到一半(combat 存在但缺少 deck/discard,
@@ -2656,6 +2677,8 @@ function applyActionInner(
         const mult = Math.max(...elemsOf(t).map((el) => elementMult(el, mon.element, mon.ignoresCounters)));
         if (Math.abs(mult - 1) > Math.abs(bestElementMult - 1)) bestElementMult = mult;
         p *= mult;
+        // 天地靈氣(5.4 版):五行天氣同屬性 +20%、被克 −20%;雷/煞天氣非相關仙法 −30%
+        p *= playerWeatherMult(weatherAt(Date.now()).kind, t, elemsOf(t));
         // 蓄力連攜(3.14 版新增):上一回合若蓄力過,這整回合的傷害額外提升 activeChargeBuffPct
         if (s.combat.activeChargeBuffPct) p *= 1 + s.combat.activeChargeBuffPct;
         // 煞屬性符寶(3.19 版新增):不受煞氣傷害懲罰,反而依煞氣額外提升傷害;其餘符寶正常吃懲罰
@@ -2857,7 +2880,14 @@ function applyActionInner(
             : shaqiPenaltyMult(s)) * (tech.element === "煞" && s.faction === "jiuyou" ? 1 + JIUYOU_SHA_CARD_PCT : 1);
         const taken = daozuDamageTaken(
           s,
-          Math.max(1, Math.floor(atk * tech.power * lvlMult * mult * sectMult * weaken * shaqiMult * (0.9 + Math.random() * 0.2))),
+          Math.max(
+            1,
+            Math.floor(
+              atk * tech.power * lvlMult * mult * sectMult * weaken * shaqiMult *
+                playerWeatherMult(weatherAt(Date.now()).kind, tech, [tech.element]) *
+                (0.9 + Math.random() * 0.2),
+            ),
+          ),
         );
         const dmg = taken.dmg;
         let statusNote = taken.note;
@@ -3033,33 +3063,6 @@ function applyActionInner(
           lines: [
             "五色異星盤共鳴,虛空裂開一道巨門——",
             "蠻荒異界自此對你敞開,天狐、真龍、霸下、貔貅四大領地静候踏足。",
-          ],
-        },
-      };
-    }
-
-    // 灰仙界(3.19 版新增):再集滿一輪五色異星盤 + 極稀有的灰質破界盤,寫法比照 unlockManhuang
-    case "unlockHuixian": {
-      if (s.huixianUnlocked) {
-        log(s, "灰仙界之門早已為你敞開,無需再度開啟。");
-        return { save: s };
-      }
-      const disks = ["xingpan_jin", "xingpan_mu", "xingpan_shui", "xingpan_huo", "xingpan_tu", "huizhi_pojiepan"];
-      if (!disks.every((id) => (s.inventory[id] ?? 0) >= 1)) {
-        log(s, "五色異星盤與灰質破界盤尚未集滿,無法開啟灰仙界之門。");
-        return { save: s };
-      }
-      disks.forEach((id) => take(s, id));
-      s.huixianUnlocked = true;
-      log(s, "五色異星盤與灰質破界盤同時懸空、轟然共鳴——灰仙界之門訇然洞開,死寂之氣撲面而來!");
-      return {
-        save: s,
-        breakResult: {
-          success: true,
-          title: "灰 仙 界 · 門 開",
-          lines: [
-            "五色異星盤與灰質破界盤共鳴,虛空裂開一道死寂巨門——",
-            "灰仙界自此對你敞開,煞氣瀰漫,妖獸不分五行,非常強大。",
           ],
         },
       };
@@ -3316,6 +3319,31 @@ function applyActionInner(
         };
       }
 
+      // 界域殘圖(5.4 版):完全隨機開啟輪迴界/真魔界/灰仙界/積菱空境/茶水仙域其一;抽到已開通的就白白耗掉
+      if (itemId === JIEYU_CANTU) {
+        if (s.combat) return { save: s, error: "激戰之中,無法使用。" };
+        if (realm.stage < 10) return { save: s, error: "此物玄奧非常,唯真仙以上方能啟用。" };
+        take(s, itemId);
+        const zone = zoneById(CANTU_ZONES[rand(0, CANTU_ZONES.length - 1)])!;
+        if (zoneUnlocked(s, zone)) {
+          log(s, `你展開【界域殘圖】,圖上山川化作【${zone.name}】的模樣——此地你早已能夠前往,殘圖化為飛灰。`);
+          return {
+            save: s,
+            loot: { title: "界 域 殘 圖", success: false, lines: [`殘圖指向【${zone.name}】`, "此地早已開通,殘圖化為飛灰。"] },
+          };
+        }
+        (s as unknown as Record<string, boolean>)[zone.unlockFlag!] = true;
+        log(s, `你展開【界域殘圖】,圖上山川定格為【${zone.name}】——前往此界的航路自此開通!`);
+        return {
+          save: s,
+          loot: {
+            title: "界 域 殘 圖 · 開 界",
+            success: true,
+            lines: [`【${zone.name}】自此開通`, "可在輿圖上自蠻荒異界飛遁前往。"],
+          },
+        };
+      }
+
       // 一次性秘境地圖道具(3.19 版新增,廣寒界/鯤鵬遺骸):使用後直接消耗道具、開啟對應一次性
       // 秘境戰鬥,獎勵沿用該怪物自己的 drops[] 掉落表(見 winCombat 的一般擊殺分支),不需要另外
       // 寫一套特判邏輯。
@@ -3323,19 +3351,12 @@ function applyActionInner(
         if (s.combat) return { save: s, error: "激戰之中,無法使用。" };
         if (realm.stage < 10) return { save: s, error: "此物玄奧非常,唯真仙以上方能啟用。" };
         const boss = monsterById(item.mapEncounter);
-        // 真魔門令:擊敗古龍才消耗(見 winCombat),落敗保留可再戰
-        const isZhenmoGate = itemId === "zhenmo_menling";
-        if (isZhenmoGate && s.zhenmoUnlocked) {
-          log(s, "真魔界之門早已為你敞開,此令已無用處。");
-          return { save: s };
-        }
-        if (!isZhenmoGate) take(s, itemId);
+        take(s, itemId);
         s.combat = {
           monsterId: boss.id,
           monsterHp: monsterHpOf(boss),
           locationId: `__map_${itemId}__`,
           isLord: true,
-          ...(isZhenmoGate ? { zhenmoGate: true } : {}),
           ...startingCombatHand(s),
           monsterStatus: [],
           playerStatus: [],

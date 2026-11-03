@@ -21,7 +21,7 @@ import {
 import FactionPicker from "./FactionPicker";
 import WorldMapModal from "./WorldMapModal";
 import { areasOfZone } from "@/game/data/xianExpansion";
-import { WORLD_TIERS, zoneById, locationsOfZone } from "@/game/data/geography";
+import { WORLD_TIERS, zoneById, locationsOfZone, locationRevealed } from "@/game/data/geography";
 import { regionArt, sceneOfLocation } from "@/game/data/sceneArt";
 import { TENGFU_DROPS, tengfuById } from "@/game/data/tengfu";
 import { useT } from "@/i18n/useT";
@@ -140,9 +140,10 @@ export default function ExploreStrip() {
   const isHere = zoneId === hereId && !travel;
   // 5.4 版:仙域底下的區域(每區 3~6 關);沒有區域的地域(人間、靈界)沿用整個地域
   // 進不去的秘境不顯示;整區都進不去的區域也不顯示
+  // 5.4 版:血肉聖殿須擊敗蠻荒四大地域王才現身
   const enterable = (locId: string) => {
     const l = LOCATIONS.find((x) => x.id === locId);
-    return !!l && canEnterStage(realm.stage, l.reqStage);
+    return !!l && canEnterStage(realm.stage, l.reqStage) && locationRevealed(s, l);
   };
   const areas = areasOfZone(zoneId)
     .map((a) => ({ ...a, locations: a.locations.filter(enterable) }))
@@ -158,7 +159,7 @@ export default function ExploreStrip() {
   const locs = area
     ? area.locations.map((id) => LOCATIONS.find((l) => l.id === id)!).filter(Boolean)
     : locationsOfZone(zoneId)
-        .filter((l) => canEnterStage(realm.stage, l.reqStage))
+        .filter((l) => canEnterStage(realm.stage, l.reqStage) && locationRevealed(s, l))
         .map((l, i) => ({ l, i }))
         .sort((a, b) => a.l.reqStage - b.l.reqStage || a.i - b.i)
         .map(({ l }) => l);

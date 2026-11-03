@@ -15,6 +15,8 @@ const REGION_ART: Record<string, string> = {
   huixian: "huixian", // 5.0 版合併 3.19:灰仙界
   zhongtu: "guanghan", // 5.4 版:中土仙域、輪迴界暫借既有插畫
   lunhui: "kunpeng",
+  jiling: "guanghan", // 5.4 版:積菱空境、茶水仙域暫借既有插畫
+  chashui: "tiannan",
 };
 const CONTINENT_ART: Record<string, string> = {
   fengyuan: "lingjie-fengyuan",

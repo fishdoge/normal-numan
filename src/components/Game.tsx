@@ -18,6 +18,7 @@ import { REALMS } from "@/game/data/realms";
 import { CHANGELOG } from "@/game/data/changelog";
 import { REVIVAL_PRICE_USD } from "@/game/data/blackMarket";
 import { currentEraYears, eraLabelText } from "@/game/data/eraTime";
+import WeatherBadge from "./WeatherBadge";
 import { renderLootLine } from "./ColoredText";
 import { useT } from "@/i18n/useT";
 import { realmDisplayName } from "@/i18n/realmText";
@@ -556,6 +557,7 @@ export default function Game() {
             <div className="hud-brand">
               <h1>{t("appTitle")}</h1>
               <p>{t("worldEraNow").replace("{era}", eraLabelText(currentEraYears()))}</p>
+              <WeatherBadge compact />
             </div>
             <div className="hud-realm">
               <span className={`hud-realm-name ${isXian ? "text-fuchsia-300" : ""}`}>

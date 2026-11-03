@@ -22,13 +22,16 @@ export const REGIONS: Region[] = [
   // 蠻荒異界:須集滿五色異星盤(金木水火土,金源仙域怪物掉落)方能開啟,四大領地各有專屬地域王
   { id: "manhuang", name: "蠻荒異界", reqStage: 10, lordChance: [0.03, 0.05], hidden: true, color: "fuchsia", desc: "五色異星盤共鳴開啟的洪荒秘域,妖獸攻勢不烈,卻生命堅韌無匹,四大領地各踞一方地域王。" },
   // 真魔界(3.19 版新增):雲遊探索隨機解鎖,真仙專屬,採集時有機率觸發「洗煞池」清空煞氣
-  { id: "zhenmo", name: "真魔界", reqStage: 10, hidden: true, color: "fuchsia", desc: "雲遊探索秘境方能窺見的至暗魔域,魔氣沖霄,深處相傳藏有可滌淨煞氣的洗煞池。" },
-  // 灰仙界(3.19 版新增):須集滿五色異星盤 + 極稀有的灰質破界盤方能開啟,怪物完全無視五行相剋
-  { id: "huixian", name: "灰仙界", reqStage: 10, lordId: "lord_huixian", hidden: true, color: "fuchsia", desc: "五色異星盤與灰質破界盤共鳴開啟的死寂秘域,妖獸不分五行、皆為煞氣所化,非常強大。" },
+  { id: "zhenmo", name: "真魔界", reqStage: 10, hidden: true, color: "fuchsia", desc: "界域殘圖指引方能抵達的至暗魔域,魔氣沖霄,深處相傳藏有可滌淨煞氣的洗煞池。" },
+  // 灰仙界(3.19 版新增;5.4 版改由血肉聖殿的界域殘圖開啟):怪物完全無視五行相剋
+  { id: "huixian", name: "灰仙界", reqStage: 10, lordId: "lord_huixian", hidden: true, color: "fuchsia", desc: "界域殘圖指引方能抵達的死寂秘域,妖獸不分五行、皆為煞氣所化,非常強大。" },
   // 中土仙域(5.2 版新增):仙界傳送網樞紐,天庭與道祖坐鎮,仙界最強地域(飛昇落點在北寒)
   { id: "zhongtu", name: "中土仙域", reqStage: 10, lordId: "lord_zhongtu", color: "fuchsia", desc: "仙界正中的浩瀚仙域,時間道祖古或今與天庭七八位道祖坐鎮於此;傳送網由此通往北寒、金源與蠻荒。此地妖獸冠絕仙界,初飛昇者切莫涉足。" },
-  // 輪迴界(5.4 版新增):輪迴殿領地,經蠻荒異界前往;非輪迴殿成員須在蠻荒雲遊時機緣發現入口
+  // 輪迴界(5.4 版新增):輪迴殿領地,經蠻荒異界前往;非輪迴殿成員須以界域殘圖開啟
   { id: "lunhui", name: "輪迴界", reqStage: 10, lordId: "lord_lunhui", hidden: true, color: "fuchsia", desc: "六道輪迴的源頭,忘川橫流、古道幽深,輪迴殿於此暗中經營,誓要奪回天庭掌控的輪迴之權。" },
+  // 5.4 版:界域殘圖(血肉聖殿掉落)隨機開啟的兩處新地域
+  { id: "jiling", name: "積菱空境", reqStage: 10, lordId: "lord_jiling", hidden: true, color: "fuchsia", desc: "億萬菱晶層層積疊而成的空間秘境,鏡中有鏡、界外有界,妖獸之強僅次於中土仙域。" },
+  { id: "chashui", name: "茶水仙域", reqStage: 10, lordId: "lord_chashui", hidden: true, color: "fuchsia", desc: "雲霧茶山與茶香水鄉組成的悠閒仙域,妖獸溫和好欺,卻遍地補品與回血丹藥,是仙界難得的休憩之地。" },
 ];
 
 // 3.14 版:hp/atk 隨符寶威力(techniques.ts)同步下修。原本 hp 從 14 一路指數長到 600 億,
@@ -193,10 +196,10 @@ export const MONSTERS: Monster[] = [
   { id: "yinzhua_xiuwei", name: "銀爪貅衛", element: "金", hp: 72_495_101, atk: 210_000, exp: 560_000, stones: [9_000_000, 17_000_000], drops: [{ id: "manhuang_yungu", chance: 0.08 }, { id: "manhuang_lingsui", chance: 0.12 }, { id: "tianxiandan", chance: 0.045 }, { id: "xiantian_qi", chance: 0.02 }, { id: "poshou_jinhow", chance: 0.05 }, { id: "xuantian_canpian", chance: 0.05 }], desc: "貔貅領地的護衛貅獸,雙爪泛銀,守衛領地寶藏。" },
 
   // 蠻荒四大地域王(獵殺時 3%~5% 遭遇),各具專屬異能
-  { id: "lord_tianhu", name: "天狐", element: "火", isLord: true, hp: 252_938_360, atk: 384_000, exp: 4_000_000, stones: [300_000_000, 600_000_000], drops: [{ id: "huizhi_pojiepan", chance: 0.06 }, { id: "manhuang_lingsui", chance: 0.12 }, { id: "zengyuandan", chance: 0.06 }, { id: "xiantian_qi", chance: 0.2 }, { id: "thantian_lu", chance: 0.0375 }, { id: "poshou_jinhow", chance: 0.5 },{id:"panlongtaoshu",chance:0.3}, { id: "zenglingzhu", chance: 0.5 }, { id: "tianxiandan", chance: 0.09 }, { id: "taiyi_jinghun_tianhu", chance: 0.12 }, { id: "xuantian_canpian", chance: 0.3 }, { id: "m_jiuxiao_leihuo", chance: 0.02 }], desc: "天狐領地之主,身法通神,戰時有三成機率身形一晃、憑空避過攻擊。" },
-  { id: "lord_zhenlong", name: "真龍", element: "木", isLord: true, hp: 298_743_685, atk: 384_000, exp: 4_000_000, stones: [300_000_000, 600_000_000], drops: [{ id: "huizhi_pojiepan", chance: 0.06 }, { id: "manhuang_lingsui", chance: 0.12 }, { id: "zengyuandan", chance: 0.06 }, { id: "jinhundan", chance: 0.03 }, { id: "thantian_lu", chance: 0.0375 }, { id: "poshou_jinhow", chance: 0.5 },{id:"panlongtaoshu",chance:0.3}, { id: "xiantian_qi", chance: 0.125 }, { id: "zenglingzhu", chance: 0.5 }, { id: "tianxiandan", chance: 0.09 }, { id: "taiyi_jinghun_zhenlong", chance: 0.12 }, { id: "xuantian_canpian", chance: 0.35 }], desc: "真龍領地之主,龍血偶爾狂暴,兩成機率一擊爆發三倍攻擊之力。" },
-  { id: "lord_baxia", name: "霸下", element: "土", isLord: true, hp: 3_333_333_332, atk: 384_000, exp: 6_000_000, stones: [400_000_000, 800_000_000], drops: [{ id: "huizhi_pojiepan", chance: 0.06 }, { id: "manhuang_lingsui", chance: 0.12 }, { id: "zengyuandan", chance: 0.06 },{id:"nimetanti",chance:0.8}, { id: "thantian_lu", chance: 0.045 }, { id: "xiantian_qi", chance: 0.15 },{id:"panlongtaoshu",chance:0.3}, { id: "zenglingzhu", chance: 0.5 }, { id: "tianxiandan", chance: 0.1 }, { id: "taiyi_jinghun_baxia", chance: 0.12 }, { id: "xuantian_canpian", chance: 0.35 }], desc: "霸下領地之主,龍生九子之一,以馱負洪荒著稱——氣血堅韌至極,乃尋常妖獸的四十倍。" },
-  { id: "lord_pixiu", name: "黑眼貔貅", element: "金", isLord: true, hp: 27_155_165, atk: 384_000, exp: 4_000_000, stones: [300_000_000, 600_000_000], drops: [{ id: "huizhi_pojiepan", chance: 0.06 }, { id: "qiankun_dai", chance: 0.08 }, { id: "manhuang_lingsui", chance: 0.12 }, { id: "zengyuandan", chance: 0.06 }, { id: "xiantian_qi", chance: 0.2 }, { id: "thantian_lu", chance: 0.0375 }, { id: "poshou_jinhow", chance: 0.5 },{id:"panlongtaoshu",chance:0.3}, { id: "zenglingzhu", chance: 0.5 }, { id: "tianxiandan", chance: 0.09 }, { id: "taiyi_jinghun_pixiu", chance: 0.12 }, { id: "xuantian_canpian", chance: 0.35 }], desc: "貔貅領地之主,雙目幽黑,戰時可封鎖敵人法力波動,令其法術盡數失效,唯有以法器相搏。" },
+  { id: "lord_tianhu", name: "天狐", element: "火", isLord: true, hp: 252_938_360, atk: 384_000, exp: 4_000_000, stones: [300_000_000, 600_000_000], drops: [{ id: "manhuang_lingsui", chance: 0.12 }, { id: "zengyuandan", chance: 0.06 }, { id: "xiantian_qi", chance: 0.2 }, { id: "thantian_lu", chance: 0.0375 }, { id: "poshou_jinhow", chance: 0.5 },{id:"panlongtaoshu",chance:0.3}, { id: "zenglingzhu", chance: 0.5 }, { id: "tianxiandan", chance: 0.09 }, { id: "taiyi_jinghun_tianhu", chance: 0.12 }, { id: "xuantian_canpian", chance: 0.3 }, { id: "m_jiuxiao_leihuo", chance: 0.02 }], desc: "天狐領地之主,身法通神,戰時有三成機率身形一晃、憑空避過攻擊。" },
+  { id: "lord_zhenlong", name: "真龍", element: "木", isLord: true, hp: 298_743_685, atk: 384_000, exp: 4_000_000, stones: [300_000_000, 600_000_000], drops: [{ id: "manhuang_lingsui", chance: 0.12 }, { id: "zengyuandan", chance: 0.06 }, { id: "jinhundan", chance: 0.03 }, { id: "thantian_lu", chance: 0.0375 }, { id: "poshou_jinhow", chance: 0.5 },{id:"panlongtaoshu",chance:0.3}, { id: "xiantian_qi", chance: 0.125 }, { id: "zenglingzhu", chance: 0.5 }, { id: "tianxiandan", chance: 0.09 }, { id: "taiyi_jinghun_zhenlong", chance: 0.12 }, { id: "xuantian_canpian", chance: 0.35 }], desc: "真龍領地之主,龍血偶爾狂暴,兩成機率一擊爆發三倍攻擊之力。" },
+  { id: "lord_baxia", name: "霸下", element: "土", isLord: true, hp: 3_333_333_332, atk: 384_000, exp: 6_000_000, stones: [400_000_000, 800_000_000], drops: [{ id: "manhuang_lingsui", chance: 0.12 }, { id: "zengyuandan", chance: 0.06 },{id:"nimetanti",chance:0.8}, { id: "thantian_lu", chance: 0.045 }, { id: "xiantian_qi", chance: 0.15 },{id:"panlongtaoshu",chance:0.3}, { id: "zenglingzhu", chance: 0.5 }, { id: "tianxiandan", chance: 0.1 }, { id: "taiyi_jinghun_baxia", chance: 0.12 }, { id: "xuantian_canpian", chance: 0.35 }], desc: "霸下領地之主,龍生九子之一,以馱負洪荒著稱——氣血堅韌至極,乃尋常妖獸的四十倍。" },
+  { id: "lord_pixiu", name: "黑眼貔貅", element: "金", isLord: true, hp: 27_155_165, atk: 384_000, exp: 4_000_000, stones: [300_000_000, 600_000_000], drops: [{ id: "qiankun_dai", chance: 0.08 }, { id: "manhuang_lingsui", chance: 0.12 }, { id: "zengyuandan", chance: 0.06 }, { id: "xiantian_qi", chance: 0.2 }, { id: "thantian_lu", chance: 0.0375 }, { id: "poshou_jinhow", chance: 0.5 },{id:"panlongtaoshu",chance:0.3}, { id: "zenglingzhu", chance: 0.5 }, { id: "tianxiandan", chance: 0.09 }, { id: "taiyi_jinghun_pixiu", chance: 0.12 }, { id: "xuantian_canpian", chance: 0.35 }], desc: "貔貅領地之主,雙目幽黑,戰時可封鎖敵人法力波動,令其法術盡數失效,唯有以法器相搏。" },
   // ═══ 4.2 版:大乘期菁英小 BOSS ═══
   // 每處 8 階靈界秘境各一隻,獵殺時 12% 機率取代一般妖獸現身(地域王判定之後)。原始數值約為該地最強一般妖獸的
   // 氣血 ×2.2、攻擊 ×7.7(大乘期玩家氣血極厚,攻擊要夠高才打得痛),修為/靈石 ×4;各有一項特技(閃避或三倍重擊,見 engine.ts 的 MONSTER_DODGE_CHANCE /
@@ -243,6 +246,13 @@ export const MONSTERS: Monster[] = [
   { id: "lh_yinchai_gouhun", name: "勾魂陰差", element: "金", hp: 205_000_000, atk: 267_000, exp: 760_000, stones: [860_000, 1_700_000], drops: [{ id: "taiyi_huanhun", chance: 0.03 }, { id: "zengyuandan", chance: 0.02 }], desc: "手執勾魂索的陰差,專拘逃出輪迴的魂魄。" },
   { id: "lh_niepan_huoling", name: "涅槃火靈", element: "火", hp: 215_000_000, atk: 273_000, exp: 780_000, stones: [880_000, 1_750_000], drops: [{ id: "jiuzhuan_xianlu", chance: 0.05 }, { id: "tianxiandan", chance: 0.06 }], desc: "輪迴古道上燃燒不滅的火靈,焚盡前世,方得新生。" },
   { id: "lh_liudao_shoushou", name: "六道守獸", element: "土", hp: 225_000_000, atk: 279_000, exp: 800_000, stones: [900_000, 1_800_000], drops: [{ id: "taiyi_huanhun", chance: 0.03 }, { id: "tianxiandan", chance: 0.06 }], desc: "鎮守六道入口的巨獸,六首各望一道。" },
+  // 5.4 版:積菱空境、茶水仙域的地域王;血肉聖殿(擊敗蠻荒四大地域王後現身)的四隻妖獸,4% 掉落界域殘圖
+  { id: "lord_jiling", name: "鏡淵空主 · 玄菱", element: "金", isLord: true, hp: 6_000_000_000, atk: 880_000, exp: 25_000_000, stones: [25_000_000, 50_000_000], drops: [{ id: "taiyi_huanhun", chance: 0.1 }, { id: "zengyuandan", chance: 0.08 }, { id: "tianxiandan", chance: 0.3 }], desc: "積菱空境的主宰,身軀由無數菱鏡拼成,每一面鏡子裡都是一個不同的它。" },
+  { id: "lord_chashui", name: "茶祖 · 清泉老人", element: "水", isLord: true, hp: 5_000_000, atk: 90_000, exp: 500_000, stones: [5_000_000, 10_000_000], drops: [{ id: "jiuzhuan_xianlu", chance: 1 }, { id: "taiyi_huanhun", chance: 0.5 }, { id: "zengyuandan", chance: 0.2 }, { id: "xianyuan_huichun", chance: 1 }], desc: "在茶山泉眼邊煮了萬年茶的老人,與他過招更像切磋,輸了他也會塞一大包補品給你。" },
+  { id: "xr_yishou", name: "蠻荒異獸", element: "土", hp: 110_000_000, atk: 270_000, exp: 700_000, stones: [12_000_000, 22_000_000], drops: [{ id: "jieyu_cantu", chance: 0.04 }, { id: "taiyi_huanhun", chance: 0.05 }, { id: "manhuang_lingsui", chance: 0.15 }, { id: "xuantian_canpian", chance: 0.06 }, { id: "poshou_jinhow", chance: 0.06 }], desc: "血肉聖殿中以四大地域王殘餘血氣孕育的異獸,形貌不定,只知吞噬。" },
+  { id: "xr_kunpeng", name: "鯤鵬殘魂", element: "水", hp: 130_000_000, atk: 290_000, exp: 760_000, stones: [13_000_000, 24_000_000], drops: [{ id: "jieyu_cantu", chance: 0.04 }, { id: "taiyi_huanhun", chance: 0.05 }, { id: "manhuang_lingsui", chance: 0.15 }, { id: "xuantian_canpian", chance: 0.06 }, { id: "poshou_jinhow", chance: 0.06 }], desc: "上古鯤鵬隕落後殘留的魂魄,化鯤則掀海、化鵬則遮天,在聖殿中徘徊不去。" },
+  { id: "xr_banshan", name: "搬山古仙猿", element: "金", hp: 150_000_000, atk: 300_000, exp: 800_000, stones: [14_000_000, 26_000_000], drops: [{ id: "jieyu_cantu", chance: 0.04 }, { id: "taiyi_huanhun", chance: 0.05 }, { id: "manhuang_lingsui", chance: 0.15 }, { id: "xuantian_canpian", chance: 0.06 }, { id: "poshou_jinhow", chance: 0.06 }], desc: "能搬山填海的上古仙猿,守著聖殿深處通往諸界的殘圖。" },
+  { id: "xr_qingluan", name: "天荒青鸞", element: "木", hp: 120_000_000, atk: 310_000, exp: 780_000, stones: [13_000_000, 24_000_000], drops: [{ id: "jieyu_cantu", chance: 0.04 }, { id: "taiyi_huanhun", chance: 0.05 }, { id: "manhuang_lingsui", chance: 0.15 }, { id: "xuantian_canpian", chance: 0.06 }, { id: "poshou_jinhow", chance: 0.06 }], desc: "天荒時代的青鸞,羽翼一振便有界壁裂開,據說它曾銜著殘圖飛越諸界。" },
   { id: "lord_lunhui", name: "輪迴守門者 · 諦聽", element: "土", isLord: true, hp: 320_000_000, atk: 360_000, exp: 3_000_000, stones: [30_000_000, 60_000_000], drops: [{ id: "taiyi_huanhun", chance: 0.08 }, { id: "tianxiandan", chance: 0.3 }, { id: "zengyuandan", chance: 0.05 }], desc: "伏於輪迴之門的神獸,能聽盡三界眾生之心,誰也騙不過牠的雙耳。" },
   // ── 派系巡守(5.4 版新增):敵對派系成員在該派領地狩獵/採集時可能遭截殺,擊殺可得功勳 ──
   { id: "guard_tianting", name: "天兵巡守", element: "金", elite: true, hp: 1_400_000_000, atk: 720_000, exp: 3_000_000, stones: [12_000_000, 24_000_000], drops: [{ id: "taiyi_huanhun", chance: 0.1 }, { id: "zengyuandan", chance: 0.03 }], desc: "奉道祖法旨巡守中土的天兵,身披時間道紋甲冑,見逆黨必擒。" },
@@ -509,6 +519,14 @@ export const LOCATIONS: Location[] = [
     id: "manhuang_pixiu", name: "貔貅領地", region: "manhuang", reqStage: 10,
     desc: "靈氣氤氳的聚寶荒野,貅仔成群覓食,黑眼貔貅坐鎮於此。",
     monsters: ["chimu_xiuzai", "jubao_xiushou", "yinzhua_xiuwei"], lordId: "lord_pixiu",
+    materials: ["manhuang_lingsui"], herbs: [],
+    manualChance: 0, manuals: [],
+  },
+  // 5.4 版:血肉聖殿——擊敗蠻荒四大地域王後現身於四大領地
+  {
+    id: "xuerou_shengdian", name: "血肉聖殿", region: "manhuang", reqStage: 10, unlock: "manhuangLords",
+    desc: "四大地域王隕落後,牠們的血肉在荒原中央凝成一座聖殿,蠻荒的氣息濃得令人窒息。聖殿中的異獸身上,偶爾帶著通往他界的殘圖。",
+    monsters: ["xr_yishou", "xr_kunpeng", "xr_banshan", "xr_qingluan"],
     materials: ["manhuang_lingsui"], herbs: [],
     manualChance: 0, manuals: [],
   },

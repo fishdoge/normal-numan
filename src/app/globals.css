@@ -3098,3 +3098,20 @@ body::after {
     font-size: 13px;
   }
 }
+
+/* ─── 5.4 版:天地靈氣標籤(src/components/WeatherBadge.tsx) ─── */
+.weather-badge {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+.battle-arena-copy .weather-badge {
+  margin: 6px 0 2px;
+  white-space: normal;
+}
+.weather-badge-left {
+  opacity: 0.7;
+}
+

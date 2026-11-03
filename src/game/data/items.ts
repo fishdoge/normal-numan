@@ -437,13 +437,13 @@ export const ITEMS: ItemDef[] = [
   // ── 一次性秘境地圖道具(3.19 版新增):使用後直接開啟對應一次性戰鬥,見 engine.ts useItem ──
   { id: "guanghanjie", name: "廣寒界", kind: "special", desc: "月魄凝成的秘境地圖,廣寒界機緣非凡,亦有絕世妖魔盤踞。", effect: "使用後消耗,開啟一場廣寒仙子首領戰(真仙以上)", price: 0, dropOnly: true, reqStage: 10, mapEncounter: "boss_guanghan" },
   { id: "kunpeng_yihai", name: "鯤鵬遺骸", kind: "special", desc: "上古鯤鵬殞落之地的殘存氣息所化地圖,機緣與凶險並存。", effect: "使用後消耗,開啟一場鯤鵬殘魂首領戰(真仙以上)", price: 0, dropOnly: true, reqStage: 10, mapEncounter: "boss_kunpeng" },
-  { id: "zhenmo_menling", name: "真魔門令", kind: "special", desc: "秘境深處魔門前拾得的漆黑令牌,令上龍紋隱隱蠕動。", effect: "於儲物袋挑戰守門的冥翎天魔古龍(真仙以上);擊敗後開啟真魔界並消耗此令,落敗則令牌保留,但煞氣 +2500;可於玩家市集轉賣", price: 0, mapEncounter: "zm_mingling_gulong", reqStage: 10 },
 
   // ── 煞氣解法(3.19 版新增) ──
   { id: "mieshadan", name: "滅煞丹", kind: "pill", desc: "以真魔精血調配的奇丹。", price: 0, dropOnly: true, reqStage: 10, cureShaqi: true },
 
   // ── 灰仙界開界道具(3.19 版新增) ──
-  { id: "huizhi_pojiepan", name: "灰質破界盤", kind: "special", desc: "極其稀有的灰質圓盤,隱隱與五色異星盤共鳴。", effect: "搭配一套五色異星盤,可開啟灰仙界", price: 0, dropOnly: true },
+  // 5.4 版:界域殘圖(血肉聖殿妖獸 4% 掉落),打開完全隨機開啟輪迴界/真魔界/灰仙界/積菱空境/茶水仙域其一
+  { id: "jieyu_cantu", name: "界域殘圖", kind: "special", desc: "血肉聖殿異獸身上的殘破圖卷,圖上的山川時時變換,指向不同的界域。", effect: "使用後隨機開啟輪迴界、真魔界、灰仙界、積菱空境、茶水仙域其中之一(抽到已開通的地域則殘圖化為飛灰);可於玩家市集轉賣", price: 0, reqStage: 10 },
 
   // ── 通天閣進場道具(3.19 版新增) ──
   { id: "tongtian_ling", name: "通天令", kind: "special", desc: "唯真仙以上方能感應的令牌。", effect: "使用後永久開啟通天閣(真仙以上)", price: 0, dropOnly: true, reqStage: 10 },

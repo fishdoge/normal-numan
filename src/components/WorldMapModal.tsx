@@ -33,6 +33,7 @@ import {
   tierIndex,
   DESCENT_ZONE,
   needsDescentPlatform,
+  locationRevealed,
   POJIE_ZHU,
   NIXING_PAN,
   CROSS_REALM_MINUTES,
@@ -504,7 +505,7 @@ function ZoneInfo({ zone, ctx }: { zone: Zone; ctx: Ctx }) {
   // 區域與關卡(只列進得去的)
   const enterable = (id: string) => {
     const l = LOCATIONS.find((x) => x.id === id);
-    return !!l && (zone.tier !== here.tier || l.reqStage <= ctx.realmStage + 1);
+    return !!l && locationRevealed(s, l) && (zone.tier !== here.tier || l.reqStage <= ctx.realmStage + 1);
   };
   const areas = areasOfZone(zone.id)
     .map((a) => ({ ...a, locations: a.locations.filter(enterable) }))

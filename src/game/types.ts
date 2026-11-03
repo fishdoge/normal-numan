@@ -377,6 +377,7 @@ export interface Location {
   manualChance: number; // 秘笈掉落率
   manuals: string[];
   continent?: string; // 同一大陸底下的子分類(如靈界三大陸),對應 CONTINENTS 的 id;未設定則只在「全部」篩選下顯示
+  unlock?: "manhuangLords"; // 5.4 版:需達成條件才現身的秘境(血肉聖殿:擊敗蠻荒四大地域王)
 }
 
 // 大陸子分類(2.14 版新增,目前僅靈界三大陸使用):供遊歷探索頁籤篩選秘境

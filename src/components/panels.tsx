@@ -21,6 +21,7 @@ import { SECTS } from "@/game/data/sects";
 import { MONSTERS } from "@/game/data/world";
 import { itemById, isXuantianArtifact } from "@/game/data/items";
 import { currentEraYears, eraLabelText } from "@/game/data/eraTime";
+import WeatherBadge from "./WeatherBadge";
 import { zoneById, WORLD_TIERS } from "@/game/data/geography";
 import { factionById } from "@/game/data/factions";
 import { zoneDisplayName, tierDisplayName } from "@/i18n/worldText";
@@ -100,9 +101,8 @@ export function RealmProgressPanel() {
 
   const showManhuang = !s.manhuangUnlocked && realm.stage >= 10;
   const showTaiyi = s.futuFloor >= 20 && realm.stage < 12;
-  const showHuixian = !s.huixianUnlocked && realm.stage >= 10;
-
-  if (!showManhuang && !showTaiyi && !showHuixian) return null;
+  // 5.4 版:灰仙界改由血肉聖殿的界域殘圖開啟,不再以異星盤 + 灰質破界盤開門
+  if (!showManhuang && !showTaiyi) return null;
 
   return (
     <>
@@ -136,49 +136,6 @@ export function RealmProgressPanel() {
             onClick={() => act("unlockManhuang")}
           >
             {t("manhuangBtn")}
-          </button>
-        </div>
-      )}
-      {showHuixian && (
-        <div className="panel deco-frame border-fuchsia-400/40">
-          <div className="flex items-baseline justify-between">
-            <span className="font-bold text-fuchsia-300">{t("huixianTitle")}</span>
-            <span className="text-xs font-mono text-fuchsia-300/80">
-              {ELEMENTS.filter((el) => (s.inventory[XINGPAN_ID_OF[el]] ?? 0) >= 1).length +
-                ((s.inventory["huizhi_pojiepan"] ?? 0) >= 1 ? 1 : 0)}
-              /6
-            </span>
-          </div>
-          <p className="text-sm text-faded mt-1">{t("huixianDesc")}</p>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {ELEMENTS.map((el) => {
-              const has = (s.inventory[XINGPAN_ID_OF[el]] ?? 0) >= 1;
-              return (
-                <span
-                  key={el}
-                  className={`chip ${has ? ELEMENT_COLOR[el] : "text-faded/40 border-faded/20"}`}
-                >
-                  {elementLabel(el, lang)}
-                </span>
-              );
-            })}
-            <span
-              className={`chip ${(s.inventory["huizhi_pojiepan"] ?? 0) >= 1 ? "text-red-500 border-red-500/50" : "text-faded/40 border-faded/20"}`}
-            >
-              {itemById("huizhi_pojiepan").name}
-            </span>
-          </div>
-          <button
-            className="btn mt-2 w-full border-fuchsia-400/60 text-fuchsia-300 hover:bg-fuchsia-400/15"
-            disabled={
-              inCombat ||
-              busy ||
-              ELEMENTS.some((el) => (s.inventory[XINGPAN_ID_OF[el]] ?? 0) < 1) ||
-              (s.inventory["huizhi_pojiepan"] ?? 0) < 1
-            }
-            onClick={() => act("unlockHuixian")}
-          >
-            {t("huixianBtn")}
           </button>
         </div>
       )}
@@ -892,6 +849,7 @@ export function CombatPanel() {
             ) : null}
             <h2>{displayName}</h2>
             <p>{monsterDisplayDesc(mon, lang)}</p>
+            <WeatherBadge />
             {monsterTraitsOf(mon.id).length > 0 && (
               <ul className="battle-traits">
                 {monsterTraitsOf(mon.id).map((tr) => (

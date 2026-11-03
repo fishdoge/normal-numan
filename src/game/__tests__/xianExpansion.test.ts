@@ -17,9 +17,9 @@ afterEach(() => {
 const dupes = (ids: string[]) => ids.filter((id, i) => ids.indexOf(id) !== i);
 
 describe("結構", () => {
-  it("七大仙域各有 2~3 個區域,每區 3~6 個關卡", () => {
+  it("九大仙域(含 5.4 版積菱空境、茶水仙域)各有 2~3 個區域,每區 3~6 個關卡", () => {
     const zones = new Set(XIAN_AREAS.map((a) => a.zone));
-    expect(zones.size).toBe(7);
+    expect(zones.size).toBe(9);
     for (const z of zones) {
       const n = XIAN_AREAS.filter((a) => a.zone === z).length;
       expect(n, z).toBeGreaterThanOrEqual(2);
@@ -61,10 +61,10 @@ describe("資料完整性", () => {
       expect(LOCATIONS.some((l) => l.id === loc), loc).toBe(true);
     }
   });
-  it("一整批新內容:至少 35 個新關卡、80 隻新妖獸;裝備 = 7 套 ×4 + 21 件圖譜裝備 + 9 件道祖神兵", () => {
+  it("一整批新內容:至少 35 個新關卡、80 隻新妖獸;裝備 = 9 套 ×4 + 21 件圖譜裝備 + 9 件道祖神兵", () => {
     expect(XIAN_LOCATIONS.length).toBeGreaterThanOrEqual(35);
     expect(XIAN_MONSTERS.length).toBeGreaterThanOrEqual(80);
-    expect(XIAN_ITEMS.filter((i) => ["artifact", "robe", "amulet", "talisman"].includes(i.kind)).length).toBe(28 + 21 + 9);
+    expect(XIAN_ITEMS.filter((i) => ["artifact", "robe", "amulet", "talisman"].includes(i.kind)).length).toBe(36 + 21 + 9);
   });
 });
 
@@ -81,6 +81,7 @@ describe("數值", () => {
     const old = MONSTERS.filter((m) => !XIAN_MONSTERS.includes(m) && !m.isLord && !m.elite);
     for (const m of XIAN_MONSTERS.filter((m) => !m.elite && !m.isLord)) {
       const peers = old.filter((o) => tierOf(o.id) === tierOf(m.id)).map((o) => o.hp).sort((a, b) => a - b);
+      if (!peers.length) continue; // 5.4 版全新地域(積菱空境、茶水仙域)沒有既有妖獸可比
       const med = peers[Math.floor(peers.length / 2)];
       expect(m.hp / med, m.id).toBeGreaterThan(0.55);
       expect(m.hp / med, m.id).toBeLessThan(1.6);

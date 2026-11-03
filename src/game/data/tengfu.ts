@@ -184,6 +184,7 @@ export const TENGFU_DROPS: Record<string, string[]> = {
   yaochi_xianlin: ["tf_wuchong", "tf_hundun"],
   wangchuan: ["tf_zhenmo", "tf_hundun"],
   lunhui_gudao: ["tf_huixian", "tf_hundun"],
+  xuerou_shengdian: ["tf_pixiu", "tf_baxia", "tf_hundun"],
 };
 // 5.4 版仙界大擴充的新關卡:沿用各仙域既有的高階滕符池
 const XIAN_ZONE_TENGFU: Record<string, string[]> = {
@@ -194,6 +195,8 @@ const XIAN_ZONE_TENGFU: Record<string, string[]> = {
   lunhui: ["tf_zhenmo", "tf_hundun"],
   huixian: ["tf_huixian", "tf_hundun"],
   zhongtu: ["tf_jindi", "tf_hundun"],
+  jiling: ["tf_huixian", "tf_jindi"],
+  chashui: ["tf_qingshen", "tf_huanyang"],
 };
 for (const l of XIAN_LOCATIONS) TENGFU_DROPS[l.id] ??= XIAN_ZONE_TENGFU[l.region] ?? ["tf_hundun"];
 export const TENGFU_DROP_CHANCE = 0.02; // 一般妖獸(5.0 版由 5% 下修)

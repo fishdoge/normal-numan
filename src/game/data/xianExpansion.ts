@@ -9,7 +9,7 @@
 // 本檔只依賴型別,world.ts / items.ts / tengfu.ts 再把這裡產生的資料併入,避免循環 import。
 import type { Element, ItemDef, Location, Monster, Recipe } from "../types";
 
-type ZoneId = "beihan" | "jinyuan" | "manhuang" | "zhenmo" | "huixian" | "lunhui" | "zhongtu";
+type ZoneId = "beihan" | "jinyuan" | "manhuang" | "zhenmo" | "huixian" | "lunhui" | "zhongtu" | "jiling" | "chashui";
 
 // 各仙域既有一般妖獸的中位數(5.3 版數值;5.4 版仙界攻擊一律 ×3)
 const TIER_BASE: Record<ZoneId, { hp: number; atk: number; exp: number; stones: number }> = {
@@ -20,6 +20,9 @@ const TIER_BASE: Record<ZoneId, { hp: number; atk: number; exp: number; stones: 
   lunhui: { hp: 205_000_000, atk: 267_000, exp: 760_000, stones: 1_280_000 },
   huixian: { hp: 368_000_000, atk: 399_000, exp: 3_600_000, stones: 6_900_000 },
   zhongtu: { hp: 480_000_000, atk: 480_000, exp: 4_100_000, stones: 8_250_000 }, // 攻擊 ×3:道祖坐鎮,傷害須遠高於灰仙界
+  // 5.4 版:血肉聖殿的界域殘圖開啟——積菱空境介於灰仙與中土之間;茶水仙域是輕鬆的補給地
+  jiling: { hp: 420_000_000, atk: 440_000, exp: 3_850_000, stones: 7_600_000 },
+  chashui: { hp: 600_000, atk: 45_000, exp: 60_000, stones: 2_000_000 },
 };
 // 各仙域的常駐丹藥掉落(沿用既有道具)
 const ZONE_POTION: Record<ZoneId, string> = {
@@ -30,7 +33,18 @@ const ZONE_POTION: Record<ZoneId, string> = {
   lunhui: "taiyi_huanhun",
   huixian: "taiyi_huanhun",
   zhongtu: "zengyuandan",
+  jiling: "taiyi_huanhun",
+  chashui: "xianyuan_huichun",
 };
+// 茶水仙域:怪物很弱,但大量掉落補品與回血丹藥(其餘仙域沿用產生器的 4% / 菁英 20%)
+const ZONE_POTION_CHANCE: Partial<Record<ZoneId, { normal: number; elite: number }>> = {
+  chashui: { normal: 0.4, elite: 1 },
+};
+const CHASHUI_SUPPLIES = [
+  { id: "jiuzhuan_xianlu", chance: 0.25 },
+  { id: "taiyi_huanhun", chance: 0.1 },
+  { id: "zengyuandan", chance: 0.03 },
+];
 // 材料售價、仙草回復量、配方靈石(依仙域強度)
 const ZONE_ECON: Record<ZoneId, { mat: number; herb: number; heal: number; recipe: number }> = {
   beihan: { mat: 800, herb: 600, heal: 300_000, recipe: 40_000_000 },
@@ -40,6 +54,8 @@ const ZONE_ECON: Record<ZoneId, { mat: number; herb: number; heal: number; recip
   lunhui: { mat: 3_000, herb: 2_000, heal: 600_000, recipe: 150_000_000 },
   huixian: { mat: 6_000, herb: 4_000, heal: 800_000, recipe: 300_000_000 },
   zhongtu: { mat: 9_000, herb: 6_000, heal: 1_000_000, recipe: 500_000_000 },
+  jiling: { mat: 7_500, herb: 5_000, heal: 900_000, recipe: 400_000_000 },
+  chashui: { mat: 500, herb: 900, heal: 500_000, recipe: 20_000_000 },
 };
 // 每套裝備的數值:法器(攻/防)、法衣(攻/防)、護身符(攻/防)、符籙(攻)
 const ZONE_GEAR_STATS: Record<ZoneId, { art: [number, number]; robe: [number, number]; amulet: [number, number]; tal: number }> = {
@@ -50,6 +66,8 @@ const ZONE_GEAR_STATS: Record<ZoneId, { art: [number, number]; robe: [number, nu
   lunhui: { art: [43_000, 11_000], robe: [4_000, 40_000], amulet: [13_000, 15_000], tal: 29_000 },
   huixian: { art: [70_000, 20_000], robe: [10_000, 60_000], amulet: [30_000, 28_000], tal: 60_000 },
   zhongtu: { art: [100_000, 30_000], robe: [15_000, 80_000], amulet: [45_000, 40_000], tal: 90_000 },
+  jiling: { art: [85_000, 25_000], robe: [12_000, 70_000], amulet: [38_000, 34_000], tal: 75_000 },
+  chashui: { art: [12_000, 1_500], robe: [0, 10_000], amulet: [3_000, 4_000], tal: 6_000 },
 };
 
 // [id, 名稱, 五行, 介紹]
@@ -167,7 +185,7 @@ const SPECS: ZoneSpec[] = [
       {
         id: "mh_a1",
         name: "四大領地",
-        existing: ["manhuang_tianhu", "manhuang_zhenlong", "manhuang_baxia", "manhuang_pixiu"],
+        existing: ["manhuang_tianhu", "manhuang_zhenlong", "manhuang_baxia", "manhuang_pixiu", "xuerou_shengdian"],
         stages: [],
         mat: ["mh_m_shoujiao", "蠻荒獸角", "土", "四大領地妖獸脫落的獸角,蘊含洪荒血氣。"],
         herb: ["mh_h_lingcao", "洪荒靈草", "蠻荒大地上野生的靈草,藥力粗獷而猛烈。"],
@@ -360,6 +378,78 @@ const SPECS: ZoneSpec[] = [
       tal: ["zt_g_duanliu_fu", "時間斷流符", "以時之花汁繪成的符籙,能讓敵人的時間短暫停滯。"],
     },
   },
+  // 5.4 版:積菱空境(介於灰仙與中土),由血肉聖殿掉落的界域殘圖開啟
+  {
+    zone: "jiling",
+    areas: [
+      {
+        id: "jl_a1",
+        name: "菱鏡迴廊",
+        stages: [
+          { id: "jl_suijing", name: "碎鏡原", desc: "億萬片菱形晶鏡懸浮的荒原,每一片鏡中都映著另一個你。", monsters: [["jl_jingying", "鏡中倒影", "金", "從菱鏡中走出的倒影,一招一式都與你分毫不差。"], ["jl_lingjing_shou", "菱晶獸", "土", "通體由菱形晶塊拼成的異獸,碎了還會重新拼合。"]] },
+          { id: "jl_huilang", name: "迴光長廊", desc: "光線在晶壁間無盡折返的長廊,走得越深,影子越多。", monsters: [["jl_zheguang", "折光靈", "火", "光線折射凝成的靈體,一閃便到了你身後。"], ["jl_xujing_she", "虛晶蛇", "水", "在晶壁縫隙中穿梭的蛇,鱗片能吞掉光。"]] },
+          { id: "jl_jingxin", name: "菱鏡之心", desc: "迴廊盡頭的巨鏡,鏡面下是無底的虛空。", monsters: [["jl_jingmo", "鏡魔", "無", "寄居巨鏡的魔物,會把映入鏡中的人困成倒影。"], ["jl_xukong_wei", "虛空守衛", "金", "守護菱鏡之心的晶甲衛士,揮刀便切開空間。"]] },
+        ],
+        elite: ["jl_e_jingyuan", "鏡淵之主", "無", "菱鏡迴廊的主宰,沒有人見過它真正的模樣——你看到的,永遠是你自己。"],
+        mat: ["jl_m_lingjing", "積菱晶", "金", "積菱空境的菱形晶塊,能把一縷空間摺疊收藏。"],
+        herb: ["jl_h_xukonglan", "虛空蘭", "長在空間裂縫邊緣的蘭花,一半在此界、一半在虛空。"],
+      },
+      {
+        id: "jl_a2",
+        name: "疊界深處",
+        stages: [
+          { id: "jl_diejie", name: "疊界裂谷", desc: "數層空間疊在一起的裂谷,一步踏錯就會落進另一層。", monsters: [["jl_diejie_shou", "疊界巨獸", "土", "身軀橫跨好幾層空間的巨獸,打中的永遠只是其中一層。"], ["jl_kongwen_die", "空紋蝶", "木", "翅膀上刻著空間紋路的蝶,振翅便撕開小小裂縫。"]] },
+          { id: "jl_wuliang", name: "無量晶海", desc: "由流動晶砂構成的海,浪頭打來時連時間都慢了半拍。", monsters: [["jl_jingsha_jiao", "晶砂蛟", "水", "在晶海中游動的蛟,每一片鱗都是一面小鏡。"], ["jl_chenshi", "沉時晶靈", "無", "被晶海凍結了時間的古老靈體。"]] },
+          { id: "jl_zhenyan", name: "空境陣眼", desc: "整個積菱空境的陣眼,菱晶在此層層積疊成塔。", monsters: [["jl_zhenyan_ling", "陣眼晶靈", "金", "陣眼孕育的晶靈,守著空境最後的秘密。"], ["jl_kongjing_ren", "空境劍修", "火", "迷失在空境的古修,劍意早已與空間融為一體。"]] },
+        ],
+        elite: ["jl_e_jilinghou", "積菱空后", "金", "以積菱晶為冠的空境之后,一個眼神便能把人摺進晶塊。"],
+        mat: ["jl_m_diejie", "疊界碎片", "無", "疊界裂谷剝落的空間碎片,拿在手上會微微發燙。"],
+        herb: ["jl_h_jinghua", "晶砂花", "只開在無量晶海浪尖上的花,花瓣是透明的晶片。"],
+      },
+    ],
+    gear: {
+      art: ["jl_g_zheguang_jian", "折光菱刃", "金", "以積菱晶磨成的菱刃,刀光在空間中折返,一刀數擊。"],
+      robe: ["jl_g_jingyi", "萬鏡晶衣", "綴滿細小菱鏡的仙衣,攻勢打來會被映向四面八方。"],
+      amulet: ["jl_g_xinjing", "菱鏡心鑑", "鏡淵之主遺落的心鏡,佩之能看清自己的破綻。"],
+      tal: ["jl_g_diejie_fu", "疊界符", "以疊界碎片為引的符籙,能把敵人疊進另一層空間。"],
+    },
+  },
+  // 5.4 版:茶水仙域——輕鬆愉快的補給地,妖獸很弱,但大量掉落補品與回血丹藥
+  {
+    zone: "chashui",
+    areas: [
+      {
+        id: "cs_a1",
+        name: "雲霧茶山",
+        stages: [
+          { id: "cs_chayuan", name: "仙茶園", desc: "雲霧繚繞的梯田茶園,茶樹精怪們整天忙著採茶曬葉。", monsters: [["cs_chajing", "茶葉小精", "木", "茶樹上冒出的小精怪,被打了會掉下一把好茶葉。"], ["cs_chachong", "胖茶蟲", "木", "吃仙茶長大的蟲子,圓滾滾的,跑也跑不快。"]] },
+          { id: "cs_quanyan", name: "溫泉岩", desc: "茶山半腰的溫泉,泡一泡便覺通體舒暢。", monsters: [["cs_quangui", "泡湯龜", "水", "整天泡在溫泉裡的老龜,被吵醒時脾氣不太好。"], ["cs_wushou", "霧絨獸", "水", "溫泉霧氣凝成的毛球,摸起來暖呼呼的。"]] },
+          { id: "cs_chating", name: "半山茶亭", desc: "茶客歇腳的亭子,常有貪嘴的靈猴來偷點心。", monsters: [["cs_tousou", "偷點心靈猴", "土", "專偷茶亭點心的靈猴,打跑了還會回頭扮鬼臉。"], ["cs_huli", "茶亭小狐", "火", "化成小二的狐狸,端茶時尾巴總是藏不住。"]] },
+        ],
+        elite: ["cs_e_chaxianweng", "茶仙翁", "木", "茶山的主人,鬍子比茶樹還長。打贏他,他會笑呵呵地請你喝茶。"],
+        mat: ["cs_m_xiancha", "仙霧茶葉", "木", "雲霧茶山的仙茶,沖一壺能讓疲憊一掃而空。"],
+        herb: ["cs_h_wenquanlian", "溫泉靈蓮", "長在溫泉邊的蓮,藥性溫和,最能回補氣血。"],
+      },
+      {
+        id: "cs_a2",
+        name: "茶香水鄉",
+        stages: [
+          { id: "cs_qiao", name: "小橋流水", desc: "茶香飄過的水鄉小橋,河裡的魚都帶著茶味。", monsters: [["cs_chayu", "茶香錦鯉", "水", "喝茶水長大的錦鯉,據說吃了能清心明目。"], ["cs_heye_wa", "荷葉蛙", "木", "頂著荷葉當傘的青蛙,呱呱叫著討茶喝。"]] },
+          { id: "cs_hufang", name: "壺坊", desc: "燒製茶壺的作坊,年代久遠的老壺都成了精。", monsters: [["cs_huling", "老壺靈", "土", "燒壞了不肯被丟掉的老茶壺,一生氣就噴熱水。"], ["cs_zhanzi", "跳跳茶盞", "火", "一組會自己跳來跳去的茶盞,碰在一起叮噹作響。"]] },
+          { id: "cs_chamiao", name: "茶神廟", desc: "供奉茶神的小廟,香火裡飄的全是茶香。", monsters: [["cs_xianghuo", "香火童子", "火", "茶神廟的童子,手上的香爐裡燒的是茶葉。"], ["cs_shiling", "廟前石獅", "土", "廟前的石獅子,其實很怕癢。"]] },
+        ],
+        elite: ["cs_e_chashen", "茶神娘娘", "水", "茶香水鄉供奉的茶神,打完架總會遞上一盞熱茶與一盒點心。"],
+        mat: ["cs_m_hutu", "老壺泥", "土", "壺坊百年老壺的壺泥,溫潤細膩。"],
+        herb: ["cs_h_chaguo", "茶果", "茶樹結的小果,酸酸甜甜,吃了精神百倍。"],
+      },
+    ],
+    gear: {
+      art: ["cs_g_chaxian", "茶仙拂塵", "木", "茶仙翁用來趕茶蟲的拂塵,輕輕一掃便清風徐來。"],
+      robe: ["cs_g_chapao", "茶香道袍", "以仙茶薰染的道袍,穿上後連心境都平和了幾分。"],
+      amulet: ["cs_g_chahu", "隨身小茶壺", "掌心大的小茶壺,裡面的茶永遠是溫的。"],
+      tal: ["cs_g_qingxin_fu", "清心茶符", "以茶湯繪成的符籙,焚之茶香四溢。"],
+    },
+  },
 ];
 
 // ═══ 產生器 ═══
@@ -429,8 +519,9 @@ for (const spec of SPECS) {
           drops: [
             { id: matId, chance: 0.15 },
             { id: herbId, chance: 0.1 },
-            { id: potion, chance: 0.04 },
+            { id: potion, chance: ZONE_POTION_CHANCE[spec.zone]?.normal ?? 0.04 },
             { id: mi === 0 ? amuletId : talId, chance: 0.008 },
+            ...(spec.zone === "chashui" ? CHASHUI_SUPPLIES : []),
           ],
           desc,
           ...(spec.ignoresCounters ? { ignoresCounters: true } : {}),
@@ -469,7 +560,8 @@ for (const spec of SPECS) {
           drops: [
             { id: matId, chance: 1 },
             { id: herbId, chance: 0.5 },
-            { id: potion, chance: 0.2 },
+            { id: potion, chance: ZONE_POTION_CHANCE[spec.zone]?.elite ?? 0.2 },
+            ...(spec.zone === "chashui" ? CHASHUI_SUPPLIES.map((d) => ({ id: d.id, chance: Math.min(1, d.chance * 3) })) : []),
             { id: amuletId, chance: 0.08 },
             { id: talId, chance: 0.08 },
             { id: artId, chance: 0.04 },

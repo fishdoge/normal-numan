@@ -238,6 +238,16 @@ function BagTab() {
               {t("btnEnterMapDungeon")}
             </button>
           )}
+          {item.kind === "special" && id === "jieyu_cantu" && (
+            <button
+              className="btn border-fuchsia-400/60 text-fuchsia-300"
+              disabled={busy || !!s.combat}
+              title={s.combat ? t("talismanPouchInCombatNote") : ""}
+              onClick={() => act("useItem", { itemId: id })}
+            >
+              {t("btnOpenCantu")}
+            </button>
+          )}
           {item.kind === "special" && id === "tongtian_ling" && (
             <button
               className="btn border-fuchsia-400/60 text-fuchsia-300"
@@ -250,7 +260,7 @@ function BagTab() {
           {item.kind === "special" &&
             !item.xianli &&
             !item.mapEncounter &&
-            !["jinhundan", "xiantian_zaohuadan", "zenglingzhu", "lianshenshu", "tongtian_ling"].includes(id) && (
+            !["jinhundan", "xiantian_zaohuadan", "zenglingzhu", "lianshenshu", "tongtian_ling", "jieyu_cantu"].includes(id) && (
               <span className="chip text-fuchsia-400 border-fuchsia-400/50 self-center">
                 {t("autoOnCondition")}
               </span>

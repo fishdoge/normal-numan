@@ -459,6 +459,57 @@
   cursor: pointer;
   padding: 4px 0;
 }
+.admin-stat {
+  margin-top: 10px;
+}
+.admin-stat summary {
+  font-size: 13px;
+}
+.admin-stat summary strong {
+  float: right;
+  font:
+    500 14px "Noto Sans TC",
+    sans-serif;
+  color: var(--gold);
+}
+.admin-stat ul {
+  margin: 4px 0 0 14px;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+}
+.admin-stat li {
+  padding: 3px 0;
+}
+.admin-stat li > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+.admin-stat li b {
+  flex-shrink: 0;
+  font-weight: 400;
+  font-family: "Noto Sans TC", sans-serif;
+}
+.admin-stat small,
+.admin-stat li > p,
+.admin-stat-empty,
+.admin-stat-note,
+.admin-stat-footnote {
+  font-size: 11px;
+  color: var(--admin-muted);
+}
+.admin-stat-subtotal {
+  border-top: 1px solid var(--admin-line);
+}
+.admin-stat-empty,
+.admin-stat-note {
+  margin: 4px 0 0 14px;
+}
+.admin-stat-footnote {
+  margin-top: 12px;
+}
 .admin-detail-section summary::marker {
   color: var(--jade);
 }

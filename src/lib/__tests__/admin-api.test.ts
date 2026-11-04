@@ -59,6 +59,9 @@ describe("後臺 API 權限與輸入邊界", () => {
       page: 2,
     });
   });
+  it("接受依攻擊力排序", () => {
+    expect(parsePlayerQuery(new URLSearchParams("sort=attack"))?.sort).toBe("attack");
+  });
   it("拒絕無效分頁/排序/狀態,沒有動態 SQL 識別字", async () => {
     for (const query of [
       "page=0",

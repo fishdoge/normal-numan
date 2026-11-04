@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
   amountOf,
+  combatBreakdownOf,
   describePlayer,
   summarizePlayer,
   resolveItem,
+  sortByAttack,
   type PlayerRow,
 } from "../admin-data";
 import { ITEMS } from "../../game/data/items";
+import { statsOf, type SaveData } from "../../game/engine";
 
 const row = (data: unknown = {}): PlayerRow => ({
   id: 10,
@@ -24,6 +27,99 @@ const row = (data: unknown = {}): PlayerRow => ({
 });
 
 describe("玩家後臺資料轉換", () => {
+  it("戰鬥屬性與遊戲 statsOf 一致;算不出來時為 null,其他欄位照常", () => {
+    const data = {
+      realmIdx: 25,
+      sectId: "huadao",
+      xianli: 100,
+      boonAtk: 1000,
+      boonDef: 500,
+      boonHp: 2000,
+      equippedWeapon: "jy_taiyi",
+    };
+    const combat = summarizePlayer(row(data)).combat!;
+    const expected = statsOf(data as unknown as SaveData);
+    expect(combat).toEqual({
+      atk: expected.atk,
+      def: expected.def,
+      hpMax: expected.hpMax,
+      mpMax: expected.mpMax,
+      speed: expected.speed,
+      xianli: 100,
+    });
+    expect(combat.atk).toBeGreaterThan(0);
+
+    const broken = summarizePlayer(row({ realmIdx: 9999, kills: { a: 3 } }));
+    expect(broken.combat).toBeNull();
+    expect(broken.kills).toBe("3");
+    expect(summarizePlayer({ ...row({}), has_save: false }).combat).toBeNull();
+  });
+
+  it("依攻擊力由高到低排序,算不出來與尚未創角的排最後", () => {
+    const player = (id: number, data: unknown, hasSave = true) =>
+      summarizePlayer({ ...row(data), id, has_save: hasSave });
+    const sorted = sortByAttack([
+      player(1, {}, false),
+      player(2, { realmIdx: 0 }),
+      player(3, { realmIdx: 9999 }),
+      player(4, { realmIdx: 25 }),
+      player(5, { realmIdx: 25, boonAtk: 1000 }),
+    ]);
+    expect(sorted.map((p) => p.id)).toEqual([5, 4, 2, 1, 3]);
+  });
+
+  it("屬性組成重算後與 statsOf 的總值完全一致", () => {
+    const saves = [
+      { realmIdx: 0 },
+      { realmIdx: 25, sectId: "huadao", xianli: 100, boonAtk: 1000, boonDef: 500, boonHp: 2000 },
+      { realmIdx: 25, xianli: 826, faction: "lunhui", equippedWeapon: "jy_taiyi" },
+      { realmIdx: 25, faction: "tianting", boonDef: 7, tengfuGrid: [{ id: "tf_jingang", r: 0, c: 0 }] },
+      {
+        realmIdx: 25,
+        faction: "manhuang",
+        boonHp: 33,
+        boonSpeed: 9,
+        tengfuGrid: [
+          { id: "tf_huanyang", r: 0, c: 0 },
+          { id: "tf_huanyang", r: 2, c: 0 },
+          { id: "tf_juqi", r: 4, c: 0 },
+          { id: "tf_leizhu", r: 0, c: 3 },
+        ],
+      },
+    ];
+    for (const data of saves) {
+      const breakdown = combatBreakdownOf(data)!;
+      const stats = statsOf(data as unknown as SaveData);
+      for (const stat of breakdown) {
+        const sum = stat.adds.reduce((a, l) => a + l.value, 0);
+        expect(Math.floor(stat.mults.reduce((a, m) => a * m.mult, sum)), stat.key).toBe(stats[stat.key]);
+        expect(stat.total, stat.key).toBe(stats[stat.key]);
+      }
+    }
+  });
+
+  it("屬性組成列出每一件來源,算不出來時為 null", () => {
+    const breakdown = combatBreakdownOf({
+      realmIdx: 25,
+      xianli: 826,
+      faction: "lunhui",
+      equippedWeapon: "jy_taiyi",
+      tengfuGrid: [
+        { id: "tf_leizhu", r: 0, c: 0 },
+        { id: "tf_leizhu", r: 2, c: 0 },
+      ],
+    })!;
+    const atk = breakdown.find((s) => s.key === "atk")!;
+    expect(atk.adds.map((l) => l.source)).toEqual(["境界", "法器"]);
+    expect(atk.mults.map((m) => m.source)).toEqual(["仙靈力", "滕符陣", "派系"]);
+    expect(atk.mults[0].mult).toBe(8);
+    expect(atk.mults[1].parts).toHaveLength(1);
+    expect(atk.mults[1].parts![0].count).toBe(2);
+    expect(breakdown.find((s) => s.key === "xianli")!.note).toContain("已達上限");
+    expect(combatBreakdownOf({ realmIdx: 9999 })).toBeNull();
+    expect(describePlayer({ ...row({}), has_save: false }, []).combatBreakdown).toBeNull();
+  });
+
   it("保留跨分支的未知道具、法術、怪物,且不改寫原存檔", () => {
     const original = row({
       inventory: { legacy_item: 7, empty: 0, invalid: -1 },

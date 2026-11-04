@@ -1,13 +1,14 @@
 import { sql } from "./db";
 import {
   describePlayer,
+  sortByAttack,
   summarizePlayer,
   type PlayerRow,
   type AdminListResult,
 } from "./admin-data";
 
 export const ADMIN_PAGE_SIZE = 25;
-export const ADMIN_SORTS = ["recent", "realm", "kills", "stones", "playtime"] as const;
+export const ADMIN_SORTS = ["recent", "realm", "attack", "kills", "stones", "playtime"] as const;
 export const ADMIN_STATUSES = ["all", "alive", "dead", "unstarted"] as const;
 export type PlayerSort = (typeof ADMIN_SORTS)[number];
 export type PlayerStatus = (typeof ADMIN_STATUSES)[number];
@@ -33,6 +34,8 @@ export async function listPlayers(
 ): Promise<AdminListResult> {
   const pattern = `%${query.search.replace(/[\\%_]/g, "\\$&")}%`;
   const offset = (query.page - 1) * ADMIN_PAGE_SIZE;
+  // 攻擊力由 statsOf 算出,資料庫無法排序:取回全部符合條件的玩家,算完再排序分頁
+  const byAttack = query.sort === "attack";
   const [rows, totals, overviewRows] = await sql.transaction(
     [
       sql`WITH candidates AS (
@@ -41,7 +44,13 @@ export async function listPlayers(
         jsonb_build_object('name',s.data->'name','realmIdx',s.data->'realmIdx',
           'exp',s.data->>'exp','dead',s.data->'dead','inventory',s.data->'inventory',
           'learned',s.data->'learned','kills',s.data->'kills',
-          'stones',s.data->>'stones','pouchStones',s.data->>'pouchStones') AS data,
+          'stones',s.data->>'stones','pouchStones',s.data->>'pouchStones',
+          'sectId',s.data->'sectId','faction',s.data->'faction','xianli',s.data->'xianli',
+        'boonAtk',s.data->'boonAtk','boonDef',s.data->'boonDef','boonHp',s.data->'boonHp','boonSpeed',s.data->'boonSpeed',
+          'equippedWeapon',s.data->'equippedWeapon','equippedArmor',s.data->'equippedArmor',
+          'equippedRobe',s.data->'equippedRobe','equippedAmulet',s.data->'equippedAmulet',
+          'equippedTalisman',s.data->'equippedTalisman','equippedPet',s.data->'equippedPet',
+          'equippedMing',s.data->'equippedMing','tengfuGrid',s.data->'tengfuGrid') AS data,
         a.play_seconds::text, a.tracking_started_at, a.last_seen_at,
         COALESCE((s.data->>'realmIdx')::int,-1) AS realm_sort,
         COALESCE((SELECT SUM(value::numeric) FROM jsonb_each_text(COALESCE(s.data->'kills','{}'::jsonb))),0) AS kill_sort,
@@ -61,7 +70,7 @@ export async function listPlayers(
         CASE WHEN ${query.sort}='stones' THEN stone_sort END DESC NULLS LAST,
         CASE WHEN ${query.sort}='playtime' THEN play_seconds::bigint END DESC NULLS LAST,
         CASE WHEN ${query.sort}='recent' THEN updated_at END DESC NULLS LAST,
-        id DESC LIMIT ${ADMIN_PAGE_SIZE} OFFSET ${offset}`,
+        id DESC LIMIT ${byAttack ? null : ADMIN_PAGE_SIZE} OFFSET ${byAttack ? 0 : offset}`,
       sql`SELECT count(*)::int AS total FROM users u LEFT JOIN saves s ON s.user_id=u.id
       WHERE (${query.search}='' OR u.username ILIKE ${pattern} OR u.name ILIKE ${pattern} OR s.data->>'name' ILIKE ${pattern})
         AND (${query.status}='all'
@@ -77,8 +86,9 @@ export async function listPlayers(
     { readOnly: true, isolationLevel: "RepeatableRead" },
   );
   const overview = overviewRows[0];
+  const players = (rows as unknown as PlayerRow[]).map(summarizePlayer);
   return {
-    players: (rows as unknown as PlayerRow[]).map(summarizePlayer),
+    players: byAttack ? sortByAttack(players).slice(offset, offset + ADMIN_PAGE_SIZE) : players,
     total: Number(totals[0].total),
     page: query.page,
     pageSize: ADMIN_PAGE_SIZE,
@@ -99,6 +109,8 @@ export async function getPlayerDetail(id: number) {
       COALESCE((s.data->>'started')::boolean,false) AS has_save,s.updated_at,s.pending_stones::text,
       jsonb_build_object('name',s.data->'name','realmIdx',s.data->'realmIdx','exp',s.data->>'exp',
         'dead',s.data->'dead','stones',s.data->>'stones','pouchStones',s.data->>'pouchStones',
+        'sectId',s.data->'sectId','faction',s.data->'faction','xianli',s.data->'xianli',
+        'boonAtk',s.data->'boonAtk','boonDef',s.data->'boonDef','boonHp',s.data->'boonHp','boonSpeed',s.data->'boonSpeed',
         'inventory',s.data->'inventory','learned',s.data->'learned','techLevels',s.data->'techLevels',
         'techCopies',s.data->'techCopies','kills',s.data->'kills',
         'equippedWeapon',s.data->'equippedWeapon','equippedArmor',s.data->'equippedArmor',

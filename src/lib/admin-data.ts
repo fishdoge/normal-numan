@@ -2,8 +2,26 @@ import { REALMS } from "../game/data/realms";
 import { itemById } from "../game/data/items";
 import { TECHNIQUES } from "../game/data/techniques";
 import { MONSTERS } from "../game/data/world";
-import { tengfuById } from "../game/data/tengfu";
+import { SECTS } from "../game/data/sects";
+import {
+  factionById,
+  LUNHUI_ATK_PCT,
+  MANHUANG_HP_PCT,
+  TIANTING_DEF_PCT,
+} from "../game/data/factions";
+import {
+  tengfuById,
+  tengfuStatValues,
+  type TengfuPlacement,
+  type TengfuStat,
+} from "../game/data/tengfu";
 import { KIND_LABEL } from "../game/types";
+import {
+  statsOf,
+  XIANLI_MULT,
+  XIANLI_MULT_CAP,
+  type SaveData,
+} from "../game/engine";
 
 type RecordData = Record<string, unknown>;
 const recordOf = (value: unknown): RecordData =>
@@ -35,6 +53,198 @@ export function resolveItem(id: string) {
   return { id, name: id, kind: "未收錄道具", known: false };
 }
 
+const equipmentSlots = [
+  ["equippedWeapon", "法器"],
+  ["equippedRobe", "法衣"],
+  ["equippedAmulet", "護身符"],
+  ["equippedTalisman", "符籙"],
+  ["equippedPet", "靈寵"],
+  ["equippedMing", "命器"],
+] as const;
+
+export interface AdminCombatStats {
+  atk: number;
+  def: number;
+  hpMax: number;
+  mpMax: number;
+  speed: number;
+  xianli: number;
+}
+
+// 戰鬥屬性:沿用遊戲的 statsOf,與玩家道籍面板同一份算法;statsOf 只讀不寫。
+// 存檔含未知境界或其他分支的裝備時算不出來,回傳 null,不影響其他欄位。
+export function combatStatsOf(data: RecordData): AdminCombatStats | null {
+  try {
+    const { atk, def, hpMax, mpMax, speed, xianli } = statsOf(data as unknown as SaveData);
+    return { atk, def, hpMax, mpMax, speed, xianli };
+  } catch {
+    return null;
+  }
+}
+
+export interface AdminStatPart {
+  name: string;
+  count: number;
+  pct: number;
+}
+export interface AdminStatAdd {
+  source: string;
+  name?: string;
+  value: number;
+  parts?: AdminStatPart[];
+}
+export interface AdminStatMult {
+  source: string;
+  name?: string;
+  mult: number;
+  parts?: AdminStatPart[];
+}
+export interface AdminStatBreakdown {
+  key: keyof AdminCombatStats;
+  label: string;
+  total: number;
+  adds: AdminStatAdd[];
+  mults: AdminStatMult[];
+  note?: string;
+}
+
+// 每一件滕符對某項屬性的百分比,同名合併
+function tengfuPartsOf(grid: TengfuPlacement[] | undefined, stat: TengfuStat): AdminStatPart[] {
+  const parts = new Map<string, AdminStatPart>();
+  for (const p of grid ?? []) {
+    const def = tengfuById(p.id);
+    const pct = def ? (tengfuStatValues(def)[stat] ?? 0) : 0;
+    if (!def || !pct) continue;
+    const part = parts.get(def.id) ?? { name: def.name, count: 0, pct: 0 };
+    parts.set(def.id, { ...part, count: part.count + 1, pct: part.pct + pct });
+  }
+  return [...parts.values()];
+}
+
+// 屬性組成:逐項列出 statsOf 的加項與乘數,順序與 statsOf 相同,總值直接取自 statsOf。
+// 兩邊是否對得起來由 admin-data.test.ts 重算驗證,statsOf 改公式時這裡要跟著改。
+export function combatBreakdownOf(data: RecordData): AdminStatBreakdown[] | null {
+  try {
+    const s = data as unknown as SaveData;
+    const stats = statsOf(s);
+    const { realm, tengfu: tf } = stats;
+    const sect = SECTS.find((x) => x.id === s.sectId);
+    const faction = factionById(s.faction)?.name;
+    const gear = equipmentSlots.flatMap(([key, slot]) => {
+      const id = key === "equippedRobe" ? (s.equippedRobe ?? s.equippedArmor) : s[key];
+      const item = id ? itemById(id) : null;
+      return item ? [{ slot, item }] : [];
+    });
+    const gearLines = (pick: (g: (typeof gear)[number]["item"]) => number | undefined) =>
+      gear.map(({ slot, item }) => ({ source: slot, name: item.name, value: pick(item) ?? 0 }));
+    const adds = (lines: AdminStatAdd[]) => lines.filter((l) => l.value);
+    const mults = (lines: AdminStatMult[]) => lines.filter((l) => l.mult !== 1);
+    const tfMult = (mult: number, stat: TengfuStat): AdminStatMult => ({
+      source: "滕符陣",
+      mult,
+      parts: tengfuPartsOf(s.tengfuGrid, stat),
+    });
+    const xianliMult = Math.min(XIANLI_MULT_CAP, 1 + stats.xianli * XIANLI_MULT);
+    return [
+      {
+        key: "atk",
+        label: "攻擊",
+        total: stats.atk,
+        adds: adds([
+          { source: "境界", name: realm.name, value: realm.atk },
+          { source: "門派", name: sect?.name, value: sect?.bonus.atk ?? 0 },
+          ...gearLines((i) => i.atkBonus),
+          { source: "雲遊所得", value: s.boonAtk ?? 0 },
+        ]),
+        mults: mults([
+          { source: "仙靈力", name: `${stats.xianli} 點`, mult: xianliMult },
+          tfMult(1 + tf.atk, "atk"),
+          {
+            source: "派系",
+            name: faction,
+            mult: s.faction === "lunhui" ? 1 + LUNHUI_ATK_PCT : 1,
+          },
+        ]),
+      },
+      {
+        key: "def",
+        label: "防禦",
+        total: stats.def,
+        adds: adds([
+          ...gearLines((i) => i.defBonus),
+          { source: "雲遊所得", value: s.boonDef ?? 0 },
+          {
+            source: "滕符護體",
+            name: `境界攻擊 × ${(tf.def * 100).toFixed(1)}%`,
+            value: Math.floor(realm.atk * tf.def),
+            parts: tengfuPartsOf(s.tengfuGrid, "def"),
+          },
+        ]),
+        mults: mults([
+          {
+            source: "派系",
+            name: faction,
+            mult: s.faction === "tianting" ? 1 + TIANTING_DEF_PCT : 1,
+          },
+        ]),
+      },
+      {
+        key: "hpMax",
+        label: "氣血上限",
+        total: stats.hpMax,
+        adds: adds([
+          { source: "境界", name: realm.name, value: realm.hpMax },
+          { source: "門派", name: sect?.name, value: sect?.bonus.hp ?? 0 },
+          { source: "雲遊所得", value: s.boonHp ?? 0 },
+        ]),
+        mults: mults([
+          tfMult(1 + tf.hp, "hp"),
+          {
+            source: "派系",
+            name: faction,
+            mult: s.faction === "manhuang" ? 1 + MANHUANG_HP_PCT : 1,
+          },
+        ]),
+      },
+      {
+        key: "mpMax",
+        label: "法力上限",
+        total: stats.mpMax,
+        adds: adds([
+          { source: "境界", name: realm.name, value: realm.mpMax },
+          { source: "門派", name: sect?.name, value: sect?.bonus.mp ?? 0 },
+        ]),
+        mults: mults([tfMult(1 + tf.mp, "mp")]),
+      },
+      {
+        key: "speed",
+        label: "速度",
+        total: stats.speed,
+        adds: adds([
+          { source: "境界攻擊", name: realm.name, value: realm.atk },
+          { source: "境界階數", name: `第 ${realm.stage} 階 × 5`, value: realm.stage * 5 },
+          ...gearLines((i) => i.speedBonus),
+          { source: "雲遊所得", value: s.boonSpeed ?? 0 },
+        ]),
+        mults: [],
+      },
+      {
+        key: "xianli",
+        label: "仙靈力",
+        total: stats.xianli,
+        adds: adds([{ source: "服用累積", value: stats.xianli }]),
+        mults: [],
+        note:
+          xianliMult >= XIANLI_MULT_CAP
+            ? `攻擊倍率 × ${xianliMult.toFixed(2)}(已達上限)`
+            : `攻擊倍率 × ${xianliMult.toFixed(2)}`,
+      },
+    ];
+  } catch {
+    return null;
+  }
+}
+
 export interface AdminPlayer {
   id: number;
   username: string;
@@ -44,6 +254,7 @@ export interface AdminPlayer {
   hasSave: boolean;
   dead: boolean;
   realm: string;
+  combat: AdminCombatStats | null;
   exp: string;
   kills: string;
   inventoryCount: number;
@@ -104,6 +315,7 @@ export function summarizePlayer(row: PlayerRow): AdminPlayer {
     hasSave: row.has_save,
     dead: d.dead === true,
     realm: row.has_save ? (REALMS[realmIdx]?.name ?? "未知境界") : "尚未創角",
+    combat: row.has_save ? combatStatsOf(d) : null,
     exp: amountOf(d.exp).toString(),
     kills: kills.toString(),
     inventoryCount: Object.values(inventory).filter((n) => countOf(n) > 0).length,
@@ -121,14 +333,11 @@ export function summarizePlayer(row: PlayerRow): AdminPlayer {
   };
 }
 
-const equipmentSlots = [
-  ["equippedWeapon", "法器"],
-  ["equippedRobe", "法衣"],
-  ["equippedAmulet", "護身符"],
-  ["equippedTalisman", "符籙"],
-  ["equippedPet", "靈寵"],
-  ["equippedMing", "命器"],
-] as const;
+// 依攻擊力由高到低;算不出來或尚未創角的排最後,同分維持原順序
+export function sortByAttack(players: AdminPlayer[]): AdminPlayer[] {
+  return [...players].sort((a, b) => (b.combat?.atk ?? -1) - (a.combat?.atk ?? -1));
+}
+
 const techniques = new Map(TECHNIQUES.map((t) => [t.id, t]));
 const monsters = new Map(MONSTERS.map((m) => [m.id, m]));
 
@@ -146,6 +355,7 @@ export function describePlayer(
   const copies = recordOf(d.techCopies);
   return {
     player: summarizePlayer(row),
+    combatBreakdown: row.has_save ? combatBreakdownOf(d) : null,
     stones: {
       onHand: amountOf(d.stones).toString(),
       pouch: amountOf(d.pouchStones).toString(),

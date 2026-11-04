@@ -2,7 +2,13 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
-import type { AdminListResult, AdminPlayer, AdminPlayerDetail } from "@/lib/admin-data";
+import type {
+  AdminListResult,
+  AdminPlayer,
+  AdminPlayerDetail,
+  AdminStatBreakdown,
+  AdminStatPart,
+} from "@/lib/admin-data";
 
 const number = (value: string | number) => {
   try {
@@ -19,6 +25,9 @@ const duration = (value: string | null) => {
   if (seconds < BigInt(60)) return `${seconds} 秒`;
   return `${number((seconds / BigInt(3600)).toString())} 時 ${(seconds / BigInt(60)) % BigInt(60)} 分`;
 };
+const percent = (pct: number) => `${(pct * 100).toFixed(1)}%`;
+const partsText = (parts: AdminStatPart[]) =>
+  parts.map((p) => `${p.name}${p.count > 1 ? ` ×${p.count}` : ""} +${percent(p.pct)}`).join("、");
 const stateName = (p: AdminPlayer) => (!p.hasSave ? "尚未創角" : p.dead ? "已隕落" : "修行中");
 const ELEMENTS: Record<string, string> = {
   metal: "金",
@@ -34,6 +43,57 @@ async function readJson<T>(url: string, signal: AbortSignal): Promise<T> {
   const data = await response.json();
   if (!response.ok) throw new Error(data.error ?? "暫時無法讀取資料");
   return data as T;
+}
+
+function StatBreakdown({ stat }: { stat: AdminStatBreakdown }) {
+  const subtotal = stat.adds.reduce((sum, line) => sum + line.value, 0);
+  return (
+    <details className="admin-stat" open>
+      <summary>
+        {stat.label}
+        <strong>{number(stat.total)}</strong>
+      </summary>
+      {stat.adds.length ? (
+        <ul>
+          {stat.adds.map((line) => (
+            <li key={`${line.source}-${line.name ?? ""}`}>
+              <div>
+                <span>
+                  {line.source}
+                  {line.name && <small> {line.name}</small>}
+                </span>
+                <b>+{number(line.value)}</b>
+              </div>
+              {line.parts?.length ? <p>{partsText(line.parts)}</p> : null}
+            </li>
+          ))}
+          {stat.mults.length ? (
+            <li className="admin-stat-subtotal">
+              <div>
+                <span>小計</span>
+                <b>{number(subtotal)}</b>
+              </div>
+            </li>
+          ) : null}
+          {stat.mults.map((line) => (
+            <li key={line.source}>
+              <div>
+                <span>
+                  {line.source}
+                  {line.name && <small> {line.name}</small>}
+                </span>
+                <b>× {Number(line.mult.toFixed(3))}</b>
+              </div>
+              {line.parts?.length ? <p>{partsText(line.parts)}</p> : null}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="admin-stat-empty">目前沒有來源</p>
+      )}
+      {stat.note && <p className="admin-stat-note">{stat.note}</p>}
+    </details>
+  );
 }
 
 function PlayerDetail({ detail }: { detail: AdminPlayerDetail }) {
@@ -86,6 +146,21 @@ function PlayerDetail({ detail }: { detail: AdminPlayerDetail }) {
           </div>
         </dl>
       </div>
+      <section className="admin-detail-section" aria-labelledby="combat-title">
+        <div className="admin-section-heading">
+          <h3 id="combat-title">戰鬥屬性</h3>
+        </div>
+        {detail.combatBreakdown ? (
+          <>
+            {detail.combatBreakdown.map((stat) => (
+              <StatBreakdown key={stat.key} stat={stat} />
+            ))}
+            <p className="admin-stat-footnote">未含宗門聲勢這類戰鬥當下才套用的加成。</p>
+          </>
+        ) : (
+          <p className="admin-empty-small">無法計算戰鬥屬性</p>
+        )}
+      </section>
       <section className="admin-detail-section" aria-labelledby="stones-title">
         <div className="admin-section-heading">
           <h3 id="stones-title">靈石資產</h3>
@@ -422,6 +497,7 @@ export default function AdminDashboard({ adminName }: { adminName: string }) {
           <select id="player-sort" value={sort} onChange={(e) => setSort(e.target.value)}>
             <option value="recent">最近更新</option>
             <option value="realm">境界由高到低</option>
+            <option value="attack">攻擊力由高到低</option>
             <option value="kills">打怪數由多到少</option>
             <option value="stones">靈石由多到少</option>
             <option value="playtime">遊玩時間由長到短</option>
@@ -464,12 +540,13 @@ export default function AdminDashboard({ adminName }: { adminName: string }) {
               >
                 <table className="admin-player-table">
                   <caption className="sr-only">
-                    玩家的等級、打怪數、靈石與遊玩時間。選取玩家可檢視持有物品與法術。
+                    玩家的等級、戰鬥屬性、打怪數、靈石與遊玩時間。選取玩家可檢視持有物品與法術。
                   </caption>
                   <thead>
                     <tr>
                       <th scope="col">玩家 / 帳號</th>
                       <th scope="col">等級 · 境界</th>
+                      <th scope="col">攻擊 / 防禦 · 氣血</th>
                       <th scope="col">打怪數</th>
                       <th scope="col">靈石總額</th>
                       <th scope="col">遊玩時間</th>
@@ -493,6 +570,18 @@ export default function AdminDashboard({ adminName }: { adminName: string }) {
                         <td>
                           <span>{p.realm}</span>
                           <small className={p.dead ? "admin-dead" : ""}>{stateName(p)}</small>
+                        </td>
+                        <td className="admin-numeric">
+                          {p.combat ? (
+                            <>
+                              <span>{number(p.combat.atk)}</span>
+                              <small>
+                                防 {number(p.combat.def)} · 血 {number(p.combat.hpMax)}
+                              </small>
+                            </>
+                          ) : (
+                            "—"
+                          )}
                         </td>
                         <td className="admin-numeric">{number(p.kills)}</td>
                         <td className="admin-numeric admin-gold">{number(p.stones)}</td>
